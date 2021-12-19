@@ -212,7 +212,7 @@ def generate_commands(main_stdin):
       else:
         cmd = f'ssh {host} '
         if ARGS.timeout: cmd += f'-o ConnectTimeout={ARGS.timeout} '
-        cmd += ARGS.ssh.replace(ARGS.subst, host)
+        cmd += '"' + ARGS.ssh.replace(ARGS.subst, host) + '"'
         commands.append(cmd)
   else:
     commands = main_stdin
