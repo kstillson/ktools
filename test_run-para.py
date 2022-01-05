@@ -56,10 +56,10 @@ def test_generate_commands():
     assert run_para.generate_commands(['a', 'b']) == ['cad', 'cbd']
 
     run_para.ARGS = run_para.parse_args(['--ssh', 'cmd'])
-    assert run_para.generate_commands(['a', 'b']) == ['ssh a cmd', 'ssh b cmd']
+    assert run_para.generate_commands(['a', 'b']) == ['ssh a "cmd"', 'ssh b "cmd"']
 
     run_para.ARGS = run_para.parse_args(['--ssh', 'cmd', '--timeout', '10'])
-    assert run_para.generate_commands(['a', 'b']) == ['ssh a -o ConnectTimeout=10 cmd', 'ssh b -o ConnectTimeout=10 cmd']
+    assert run_para.generate_commands(['a', 'b']) == ['ssh a -o ConnectTimeout=10 "cmd"', 'ssh b -o ConnectTimeout=10 "cmd"']
 
     
 # ---------- integration level tests ----------
