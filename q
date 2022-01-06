@@ -401,7 +401,7 @@ function checks_real() {
     /root/bin-docker/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect "exim panic log empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect "exim reject log empty" "0"
-    git_check_all |& expect "git dirs with local changes" " "
+    git_check_all |& expect "git dirs with local changes" ""
 }
 
 # Wrapper around checks_real that does formatting and checks for overall status.
