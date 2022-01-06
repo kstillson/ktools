@@ -157,8 +157,7 @@ function run_para() {
     fi
     hosts="$1"
     shift
-    exc=${EXCLUDE//,/|}   # csv -> regex
-    echo "$hosts" | tr ' ' '\n' | egrep -v "$exc" | /usr/local/bin/run-para $RP_FLAGS --subst "$HOST_SUBST" --timeout $TIMEOUT  "$type" "$@"
+    echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | /usr/local/bin/run-para $RP_FLAGS --subst "$HOST_SUBST" --timeout $TIMEOUT  "$type" "$@"
     return $?
 }
 
@@ -186,18 +185,30 @@ function git_add_repo() {
     emitc green "ready: git:git/${name}"
 }
 
-# Scan all known git dirs, and submit any outstanding changes.
-# relies on ~/.gitconfig having the following in the [alias] section:
-#    C = !"git commit -v -a && { git remote | xargs -L1 git push; }"
-function git_checkin_all() {
+# $1 is a git controlled directory.  Will check-in any local changes, then
+# pull updates from all remotes, then push updates to all remotes.
+# assumes "need_ssh_agent" was already called.
+function git_sync() {
+    dir="$1"
+    if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; return 1; fi
+    pushd .
+    cd $dir
+    git_status=$(git status -s)
+    if [[ "$git_status" == "" ]]; then
+        emitc green "no local changes: $dir"
+    else
+        git commit -v -a
+    fi
+    git remote | xargs -L1 git pull
+    git remote | xargs -L1 git push
+    echoc green "done: $dir"
+}
+
+
+# Sync all known git dirs.
+function git_sync_all() {
     need_ssh_agent
-    for dir in $GIT_DIRS; do
-        if [[ ! -d $dir ]]; then emit "missing dir: $dir"; continue; fi
-        cd $dir
-        git_status=$(git status -s)
-        if [[ "$git_status" == "" ]]; then emit "no changes: $dir"; continue; fi
-        runner git C
-    done
+    for dir in $GIT_DIRS; do git_sync $dir; done
     emitc green "all done\n"
 }
 
@@ -237,7 +248,7 @@ function pinger() {
         echo ""
         emit $(printf "problems: [ $(echo $problems | tr '\n' ' ') ]... ${RED} retry #${try}/3... ${RESET}")
         sleep 1
-	problems=$(run_para LOCAL "$problems" "ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
+        problems=$(run_para LOCAL "$problems" "ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emit "fixed; $(echoC green 'all ok\n')"; return; fi
     done
     emitc red ":-("
@@ -335,13 +346,13 @@ function update_dns_rmmac() {
 # Remove all docker copy-on-write files that have changed unexpectedly.
 function procmon_clear_cow() {
     for f in $(curl -sS jack:8080/healthz | grep COW | sed -e 's/COW: unexpected file: //'); do
-	emitC blue "$f"
-	docker=${f%%:*}
-	relfile=${f#*:}
-	echoc yellow "${docker}:${relfile}"
-	base=$(d cow $docker)
-	fn="${base}/${relfile}"
-	rm $fn
+        emitC blue "$f"
+        docker=${f%%:*}
+        relfile=${f#*:}
+        echoc yellow "${docker}:${relfile}"
+        base=$(d cow $docker)
+        fn="${base}/${relfile}"
+        rm $fn
     done
     emitc green done
 }
@@ -509,19 +520,31 @@ function list_dynamic() {
     esac
 }
 
-# stdin is a space or newline separated list (indivual items should not contain spaces)
-# $@ is list of things to remove. It can be separate args, or a space or comma separated list.
+# Similar to 'egrep -v' except input can be space or newline separated, and
+# multiple removal expressions can be given easily.
+#
+# stdin is a space or newline separated list (indivual items should not
+# contain spaces) $@ is list of things to remove.  Each "thing" can be a
+# substring, a regular expression, or a comma or space separated list of
+# substrings or regular expressions.
+#
 # stdout will be a space separated list with the requested items removed.
+#   (give $1 as "-" if you want newline separated instead.)
 # stderr will note the list of removed items (if any).
 function without() {
+    if [[ "$1" == "-" ]]; then newline=1; shift; else newline=0; fi
     if [[ "$1" == "" ]]; then cat; fi
     t=$(mktemp)
     cat > $t
     exp=$(echo "$@" | tr " " "|" | tr "," "|")
     removed=$(cat $t | tr ' ' '\n' | egrep "$exp" | sort | tr '\n' ' ')
     if [[ "$removed" != "" ]]; then emit "filtered: $removed"; fi
-    cat $t | tr ' ' '\n' | egrep -v "$exp" | sort | tr '\n' ' '
-    echo ""
+    if [[ "$newline" == "1" ]]; then
+        cat $t | tr ' ' '\n' | egrep -v "$exp" | sort
+    else
+        cat $t | tr ' ' '\n' | egrep -v "$exp" | sort | tr '\n' ' '
+        echo ""
+    fi
     rm $t
 }
 
@@ -578,23 +601,23 @@ function main() {
     shift
     case "$cmd" in
     # general linux maintenance routines for localhost
-	df) df -h | egrep -v '/docker|/snap|tmpfs|udev' ;;   ## df with only interesting output
-	ed) date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;       ## epoch day to m/d/y
-	es) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;             ## epoch seconds to standard date format
-	es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
-	es-now | now) date -u +%s ;;                         ## print current epoch seconds
+        df) df -h | egrep -v '/docker|/snap|tmpfs|udev' ;;   ## df with only interesting output
+        ed) date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;       ## epoch day to m/d/y
+        es) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;             ## epoch seconds to standard date format
+        es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
+        es-now | now) date -u +%s ;;                         ## print current epoch seconds
         journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
-        git-checkin-all | git-all | ga) git_checkin_all ;;   ## check all git dirs for unsubmitted changes and submit them
-        git-pull-all | git-pull | gp) git_pull_all ;;        ## update local repo for all git dirs
+        git-sync | git | g) git_sync "${1:-.}" ;;            ## git sync a single directory (defaults to .)
+        git-sync-all | git-all | ga) git_sync_all ;;         ## check all git dirs for unsubmitted changes and submit them
         pi-root | pir) host=${1:-rp}; need_ssh_agent; P=$(/usr/local/bin/kmc pi-login); sshpass -p $P scp ~/.ssh/id_rsa.pub pi@${host}:/tmp; sshpass -p $P ssh pi@$host 'sudo bash -c "mkdir -p /root/.ssh; cat /tmp/id_rsa.pub >>/root/.ssh/authorized_keys; rm /tmp/id_rsa.pub" '; echo "done" ;;  ## copy root pubkey to root@ arg1's a_k via pi std login.
-	ps) ps_fixer ;;                                      ## colorized and improved ps output
-	sort-skip-header | sort | snh) sort_skip_header ;;   ## sort stdin->stdout but skip 1 header row
+        ps) ps_fixer ;;                                      ## colorized and improved ps output
+        sort-skip-header | sort | snh) sort_skip_header ;;   ## sort stdin->stdout but skip 1 header row
         systemd-daemon-reload | sdr | sR) systemctl daemon-reload && emit "reloaded";;   ## systemd daemon refresh
         systemd-down | s0) systemctl stop ${1:-procmon} ;;            ## stop a specified service (procmon by default)
         systemd-restart | sr) systemctl restart ${1:-procmon} ;;      ## restart a specified service (procmon by default)
         systemd-status | ss | sq) systemctl status ${1:-procmon} ;;   ## check service status (procmon by default)
         systemd-up | s1) systemctl start ${1:-procmon} ;;             ## start a specified service (procmon by default)
-        without | wo) cat | without "${1:-$EXCLUDE}" ;;               ## remove arg1 (csv or regexp) from stdin (space, csv, or line separated)
+        without | wo) cat | without "$@" ;;                           ## remove args (csv or regexp) from stdin (space, csv, or line separated)
     # list multiple hosts (or multiple other things)
         list-all | la) list_all | without $EXCLUDE ;;                 ## list all known local-network hosts (respecting -x) via dhcp server leases
         list-git-dirs | lg) echo $GIT_DIRS ;;                         ## list all known git dirs (hard-coded list)
@@ -620,15 +643,15 @@ function main() {
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) update_dns_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
         dns-update | mac-update | du | mu | mac) update_dns ;;            ## add/change a mac or dhcp assignment
-	exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
-	exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
-	exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
-	exim-queue-reset | eqrm) d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm' ;;  ## clear the exim queue
-	exim-queue-reset-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | awk {"print $3"} | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
-	exim-queue-run | eqr) d run eximdock exim -qff ;;                 ## unfreeze and retry the queue
+        exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
+        exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
+        exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
+        exim-queue-reset | eqrm) d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm' ;;  ## clear the exim queue
+        exim-queue-reset-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | awk {"print $3"} | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
+        exim-queue-run | eqr) d run eximdock exim -qff ;;                 ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo to gitdock
-	git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homesec
+        git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homesec
         homesec-add-user | hau) homesec_add_user "$1" "$2" ;;             ## add a user to homesec via djangi cgi
         homesec-del-user | hdu) homesec_del_user "$1" ;;                  ## remove a user freom homesec via djangi cgi
         lease-orphans | lsmaco | lo | unknown-macs | um) leases_list_orphans ;;   ## list dhcp leases not known to dnsmasq config
