@@ -185,6 +185,18 @@ function git_add_repo() {
     emitc green "ready: git:git/${name}"
 }
 
+# Check all known git dirs for any local changes; output dirs with changes.
+function git_check_all() {
+    pushd . >& /dev/null
+    for dir in $GIT_DIRS; do
+        if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; continue; fi
+        cd $dir
+        git_status=$(git status -s)
+        if [[ "$git_status" != "" ]]; then echo "$dir"; fi
+    done
+    popd >& /dev/null
+}
+
 # $1 is a git controlled directory.  Will check-in any local changes, then
 # pull updates from all remotes, then push updates to all remotes.
 # assumes "need_ssh_agent" was already called.
@@ -192,7 +204,7 @@ function git_add_repo() {
 function git_sync() {
     dir="$1"
     if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; return 1; fi
-    pushd .
+    pushd . >& /dev/null
     cd $dir
     git_status=$(git status -s)
     if [[ "$git_status" == "" ]]; then
@@ -202,7 +214,7 @@ function git_sync() {
     fi
     git remote | xargs -L1 -I@ echo git pull @ master
     git remote | xargs -L1 git push
-    popd
+    popd >& /dev/null
     echoc green "done: $dir"
 }
 
@@ -389,16 +401,7 @@ function checks_real() {
     /root/bin-docker/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect "exim panic log empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect "exim reject log empty" "0"
-
-    # git checks
-    status="ok"
-    for dir in $GIT_DIRS; do
-        if [[ ! -d $dir ]]; then printf "${RED}missing git dir:${RESET} $dir"; status="error"; continue; fi
-        cd $dir
-        git_status=$(git status -s)
-        if [[ "$git_status" != "" ]]; then printf "${YELLOW}git dir with changes:${RESET} $dir\n"; status="error"; fi
-    done
-    emit "git dirs status - $status"
+    git_check_all |& expect "git dirs with local changes" " "
 }
 
 # Wrapper around checks_real that does formatting and checks for overall status.
@@ -609,6 +612,7 @@ function main() {
         es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
         es-now | now) date -u +%s ;;                         ## print current epoch seconds
         journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
+        git-check-all | gca | gc) git_check_all ;;           ## list any known git dirs with local changes
         git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;             ## git sync a single directory (defaults to .)
         git-sync-all | git-all | ga) git_sync_all ;;         ## check all git dirs for unsubmitted changes and submit them
         pi-root | pir) host=${1:-rp}; need_ssh_agent; P=$(/usr/local/bin/kmc pi-login); sshpass -p $P scp ~/.ssh/id_rsa.pub pi@${host}:/tmp; sshpass -p $P ssh pi@$host 'sudo bash -c "mkdir -p /root/.ssh; cat /tmp/id_rsa.pub >>/root/.ssh/authorized_keys; rm /tmp/id_rsa.pub" '; echo "done" ;;  ## copy root pubkey to root@ arg1's a_k via pi std login.
