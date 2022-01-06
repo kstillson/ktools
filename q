@@ -188,6 +188,7 @@ function git_add_repo() {
 # $1 is a git controlled directory.  Will check-in any local changes, then
 # pull updates from all remotes, then push updates to all remotes.
 # assumes "need_ssh_agent" was already called.
+# TODO: assumes remote branch is named "master"
 function git_sync() {
     dir="$1"
     if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; return 1; fi
@@ -199,8 +200,9 @@ function git_sync() {
     else
         git commit -v -a
     fi
-    git remote | xargs -L1 git pull
+    git remote | xargs -L1 -I@ echo git pull @ master
     git remote | xargs -L1 git push
+    popd
     echoc green "done: $dir"
 }
 
