@@ -607,7 +607,7 @@ function main() {
         es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
         es-now | now) date -u +%s ;;                         ## print current epoch seconds
         journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
-        git-sync | git | g) git_sync "${1:-.}" ;;            ## git sync a single directory (defaults to .)
+        git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;             ## git sync a single directory (defaults to .)
         git-sync-all | git-all | ga) git_sync_all ;;         ## check all git dirs for unsubmitted changes and submit them
         pi-root | pir) host=${1:-rp}; need_ssh_agent; P=$(/usr/local/bin/kmc pi-login); sshpass -p $P scp ~/.ssh/id_rsa.pub pi@${host}:/tmp; sshpass -p $P ssh pi@$host 'sudo bash -c "mkdir -p /root/.ssh; cat /tmp/id_rsa.pub >>/root/.ssh/authorized_keys; rm /tmp/id_rsa.pub" '; echo "done" ;;  ## copy root pubkey to root@ arg1's a_k via pi std login.
         ps) ps_fixer ;;                                      ## colorized and improved ps output
