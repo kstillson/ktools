@@ -95,7 +95,6 @@ def runner(job_id, cmd, send_stdin=None):
                        stdin=subprocess.PIPE if send_stdin else None,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   status = p.poll()
-  if status is not None: return update(job_id, 'magenta', f'Job terminated immediately with code {status}')
   t1 = threading.Thread(target=stream_copier, args=(p.stdout, job_id, 'white'))
   t2 = threading.Thread(target=stream_copier, args=(p.stderr, job_id, 'red'))
   t1.start()
