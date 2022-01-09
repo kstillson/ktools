@@ -1,0 +1,86 @@
+
+# This file is designed to be included by Makefiles in the subdirectories.
+#
+# The include should be after the input variable(s) are set, but before
+# any rules are specified, assuming you want this file's "all" to be the
+# default build target.
+
+# Supported meta-targets:  all, clean, test, install, update
+
+# Note: the "test" target is incomplete.  The caller is expected to provide
+# a target for $(TEST_LOG), which isn't easily generalizable here.
+
+# Non-standard targets:
+# comp: compares files in the staging directories to the install directories
+# update: all, test, install, then git commit, remote pull, and remote push.
+
+# ----------------------------------------
+
+SHELL := /bin/bash
+
+# Input variables: at least one of these must be set, if you want the Makefile to do anything.
+# PY and SH targets should be specified without their extensions.  They'll be copied to the
+# staging directory with the extensions removed.  Plain targets are just copied to staging.
+# Custom targets need their own rules specified in the calling Makefile.
+PY_TARGETS ?=
+SH_TARGETS ?=
+PLAIN_TARGETS ?=
+CUSTOM_TARGETS ?=
+
+# Control variables: optionally specified by the calling Makefile or
+# in the environment, to override the defaults.
+STAGING_DIR ?= staging
+TEST_LOG ?= $(STAGING_DIR)/test.log
+INSTALL_DIR ?= /root/bin
+GIT_BRANCH ?= master
+
+# Output variables: each of the target types, but in the staging directory.
+STAGING_PY_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(PY_TARGETS))
+STAGING_SH_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(SH_TARGETS))
+STAGING_PLAIN_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(PLAIN_TARGETS))
+STAGING_CUSTOM_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(CUSTOM_TARGETS))
+
+# Output variables: overall targets, plain, and in staging and target dirs.
+TARGETS := $(PY_TARGETS) $(SH_TARGETS) $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
+STAGING_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(TARGETS))
+INSTALL_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(TARGETS))
+
+# ----------------------------------------
+# Common rule patterns
+
+all: $(STAGING_TARGETS)
+
+# Pattern to create versions in the staging dir without the .py extension.
+$(STAGING_PY_TARGETS): $(STAGING_DIR)/%: %.py
+	install -D $^ $@
+
+# Pattern to create versions in the staging dir without the .py extension.
+$(STAGING_SH_TARGETS): $(STAGING_DIR)/%: %.sh
+	install -D $^ $@
+
+# Pattern to create copies of plain files in the staging area.
+$(STAGING_PLAIN_TARGETS): $(STAGING_DIR)/%: %
+	install -D $^ $@
+
+# TEST_LOG targets should depend on staging dir for output storage.
+$(STAGING_DIR):
+	mkdir -p $(STAGING_DIR)
+
+clean:
+	rm -rf $(STAGING_DIR) __pycache__ .pytest_cache
+
+install: $(INSTALL_TARGETS)
+$(INSTALL_TARGETS): $(STAGING_TARGETS)
+	install $^ ${INSTALL_DIR}
+
+test: $(TEST_LOG)
+
+update: all test install
+	git commit -v -a
+	git remote | xargs -L1 -I@ echo git pull @ ${GIT_BRANCH}
+	git remote | xargs -L1 git push
+
+comp: FORCE
+	@for t in $(TARGETS); do diff -q $(STAGING_DIR)/$$t $(INSTALL_DIR)/$$t; done
+
+FORCE:
