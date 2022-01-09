@@ -88,8 +88,24 @@ def do_check(args):
     return ok
 
 
+# Scan my own source code and return the leading file comment as a string.
+def get_file_comment():
+  out = ''
+  started = False
+  with open(__file__) as f:
+    for line in f:
+      if started:
+        if line.startswith("'''"): return out
+        out += line 
+      elif line.startswith("'''"):
+        out += line[3:]
+        started = True
+  # If we get to here, something went wrong, return nothing.
+  return ''
+
+
 def parse_args(argv_list):
-    ap = argparse.ArgumentParser(description='stateful ratelimiter')
+    ap = argparse.ArgumentParser(description='stateful ratelimiter', epilog=get_file_comment(), formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--init', '-i', default=None, help='initialize state file with rate,per(seconds)')
     ap.add_argument('--cmd', '-c', default=None, help='if provided, run this command if rate limit allows (or run it after delay if -w used)')
     ap.add_argument('--wait', '-w', type=float, default=0.0, help='if limit exceeded, rather than error exit, wait this many seconds (in a loop) and try again')

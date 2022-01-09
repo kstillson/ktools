@@ -257,8 +257,23 @@ def generate_output(job_ids):
     if ARGS.output != '-' and not ARGS.quiet: print(f'\noutput transcript saved to: {ARGS.output}', file=sys.stderr)
 
 
+# Scan my own source code and return the leading file comment as a string.
+def get_file_comment():
+  out = ''
+  started = False
+  with open(__file__) as f:
+    for line in f:
+      if started:
+        if line.startswith("'''"): return out
+        out += line 
+      elif line.startswith("'''"):
+        out += line[3:]
+        started = True
+  # If we get to here, something went wrong, return nothing.
+  return ''
+
 def parse_args(argv_list):
-  parser = argparse.ArgumentParser(description='run commands (from stdin) in parallel')
+  parser = argparse.ArgumentParser(description='run commands (from stdin) in parallel', epilog=get_file_comment(), formatter_class=argparse.RawDescriptionHelpFormatter)
   parser.add_argument('--align', '-a', action='store_true', help='In addition to --plain, align the outupt into a nice table')
   parser.add_argument('--cmd', '-C', default=None, help='Rather the reading complete commands from stdin, create commands to run from this param value, substituting each line in stdin for the "@" char specified in this command.')
   parser.add_argument('--cycle_time', '-c', type=float, default=0.2, help='time between updates')
