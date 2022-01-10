@@ -241,7 +241,7 @@ function git_pull_all() {
 function git_update_pis() {
     set +e
     t="/tmp/git-updates.out"
-    hosts=$(list_pis | without ap2,hs-front,pi1,lightning)
+    hosts=$(list_pis | without hs-front,pi1,lightning)
     echo "pulling git updates..."
     echo $hosts | /usr/local/bin/run-para --output $t --plain --timeout $TIMEOUT --ssh "/bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rm $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
@@ -463,14 +463,6 @@ EOF2
 EOF1
 }
 
-# Push updated mac list to 2nd access point.
-function update_ap2() {
-    need_ssh_agent
-    scp ${DD}/dnsmasq.macs ap2:
-    ssh ap2 "systemctl restart ap2-expect"
-}
-
-
 # ----------------------------------------
 # host lists
 
@@ -485,7 +477,7 @@ function list_linux() {
 }
 
 function list_pis() {
-    echo "ap2 homectrl homesec1 homesec2 hs-front lightning pi1 pibr pout trellis1 twinkle"
+    echo "homectrl homesec1 homesec2 hs-front lightning pi1 pibr pout trellis1 twinkle"
 }
 
 function list_rsnap_hosts() {
@@ -637,8 +629,8 @@ function main() {
         ping-tps | ptp) pinger "$(list_tps)" ;;                       ## ping all tplinks
         reboot-counts-month | rcm) m=$(date +%b); run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;  ## count of reboots this month on all pi's
         reboot-counts | rc) d=$(date "+%b %d " | sed -e "s/ 0/  /"); echo "$d"; run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep '$d' | wc -l" ;;  ## count of reboots today on all pi's
-        re-wifi-pi | rwp) run_para "$(list_pis | without ap2)" "wpa_cli -i wlan0 reconfigure" ;;   ## reconf wifi ap on pis (except ap2)
-        update-all | update_all | ua) updater "$(list_linux | without jack,blue,mc2)" ;;           ## run apt-get upgrade on all linux hosts
+        re-wifi-pi | rwp) run_para "$(list_pis)" "wpa_cli -i wlan0 reconfigure" ;;             ## reconf wifi ap on pis
+        update-all | update_all | ua) updater "$(list_linux | without jack,blue,mc2)" ;;       ## run apt-get upgrade on all linux hosts
         uptime | uta | ut) run_para "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;  ## uptime for all linux hosts
     # run arbitrary commands on multiple hosts
         listp) run_para LOCAL "$(cat)" "$@" ;;      ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
@@ -677,7 +669,6 @@ function main() {
         syslog-queue-view | syslog-queue | sqv | q) less /rw/log/queue ;;                  ## view the current log queue
         syslog-queue-view-no-ssh | sqv0 | q0) fgrep -v 'session opened' /rw/log/queue ;;   ## view the current log queue (w/o ssh)
         syslog-queue-view-yesterday-no-ssh | sqv1 | q1) fgrep -v 'session opened' /rw/log/Arc/queue.1 ;;   ## view yesterday's log queue
-        update-ap2 | up-ap2) update_ap2 ;;                                ## push latest mac address mappings to ap2
     # internal
         help | h) myhelp "$@";;                                           ## display this help ($1 to search)
         commands) myhelp | fgrep -v '#' | sed -e 's/\t/ /g' -e 's/^  *//' -e 's/   .*//' | tr '|' '\n' | tr -d ' ' | sort --version-sort  ;;  ## list q commands and flags
