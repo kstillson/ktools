@@ -45,6 +45,9 @@ TARGETS := $(PY_TARGETS) $(SH_TARGETS) $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
 STAGING_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(TARGETS))
 INSTALL_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(TARGETS))
 
+INSTALL_MP := $(shell findmnt -n -o TARGET --target $(INSTALL_DIR))
+
+
 # ----------------------------------------
 # Common rule patterns
 
@@ -71,7 +74,13 @@ clean:
 
 install: $(INSTALL_TARGETS)
 $(INSTALL_TARGETS): $(STAGING_TARGETS)
-	install $^ ${INSTALL_DIR}
+	if [ -w ${INSTALL_DIR} ]; then \
+	  install $^ ${INSTALL_DIR}; \
+	else \
+	  mount -o remount,rw $INSTALL_MP ; \
+	  install $^ ${INSTALL_DIR} ; \
+	  mount -o remount,ro $INSTALL_MP ; \
+	fi
 
 test: $(TEST_LOG)
 
