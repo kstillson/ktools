@@ -2,7 +2,7 @@
 # Supported meta-targets:  all, clean, test, install, update
 
 PY_TARGETS := iptables_log_sum ratelimiter run_para
-SH_TARGETS := q
+SH_TARGETS := pb-push q
 include ../Makefile-inc
 
 # NB: tests the .py files in the current dir, not the files in STAGING_DIR.

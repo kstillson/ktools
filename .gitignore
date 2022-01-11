@@ -130,4 +130,4 @@ dmypy.json
 
 # kds additions
 # local bin/ staging dir
-bin/
+staging/
