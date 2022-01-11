@@ -79,13 +79,6 @@ Keymanager ("KM") is a secrets server.  The secrets are stored in an encrypted G
 Clients that use KM can start up automatically, but need to be able to gracefully retry for long periods -- long enough for the human to provide the unlock key.  In this way, all services can auto-start, but ones that need secrets won't actually reach their serving state until KM is unlocked.  Unlocking KM is the only manual action a human needs to take upon a network-wide cold-start -- once it's done, all the services waiting on their secrets move to their serving states.
 
 - - -
-### iptables: simple tools for iptables maintenance and analysis
-
-<p style="color:purple"><b>not included yet: still being prepared for publication...</b></p>
-
-The author is a very strong believer in extremely tight firewall rules -- both inbound *and outbound*.  A small number of IPs that have active humans on them might need unlimited outbound connectivity, but servers without human users, and IP's assigned to things like Docker micro-services should have extremely simple and unchanging connectivity needs, and any deviation from norm should not only be prevented but also trigger an alert.  Included here are a few tools to make management of tight iptable rules easier.
-
-- - -
 ### nagios: simple nagios CLI interface and enhanced plugins
 
 <p style="color:purple"><b>not included yet: still being prepared for publication...</b></p>
@@ -113,19 +106,17 @@ A tool is also provided that generates a filtered list of changes by comparing t
 ### syslog-ng: @@ TODO
 
 
-
----
-### system-maint: system maintenance automation, tricks, shortcuts
-
-"q" is a collection of Linux shortcuts, tools, and bash tricks.  Hopefully it will eventually be detangeled so the parts that are hopelessly bound with the details of the author's personal configuration can be separated out.
-
-But it's being published anyway. because this script contains considerable wisdom in using and managing a small-to-medium fleet of Linux systems, and contains a repository of bash tips and techniques that provide a good reference for such things.
-
 - - -
 ### tools: general stand-alone Linux command-line tools
 
-  * run_para: run commands in parallel, showing their real-time output in a dashboard and (optionally) keeping an organized output transcript.
+  * iptables_log_sum: summarize rejected packets from iptables logs.
   * ratelimiter: incorporate easy rate-limits into shell scripts
+  * run_para: run commands in parallel, showing their real-time output in a dashboard and (optionally) keeping an organized output transcript.
+
+And a special one...
+
+  * q: a collection of Linux shortcuts, tools, and bash tricks.  Hopefully it will eventually be detangeled so the parts that are hopelessly bound with the details of the author's personal configuration can be separated out.  But it's being published anyway. because this script contains considerable wisdom in using and managing a small-to-medium fleet of Linux systems, and contains a repository of bash tips and techniques that provide a good reference for such things.
+
 
 - - -
 ### tplink: tools for CLI control of tplink smart lights & plugs, setting complex scenes, etc.

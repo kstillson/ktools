@@ -41,7 +41,7 @@ VERBOSE=0        # similar to ECHO but also execute the commands
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 DD="/root/docker-dev/dnsdock/files/etc/dnsmasq"
-GIT_DIRS="/root/arps /root/bin /root/bin-docker /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin"
+GIT_DIRS="/root/arps /root/bin-docker /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin"
 LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
 PROCQ="/var/procmon/queue"
 RP_FLAGS='--output - --plain --quiet '
