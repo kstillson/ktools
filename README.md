@@ -110,6 +110,11 @@ Various examples are provided to guide towards this configuration.
 A tool is also provided that generates a filtered list of changes by comparing the last two days' snapshots.  The idea is that one can develop a filter to remove things that are expected change regularly, and receive a daily report of just unusual changes.  This even works with encrypted files- the tool can't decrypt the contents, but it can tell if they've changed.  In this way, should ransomware or anything else corrupt obscure files that you normally wouldn't notice for a while, you'll see a report of unexpected changes and be able to investigate, and preserve the corrupted data in older snapshots before it's rotated out by newer snapshots.
 
 - - -
+### syslog-ng: @@ TODO
+
+
+
+---
 ### system-maint: system maintenance automation, tricks, shortcuts
 
 "q" is a collection of Linux shortcuts, tools, and bash tricks.  Hopefully it will eventually be detangeled so the parts that are hopelessly bound with the details of the author's personal configuration can be separated out.
