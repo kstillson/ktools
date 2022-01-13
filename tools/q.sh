@@ -644,8 +644,8 @@ function main() {
         exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
         exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
-        exim-queue-reset | eqrm) d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm' ;;  ## clear the exim queue
-        exim-queue-reset-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | awk {"print $3"} | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
+        exim-queue-zap | eqrm) d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm' ;;  ## clear the exim queue
+        exim-queue-zap-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | awk {"print $3"} | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
         exim-queue-run | eqr) d run eximdock exim -qff ;;                 ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo to gitdock
@@ -661,11 +661,11 @@ function main() {
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
         procmon-query | pq) curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;   ## check procmon status
         procmon-rescan | pr) curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;      ## procmon re-scan and show status
-        procmon-zap | homesec-reset | hr | pz) runner :>$PROCQ; echo 'reset done.' ;;  ## clear procmon queue
+        procmon-zap | homesec-reset | hr | pz) runner :>$PROCQ; echo 'procmon queue cleared.' ;;              ## clear procmon queue
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
         syslog-queue-archive | queue-archive | sqa | qa) zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;  ## show full queue history
         syslog-queue-filter-ssh | queue-filter | sqf | qf) runner sed -i -e "/session opened/d" /rw/log/queue ;;  ## remove sshs from log queue
-        syslog-queue-reset | queue-reset | sqr | qr) runner bash -c ":>/rw/log/queue" ;;   ## wipe the current log queue
+        syslog-queue-zap | queue-zap | qz) runner bash -c ":>/rw/log/queue" ;;             ## wipe the current log queue
         syslog-queue-view | syslog-queue | sqv | q) less /rw/log/queue ;;                  ## view the current log queue
         syslog-queue-view-no-ssh | sqv0 | q0) fgrep -v 'session opened' /rw/log/queue ;;   ## view the current log queue (w/o ssh)
         syslog-queue-view-yesterday-no-ssh | sqv1 | q1) fgrep -v 'session opened' /rw/log/Arc/queue.1 ;;   ## view yesterday's log queue
