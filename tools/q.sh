@@ -645,7 +645,7 @@ function main() {
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
         exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
         exim-queue-zap | eqrm) d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm' ;;  ## clear the exim queue
-        exim-queue-zap-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | awk {"print $3"} | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
+        exim-queue-zap-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d" " | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
         exim-queue-run | eqr) d run eximdock exim -qff ;;                 ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo to gitdock
