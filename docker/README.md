@@ -8,8 +8,7 @@ I convert almost every service into a Docker container.  Why?
   1. Security
   
      + uid-mapping: the entire concept of system uid root ceases to exist
-       in the containers.
-       - TODO: add doc on enabling uid-mapping and its complications.
+       in the containers.  See [uid mapping](Readme-uid-mapping.md).
      
      + attack surface area reduction: trimming the available tools inside
        the container limits the footholds an attacker can use.

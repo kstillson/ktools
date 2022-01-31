@@ -1,9 +1,9 @@
 
 # Supported meta-targets:  all, clean, test, install, update
 
-PY_TARGETS := iptables_log_sum ratelimiter run_para
-SH_TARGETS := pb-push q
-include ../Makefile-inc
+PY_TARGETS := iptables_log_sum
+SH_TARGETS := q
+include ../../common/Makefile-inc
 
 # NB: tests the .py files in the current dir, not the files in STAGING_DIR.
 # Doesn't depend on "all", and can be run independently (unusual for a Makefile).
