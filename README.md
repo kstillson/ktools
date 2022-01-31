@@ -2,28 +2,68 @@
 
 ## About The Project
 
-This is a collection of tools developed over the last 20 years or so, designed to use and manage a Linux-based home network and smart-home.  The author's machines are primarily Ubuntu and Raspberry PIs, although the tools should mostly work on any Debian-derived Linux systems.
+This is a collection of tools and techniques developed over the last 20
+years or so, designed to use and manage a Linux-based home network and
+smart-home.  The author's machines are primarily Ubuntu and Raspberry PIs,
+although the tools should mostly work on any Debian-derived Linux systems.
 
-These tools represent years of tinkering and fine-tuning, and it is hoped that this code (even if its only the structural concepts and some of the specific techniques used) may be of use to those either building their own systems, or just trying to extend their Linux expertise.
+These tools represent years of tinkering and fine-tuning, and it is hoped
+that this code (even if its only the structural concepts and some of the
+specific techniques used) may be of use to those either building their own
+systems, or just trying to extend their Linux expertise.
 
-Many Googler engineeringisms are used: from the code formatting style to the fact that almost everything is a web-server, and the web-servers have lots of standardized handlers that end with the letter "z' (/logs, /healthz, /varz, etc.)  Collectively these are referred to as "/z handlers.  However, the author was extremely careful to NOT actually use any Google intellectual property or trade secrets in the creation of these tools.
+Many Googler engineeringisms are used: from the code formatting style to
+the fact that almost everything is a web-server, and the web-servers have
+lots of standardized handlers that end with the letter "z' (/logs,
+/healthz, /varz, etc.)  Collectively these are referred to as "/z handlers.
+However, the author was extremely careful to NOT actually use any Google
+intellectual property or trade secrets in the creation of these tools.
 
 ## About The Author
 
-Ken Stillson retired from Google's central security team in 2021.  He left with the rank of "Senior Staff" (level 7 out of 9).  Before that, he worked at MITRE / Mitretek, assisting the US Government with various telecommunications and security projects.  He left Mitretek as a "Senior Principal" (one level shy of "Fellow"), and earned a "Hammer Award" from then Vice President Al Gore, for work that "makes the government work better and cost less."
+Ken Stillson retired from Google's central security team in 2021.  He left
+with the rank of "Senior Staff" (level 7 out of 9).  Before that, he worked
+at MITRE / Mitretek, assisting the US Government with various
+telecommunications and security projects.  He left Mitretek as a "Senior
+Principal" (one level shy of "Fellow"), and earned a "Hammer Award" from
+the then US Vice President, for work that "makes the government work better
+and cost less."
 
 Ken <<ktools@point0.net>> is now a free-range maker, tinkerer, artist, and hacker (in the good sense).
 
 ## About The Structure
 
-These tools were not originally designed to be shared, and made many assumptions about each other and the environment in which they run.  The process of disentangling and generalizing them is on-going, and some of the modules may be initially published in their not-yet-fully-detangled form.  You're welcome to help out via pull requests, or just wait for the author to get to it.
+These tools were not originally designed to be shared, and made many
+assumptions about each other and the environment in which they run.  The
+process of disentangling and generalizing them is on-going, and some of the
+modules may be initially published in their not-yet-fully-detangled form.
+You're welcome to help out via pull requests, or just wait for me to get to
+it.
 
-The modules are structured to use GNU Linux Makefiles.  The code is generally in Python or bash shell, so doesn't need compilation.  But the author likes the way Makefiles document how things are to be  combined, tested, and deployed.
+The project uses GNU Linux Makefiles.  The code is generally in Python or
+bash shell, so doesn't need compilation.  But I likes the way Makefiles
+document how things are to be combined, tested, and deployed.
 
-  * "make all" will gather production-ready versions of tools into staging areas.  In a few cases, this involves merging in site-specific code or data (which aren't included in the git repo due to .gitinclude rules).  This is how the author hides private or too-specialized-to-be-reusable parts of the system.  The idea is that you can insert your own site-specific plugins here, if desired.
+  * "make all" will gather production-ready versions of tools into staging
+    areas.  In a few cases, this involves merging in site-specific code or
+    data (which aren't included in the git repo due to .gitinclude rules).
+    This is how the author hides private or too-specialized-to-be-reusable
+    parts of the system.  The idea is that you can insert your own
+    site-specific plugins here, if desired.
+  
   * "make test" will run whatever unit or integration tests are available.
-  * "make install" will copy tools from the staging area to final destination directories.  The Makefiles are generally written to allow environment variables to override the installation directories, so you can position the final tools where you like without needing to change git controlled files.
-  * "make update" is primarily for the author's use.  It runs the above sequence in order, then does local git commits, then pulls and pushes for all remote repos.
+  
+  * "make install" will copy tools from the staging area to final
+    destination directories.  The Makefiles are generally written to allow
+    environment variables to override the installation directories, so you
+    can position the final tools where you like without needing to change
+    git controlled files.  For docker-based modules, the "install"
+    directive marks the image build by "all" as the currently "live"
+    version.  See [docker readme](docker/README.md) for details.
+  
+  * "make update" is primarily for the author's use.  It runs the above
+    sequence in order, then does local git commits, then pulls and pushes
+    for all remote repos.
 
 ## The Modules
 
@@ -32,29 +72,29 @@ The modules are structured to use GNU Linux Makefiles.  The code is generally in
 
 <p style="color:purple"><b>not included yet: still being prepared for publication...</b></p>
 
-ktools uses a somewhat unusual DHCP and DNS configuration: IP addresses and hostnames are assigned manually in the DHCP server.  Why?
+ktools uses a somewhat unusual DHCP and DNS configuration: IP addresses and
+hostnames are assigned manually in the DHCP server.  Why?
 
-  1. Security:  An new (unregistered) device is immediately noticed and is treated differently.
-  2. Connectivity: Every device has a human-controlled name.  For example, in the "tplink" module, it is necessary for the server to be able to contact each of the smart plugs/switches/bulbs being controlled.
-  3. Traceability: Every connection can be traced back to a known registered device by IP.  For example, in the "keynmaster" section, connection source IP addresses are very important.
+  1. Security: An new (unregistered) device is immediately noticed and is
+  treated differently.
+  
+  2. Connectivity: Every device has a human-controlled name.  For example,
+  in the "tplink" module, it is necessary for the server to be able to
+  contact each of the smart plugs/switches/bulbs being controlled.
+  
+  3. Traceability: Every connection can be traced back to a known
+  registered device by IP.  For example, in the "keynmaster" section,
+  connection source IP addresses are very important.
 
-It is worth noting that this arrangement requires a flat network.  Specifically, all wireless access points must run in "bridge mode," where they simply pass traffic back and forth without performing any NAT or IP masking.  Without this the above benefits are lost and many of the tools below won't work.
+It is worth noting that this arrangement requires a flat network.
+Specifically, all wireless access points must run in "bridge mode," where
+they simply pass traffic back and forth without performing any NAT or IP
+masking.  Without this the above benefits are lost and many of the tools
+below won't work.
 
 See also the "system-maint" module below, for tools that make DNS assignment and management easy.
 
 - - -
-### docker: set of tools for docker container updates, monitoring, control
-
-<p style="color:purple"><b>not included yet: still being prepared for publication...</b></p>
-
-With a little added infrastructure, Docker is an incredible tool.  I convert almost every service into a Docker container.  Why?
-
-  1. Security
-     + uid-mapping: the entire concept of system uid root ceases to exist in the containers.
-     + attack surface area reduction: trimming the available tools inside the container limits the footholds an attacker can find
-     + copy on write: besides the obvious fact that restarting a container puts it back to a last-known-good state, COW changes are neatly organized by Docker into the real file-system.  This means it's trivial to monitor for changes to files within a container.  Filter out any expected changes, and you're left with a clear and simple set of the unexpected changes.  This is fantastic both for discovering and understanding unexpected changes.
-  2. Installation and configuration as code: most servers take a fair amount of tweaking to get install and config just right.  Far too often these changes get lost in countless adjustments to obscure files.  With Docker, when correctly used, all those adjustments get captured, either in the Dockerfile or things it pulls in, which means they can be tracked in git, commented, and tested- just like normal code.
-  3. Testability: Docker makes it really easy to build, launch, and test changes in a separate container that doesn't interfere at all with the production instance.  This makes things like automated updates much safer-- if you're confident about your tests, you can have scripts automatically update, build, test, and deploy many containers and only need to get involved should a test fail.
 
 - - -
 ### homesec: a custom (and highly customizable) home security system framework
