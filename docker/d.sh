@@ -131,8 +131,9 @@ function myhelp() {
 }
 
 case "$cmd" in
-    
-# Simple container management    
+
+  # Simple container management
+  build | b) cd ${D_SRC_DIR}/$(pick_container_from_dev $spec); ./Build ;;
   down | stop | 0) down $(pick_container_from_up $spec) ;;
   restart | 01 | R)
     name=$(pick_container_from_up $spec)
@@ -142,20 +143,6 @@ case "$cmd" in
     echo "Starting up $name"
     up $name
     ;;
-  restart-all | 01a | ra | RA | Ra)
-    for name in $(list-up); do
-      echo "Restarting $name"
-      down $name
-      sleep 1
-      up $name
-    done
-    ;;
-  down-all | 0a | 00)
-    for name in $(list-up); do
-      echo "Shutting down $name"
-      down $name
-    done
-    ;;
   up | start | 1)
     sel=$(pick_container_from_dev $spec)
     up=$(pick_container_from_up $sel)
@@ -164,11 +151,6 @@ case "$cmd" in
 	exit 1
     fi
     up $sel
-    ;;
-  start-all | up-all | 1a | 11)
-    for name in $(list-autostart); do
-      up ${name} || true
-    done
     ;;
 
 # container maintenance
@@ -184,23 +166,6 @@ case "$cmd" in
     docker exec -u 0 -ti ${name} /bin/bash
     echo "back from container."
     ;;
-  build-all | ba)
-      for name in $(list-buildable); do
-        emit "<> Building ${name}"
-	cd ${D_SRC_DIR}/${name}; ./Build
-    done
-    ;;
-  check-all-up | cau | ca | qa)
-      t=$(mktemp)
-      list-up | cut -d' ' -f1 > $t
-      missing=$(list-autostart | fgrep -v -f $t || true)
-      rm $t
-      if [[ "$missing" == "" ]]; then
-	  echo "all ok"
-      else
-	  emit "missing containers: $missing"
-      fi
-      ;;
   clean)
     ## Don't want to use 'docker system prune' because would delete
     ## network 'docker2' which is not always in use, but is useful.
@@ -226,27 +191,9 @@ case "$cmd" in
     lxc-attach -n plex -- /usr/sbin/service minidlna force-reload
     ;;
   test | t) test $(pick_container_from_dev $spec) ;;
-  test-all-old | ta0) for name in $(list-testable); do test $name -r; done ;;
-  test-all | ta) list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
-  test-all-prod | tap) for name in $(list-testable); do test $name -p; done ;;
   upgrade | u) upgrade $(pick_container_from_dev $spec) ;;
-  upgrade-all | ua)
-    for name in kds-baseline $(list-buildable | fgrep -v kmdock); do
-	upgrade $name
-    done
-    upgrade kmdock
-    ;;
 
 # command execution
-  run-in-all | ria)
-    shift
-    cmd="$@"
-    for name in $(list-up); do
-      ( docker exec ${name} ${cmd} |& sed -e "s/^/${name}: /" ) &
-      echo ""
-    done
-    wait
-    ;;
   console | C)
     docker attach $(pick_container_from_up $spec)
     echo "back from container console."
@@ -264,7 +211,27 @@ case "$cmd" in
   run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;
   shell) docker run -ti --user root --entrypoint /bin/bash kstillson/$(pick_container_from_dev $spec):latest ;;
 
-# various queries  
+# Multiple container management done in parallel
+  build-all | ba)                    list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
+  down-all | 0a | 00)                list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
+  restart-all | 01a | ra | RA | Ra)  list-up | /usr/local/bin/run_para --align --cmd "$0 restart @" --timeout $TIMEOUT ;; 
+  run-in-all | ria)                  list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
+  start-all | up-all | 1a | 11)      list-autostart | /usr/local/bin/run_para --align --cmd "$0 up @" --timeout $TIMEOUT ;;
+  test-all | ta)                     list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
+  test-all-prod | tap)               list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;
+
+# various queries
+  check-all-up | cau | ca | qa)
+      t=$(mktemp)
+      list-up | cut -d' ' -f1 > $t
+      missing=$(list-autostart | fgrep -v -f $t || true)
+      rm $t
+      if [[ "$missing" == "" ]]; then
+	  echo "all ok"
+      else
+	  emit "missing containers: $missing"
+      fi
+      ;;
   cow-dir | cow)
     name=$(pick_container_from_up $spec)
     $DLIB get_cow_dir "$name"
@@ -295,7 +262,7 @@ case "$cmd" in
     /bin/grep -l "$idx" /sys/class/net/veth*/ifindex | /usr/bin/cut -d/ -f5
     ;;
 
-# instance lists  
+# instance lists
   list-autostart | la) list-autostart ;;
   list-buildable | lb) list-buildable ;;
   list-testable | lt) list-testable ;;

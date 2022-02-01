@@ -242,7 +242,9 @@ def generate_output(job_ids):
       for line in LOG[job_id]:
         if include_in_log(line): out += f'{job_id}^{line}\n'
     p.communicate(out.encode('utf-8'))
-    if stdout: stdout.close()
+    if stdout:
+      stdout.close()
+      if not ARGS.quiet: print(f'\noutput transcript saved to: {ARGS.output}', file=sys.stderr)
   elif ARGS.output:
     outfile = '/dev/stdout' if ARGS.output == '-' else ARGS.output
     with open(outfile, 'w') as f:
