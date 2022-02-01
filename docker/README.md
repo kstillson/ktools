@@ -132,7 +132,7 @@ Here are the contents expected for each container source directory:
     If a test fails, it should output a human-readable explanation of what
     went wrong, and exit with non-0 status.
 
-    [d-lib.py][] provides a whole bunch of useful helper tools to make
+    [d_lib.py][] provides a whole bunch of useful helper tools to make
     testing easier.  See the provided `Test` files for examples.
 
 
@@ -227,9 +227,9 @@ container runnning, although generally restarting the container would be a
 safer way to re-establish a known-good state.
 
 
-### "d-lib.py"
+### "d_lib.py"
 
-d-lib is a Python library that provides logic to shell-based docker tools
+d_lib is a Python library that provides logic to shell-based docker tools
 that would be difficult to provide in shell.  As such, it provides some
 logic used by the tools above, and also a set of abstractions used by
 testing modules; see the [Testing][] section for details.

@@ -4,22 +4,22 @@
 Run, don't run, or pause a command so as to obey rate limits.
 
 First, decide on the desired limit and initialize the state file:
- ./ratelimiter -i 1,10 statefile.rl    # allow 1 invocations per 10 seconds.
+ ratelimiter -i 1,10 statefile.rl    # allow 1 invocations per 10 seconds.
 
 Then there are several ways to invoke the actual limit:
 
 Exit from a shell script if over limit:
-  ./ratelimiter statefile.rl || { echo 'ratelimited'; exit 1; }
+  ratelimiter statefile.rl || { echo 'ratelimited'; exit 1; }
   { take rate-limited action }
 
 Wait until the limit let's the next command through:
-  ./ratelimiter -w statefile.rl
+  ratelimiter -w statefile.rl
   { take rate-limited action }
 
 Skip a particular command if limit exceeded (but resume rest of script):
- ./ratelimiter statefile.rl && { take rate-limited action; }
+ ratelimiter statefile.rl && { take rate-limited action; }
    or, alternatively:
- ./ratelimiter -z -c "{ rate limited command }" statefile.rl
+ ratelimiter -z -c "{ rate limited command }" statefile.rl
    (note: when using -c, the exit status of the run command is lost.)
 
 Note that script needs r+w access to statefile.rl and statefile.rl.lock

@@ -30,13 +30,13 @@ common prefixes and suffixes (and a few other common string patterns).
 Some example uses:
 
 Upgrade a bunch of hosts all at the same time:
-$ echo 'host1 host2 host3' | run-para --output report.log --ssh 'apt-get -y upgrade'
+$ echo 'host1 host2 host3' | run_para --output report.log --ssh 'apt-get -y upgrade'
 
 Get a tidy report on root-disk free space for a bunch of hosts:
-$ echo 'host1 host2 host3' | run-para --align --ssh "df -h | egrep ' /$'"
+$ echo 'host1 host2 host3' | run_para --align --ssh "df -h | egrep ' /$'"
 
 Copy a file to a bunch of remote hosts:
-$ echo 'host1 host2 host3' | run-para --cmd 'scp file ^^@:/destdir'
+$ echo 'host1 host2 host3' | run_para --cmd 'scp file ^^@:/destdir'
 '''
 
 import argparse, os, multiprocessing, subprocess, sys, threading, time

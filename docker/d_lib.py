@@ -87,7 +87,7 @@ def launch_or_find_container(args, extra_run_args=None):
         launch_test_container(args, extra_run_args, OUT)
         if os.fork() == 0: run_log_relay(args, OUT)
 
-    try: ip = subprocess.check_output(['/root/bin-docker/d', 'ip', name]).strip()
+    try: ip = subprocess.check_output(['/root/bin/d', 'ip', name]).strip()
     except: ip = None
     cow = find_cow_dir(name)
     dv = '/rw/dv/%s' % name if args.prod else '/rw/dv/TMP/%s' % orig_name
@@ -95,7 +95,7 @@ def launch_or_find_container(args, extra_run_args=None):
 
 def launch_test_container(args, extra_run_args, out):
     emit('launching container ' + args.real_name)
-    cmnd = ['/root/bin-docker/d-run', '--log', 'json-file', '--tag', args.tag, '--print-cmd']
+    cmnd = ['/root/bin/d-run', '--log', 'json-file', '--tag', args.tag, '--print-cmd']
     if args.name: cmnd.extend(['--name', args.name])
     if extra_run_args: cmnd.extend(extra_run_args)
     if not args.prod:
@@ -142,13 +142,13 @@ def container_file_expect(expect, container_name, filename):
 def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate(send_in)
-    if expect_returncode is not None and p.returncode != expect_returncode: dlib.abort('wrong return code: %d <> %d for %s' % (p.returncode, expect_returncode, cmd))
+    if expect_returncode is not None and p.returncode != expect_returncode: d_lib.abort('wrong return code: %d <> %d for %s' % (p.returncode, expect_returncode, cmd))
     if expect_out is not None:
-        if out and not expect_out: dlib.abort('Unexpected output "%s" for: %s' % (out, cmd))
-        if expect_out not in out: dlib.abort('Unable to find output "%s" in "%s" for: %s' % (expect_out, out, cmd))
+        if out and not expect_out: d_lib.abort('Unexpected output "%s" for: %s' % (out, cmd))
+        if expect_out not in out: d_lib.abort('Unable to find output "%s" in "%s" for: %s' % (expect_out, out, cmd))
     if expect_err is not None:
-        if err and not expect_err: dlib.abort('Unexpected error output "%s" for: %s', (err, cmd))
-        if expect_err and expect_err not in err: dlib.abort('Unable to find error "%s" in "%s" for: %s' % (expect_err, err, cmd))
+        if err and not expect_err: d_lib.abort('Unexpected error output "%s" for: %s', (err, cmd))
+        if expect_err and expect_err not in err: d_lib.abort('Unable to find error "%s" in "%s" for: %s' % (expect_err, err, cmd))
     emit('success; expected output for %s' % cmd)
 
     

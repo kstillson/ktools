@@ -5,6 +5,7 @@ import argparse, os, shutil, socket, subprocess, sys, yaml
 # Supported features in the settings file:
 #
 # debug_alt_cmnd: string
+# extra_init: string
 # debug_extra_init: string
 # extra_docker: string
 # foreground: 1   (note: ignored when --vol-alt, which requires background launches)
@@ -161,36 +162,46 @@ def get_ip_to_use(args, settings):
 
 def parse_args():
     ap = argparse.ArgumentParser(description='docker container launcher')
+
+    # Flags that help d-run select which container to launch.
     ap.add_argument('--cd', default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
-    ap.add_argument('--cmd', default=None, help='Specify the inside-container command or args to run.')
-    ap.add_argument('--dmap-update', action='store_false', help='skip auto-update of dmap just after run starts (needed by procmon for container name mapping).')
+    ap.add_argument('--image', '-i', default=None, help='Name of image to use; default of None will use container name.')
+    ap.add_argument('--latest', '-l', action='store_true', help='Shorthand for --tag=latest')
+    ap.add_argument('--repo', default='kstillson/', help='repo prefix for image name.')
+    ap.add_argument('--tag', '-T', default=DEFAULT_TAG, help='tag or hash of image version to use.  set to "" to use "latest"')
+
+    # Flags that provide context about the mode we're launching the container in.
     ap.add_argument('--dev', '-D', action='store_true', help='Activate development mode (equiv to: --fg --log=NONE --name_prefix=dev- --network=docker2 --rm --subnet=3 --latest --vol-alt).')
     ap.add_argument('--dev-test', '-DT', action='store_true', help='Same as --dev but use --name_prefix=test-')
+    ap.add_argument('--settings', '-s', default=None, help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
+    ap.add_argument('--test-in-place', '-P', action='store_true', help='Run dev version in real container (equiv to: --fg --log=NONE --rm --latest).')
+
+    # Flags that override or are merged with individual settings to fine-tune individual flags passed to the container launch.
+    ap.add_argument('--cmd', default=None, help='Specify the inside-container command or args to run.')
     ap.add_argument('--extra-docker', default=None, help='Any additional flags to pass to the docker command.')
     ap.add_argument('--extra-init', default=None, help='Any additional flags to pass the the init command.')
-    ap.add_argument('--fail-on-exists', action='store_true', help='fail if a container with this name already exists.  default will auto-remove the conflicting container instance (which only works if its shut down).')
     ap.add_argument('--fg', action='store_true', help='Run the container in the foreground')
     ap.add_argument('--hostname', '-H', default=None, help='use a particular hostname.  default of None will use a hostname that matches the container name.')
-    ap.add_argument('--image', '-i', default=None, help='Name of image to use; default of None will use container name.')
     ap.add_argument('--ip', default=None, help='assign a particular IP address.  default of None will dns resolve the hostname and use that IP.  dns lookup failure or a value of "-" will let docker dhcp assign the IP.')
-    ap.add_argument('--latest', '-l', action='store_true', help='Shorthand for --tag=latest')
     ap.add_argument('--log', '-L', default=None, help='If specified, override the log driver in the settings file and use this.')
     ap.add_argument('--name', '-n', default=None, help='use a specified container name.  default of None will use the name of the directory that contains the settings file')
-    ap.add_argument('--name_prefix', default='', help='If specified, use existing logic to determine the container name, but then prefix it with this string.')
     ap.add_argument('--network', '-N', default=None, help='Name of docker network to use. defaults to "docker1"')
     ap.add_argument('--ports', '-p', default=None, nargs='*', help='Port to map, host:container (can specify flag multiple times')
-    ap.add_argument('--print-cmd', action='store_true', help='Print launch command before executing it.')
-    ap.add_argument('--repo', default='kstillson/', help='repo prefix for image name.')
     ap.add_argument('--rm', action='store_true', help='Ask docker to auto-remove the container when it stops.')
-    ap.add_argument('--settings', '-s', default=None, help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
-    ap.add_argument('--shell', '-S', action='store_true', help='If activated, override the normal entrypoint and use foreground interactive tty-enabled bash.')
-    ap.add_argument('--shell0', '-S0', action='store_true', help='Same as --shell, but use bash0 rather than bash.')
     ap.add_argument('--subnet', default=None, help='If specified, use existing logic to determine IP number, but then map that number to this subnet.')
-    ap.add_argument('--tag', '-T', default=DEFAULT_TAG, help='tag or hash of image version to use.  set to "" to use "latest"')
-    ap.add_argument('--test', '-t', action='store_true', help='Just print the command that would be run rather than running it.')
-    ap.add_argument('--test-in-place', '-P', action='store_true', help='Run dev version in real container (equiv to: --fg --log=NONE --rm --latest).')
-    ap.add_argument('--vol-alt', '-v', action='store_true', help='Mount non-read-only volumes in alternate locations.  Also send send debug_extra_init settings.')
     ap.add_argument('--ipv6', '-6', action='store_true', help='If not specified, make port bindings specific to IPv4 only.')
+
+    # Flags that tweak the way d-run works.
+    ap.add_argument('--dmap-update', action='store_false', help='skip auto-update of dmap just after run starts (needed by procmon for container name mapping).')
+    ap.add_argument('--fail-on-exists', action='store_true', help='fail if a container with this name already exists.  default will auto-remove the conflicting container instance (which only works if its shut down).')
+    ap.add_argument('--name_prefix', default='', help='If specified, use normal logic to determine the container name, but prefix it with this string.')
+    ap.add_argument('--print-cmd', action='store_true', help='Print launch command before executing it.')
+    ap.add_argument('--vol-alt', '-v', action='store_true', help='Mount non-read-only volumes in alternate locations.  Also send send debug_extra_init settings.  This is a subset of --dev, and --dev is probably what you want.')
+
+    # Flags that activate an entirely different mode of operation from the usual.
+    ap.add_argument('--shell', '-S', action='store_true', help='If activated, override the normal entrypoint and use foreground interactive tty-enabled bash.')
+    ap.add_argument('--test', '-t', action='store_true', help='Just print the command that would be run rather than running it.')
+    
     args = ap.parse_args()
     if args.latest and args.tag==DEFAULT_TAG: args.tag = 'latest'
     if args.test_in_place:
@@ -228,7 +239,7 @@ def parse_settings(args):
 def gen_command(args, settings):
     cmnd = ['/usr/bin/docker', 'run']
     fg = (args.fg
-          or args.shell or args.shell0
+          or args.shell 
           or (settings.get('foreground',0) == 1  and not args.vol_alt))
     if not fg: cmnd.append('-d')
     settings['basename'] = basename = settings['settings_leaf_dir']
@@ -261,8 +272,6 @@ def gen_command(args, settings):
 
     if args.shell: 
         cmnd.extend(['--user', '0', '-ti', '--entrypoint', '/bin/bash'])
-    elif args.shell0:
-        cmnd.extend(['--user', '0', '-ti', '--entrypoint', '/bin/bash0'])
     else:
         if settings.get('debug_alt_cmnd') and args.vol_alt:
             cmnd.extend(['--entrypoint', settings['debug_alt_cmnd']])
@@ -293,9 +302,17 @@ def gen_command(args, settings):
     cmnd.append(image)
     if args.cmd: cmnd.extend(args.cmd.split(' '))
 
-    if not args.shell and not args.shell0:
+    # Throw any additional init args on the end, if any are requested by flags or settings.
+    if not args.shell:
       extra_init = args.extra_init or ''
-      if args.vol_alt and settings.get('debug_extra_init'): extra_init += ' ' + settings['debug_extra_init']
+      # If in alt mode, allow debug_extra_init to override extra_init if provided, use plain extra_init if debug_extra_init not provided.
+      if args.vol_alt:
+          if settings.get('debug_extra_init'):
+              extra_init += ' ' + settings['debug_extra_init']
+          else:
+              if settings.get('extra_init'): extra_init += ' ' + settings['extra_init']
+      else:
+          if settings.get('extra_init'): extra_init += ' ' + settings['extra_init']
       if extra_init: cmnd.extend(extra_init.strip().split(' '))
 
     return cmnd

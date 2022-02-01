@@ -41,7 +41,7 @@ VERBOSE=0        # similar to ECHO but also execute the commands
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 DD="/root/docker-dev/dnsdock/files/etc/dnsmasq"
-GIT_DIRS="/root/arps /root/bin-docker /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin"
+GIT_DIRS="/root/arps /root/bin /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin"
 LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
 PROCQ="/var/procmon/queue"
 RP_FLAGS='--output - --plain --quiet '
@@ -144,7 +144,7 @@ function runner() {
     fi
 }
 
-# Wrapper around /usr/local/bin/run-para which assumes --ssh mode unless
+# Wrapper around /usr/local/bin/run_para which assumes --ssh mode unless
 # $1 is "LOCAL", in which case it uses --cmd mode.  ssv hosts in $1,
 # command to run in $2+.
 function run_para() {
@@ -157,7 +157,7 @@ function run_para() {
     fi
     hosts="$1"
     shift
-    echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | /usr/local/bin/run-para $RP_FLAGS --subst "$HOST_SUBST" --timeout $TIMEOUT  "$type" "$@"
+    echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | /usr/local/bin/run_para $RP_FLAGS --subst "$HOST_SUBST" --timeout $TIMEOUT  "$type" "$@"
     return $?
 }
 
@@ -243,11 +243,11 @@ function git_update_pis() {
     t="/tmp/git-updates.out"
     hosts=$(list_pis | without hs-front,pi1,lightning)
     echo "pulling git updates..."
-    echo $hosts | /usr/local/bin/run-para --output $t --plain --timeout $TIMEOUT --ssh "/bin/su pi -c 'cd /home/pi/dev; git pull'"
+    echo $hosts | /usr/local/bin/run_para --output $t --plain --timeout $TIMEOUT --ssh "/bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rm $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
     echo "restarting services..."
-    echo $hosts | /usr/local/bin/run-para --plain --timeout $TIMEOUT --ssh systemctl daemon-reload
-    echo $hosts | /usr/local/bin/run-para --output $t --plain --timeout $TIMEOUT --ssh /home/pi/dev/Restart
+    echo $hosts | /usr/local/bin/run_para --plain --timeout $TIMEOUT --ssh systemctl daemon-reload
+    echo $hosts | /usr/local/bin/run_para --output $t --plain --timeout $TIMEOUT --ssh /home/pi/dev/Restart
     if [[ $? != 0 ]]; then cat $t; rm $t; echo ''; emitc red "some restart failures"; return 1; fi
     emitc green "all done\n"
 }
@@ -288,8 +288,8 @@ function updater() {
     OUT1="/tmp/all-update.out"
     OUT2="/tmp/all-upgrade.out"
     need_ssh_agent
-    echo "$hosts" | /usr/local/bin/run-para --output $OUT1 --timeout 120 --ssh 'apt-get update'
-    echo "$hosts" | /usr/local/bin/run-para --output $OUT2 --timeout 800 --ssh 'apt-get -y upgrade'
+    echo "$hosts" | /usr/local/bin/run_para --output $OUT1 --timeout 120 --ssh 'apt-get update'
+    echo "$hosts" | /usr/local/bin/run_para --output $OUT2 --timeout 800 --ssh 'apt-get -y upgrade'
     emit "output sent to $OUT1 and $OUT2 (consider rm $OUT1 $OUT2 )"
 }
 
@@ -325,7 +325,7 @@ function update_dns() {
     if [[ "$s1" == "$s2" ]]; then emit "no change to macs; not updating dnsmasq"; return; fi
     if [[ "$TEST" == 1 ]]; then emit "test mode; not updating dnsmasq"; return; fi
     emit "updating dnsmasq"
-    /root/bin-docker/d u dnsdock
+    /root/bin/d u dnsdock
     cd /root/docker-dev/dnsdock
     git C
     emit "done"
@@ -348,12 +348,12 @@ function update_dns_rmmac() {
     s2=$(wc -l $t)
     if [[ "$s1" == "$s2" ]]; then emit "change failed; not updating."; return; fi
     emit "committing change..."
-    /root/bin-docker/d 0 dnsdock
+    /root/bin/d 0 dnsdock
     mv -f $t $LEASES
     chown droot.dgroup $LEASES
     # filewatchdock needs to be able to monitor this file.
     chmod go+r $LEASES
-    /root/bin-docker/d 1 dnsdock
+    /root/bin/d 1 dnsdock
     emit "done."
 }
 
@@ -396,9 +396,9 @@ function checks_real() {
     cat $PROCQ | expect "procmon queue" ""
     fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
     $0 dup-check | expect "$0 dup cmds" "all ok"
-    /root/bin-docker/d dup-check |& expect "docker dup cmds" "all ok"
-    /root/bin-docker/d check-all-up |& expect "docker instances" "all ok"
-    /root/bin-docker/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
+    /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
+    /root/bin/d check-all-up |& expect "docker instances" "all ok"
+    /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect "exim panic log empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect "exim reject log empty" "0"
     git_check_all |& expect "git dirs with local changes" ""

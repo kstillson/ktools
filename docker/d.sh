@@ -8,7 +8,7 @@ spec="$1"
 shift || true
 extra_flags="$@"
 
-DLIB_DEFAULT="$(dirname $0)/d-lib.py"
+DLIB_DEFAULT="$(dirname $0)/d_lib.py"
 
 # Overridable from the environment
 D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
@@ -73,7 +73,7 @@ function up() {
   else
     # This substitution only supports a single param to the right of the "--".
     extra_flags=${extra_flags/-- /--extra-init=}
-    /root/bin-docker/d-run ${extra_flags}
+    /root/bin/d-run ${extra_flags}
   fi
 }
 
@@ -183,6 +183,12 @@ case "$cmd" in
     docker exec -u 0 -ti ${name} /bin/bash
     echo "back from container."
     ;;
+  build-all | ba)
+      for name in $(list-buildable); do
+        emit "<> Building ${name}"
+	cd ${D_SRC_DIR}/${name}; ./Build
+    done
+    ;;
   check-all-up | cau | ca | qa)
       t=$(mktemp)
       list-up | cut -d' ' -f1 > $t
@@ -253,7 +259,6 @@ case "$cmd" in
     docker exec -u 0 -ti ${name} /bin/bash
     echo "back from container."
     ;;
-  ken-cmd | k) /root/bin/docker-attach $(pick_container_from_up $spec) /bin/su -s /bin/bash -l ken ;;
   run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;
   shell) docker run -ti --user root --entrypoint /bin/bash kstillson/$(pick_container_from_dev $spec):latest ;;
   test | t) test $(pick_container_from_dev $spec) ;;
