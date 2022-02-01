@@ -29,7 +29,8 @@ Principal" (one level shy of "Fellow"), and earned a "Hammer Award" from
 the then US Vice President, for work that "makes the government work better
 and cost less."
 
-Ken <<ktools@point0.net>> is now a free-range maker, tinkerer, artist, and hacker (in the good sense).
+Ken <<ktools@point0.net>> is now a free-range maker, tinkerer, artist, and
+hacker (in the good sense).
 
 ## About The Structure
 
@@ -39,6 +40,8 @@ process of disentangling and generalizing them is on-going, and some of the
 modules may be initially published in their not-yet-fully-detangled form.
 You're welcome to help out via pull requests, or just wait for me to get to
 it.
+
+TODO: notes about opinionated dir structure.
 
 The project uses GNU Linux Makefiles.  The code is generally in Python or
 bash shell, so doesn't need compilation.  But I likes the way Makefiles

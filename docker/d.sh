@@ -13,6 +13,7 @@ DLIB_DEFAULT="$(dirname $0)/d_lib.py"
 # Overridable from the environment
 D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
 DLIB=${DLIB:-$DLIB_DEFAULT}
+TIMEOUT=${TIMEOUT:-60}
 
 # ----------------------------------------
 
@@ -33,7 +34,7 @@ function pick_container_from_up() {
 function pick_container_from_dev() {
   srch=$1
   cd ${D_SRC_DIR}
-  sel=$(ls -1 ${srch}*/settings.yaml | head -1 | cut -f1 -d/ )
+  sel=$(ls -1 ${srch}*/settings*.yaml | head -1 | cut -f1 -d/ )
   echo $sel
 }
 
@@ -225,7 +226,8 @@ case "$cmd" in
     lxc-attach -n plex -- /usr/sbin/service minidlna force-reload
     ;;
   test | t) test $(pick_container_from_dev $spec) ;;
-  test-all | ta) for name in $(list-testable); do test $name -r; done ;;
+  test-all-old | ta0) for name in $(list-testable); do test $name -r; done ;;
+  test-all | ta) list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
   test-all-prod | tap) for name in $(list-testable); do test $name -p; done ;;
   upgrade | u) upgrade $(pick_container_from_dev $spec) ;;
   upgrade-all | ua)
@@ -261,9 +263,6 @@ case "$cmd" in
     ;;
   run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;
   shell) docker run -ti --user root --entrypoint /bin/bash kstillson/$(pick_container_from_dev $spec):latest ;;
-  test | t) test $(pick_container_from_dev $spec) ;;
-  test-all | ta) for name in $(list-testable); do test $name -r; done ;;
-  test-all-prod | tap) for name in $(list-testable); do test $name -p; done ;;
 
 # various queries  
   cow-dir | cow)
@@ -299,6 +298,7 @@ case "$cmd" in
 # instance lists  
   list-autostart | la) list-autostart ;;
   list-buildable | lb) list-buildable ;;
+  list-testable | lt) list-testable ;;
 
 # internal
   help | h) myhelp ;;
