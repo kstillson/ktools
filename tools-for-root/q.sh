@@ -288,8 +288,8 @@ function updater() {
     OUT1="/tmp/all-update.out"
     OUT2="/tmp/all-upgrade.out"
     need_ssh_agent
-    echo "$hosts" | /usr/local/bin/run_para --output $OUT1 --timeout 120 --ssh 'apt-get update'
-    echo "$hosts" | /usr/local/bin/run_para --output $OUT2 --timeout 800 --ssh 'apt-get -y upgrade'
+    echo "$hosts" | /usr/local/bin/run_para --output $OUT1 --timeout 240 --ssh 'apt-get update'
+    echo "$hosts" | /usr/local/bin/run_para --output $OUT2 --timeout 999 --ssh 'apt-get -y upgrade'
     emit "output sent to $OUT1 and $OUT2 (consider rm $OUT1 $OUT2 )"
 }
 

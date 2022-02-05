@@ -198,12 +198,7 @@ case "$cmd" in
     docker attach $(pick_container_from_up $spec)
     echo "back from container console."
     ;;
-  exec-cmd | exec | e)
-    name=$(pick_container_from_up $spec)
-    docker exec -u 0 -ti ${name} /bin/bash
-    echo "back from container."
-    ;;
-  e0)
+  enter | exec-cmd | exec | e0 | e)
     name=$(pick_container_from_up $spec)
     docker exec -u 0 -ti ${name} /bin/bash
     echo "back from container."
@@ -213,12 +208,12 @@ case "$cmd" in
 
 # Multiple container management done in parallel
   build-all | ba)                    list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
-  down-all | 0a | 00)                list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
+  down-all | stop-all | 0a | 00)     list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
   restart-all | 01a | ra | RA | Ra)  list-up | /usr/local/bin/run_para --align --cmd "$0 restart @" --timeout $TIMEOUT ;; 
   run-in-all | ria)                  list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
-  start-all | up-all | 1a | 11)      list-autostart | /usr/local/bin/run_para --align --cmd "$0 up @" --timeout $TIMEOUT ;;
   test-all | ta)                     list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
   test-all-prod | tap)               list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;
+  up-all | start-all | 1a | 11)      list-autostart | /usr/local/bin/run_para --align --cmd "$0 up @" --timeout $TIMEOUT ;;
 
 # various queries
   check-all-up | cau | ca | qa)
@@ -252,7 +247,7 @@ case "$cmd" in
   list-up | lu | l | ps | p)
     docker ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
       sed -e 's/0.0.0.0/*/g' -e 's:/tcp::g' | \
-      column -s @ -t | cut -c-$COLUMNS
+      column -s @ -t | cut -c-$COLUMNS | sort
     ;;
   log | logs) docker logs -ft --details $(pick_container_from_dev $spec) ;;
   pid) docker inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;
