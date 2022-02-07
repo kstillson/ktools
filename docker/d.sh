@@ -8,7 +8,7 @@ spec="$1"
 shift || true
 extra_flags="$@"
 
-DLIB_DEFAULT="$(dirname $0)/d_lib.py"
+DLIB_DEFAULT="$(realpath $(dirname $0)/d_lib.py)"
 
 # Overridable from the environment
 D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
@@ -17,7 +17,22 @@ TIMEOUT=${TIMEOUT:-60}
 
 # ----------------------------------------
 
+BLUE='\x1b[01;34m'
+CYAN='\x1b[36m'
+GREEN='\x1b[01;32m'
+MAGENTA='\x1b[35m'
+RED='\x1b[0;31m'
+YELLOW='\x1b[0;33m'
+WHITE='\x1b[37m'
+RESET='\x1b[00m'
+
 function emit() { echo ">> $@" >&2; }
+# stderr $2+ in color named by $1. insert "-" as $1 to skip ending newline.
+function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
+# stderr $2+ in color named by $1, but only if stdin is an interactive terminal.
+function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
+
+# ----------------------------------------
 
 function pick_container_from_up() {
   srch=$1
@@ -83,18 +98,18 @@ function test() {
   shift
   cd ${D_SRC_DIR}/${name}
   if [[ ! -x ./Test ]]; then
-      emit "${name}: no test available; default to pass"
+      emitc magenta "${name}: no test available; default to pass"
       echo "pass"
       return
   fi
-  emit "Testing ${name}."
+  emitc blue "Testing ${name}."
   out="/rw/dv/TMP/${name}/test.out"
   rslt=$(./Test -r -o "${out}" "$@" | tail -1)
   if [[ "$rslt" == "pass" ]]; then
-	  emit "test passed    ( $out )."
+	  emitc green "test passed    ( $out )."
 	  echo "pass"
   else
-	  emit "test failed. [ $rslt ]; log: $out"
+	  emitc red "test failed. [ $rslt ]; log: $out"
 	  echo "fail"
   fi
 }
@@ -102,25 +117,26 @@ function test() {
 function upgrade() {
   name=$1
   emit ""
-  emit "<> Building container ${name}"
+  emitc blue "<> Building container ${name}"
   cd ${D_SRC_DIR}/${name}
   ./Build
   if [[ "$($DLIB latest_equals_live $name)" == "true" ]]; then
-      emit "#latest == #live, so nothing more to do."
+      emitc yellow "#latest == #live, so nothing more to do."
       return
   fi
   rslt=$(test $name)
   if [[ "$rslt" != "pass" ]]; then
+      emitc yellow "result: $rslt (expected 'pass')"
       return 1
   fi
   ./Build --setlive
   if [[ -f ./autostart ]]; then
-      emit "restarting $name"
+      emitc blue "restarting $name"
       down $name
       sleep 1
       up $name
   fi
-  emit "done with $name"
+  emitc green "done with $name"
 }
 
 # ----------------------------------------
@@ -186,9 +202,7 @@ case "$cmd" in
     docker exec -u 0 $(pick_container_from_up $spec) kill -HUP 1
     ;;
   mini-dlna-refresh | M)
-    echo "@@ not ready yet"
-    exit -1
-    lxc-attach -n plex -- /usr/sbin/service minidlna force-reload
+    docker exec dlnadock /usr/sbin/minidlnad -R
     ;;
   test | t) test $(pick_container_from_dev $spec) ;;
   upgrade | u) upgrade $(pick_container_from_dev $spec) ;;
@@ -224,7 +238,7 @@ case "$cmd" in
       if [[ "$missing" == "" ]]; then
 	  echo "all ok"
       else
-	  emit "missing containers: $missing"
+	  emitc red "missing containers: $missing"
       fi
       ;;
   cow-dir | cow)

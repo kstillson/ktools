@@ -66,7 +66,7 @@ function echoc() { color=${1^^}; shift; if [[ -t 1 ]]; then echoC "$color" "$@";
 # Same as above, but send to stderr.
 function emit() { echo ">> $@" >&2; }
 function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
-function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n"; fi; }
+function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
 
 # ----------------------------------------
 # ssh agent
