@@ -252,6 +252,60 @@ function git_update_pis() {
     emitc green "all done\n"
 }
 
+function iptables_list_tables() {
+    iptables-save | egrep '^\*' | tr -d '*' | sort
+}
+
+function iptables_list_chains() {
+    iptables-save | awk -F' ' '/^\*/ { tab=substr($1,2) } /^:/ { print tab $1 }' | sort
+}
+
+# $1 can either be a chain name or a thing to grep for.
+function iptables_query_real() {
+    search="$1"
+    Search="${1^^}"  # try upper case chian names too..
+    params="-n -v --line-numbers "
+    tables=$(iptables_list_tables | tr '\n' ' ')
+    case $Search in
+	PREROUTING | PRE) iptables $params -L PREROUTING -t nat ;;
+	POSTROUTING | POST) iptables $params -L POSTROUTING -t nat ;;
+	"")
+	    for tab in $tables; do
+		echoc cyan "\nTABLE: $tab\n"
+		iptables $params -L -t $tab
+	    done
+	    ;;
+	*)
+	    # See if they specified a table-name, and if so, output that whole table.
+	    if [[ "$tables" == *"$search"* ]]; then
+		echoc cyan "\nTABLE: $search\n"
+		iptables $params -L -t $search
+		return
+	    fi
+	    # Decorate each rule line with table and chain name, then search for anything matching the given substring.
+	    for tab in $tables; do
+		echoc cyan "\nTABLE: $tab\n"
+		iptables $params -L -t $tab | awk -F" " '/^Chain/ { chain=$2 } /^[0-9]/ { print chain ":" $0 }' | fgrep --color=auto -i "$search" || true
+	    done
+    esac
+}
+
+function iptables_query() {
+    if [[ -t 1 && "$1" == "" ]] ; then
+	iptables_query_real | less --raw-control-chars --quit-if-one-screen
+    else
+	iptables_query_real "$1"
+    fi
+}
+
+# Save current iptables rules to disk for auto-restore upon boot.
+function iptables_save() {
+    # TODO: move to standard location (with autodetect for ro root)
+    /bin/mv -f ~/iptables.rules ~/iptables.rules.mbk
+    /usr/sbin/iptables-save > ~/iptables.rules
+    emitc green "saved"
+}
+
 # (in parallel) ping the list of hosts in $@.  Try up to 3 times.
 function pinger() {
     set +e
@@ -603,6 +657,10 @@ function main() {
         es) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;             ## epoch seconds to standard date format
         es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
         es-now | now) date -u +%s ;;                         ## print current epoch seconds
+	iptables-list-chains | iptc | ic) iptables_list_chains ;;  ## print list of iptables chains
+	iptables-list-tables | iptt | it) iptables_list_tables ;;  ## print list of iptables tables
+	iptables-query | iptq | iq) iptables_query $1 ;;     ## print/query iptables
+	iptables-save | ipts | is) iptables_save ;;          ## save current iptables
         journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
         git-check-all | gca | gc) git_check_all ;;           ## list any known git dirs with local changes
         git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;             ## git sync a single directory (defaults to .)
