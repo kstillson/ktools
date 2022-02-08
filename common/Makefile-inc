@@ -69,6 +69,9 @@ $(STAGING_PLAIN_TARGETS): $(STAGING_DIR)/%: %
 $(STAGING_DIR):
 	mkdir -p $(STAGING_DIR)
 
+# ----------------------------------------
+# standard targets
+
 clean:
 	rm -rf $(STAGING_DIR) __pycache__ .pytest_cache
 
@@ -84,10 +87,14 @@ $(INSTALL_TARGETS): $(STAGING_TARGETS)
 
 test: $(TEST_LOG)
 
+# ----------------------------------------
+# custom targets
+
 update: all test install
 	git commit -v -a
 	git remote | xargs -L1 -I@ echo git pull @ ${GIT_BRANCH}
 	git remote | xargs -L1 git push
+	$(MAKE) clean
 
 comp: FORCE
 	@for t in $(TARGETS); do diff -q $(STAGING_DIR)/$$t $(INSTALL_DIR)/$$t; done

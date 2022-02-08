@@ -1,7 +1,7 @@
 
 # Handy Makefile reference: https://makefiletutorial.com/
 
-TOP_TARGETS = all clean comp install test
+TOP_TARGETS = all clean comp install test update
 
 SUBDIRS = $(shell ls */Makefile | cut -d/ -f1)
 

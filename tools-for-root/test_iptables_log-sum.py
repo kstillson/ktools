@@ -12,3 +12,6 @@ def test1():
         else: expect = -1
         assert expect == count
 
+def test_fail():
+    assert 1 == 2
+
