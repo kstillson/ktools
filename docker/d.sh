@@ -152,7 +152,7 @@ function upgrade() {
 
 # Scan my own source code, find the main switch statement, extract and format showing the commands this script supports.
 function myhelp_real() {
-    awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | egrep '(^#)|(^..[a-z])' | sed -e '/case /d' -e '/esac/d' -e '/*)/d' -e 's/##/~/' -e 's/).*;;//' | column -t -s~
+    awk -- '/case "\$cmd/,/esac/{ print }' $0 | egrep '(^#)|(^..[a-z])' | sed -e '/case /d' -e '/esac/d' -e '/*)/d' -e 's/##/~/' -e 's/).*;;//' | column -t -s~
 }
 
 # Wrapper around myhelp_real, optionally searching for $1 and auto-paging if on an interactive terminal.
