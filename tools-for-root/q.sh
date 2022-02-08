@@ -475,11 +475,16 @@ function checks() {
 
 # Download the homesec keyscanner common code from git repo, parse out and tidy the keyboard commands, stripping private ones.
 function keypad_commands {
+    if [[ "$1" == "" ]]; then
+	fmt="column"
+    else
+	fmt="fgrep $1"
+    fi
     git archive --remote gitro:git/homectrl.git master ks_common.py | tar -xOf - | \
         sed -e '/[#:]/!d' -e 's/, GO//' -e 's/common.trigger//' -e 's/common.control//' -e 's@common.read_web(\"http://@(web-@' \
             -e '/touch-home/d' -e '/disarm/d' \
             -e "s/)\',//" -e 's/#/:####/' -e "s/'//g" -e 's/"//g' -e 's/),/)/g' | \
-        column -t -s: | column
+        column -t -s: | $fmt
 }
 
 # Run $1 as if it was typed into a keypad.
@@ -653,13 +658,13 @@ function main() {
     case "$cmd" in
     # general linux maintenance routines for localhost
         df) df -h | egrep -v '/docker|/snap|tmpfs|udev' ;;   ## df with only interesting output
-        ed) date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;       ## epoch day to m/d/y
-        es) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;             ## epoch seconds to standard date format
+        ed) date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;       ## epoch day $1 to m/d/y
+        es) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;             ## epoch seconds $1 to standard date format
         es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
         es-now | now) date -u +%s ;;                         ## print current epoch seconds
 	iptables-list-chains | iptc | ic) iptables_list_chains ;;  ## print list of iptables chains
 	iptables-list-tables | iptt | it) iptables_list_tables ;;  ## print list of iptables tables
-	iptables-query | iptq | iq) iptables_query $1 ;;     ## print/query iptables
+	iptables-query | iptq | iq) iptables_query $1 ;;     ## print/query iptables ($1 to search)
 	iptables-save | ipts | is) iptables_save ;;          ## save current iptables
         journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
         git-check-all | gca | gc) git_check_all ;;           ## list any known git dirs with local changes
@@ -692,7 +697,7 @@ function main() {
         uptime | uta | ut) run_para "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;  ## uptime for all linux hosts
     # run arbitrary commands on multiple hosts
         listp) run_para LOCAL "$(cat)" "$@" ;;      ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
-        run | run-remote | rr | r) hostspec=$1; shift; run_para "$(list_dynamic $hostspec)" "$@" ;;  ## run cmd ($2+) on listed hosts ($1)
+        run | run-remote | rr | r) hostspec=$1; shift; run_para "$(list_dynamic $hostspec)" "$@" ;;  ## run cmd $2+ on listed hosts $1
         run-local | rl) hostspec=$1; shift; run_para LOCAL "$(list_dynamic $hostspec)" "$@" ;;       ## eg: q run-local linux scp localfile @:/destdir
         run-pis | rpis | rp) run_para "$(list_pis)" "$@" ;;               ## run command on all pi's
     # jack/homesec specific maintenance routines
@@ -706,15 +711,15 @@ function main() {
         exim-queue-zap-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d" " | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
         exim-queue-run | eqr) d run eximdock exim -qff ;;                 ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
-        git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo to gitdock
+        git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo $1 to gitdock
         git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homesec
-        homesec-add-user | hau) homesec_add_user "$1" "$2" ;;             ## add a user to homesec via djangi cgi
-        homesec-del-user | hdu) homesec_del_user "$1" ;;                  ## remove a user freom homesec via djangi cgi
+        homesec-add-user | hau) homesec_add_user "$1" "$2" ;;             ## add a user $1 to homesec via djangi cgi
+        homesec-del-user | hdu) homesec_del_user "$1" ;;                  ## remove user $1 freom homesec via djangi cgi
         lease-orphans | lsmaco | lo | unknown-macs | um) leases_list_orphans ;;   ## list dhcp leases not known to dnsmasq config
         lease-query | lsmacs | lq) egrep --color=auto "$1" $LEASES ;;     ## search for $1 in dhcp leases file
         lease-query-red | lqr | 9) fgrep --color=auto -F ".9." $LEASES || echoc green "ok\n" ;;  ## list red network leases
-        keypad | key | k) run_keypad_command "$1" ;;                      ## run a command as if typed on homectrl keypad
-        keypad-commands | kc) keypad_commands ;;                          ## list homesec keypad common commands
+        keypad | key | k) run_keypad_command "$1" ;;                      ## run command $1 as if typed on homectrl keypad
+        keypad-commands | kc) keypad_commands "$1" ;;                     ## list homesec keypad common commands ($1 to search)
         panic-reset | PR) runner /usr/local/bin/panic reset ;;            ## recover from a homesec panic
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
         procmon-query | pq) curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;   ## check procmon status
