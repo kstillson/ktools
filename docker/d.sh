@@ -34,7 +34,7 @@ function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@";
 
 # ----------------------------------------
 # select specific container to operate on.
-# $1 is generally a substring search spec.  If search matches more than 1, then 1st one is picked.
+# $1 is a prefix substring search spec.  If search matches more than 1, then 1st alphabetical is picked.
 
 function pick_container_from_up() {
   srch=$1
