@@ -33,6 +33,8 @@ function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; co
 function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
 
 # ----------------------------------------
+# select specific container to operate on.
+# $1 is generally a substring search spec.  If search matches more than 1, then 1st one is picked.
 
 function pick_container_from_up() {
   srch=$1
@@ -52,6 +54,9 @@ function pick_container_from_dev() {
   sel=$(ls -1 ${srch}*/settings*.yaml | head -1 | cut -f1 -d/ )
   echo $sel
 }
+
+# ------------------------------
+# generate lists of containers
 
 function list-autostart() {
   cd ${D_SRC_DIR}
@@ -73,6 +78,9 @@ function list-testable() {
   cd ${D_SRC_DIR}
   ls -1 */Test | cut -d/ -f1
 }
+
+# ------------------------------
+# operations complicated enough to need their own support functions
 
 function down() {
   name="$1"
@@ -106,11 +114,11 @@ function test() {
   out="/rw/dv/TMP/${name}/test.out"
   rslt=$(./Test -r -o "${out}" "$@" | tail -1)
   if [[ "$rslt" == "pass" ]]; then
-	  emitc green "test passed    ( $out )."
-	  echo "pass"
+          emitc green "test passed    ( $out )."
+          echo "pass"
   else
-	  emitc red "test failed. [ $rslt ]; log: $out"
-	  echo "fail"
+          emitc red "test failed. [ $rslt ]; log: $out"
+          echo "fail"
   fi
 }
 
@@ -142,16 +150,31 @@ function upgrade() {
 # ----------------------------------------
 # internal
 
-function myhelp() {
-    awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | sed -e '/[#)]/!d' -e '/(/d' -e '/*)/d' -e 's/).*$//' -e '/##/d'
+# Scan my own source code, find the main switch statement, extract and format showing the commands this script supports.
+function myhelp_real() {
+    awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | egrep '(^#)|(^..[a-z])' | sed -e '/case /d' -e '/esac/d' -e '/*)/d' -e 's/##/~/' -e 's/).*;;//' | column -t -s~
 }
+
+# Wrapper around myhelp_real, optionally searching for $1 and auto-paging if on an interactive terminal.
+function myhelp() {
+    if [[ "$1" != "" ]]; then
+        myhelp_real | egrep --color=auto "$1"
+    else
+        if [ -t 1 ] ; then myhelp_real | less
+        else myhelp_real
+        fi
+    fi
+}
+
+# ------------------------------
+# main:
 
 case "$cmd" in
 
-  # Simple container management
-  build | b) cd ${D_SRC_DIR}/$(pick_container_from_dev $spec); ./Build ;;
-  down | stop | 0) down $(pick_container_from_up $spec) ;;
-  restart | 01 | R)
+# Simple container management
+  build | b) cd ${D_SRC_DIR}/$(pick_container_from_dev $spec); ./Build ;;  ## Build container, name=$1
+  down | stop | 0) down $(pick_container_from_up $spec) ;;                 ## Stop container $1
+  restart | 01 | R)           ## Restart container $1
     name=$(pick_container_from_up $spec)
     echo "Shutting down $name"
     down $name
@@ -159,30 +182,30 @@ case "$cmd" in
     echo "Starting up $name"
     up $name
     ;;
-  up | start | 1)
+  up | start | 1)             ## Launch container $1
     sel=$(pick_container_from_dev $spec)
     up=$(pick_container_from_up $sel)
     if [[ "$up" != "" ]]; then
-	echo "error- container already up: $sel"
-	exit 1
+        echo "error- container already up: $sel"
+        exit 1
     fi
     up $sel
     ;;
 
 # container maintenance
-  add-su | addsu)
+  add-su | addsu)             ## Copy /bin/su into container $1
     name=$(pick_container_from_up $spec)
     docker cp ${D_SRC_DIR}/Etc/su ${name}:/bin
     echo "added /bin/su to ${name}"
     ;;
-  add-debug | debug)
+  add-debug | debug)          ## Add debugging tools and enter container $1
     name=$(pick_container_from_up $spec)
     docker cp ${D_SRC_DIR}/debugger/debug.tgz ${name}:/
     docker exec -u 0 ${name} tar x -k -o -z -f debug.tgz
     docker exec -u 0 -ti ${name} /bin/bash
     echo "back from container."
     ;;
-  clean)
+  clean)                        ## Remove all sorts of unused docker cruft
     ## Don't want to use 'docker system prune' because would delete
     ## network 'docker2' which is not always in use, but is useful.
     ##
@@ -194,91 +217,91 @@ case "$cmd" in
     docker volume prune -f --filter label!=live
     docker builder prune -f
     ;;
-  dmap|map)
+  dmap|map)                     ## update map of hashes->container names
     docker ps --format "{{.ID}} {{.Names}}" > /var/run/dmap
     chmod 644 /var/run/dmap
     ;;
-  hup | H | HUP | reload | r)
+  hup | H | HUP | reload | r)   ## Send sigHup to proc 1 in container $1
     docker exec -u 0 $(pick_container_from_up $spec) kill -HUP 1
     ;;
-  mini-dlna-refresh | M)
+  mini-dlna-refresh | M)        ## kds specific; rescan miniDlna library
     docker exec dlnadock /usr/sbin/minidlnad -R
     ;;
-  test | t) test $(pick_container_from_dev $spec) ;;
-  upgrade | u) upgrade $(pick_container_from_dev $spec) ;;
+  test | t) test $(pick_container_from_dev $spec) ;;  ## Run tests for container $1
+  upgrade | u) upgrade $(pick_container_from_dev $spec) ;;  ## Upgrade (build, test, relabel, restart) $1.
 
 # command execution
-  console | C)
+  console | C)                  ## Enter console for $1
     docker attach $(pick_container_from_up $spec)
     echo "back from container console."
     ;;
-  enter | exec-cmd | exec | e0 | e)
+  enter | exec-cmd | exec | e0 | e)   ## Interactive root shell in $1
     name=$(pick_container_from_up $spec)
     docker exec -u 0 -ti ${name} /bin/bash
     echo "back from container."
     ;;
-  run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;
-  shell) docker run -ti --user root --entrypoint /bin/bash kstillson/$(pick_container_from_dev $spec):latest ;;
+  run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;  ## Run command $2+ as root in $1
+  shell) docker run -ti --user root --entrypoint /bin/bash kstillson/$(pick_container_from_dev $spec):latest ;;  ## Start container $1 but shell overriding entrypoint.
 
 # Multiple container management done in parallel
-  build-all | ba)                    list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
-  down-all | stop-all | 0a | 00)     list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
-  restart-all | 01a | ra | RA | Ra)  list-up | /usr/local/bin/run_para --align --cmd "$0 restart @" --timeout $TIMEOUT ;; 
-  run-in-all | ria)                  list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
-  test-all | ta)                     list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
-  test-all-prod | tap)               list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;
-  up-all | start-all | 1a | 11)      list-autostart | /usr/local/bin/run_para --align --cmd "$0 up @" --timeout $TIMEOUT ;;
+  build-all | ba)                    list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;  ## Build all buildable containers.
+  down-all | stop-all | 0a | 00)     list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;        ## Down all up containers
+  restart-all | 01a | ra | RA | Ra)  list-up | /usr/local/bin/run_para --align --cmd "$0 restart @" --timeout $TIMEOUT ;;     ## Restart all up containers
+  run-in-all | ria)                  list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;; ## Run $1+ in root shell in all up containers
+  test-all | ta)                     list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;     ## Test all testable containers (#latest)
+  test-all-prod | tap)               list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;  ## Test all testable production containers
+  up-all | start-all | 1a | 11)      list-autostart | /usr/local/bin/run_para --align --cmd "$0 up @" --timeout $TIMEOUT ;;   ## Launch all autostart containers
 
 # various queries
-  check-all-up | cau | ca | qa)
+  check-all-up | cau | ca | qa)       ## Check that all autostart containers are up.
       t=$(mktemp)
       list-up | cut -d' ' -f1 > $t
       missing=$(list-autostart | fgrep -v -f $t || true)
       rm $t
       if [[ "$missing" == "" ]]; then
-	  echo "all ok"
+          echo "all ok"
       else
-	  emitc red "missing containers: $missing"
+          emitc red "missing containers: $missing"
       fi
       ;;
-  cow-dir | cow)
+  cow-dir | cow)                       ## Print the copy-on-write layer dir location for $1
     name=$(pick_container_from_up $spec)
     $DLIB get_cow_dir "$name"
     ;;
-  images | i) docker images ;;
-  get-ip | getip | get_ip | ip)
+  images | i) docker images ;;         ## List docker images
+  get-ip | getip | get_ip | ip)        ## Print the IP address for $1
     set -o pipefail
     name="$(pick_container_from_up $spec)"
     if [[ "$name" == "" ]]; then exit -1; fi
     docker inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
     ;;
-  get-all-ips | ips)
+  get-all-ips | ips)                   ## Print IPs for all up containers.
     t=$(mktemp)
     list-buildable > $t
     fgrep -f $t /root/docker-dev/dnsdock/files/etc/dnsmasq/dnsmasq.hosts | sort -k 2 | cut -f1-2
     rm $t
     ;;
-  list-up | lu | l | ps | p)
+  list-up | lu | ls | l | ps | p)      ## List all up containers
     docker ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
       sed -e 's/0.0.0.0/*/g' -e 's:/tcp::g' | \
       column -s @ -t | cut -c-$COLUMNS | sort
     ;;
-  log | logs) docker logs -ft --details $(pick_container_from_dev $spec) ;;
-  pid) docker inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;
-  spec | s) docker inspect $(pick_container_from_up $spec) ;;
-  veth)
+  log | logs) docker logs -ft --details $(pick_container_from_dev $spec) ;;  ## Print logs for $1
+  pid) docker inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;  ## Print main PID for $1
+  spec | s) docker inspect $(pick_container_from_up $spec) ;;    ## Print docker details for $1
+  veth)                                ## Print virtual eth name for $1
     idx=$(docker exec $(pick_container_from_up $spec) cat /sys/class/net/eth0/iflink)
     /bin/grep -l "$idx" /sys/class/net/veth*/ifindex | /usr/bin/cut -d/ -f5
     ;;
 
 # instance lists
-  list-autostart | la) list-autostart ;;
-  list-buildable | lb) list-buildable ;;
-  list-testable | lt) list-testable ;;
+  list-autostart | la) list-autostart ;;   ## List auto-startable containers
+  list-buildable | lb) list-buildable ;;   ## List buildable containers
+  list-testable | lt) list-testable ;;     ## List containers with tests
 
 # internal
-  help | h) myhelp ;;
-  dup-check | check | chk) ( myhelp | fgrep -v '#' | tr '|' '\n' | tr -d ' ' | sort | uniq -c | fgrep -v '  1 ') || echo 'all ok' ;;
+  help | h) myhelp "$spec" ;;              ## display this help
+  dup-check | check | chk) ( myhelp | fgrep -v '#' | tr '|' '\n' | tr -d ' ' | sort | uniq -c | fgrep -v '  1 ') || echo 'all ok' ;;  ## Check if any command-shortcuts are duplicated.
   *)
      echo "invalid command: $cmd"
      exit 3
