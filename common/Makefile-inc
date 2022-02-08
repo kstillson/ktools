@@ -90,10 +90,10 @@ test: $(TEST_LOG)
 # ----------------------------------------
 # custom targets
 
-update: all test install
-	git commit -v -a
-	git remote | xargs -L1 -I@ echo git pull @ ${GIT_BRANCH}
-	git remote | xargs -L1 git push
+update: $(STAGING_TARGETS)
+	$(MAKE) all
+	$(MAKE) test
+	$(MAKE) install
 	$(MAKE) clean
 
 comp: FORCE
