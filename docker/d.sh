@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Stop on first error...
 set -e
 
 cmd="$1"
@@ -250,7 +251,7 @@ case "$cmd" in
   run-in-all | ria)                  list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;; ## Run $1+ in root shell in all up containers
   test-all | ta)                     list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;     ## Test all testable containers (#latest)
   test-all-prod | tap)               list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;  ## Test all testable production containers
-  up-all | start-all | 1a | 11)      list-autostart | /usr/local/bin/run_para --align --cmd "$0 up @" --timeout $TIMEOUT ;;   ## Launch all autostart containers
+  up-all | start-all | 1a | 11)      for i in $(list-autostart); do up "$i"; done ;;                                          ## Launch all autostart containers
 
 # various queries
   check-all-up | cau | ca | qa)       ## Check that all autostart containers are up.
