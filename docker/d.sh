@@ -218,10 +218,6 @@ case "$cmd" in
     docker volume prune -f --filter label!=live
     docker builder prune -f
     ;;
-  dmap|map)                     ## update map of hashes->container names
-    docker ps --format "{{.ID}} {{.Names}}" > /var/run/dmap
-    chmod 644 /var/run/dmap
-    ;;
   hup | H | HUP | reload | r)   ## Send sigHup to proc 1 in container $1
     docker exec -u 0 $(pick_container_from_up $spec) kill -HUP 1
     ;;

@@ -2,11 +2,6 @@
 
 # --------------------
 
-function dmap_update() {
-    docker ps --format "{{.ID}} {{.Names}}" > /var/run/dmap
-    chmod 644 /var/run/dmap
-}
-
 function pre_run() {
     docker rm ${NAME} >/dev/null 2>&1
 }
@@ -66,10 +61,5 @@ XTRA=""
 if [[ $0 == *Run ]]; then
   echo "running ${NAME}..."
   pre_run
-  ( sleep 3; dmap_update ) &
 fi
 
-if [[ $0 == *common ]]; then
-  dmap_update
-  echo "updated dmap"
-fi

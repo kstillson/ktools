@@ -192,7 +192,6 @@ def parse_args():
     ap.add_argument('--ipv6', '-6', action='store_true', help='If not specified, make port bindings specific to IPv4 only.')
 
     # Flags that tweak the way d-run works.
-    ap.add_argument('--dmap-update', action='store_false', help='skip auto-update of dmap just after run starts (needed by procmon for container name mapping).')
     ap.add_argument('--fail-on-exists', action='store_true', help='fail if a container with this name already exists.  default will auto-remove the conflicting container instance (which only works if its shut down).')
     ap.add_argument('--name_prefix', default='', help='If specified, use normal logic to determine the container name, but prefix it with this string.')
     ap.add_argument('--print-cmd', action='store_true', help='Print launch command before executing it.')
@@ -334,8 +333,6 @@ def main():
     if not args.fail_on_exists:
         with open('/dev/null', 'w') as z:
             subprocess.call(['/usr/bin/docker', 'rm', settings['name']], stdout=z, stderr=z)
-    if args.dmap_update:
-        subprocess.call('(sleep 3; docker ps --format "{{.ID}} {{.Names}}" > /var/run/dmap; chmod 644 /var/run/dmap) &', shell=True)
     return subprocess.call(cmnd)
 
 

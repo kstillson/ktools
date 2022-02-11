@@ -2,10 +2,11 @@
 # Supported meta-targets:  all, clean, test, install, update
 
 PY_TARGETS := d-cowscan d-run
-SH_TARGETS := d
+SH_TARGETS := d d-map
 PLAIN_TARGETS := d-common-opts.sh d-common.sh d_lib.py   # Listed here to preserve extension.
 include ../common/Makefile-inc
 
+# TODO: add some tests
 # NB: tests the .py files in the current dir, not the files in STAGING_DIR.
 # Doesn't depend on "all", and can be run independently (unusual for a Makefile).
 # uses 'script' to avoid stripping the color (as output redirection would).
