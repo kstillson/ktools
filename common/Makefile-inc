@@ -73,7 +73,7 @@ $(STAGING_DIR):
 # standard targets
 
 clean:
-	rm -rf $(STAGING_DIR) __pycache__ .pytest_cache
+	rm -rf $(STAGING_DIR) __pycache__ .pytest_cache *.pyc
 
 install: $(INSTALL_TARGETS)
 $(INSTALL_TARGETS): $(STAGING_TARGETS)

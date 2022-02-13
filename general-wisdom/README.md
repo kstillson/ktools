@@ -10,3 +10,6 @@
 
   - read-only root
   - use full paths
+
+  - server layering and purposes: docker, disposable host containers, etc.
+
