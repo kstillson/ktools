@@ -5,7 +5,7 @@
 # any rules are specified, assuming you want this file's "all" to be the
 # default build target.
 
-# Supported meta-targets:  all, clean, test, install, update
+# Supported meta-targets:  all, clean, test, install, uninstall, update
 
 # Note: the "test" target is incomplete.  The caller is expected to provide
 # a target for $(TEST_LOG), which isn't easily generalizable here.
@@ -89,6 +89,9 @@ $(INSTALL_TARGETS): $(STAGING_TARGETS)
 	  install $^ ${INSTALL_DIR} ; \
 	  mount -o remount,ro $(INSTALL_MP) ; \
 	fi
+
+uninstall:
+	rm $(INSTALL_TARGETS)
 
 test: $(TEST_LOG)
 
