@@ -29,32 +29,43 @@ def test_read_file():
         pass
 
 def test_capture():
-    with C.Capture() as cap:
+    with C.Capture(strip=False) as cap:
         print('test1')
         C.stderr('test2')
+        assert '%s' % cap == 'test1\n'
+        assert str(cap) == 'test1\n'
         assert cap.out == 'test1\n'
         assert cap.err == 'test2\n'
+    with C.Capture() as cap:
+        print('test1')
+        print('test2')
+        assert cap.out == 'test1\ntest2'
     with C.Capture() as cap:
         assert cap.out == ''
         assert cap.err == ''
 
 def test_exec_wrapper():
     C.init_log(logfile=None)  # Don't log errors below to a logfile.
-    assert C.exec_wrapper('print(1+2)') == '3'
+    assert C.exec_wrapper('print(1+2)').out == '3'
+    # Try passing in a local variable.
     a = 2
-    assert C.exec_wrapper('print(a*2)', locals()) == '4'
-    assert C.exec_wrapper('print(a*2)') is False
-    assert C.exec_wrapper('bad-code') is False
+    assert C.exec_wrapper('print(a*2)', locals()).out == '4'
+    # And now try where locals are not passed in; should cause an error.
+    fail1 = C.exec_wrapper('print("to-out"); sys.stderr.write("to-err"); print(a*2)')
+    assert fail1.out == 'to-out'
+    assert fail1.err == 'to-err'
+    assert 'not defined' in str(fail1.exception)
+    # Try pulling something out of global namespace.
     import k_varz as varz
-    varz.set('x', 'y')  # Try pulling out of global namespace...
-    assert C.exec_wrapper('print(varz.VARZ["x"])') == 'y'
+    varz.set('x', 'y')
+    assert C.exec_wrapper('print(varz.VARZ["x"])').out == 'y'
 
 
 # Helper function for test_logging..
 # NB: depends on k_common.capture (which we tested separately above).
 def check_logging(func_to_run, expect_error_count, logfile_name, expect_logfile,
                   expect_stdout, expect_stderr, expect_syslog=None):
-    with C.Capture() as cap:
+    with C.Capture(strip=False) as cap:
         func_to_run()
         assert cap.out == expect_stdout
         assert cap.err == expect_stderr
@@ -106,22 +117,46 @@ def test_logging(tmp_path):
 
 
 # NB: relies on the author's personal web-server.  TODO: find something better.
+def test_web_get():
+    # Test standard response fields (check my wrapping didn't break anything).
+    url = 'http://a1.point0.net/test.html'
+    resp = C.web_get(url)
+    ## import pdb; pdb.set_trace() ##@@
+    assert resp.elapsed.microseconds > 0
+    assert resp.ok
+    assert 'date' in resp.headers
+    assert resp.status_code == 200
+    assert resp.text == 'hi-nossl\n'
+    assert resp.url == url
+    # Test custom added elements.
+    assert resp.exception is None
+    assert str(resp) == 'hi-nossl\n'
+
+    # Test successful ssl verification.
+    assert 'hi-ssl\n' == C.web_get('https://a1.point0.net/test.html').text
+
+    # Test ssl verify failure bypass (cert is for "a1" not "a2").
+    assert 'hi-ssl\n' == C.web_get('https://a2.point0.net/test.html', verify_ssl=False).text
+
+    # Test actual ssl verification failure.
+    resp = C.web_get('https://a2.point0.net/test.html')
+    assert "doesn't match" in str(resp.exception)
+    assert not resp.ok
+    assert not resp.status_code
+    assert str(resp) == ''
+
+    # Test manually construct get params.
+    assert '\na=b\n\nx=y\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test?a=b&x=y').text
+
+    # Test get_dict.
+    assert '\nc=d\n\ne=f\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test', get_dict={'c': 'd', 'e': 'f'}).text
+
+    # Test post_dict.
+    assert '\ng=h\n\ni=j\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test', post_dict={'g': 'h', 'i': 'j'}).text
+
+
 def test_read_web():
-    assert 'hi-nossl\n' == C.read_web('http://a1.point0.net/test.html')
     assert 'hi-ssl\n' == C.read_web('https://a1.point0.net/test.html')
-    assert 'hi-ssl\n' == C.read_web('https://a2.point0.net/test.html', verify_ssl=False)
-    assert None == C.read_web('https://a2.point0.net/test.html')  ## ssl check faiure
 
-    try_get = C.read_web('https://a1.point0.net/cgi-bin/test?a=b&x=y')
-    assert 'a=b' in try_get
-    assert 'x=y' in try_get
 
-    try_get2 = C.read_web('https://a1.point0.net/cgi-bin/test', get_dict={'c': 'd', 'e': 'f'})
-    assert 'c=d' in try_get2
-    assert 'e=f' in try_get2
-
-    try_post = C.read_web('https://a1.point0.net/cgi-bin/test', post_dict={'g': 'h', 'i': 'j'})
-    assert 'g=h' in try_post
-    assert 'i=j' in try_post
-
-        
+# Note: quote_plus tested indirectly by test_read_web get_dict under Python 3.

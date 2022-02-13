@@ -7,7 +7,7 @@ if PY_VER == 2:
     import StringIO as io
     import urllib2
 else:
-    import io, urllib.parse, urllib.request
+    import io, urllib.parse, requests
 
 
 # ----------------------------------------
@@ -46,7 +46,9 @@ def raw_print(s):
 def stderr(msg):
     sys.stderr.write("%s\n" % msg)
 
+
 '''Temporarily captures stdout and stderr and makes them available.
+Outputs an instance with .out .err.  Conversion to string gives .out
 Example usage:
   with k_common.Capture() as cap:
     # (write stuff to stdout and/or stderr...)
@@ -55,6 +57,8 @@ Example usage:
   # (do stuff with caught_stdout, caught_stderr...)
 '''
 class Capture():
+    def __init__(self, strip=True):
+        self._strip = strip
     def __enter__(self):
         self._real_stdout = sys.stdout
         self._real_stderr = sys.stderr
@@ -64,15 +68,19 @@ class Capture():
     def __exit__(self, type, value, traceback):
         sys.stdout = self._real_stdout
         sys.stderr = self._real_stderr
+    def __str__(self): return self.out
     @property
-    def out(self): return self.stdout.getvalue()
+    def out(self):
+        o = self.stdout.getvalue()
+        return o.strip() if self._strip else o
     @property
-    def err(self): return self.stderr.getvalue()
+    def err(self):
+        e = self.stderr.getvalue()
+        return e.strip() if self._strip else e
 
 
-# ----------------------------------------
-# File I/O
-
+# Returns contents as string or list of strings (as-per list_of_lines), and
+# returns None on error.  list_of_lines + strip will strip all lines.
 def read_file(filename, list_of_lines=False, strip=False, wrap_exceptions=True):
     if wrap_exceptions:
         try:
@@ -88,6 +96,19 @@ def read_file(filename, list_of_lines=False, strip=False, wrap_exceptions=True):
     return data
 
 
+# Run a string as Python code and capture any output.
+# Returns a Capture object, with added .exception field.
+def exec_wrapper(cmd, locals=globals(), strip=True):
+    with Capture(strip) as cap:
+        try:
+            exec(cmd, globals(), locals)
+            cap.exception = None
+            return cap
+        except Exception as e:
+            cap.exception = e
+            return cap
+
+
 # ----------------------------------------
 # System interaction
 
@@ -99,21 +120,6 @@ def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     os.setgid(running_gid)
     os.setuid(running_uid)
     old_umask = os.umask(0o077)
-
-
-# Run a string as Python code, returns any stdout as a string, or False on failure.
-def exec_wrapper(cmd, locals=globals()):
-    old_stdout = sys.stdout
-    new_stdout = sys.stdout = io.StringIO()
-    try:
-        exec(cmd, globals(), locals)
-        return new_stdout.getvalue().strip()
-    except Exception as e:
-        sys.stdout = old_stdout  # in-case logger wants to print...
-        log_error('exception during exec: %s : %s' % (cmd, e))
-        return False
-    finally:
-        sys.stdout = old_stdout
 
 
 # ----------------------------------------
@@ -252,9 +258,32 @@ def last_logs_html(): return '<p>' + '<br/>'.join(LOG_QUEUE)
 # ----------------------------------------
 # web client
 
-def read_web(url, timeout=10,
-             get_dict=None, post_dict=None,
-             verify_ssl=True, wrap_exceptions=True):
+# For python3, this is a thin wrapper around requests.  It adds:
+# - .exception field with contents of any exception.
+# - __str__() method that returns .text
+
+# For python2, installing requests is a pain, so this is provided as a
+# partial backport.  See FakeResponse (below) for the emulated fields.
+
+# This is a partial emulation of requests.models.Response
+class FakeResponse:
+    def __init__(self):
+        self.elapsed = None
+        self.exception = None
+        self.ok = False
+        self.headers = {}
+        self.status_code = None
+        self.text = ''
+        self.url = None
+    def __str__(self): return self.text
+        # not supported: connection, cookies, encoding, is_redirect,
+        #                iter_content, iter_lines, json, links, next, history,
+        #                raise_for_status, request, raw
+
+# For python2, this emulates the python3 requests framework.  i.e. the caller
+# can use web_get to provide the same API regardless of Python version.
+
+def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True):
     reader = _read_web2 if PY_VER == 2 else _read_web3
     ctx = ssl.create_default_context()
     if not verify_ssl:
@@ -262,39 +291,65 @@ def read_web(url, timeout=10,
         ctx.verify_mode = ssl.CERT_NONE
     if wrap_exceptions:
         try:
-            return reader(url, get_dict, post_dict, timeout, ctx)
+            return reader(url, get_dict, post_dict, timeout, verify_ssl)
         except Exception as e:
-            log_error('error getting URL: %s: %s' % (url, e))
-            return None
+            r = FakeResponse()
+            r.exception = e
+            r.url = url
+            return r
     else:
-        return reader(url, get_dict, post_dict, timeout, ctx)
+        return reader(url, get_dict, post_dict, timeout, verify_ssl)
+
+# For a really simple interface: returns a string or None upon error.
+def read_web(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True):
+    return web_get(url, timeout, get_dict, post_dict, verify_ssl, wrap_exceptions).text
+
+
+def read_web_noverify(url, timeout=10, get_dict=None, post_dict=None, wrap_exceptions=True):
+    return read_web(url, timeout, get_dict, post_dict, False, wrap_exceptions)
 
 
 # ---------- other web client helper functions
 
 def quote_plus(url):
-    return urllib.quote_plus(url) if PY_VER == 2 else urllib.parse.quote_plus(url)
-
-def read_web_noverify(url, timeout=5):
-    return read_web(url, timeout, verify_ssl=False)
+    if PY_VER == 2: return urllib.quote_plus(url)
+    else: urllib.parse.quote_plus(url)
 
 
 # ---------- internals
 
-def _read_web2(url, get_dict=None, post_dict=None, timeout=5, ctx=None):
+def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True):
     if get_dict:
         data = urllib.urlencode(get_dict)
         url += '%s%s' % ('&' if '?' in url else '?', data)
+    ctx = ssl.create_default_context()
+    if not verify_ssl:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
     req = urllib2.Request(url, urllib.urlencode(post_dict) if post_dict else None)
-    return urllib2.urlopen(req, timeout=timeout, context=ctx).read()
+    start_time = datetime.datetime.now()
+    res = urllib2.urlopen(req, timeout=timeout, context=ctx)
+    resp = FakeResponse()
+    resp.elapsed = datetime.datetime.now() - start_time
+    resp.exception = None
+    resp.ok = True
+    resp.headers = res.headers.dict
+    resp.status_code = res.code
+    resp.text = res.read()
+    resp.url = url
+    return resp
 
-def _read_web3(url, get_dict=None, post_dict=None, timeout=5, ctx=None):
+def _read_web3(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True):
+    setattr(requests.models.Response, '__str__', lambda _self: _self.text)
+    if not verify_ssl:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     if get_dict:
         data = urllib.parse.urlencode(get_dict, quote_via=urllib.parse.quote_plus)
         url += '%s%s' % ('&' if '?' in url else '?', data)
-    data = urllib.parse.urlencode(post_dict).encode() if post_dict else None
-    with urllib.request.urlopen(url, data=data, timeout=timeout, context=ctx) as resp:
-        return resp.read().decode('utf-8')
-
-
-
+    if post_dict:
+        resp = requests.post(url, data=post_dict, timeout=timeout, verify=None if verify_ssl else False)
+    else:
+        resp = requests.get(url, timeout=timeout, verify=None if verify_ssl else False)
+    resp.exception = None
+    return resp
