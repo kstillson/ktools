@@ -75,7 +75,12 @@ $(STAGING_DIR):
 clean:
 	rm -rf $(STAGING_DIR) __pycache__ .pytest_cache *.pyc
 
-install: $(INSTALL_TARGETS)
+# install_real is separated out so that individual Makefiles can call
+# secondary "INSTALL_DIR=/whatever $(MAKE) install_real" targets without
+# causing infinite recursion of 'install' targets.  See pylib/Makefile.
+
+install: install_real
+install_real: $(INSTALL_TARGETS)
 $(INSTALL_TARGETS): $(STAGING_TARGETS)
 	if [ -w ${INSTALL_DIR} ]; then \
 	  install $^ ${INSTALL_DIR}; \
