@@ -1,12 +1,8 @@
 
 # This file is designed to be included by Makefiles in the subdirectories.
 #
-# The include should be after the input variable(s) are set, but before
-# any rules are specified, assuming you want this file's "all" to be the
-# default build target.
-
-# Supported meta-targets:  all, clean, test, install, uninstall, update
-
+# Supported meta-targets:  staged_all, staged_clean, staged_test, staged_install, staged_uninstall, staged_update
+#
 # Note: the "test" target is incomplete.  The caller is expected to provide
 # a target for $(TEST_LOG), which isn't easily generalizable here.
 
@@ -15,8 +11,6 @@
 # update: all, test, install, then git commit, remote pull, and remote push.
 
 # ----------------------------------------
-
-SHELL := /bin/bash
 
 # Input variables: at least one of these must be set, if you want the Makefile to do anything.
 # PY and SH targets should be specified without their extensions.  They'll be copied to the
@@ -34,6 +28,11 @@ TEST_LOG ?= $(STAGING_DIR)/test.log
 INSTALL_DIR ?= /root/bin
 GIT_BRANCH ?= master
 
+# ----------------------------------------
+# Internal variables created from the inputs.
+
+SHELL := /bin/bash
+
 # Output variables: each of the target types, but in the staging directory.
 STAGING_PY_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(PY_TARGETS))
 STAGING_SH_TARGETS := $(patsubst %,$(STAGING_DIR)/%,$(SH_TARGETS))
@@ -47,11 +46,13 @@ INSTALL_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(TARGETS))
 
 INSTALL_MP := $(shell findmnt -n -o TARGET --target $(INSTALL_DIR))
 
+# ----------------------------------------
+# Default target
+
+staged_all: $(STAGING_TARGETS)
 
 # ----------------------------------------
 # Common rule patterns
-
-all: $(STAGING_TARGETS)
 
 # Pattern to create versions in the staging dir without the .py extension.
 $(STAGING_PY_TARGETS): $(STAGING_DIR)/%: %.py
@@ -72,15 +73,11 @@ $(STAGING_DIR):
 # ----------------------------------------
 # standard targets
 
-clean:
+staged_clean:
 	rm -rf $(STAGING_DIR) __pycache__ .pytest_cache *.pyc
 
-# install_real is separated out so that individual Makefiles can call
-# secondary "INSTALL_DIR=/whatever $(MAKE) install_real" targets without
-# causing infinite recursion of 'install' targets.  See pylib/Makefile.
+staged_install: $(INSTALL_TARGETS)
 
-install: install_real
-install_real: $(INSTALL_TARGETS)
 $(INSTALL_TARGETS): $(STAGING_TARGETS)
 	if [ -w ${INSTALL_DIR} ]; then \
 	  install $^ ${INSTALL_DIR}; \
@@ -90,21 +87,23 @@ $(INSTALL_TARGETS): $(STAGING_TARGETS)
 	  mount -o remount,ro $(INSTALL_MP) ; \
 	fi
 
-uninstall:
+staged_uninstall:
 	rm $(INSTALL_TARGETS)
 
-test: $(TEST_LOG)
+# Calling Makefile needs to provide a recipe for $(TEST_LOG)
+staged_test: $(TEST_LOG)
+
 
 # ----------------------------------------
 # custom targets
 
-update: $(STAGING_TARGETS)
+staged_update: $(STAGING_TARGETS)
 	$(MAKE) all
 	$(MAKE) test
 	$(MAKE) install
 	$(MAKE) clean
 
-comp: FORCE
-	@for t in $(TARGETS); do diff -q $(STAGING_DIR)/$$t $(INSTALL_DIR)/$$t; done
+staged_comp: $(STAGING_TARGETS) FORCE
+	@for t in $(TARGETS); do diff -s "$(STAGING_DIR)/$$t" "$(INSTALL_DIR)/$$t" | sed -e "/identical/s/.*/ok: $$t/"; done
 
-FORCE:
+FORCE: ;

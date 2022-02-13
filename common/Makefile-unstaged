@@ -1,0 +1,106 @@
+
+# This file is designed to be included by Makefiles in the subdirectories.
+#
+# Supported meta-targets:  common_all, common_clean, common_test, common_install, common_uninstall, common_update
+#
+# Note: the "test" target is incomplete.  The caller is expected to provide
+# a target for $(TEST_LOG), which isn't easily generalizable here.
+
+# Non-standard targets:
+# comp: compares files in the source directory to the install directory
+# update: all, test, install, then git commit, remote pull, and remote push.
+
+# ----------------------------------------
+
+# Input variables: at least one of these must be set, if you want the Makefile to do anything.
+# PY and SH targets should be specified without their extensions.  They'll be copied to the
+# staging directory with the extensions removed.  Plain targets are just copied to staging.
+# Custom targets need their own rules specified in the calling Makefile.
+PY_TARGETS ?=
+SH_TARGETS ?=
+PLAIN_TARGETS ?=
+CUSTOM_TARGETS ?=
+
+# Control variables: optionally specified by the calling Makefile or
+# in the environment, to override the defaults.
+TEST_LOG ?= test.log
+INSTALL_DIR ?= /root/bin
+GIT_BRANCH ?= master
+
+# ----------------------------------------
+# Internal variables created from the inputs.
+
+SHELL := /bin/bash
+
+# Output variables: overall targets, plain, and in staging and target dirs.
+PY_SOURCES := $(patsubst %,%.py,$(PY_TARGETS))
+SH_SOURCES := $(patsubst %,%.sh,$(SH_TARGETS))
+SOURCES := $(PY_SOURCES) $(SH_SOURCES) $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
+TARGETS := $(PY_TARGETS) $(SH_TARGETS) $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
+INSTALL_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(TARGETS))
+INSTALL_PY_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PY_TARGETS))
+INSTALL_SH_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(SH_TARGETS))
+INSTALL_PLAIN_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PLAIN_TARGETS))
+
+INSTALL_MP := $(shell findmnt -n -o TARGET --target $(INSTALL_DIR))
+
+# ----------------------------------------
+# Default target
+
+# This is generally a no-op; the targets are the source files, so they
+# should already be there...
+
+common_all: $(SOURCES)
+
+# ----------------------------------------
+# Patterns for renaming and copying to install_dir
+
+$(INSTALL_SH_TARGETS): $(INSTALL_DIR)/%: %.sh
+	  install $^ $@
+
+$(INSTALL_PY_TARGETS): $(INSTALL_DIR)/%: %.py
+	  install $^ $@
+
+$(INSTALL_PLAIN_PLAIN): $(INSTALL_DIR)/%: %
+	  install $^ $@
+
+
+# ----------------------------------------
+# standard targets
+
+common_clean:
+	rm -rf $(TEST_LOG) __pycache__ .pytest_cache *.pyc
+
+common_install: $(INSTALL_TARGETS)
+
+#$(INSTALL_TARGETS): $(TARGETS)
+#	if [ -w ${INSTALL_DIR} ]; then \
+#	  install $^ ${INSTALL_DIR}; \
+#	else \
+#	  mount -o remount,rw $(INSTALL_MP) ; \
+#	  install $^ ${INSTALL_DIR} ; \
+#	  mount -o remount,ro $(INSTALL_MP) ; \
+#	fi
+
+common_uninstall:
+	rm $(INSTALL_TARGETS)
+
+# Calling Makefile needs to provide a recipe for $(TEST_LOG)
+common_test: $(TEST_LOG)
+
+
+# ----------------------------------------
+# custom targets
+
+common_update: $(TARGETS)
+	$(MAKE) all
+	$(MAKE) test
+	$(MAKE) install
+	$(MAKE) clean
+
+common_comp: FORCE
+	for t in $(PLAIN_TARGETS) $(CUSTOM_TARGETS); do diff -s "$$t" "$(INSTALL_DIR)/$$t" | sed -e "/identical/s/.*/ok: $$t/"; done
+	for t in $(SH_SOURCES); do t2=`echo $$t | sed -e 's/\.sh//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
+	for t in $(PY_SOURCES); do t2=`echo $$t | sed -e 's/\.py//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
+
+FORCE: ;
