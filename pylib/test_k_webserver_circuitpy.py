@@ -1,7 +1,7 @@
 
 import random, threading, subprocess
 import k_common as C
-import k_webserver_circuitpython as W
+import k_webserver_circuitpy as W
 
 # ---------- helpers
 

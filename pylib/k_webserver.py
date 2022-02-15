@@ -1,7 +1,7 @@
 
 import cgi, threading, sys
-from functools import partial
 
+import k_common as C           # for logging.
 import k_webserver_base as B
 
 PY_VER = sys.version_info[0]
@@ -55,8 +55,12 @@ class Worker(BaseHTTPRequestHandler):
 
     
 class WebServer(B.WebServerBase):
-    # Note: see WebServerBase constructor for the list of params it takes.
-    # No additional params needed here, so we'll let Python pass it through.
+    def __init__(self, *args, **kwargs):
+        logging_adapter = B.LoggingAdapter(
+            log_request=C.log_info, log_404=C.log_info,
+            log_exceptions=C.log_error, get_logz_html=C.last_logs_html)
+        super(WebServer, self).__init__(logging_adapter=logging_adapter, *args, **kwargs)
+
     
     def start(self, port=80, listen='0.0.0.0', background=True, server_class=HTTPServer):
         self.httpd = server_class((listen, port), Worker)

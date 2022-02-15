@@ -48,21 +48,31 @@ class _HandlerData:
         self.compiled_regex = re.compile(regex)
         self.func = func
         self.match_groups = None   # Populated once match is made.
+
+
+# WebServerBase expects an instance of this as logging_adapter.
+# This is taken care of by the subclasses of WebServerBase.
+class LoggingAdapter:
+    def __init__(self, log_request, log_404, log_exceptions, get_logz_html):
+        self.log_request = log_request
+        self.log_404 = log_404
+        self.log_exceptions = log_exceptions
+        self.get_logz_html = get_logz_html
         
 
-class WebServerBase:
+class WebServerBase(object):
     # TODO: doc
     def __init__(self, handlers={}, context={},
                  wrap_handlers=True, add_default_handlers=True,
                  varz=True, varz_path_trim=14,
-                 k_common_logging=True, logging_filters=['favicon.ico'],
+                 logging_adapter=None, logging_filters=['favicon.ico'],
                  flagz_args=None):
         self.routes = []
         self.add_handlers(handlers)
         if add_default_handlers: self._add_default_handlers()
         self.context = context
         self.flagz_args = flagz_args
-        self.logging = k_common_logging
+        self.logger = logging_adapter
         self.logging_filters = logging_filters
         self.varz = varz
         self.varz_path_trim = varz_path_trim
@@ -100,8 +110,10 @@ class WebServerBase:
     # Takes a Request, returns a populated Response.
     def find_and_run_handler(self, request):
         # Logging
-        if self.logging and not str_in_substring_list(request.full_path, self.logging_filters):
-            C.log('%s: %s' % (request.method, request.full_path))
+        if (self.logger
+            and self.logger.log_request
+            and not str_in_substring_list(request.full_path, self.logging_filters)):
+            self.logger.log_request('%s: %s' % (request.method, request.full_path))
 
         # varz
         if self.varz:
@@ -113,7 +125,8 @@ class WebServerBase:
         # Find a matching handler.
         handler_data = self._find_handler(request.path)
         if not handler_data:
-            if self.logging: C.log('No handler found for: %s' % request.path)
+            if self.logger and self.logger.log_404:
+                self.logger.log_404('No handler found for: %s' % request.path)
             if self.varz: k_varz.bump('web-status-404')
             return Response('page not found', 404)
 
@@ -126,7 +139,8 @@ class WebServerBase:
             try:
                 answer = handler_data.func(request)
             except Exception as e:
-                if self.logging: C.log_error('handler exception. path=%s, error=%s' % (request.path, e))
+                if self.logger and self.logger.log_exceptions:
+                    self.logger.log_exceptions('handler exception. path=%s, error=%s' % (request.path, e))
                 if self.varz: k_varz.bump('web-handler-exception')
                 return Response(None, -1, exception=e)
         else:
@@ -148,7 +162,7 @@ class WebServerBase:
             ('/favicon.ico',  lambda _: ''),
             ('/flagz',        self._flagz_handler),
             ('/healthz',      lambda _: 'ok'),
-            ('/logz',         lambda _: C.last_logs_html()),
+            ('/logz',         lambda _: self.logger.get_logz_html()),
             ('/varz',         self._varz_handler),
         ])
         
@@ -169,7 +183,7 @@ class WebServerBase:
         for r in self.routes:
             my_match = r.compiled_regex.match(path)
             if False:  # turn on for debugging...
-                C.stderr('DEBUG: path %s comp to %s => %s' % (path, r.compiled_regex, my_match))
+                sys.stderr.write('ROUTER DEBUG: path %s comp to %s => %s\n' % (path, r.compiled_regex, my_match))
             if my_match:
                 r.match_groups = my_match.groups()
                 return r            

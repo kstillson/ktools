@@ -1,6 +1,7 @@
 
 import io, os
 import k_common as C
+import k_log_queue as Q
 import k_uncommon as UC
 import k_varz as varz  ## to access varz counts in tests.
 
@@ -51,6 +52,9 @@ def test_logging(tmp_path):
     tempname = str(tmp_path / "test.log")
     assert not os.path.isfile(tempname)
 
+    # Override log queues time generation function.
+    Q.get_time = lambda: 'TIME'
+    
     # Basic test with all defaults except log filename.
     ok = C.init_log(logfile=tempname, force_time='TIME', clear=True)
     assert ok

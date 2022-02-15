@@ -2,6 +2,8 @@
 import k_webserver_base as B
 import k_varz
 
+# ---------- various helpful constants
+
 path1 = '/dir1/file2'
 path2 = '/dir1'
 path3 = '/'
@@ -55,7 +57,7 @@ def test_parse_get_params():
     assert d['x2'] == 'y2'
 
 def test_finding_handlers():
-    wsb = B.WebServerBase(paths, k_common_logging=False)
+    wsb = B.WebServerBase(paths, logging_adapter=None)
     assert wsb.test_handler(path1).body == '1'
     assert wsb.test_handler(path2).body == '2'
     assert wsb.test_handler(path3).body == '3'
@@ -70,7 +72,7 @@ def test_finding_handlers():
     assert resp.exception is None
 
 def test_handler_list_changes():
-    wsb = B.WebServerBase(paths, k_common_logging=False)
+    wsb = B.WebServerBase(paths, logging_adapter=None)
     
     # Try removing a handler.
     assert not wsb.del_handler('non-existent-route-regex')
@@ -93,7 +95,7 @@ def test_handler_list_changes():
 
 def test_multiple_hanlder_matches():
     # First one in the current list is supposed to take control.
-    wsb = B.WebServerBase([('/', lambda _: 'a'), ('/', lambda _: 'b')], k_common_logging=False)
+    wsb = B.WebServerBase([('/', lambda _: 'a'), ('/', lambda _: 'b')], logging_adapter=None)
     assert wsb.test_handler('/').body == 'a'
     assert wsb.del_handler('/')
     assert wsb.test_handler('/').body == 'b'
@@ -103,14 +105,14 @@ def test_multiple_hanlder_matches():
     assert wsb.test_handler('/').body == 'c'
     
 def test_handler_wrapping():
-    wsb = B.WebServerBase([('/', unhelpful_handler)], k_common_logging=False)
+    wsb = B.WebServerBase([('/', unhelpful_handler)], logging_adapter=None)
     resp = wsb.test_handler('/')
     assert resp.status_code == -1
     assert str(resp.exception) == 'failed handler'
     assert resp.body is ''
 
 def test_no_handler_wrapping():
-    wsb = B.WebServerBase([('/', unhelpful_handler)], wrap_handlers=False, k_common_logging=False)
+    wsb = B.WebServerBase([('/', unhelpful_handler)], wrap_handlers=False, logging_adapter=None)
     try:
         resp = wsb.test_handler('/')
         assert 1 == 2  # That was supposed to fail.
@@ -119,7 +121,7 @@ def test_no_handler_wrapping():
 
 def test_varz():
     k_varz.reset()
-    wsb = B.WebServerBase(paths, varz_path_trim=4, k_common_logging=False)
+    wsb = B.WebServerBase(paths, varz_path_trim=4, logging_adapter=None)
     wsb.add_handler('/zap', unhelpful_handler)
     wsb.test_handler(path1_with_get)
     wsb.test_handler(path2)
@@ -138,13 +140,13 @@ def test_varz():
     assert v['web-handler-exception'] == 1
 
 def test_context():
-    wsb = B.WebServerBase([('/', context_handler)], context={'a': 'b'}, k_common_logging=False)
+    wsb = B.WebServerBase([('/', context_handler)], context={'a': 'b'}, logging_adapter=None)
     assert wsb.test_handler('/').body == 'b'
 
 def test_default_handlers():
     flags = {'flag1': 'val1', 'flag2': 'val2'}
     k_varz.reset()
-    wsb = B.WebServerBase([], flagz_args=flags, k_common_logging=False)
+    wsb = B.WebServerBase([], flagz_args=flags, logging_adapter=None)
     assert wsb.test_handler('/').status_code == 404
     assert wsb.test_handler('/favicon.ico').body == ''
     assert wsb.test_handler('/healthz').body == 'ok'
@@ -159,5 +161,5 @@ def test_default_handlers():
 def test_match_groups():
     wsb = B.WebServerBase(
         {r'/(\w+)/(\w+)/x': lambda rqst: "%s::%s" % (rqst.route_match_groups[0], rqst.route_match_groups[1])},
-        k_common_logging=False)
+        logging_adapter=None)
     assert wsb.test_handler('/d1/d2/x').body == 'd1::d2'

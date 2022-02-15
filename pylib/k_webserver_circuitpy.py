@@ -5,15 +5,16 @@
 '''Trivial web-server for Circuit Python.
    Example usage in non-blocking mode:
 
+import time
+import k_webserver_circuitpython as W
 
 def default_handler(request):
     name = request.params['name'] if 'name' in request.params else 'world'
     return f'Hello {name}!'
 
-kds_cp_web_server.connect_wifi('dhcp-hostname', 'ssid', 'wifi-password')
-svr = kds_cp_web_server.WebServer(80)  ## Non-blocking mode by default.
-svr.add_handler('/', default_handler)
-
+W.connect_wifi('dhcp-hostname', 'ssid', 'wifi-password')
+svr = W.WebServer({'.*': default_handler})
+w.start(80)
 while True:
     status = svr.listen()
     # That was non-blocking, we can do something else between incoming requests...
@@ -22,13 +23,14 @@ while True:
 '''
 
 import io, os, re, sys
+import k_log_queue as Q
 import k_webserver_base as B
 
 PY_VER = sys.version_info[0]
 
-# Are we running CircuitPython? If not, add path to circ-py simulator.
+# Are we running CircuitPython? If not, inject path to the simulator.
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
-if not CIRCUITPYTHON: sys.path.insert(0, 'circpysim')
+if not CIRCUITPYTHON: sys.path.insert(0, 'circuitpy_sim')
 
 import socketpool, wifi
 
@@ -36,6 +38,13 @@ BUFFER_SIZE = 256
 
 
 class WebServer(B.WebServerBase):
+    def __init__(self, *args, **kwargs):
+        logging_adapter = B.LoggingAdapter(
+            log_request=Q.log_info, log_404=Q.log_info,
+            log_exceptions=Q.log_error, get_logz_html=Q.last_logs_html)
+        super(WebServer, self).__init__(logging_adapter=logging_adapter, *args, **kwargs)
+
+    
     def start(self, port=80, listen_address='0.0.0.0', blocking=False,
               timeout=30, backlog_queue_size=3, socket=None):
         self.timeout = timeout

@@ -1,6 +1,6 @@
 
 import datetime
-import circpysim_base
+import circpysim_logging as L
 
 class RTC:
     def __init__(self):
@@ -9,7 +9,7 @@ class RTC:
     def get_date(self): return datetime.datetime.now()
     
     def set_date(self, newdate):
-        circpysim_base.log(f'set rtc time to: {newdate}')
+        L.log(f'set rtc time to: {newdate}')
 
     def del_date(self): pass
 

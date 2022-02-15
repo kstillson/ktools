@@ -1,5 +1,6 @@
 
 import datetime, logging, os, syslog, time, urllib, ssl, sys
+import k_log_queue as Q
 import k_varz as varz
 
 PY_VER = sys.version_info[0]
@@ -76,8 +77,6 @@ FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_S
 LOGGER = None
 LOG_FILENAME = None
 LOG_TITLE = ''
-LOG_QUEUE = []
-LOG_QUEUE_LEN_MAX = 20
 LOG_INIT_DONE = False
 FORCE_TIME = None
 
@@ -98,7 +97,7 @@ def init_log(log_title='log', logfile='logfile',
     global LOGGER, LOG_INIT_DONE, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
     LOG_INIT_DONE = True  # Start with this so any other threads yield to this one.
     if log_title: LOG_TITLE = log_title
-    if log_queue_len: LOG_QUEUE_LEN_MAX = log_queue_len
+    if log_queue_len: Q.set_queue_len(log_queue_len)
     if force_time: FORCE_TIME = force_time
 
     global FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG, FILTER_LEVEL_MIN
@@ -143,9 +142,7 @@ def log(msg, level=logging.INFO):
     msg1 = '%s: %s' % (time, msg)
     msg2 = '%s: %s' % (level_name, msg1)
     # Add to internal queue.
-    global LOG_QUEUE
-    if LOG_QUEUE_LEN_MAX and len(LOG_QUEUE) > LOG_QUEUE_LEN_MAX: del LOG_QUEUE[LOG_QUEUE_LEN_MAX]
-    LOG_QUEUE.insert(0, msg2)
+    Q.log(msg, level)
     # Send to various destinations.
     if level >= FILTER_LEVEL_LOGFILE and LOGGER: LOGGER.log(level, msg1)
     if level >= FILTER_LEVEL_STDOUT: print(title + msg2)
@@ -158,8 +155,8 @@ def log(msg, level=logging.INFO):
 
 def clear_log():
     if LOG_FILENAME and os.path.exists(LOG_FILENAME): os.unlink(LOG_FILENAME)
-    global LOG_QUEUE, LOG_INIT_DONE
-    LOG_QUEUE = []
+    global LOG_INIT_DONE
+    Q.clear()
     LOG_INIT_DONE = False
     # Clean varz
     rm = []
@@ -187,10 +184,10 @@ def log_debug(msg): log(msg, level=logging.DEBUG)
 
 
 # ----------
-# Log queue access
+# Log queue access passthrough
 
-def last_logs(): return '\n'.join(LOG_QUEUE)
-def last_logs_html(): return '<p>' + '<br/>'.join(LOG_QUEUE)
+def last_logs(): return Q.last_logs()
+def last_logs_html(): return Q.last_logs_html()
 
 
 # ----------------------------------------
