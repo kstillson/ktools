@@ -1,6 +1,7 @@
 
 import io, os
 import k_common as C
+import k_uncommon as UC
 import k_varz as varz  ## to access varz counts in tests.
 
 
@@ -28,44 +29,12 @@ def test_read_file():
     except FileNotFoundError:  ## py3
         pass
 
-def test_capture():
-    with C.Capture(strip=False) as cap:
-        print('test1')
-        C.stderr('test2')
-        assert '%s' % cap == 'test1\n'
-        assert str(cap) == 'test1\n'
-        assert cap.out == 'test1\n'
-        assert cap.err == 'test2\n'
-    with C.Capture() as cap:
-        print('test1')
-        print('test2')
-        assert cap.out == 'test1\ntest2'
-    with C.Capture() as cap:
-        assert cap.out == ''
-        assert cap.err == ''
-
-def test_exec_wrapper():
-    C.init_log(logfile=None)  # Don't log errors below to a logfile.
-    assert C.exec_wrapper('print(1+2)').out == '3'
-    # Try passing in a local variable.
-    a = 2
-    assert C.exec_wrapper('print(a*2)', locals()).out == '4'
-    # And now try where locals are not passed in; should cause an error.
-    fail1 = C.exec_wrapper('print("to-out"); sys.stderr.write("to-err"); print(a*2)')
-    assert fail1.out == 'to-out'
-    assert fail1.err == 'to-err'
-    assert 'not defined' in str(fail1.exception)
-    # Try pulling something out of global namespace.
-    import k_varz as varz
-    varz.set('x', 'y')
-    assert C.exec_wrapper('print(varz.VARZ["x"])').out == 'y'
-
 
 # Helper function for test_logging..
-# NB: depends on k_common.capture (which we tested separately above).
+# NB: depends on k_uncommon.capture (tested separately).
 def check_logging(func_to_run, expect_error_count, logfile_name, expect_logfile,
                   expect_stdout, expect_stderr, expect_syslog=None):
-    with C.Capture(strip=False) as cap:
+    with UC.Capture(strip=False) as cap:
         func_to_run()
         assert cap.out == expect_stdout
         assert cap.err == expect_stderr
@@ -85,7 +54,6 @@ def test_logging(tmp_path):
     # Basic test with all defaults except log filename.
     ok = C.init_log(logfile=tempname, force_time='TIME', clear=True)
     assert ok
-    C.stderr('@@ %s' % C.LOG_FILENAME)
     check_logging(lambda: C.log('test1'),
                   0, tempname, 'INFO:log:TIME: test1\n', '', '')
     # Lets add an error-level log to that.
@@ -121,7 +89,6 @@ def test_web_get():
     # Test standard response fields (check my wrapping didn't break anything).
     url = 'http://a1.point0.net/test.html'
     resp = C.web_get(url)
-    ## import pdb; pdb.set_trace() ##@@
     assert resp.elapsed.microseconds > 0
     assert resp.ok
     assert 'date' in resp.headers
