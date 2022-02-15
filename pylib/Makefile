@@ -18,13 +18,15 @@ $(TEST_LOG): $(wildcard *.py)
 
 all: common_all
 
-clean: common_clean
-
 test: common_test
 
 upgrade: common_update
 
 # ---------- local custom locic
+
+clean:
+	$(MAKE) --no-print-directory common_clean
+	rm -rf circpysim/__pycache__ circpysim/*.pyc
 
 comp: FORCE
 	INSTALL_DIR=$(shell ls -1d /usr/local/lib/python*/dist-packages | head -1) $(MAKE) --no-print-directory common_comp
