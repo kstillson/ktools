@@ -23,8 +23,7 @@ def start(ctx={}):
     global PORT
     PORT = random_high_port()
     C.init_log('test_k_webserver', logfile=None)
-    ws = W.WebServer(ROUTES, context=ctx)
-    ws.start(port=PORT, blocking=True)
+    ws = W.WebServer(ROUTES, port=PORT, blocking=True, context=ctx)
     return ws
 
 def url(path): return 'http://localhost:%d/%s' % (PORT, path)

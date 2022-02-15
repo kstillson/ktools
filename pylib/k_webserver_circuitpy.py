@@ -13,8 +13,7 @@ def default_handler(request):
     return f'Hello {name}!'
 
 W.connect_wifi('dhcp-hostname', 'ssid', 'wifi-password')
-svr = W.WebServer({'.*': default_handler})
-w.start(80)
+svr = W.WebServer({'.*': default_handler}, 80)
 while True:
     status = svr.listen()
     # That was non-blocking, we can do something else between incoming requests...
@@ -28,25 +27,29 @@ import k_webserver_base as B
 
 PY_VER = sys.version_info[0]
 
+# ----------
 # Are we running CircuitPython? If not, inject path to the simulator.
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
 if not CIRCUITPYTHON: sys.path.insert(0, 'circuitpy_sim')
 
 import socketpool, wifi
+# ----------
 
 BUFFER_SIZE = 256
 
 
 class WebServer(B.WebServerBase):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, handlers={}, port=80,
+                 listen_address='0.0.0.0', blocking=False, timeout=30, backlog_queue_size=3, socket=None,
+                 *args, **kwargs):
+
+        # Create a logging adapter that uses the low-dep system from k_log_queue.
         logging_adapter = B.LoggingAdapter(
             log_request=Q.log_info, log_404=Q.log_info,
             log_exceptions=Q.log_error, get_logz_html=Q.last_logs_html)
-        super(WebServer, self).__init__(logging_adapter=logging_adapter, *args, **kwargs)
+        
+        super(WebServer, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
 
-    
-    def start(self, port=80, listen_address='0.0.0.0', blocking=False,
-              timeout=30, backlog_queue_size=3, socket=None):
         self.timeout = timeout
         if not socket:
             pool = socketpool.SocketPool(wifi.radio)
@@ -56,7 +59,6 @@ class WebServer(B.WebServerBase):
         self.socket.bind((listen_address, port))
         self.socket.listen(backlog_queue_size)
         self.socket.setblocking(blocking)
-
 
     # Returns: -3 if no suitable handler was found
     #          -1 if exception during handler
