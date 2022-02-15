@@ -6,8 +6,10 @@ import k_webserver_base as B
 
 PY_VER = sys.version_info[0]
 if PY_VER == 2:
+    from urlparse import parse_qs
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 else:
+    from urllib.parse import parse_qs
     from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -36,25 +38,27 @@ class Worker(BaseHTTPRequestHandler):
         if PY_VER == 2: ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
         else: ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
         if ctype == 'multipart/form-data':
+            if PY_VER == 3:
+                pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
             postvars = cgi.parse_multipart(self.rfile, pdict)
         elif ctype == 'application/x-www-form-urlencoded':
-            if PY_VER == 2: length = int(self.headers.getheader('content-length'))
-            else: length = int(self.headers.get('content-length'))
-            postvars = cgi.parse_qs(self.rfile.read(length), keep_blank_values=1)
+            if PY_VER == 2:
+                length = int(self.headers.getheader('content-length'))
+            else:
+                length = int(self.headers.get('content-length'))
+            postvars = parse_qs(self.rfile.read(length), keep_blank_values=1)
+            if PY_VER == 2:
+                postvars = {k: v[0] for k, v in postvars.items()}
             if PY_VER == 3:
-                temp = {}
-                for k,v in postvars.items(): temp[k.decode('utf-8')] = v[0].decode('utf-8')
-                postvars = temp
+                postvars = {k.decode('utf-8'): v[0].decode('utf-8') for k, v in postvars.items()}
         else: postvars = {}
         return postvars
 
     
 class WebServer(B.WebServerBase):
-    # args & kwargs are passed along to WebServerBase's constructor.
-    def __init__(self, *args, **kwargs):
-        if PY_VER == 2: super(WebServer, self).__init__(*args, **kwargs)
-        else: super().__init__(*args, **kwargs)
-
+    # Note: see WebServerBase constructor for the list of params it takes.
+    # No additional params needed here, so we'll let Python pass it through.
+    
     # args & kwargs are passed along to BaseHTTPRequestHandler's constructor.
     def start(self, port=80, listen='0.0.0.0', background=True, *args, **kwargs):
         self.httpd = HTTPServer((listen, port), Worker)

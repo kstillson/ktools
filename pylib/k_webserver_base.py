@@ -29,11 +29,11 @@ class Request:
 # If the web-server has wrap_handlers turned on, it does this for you.
 class Response:
     def __init__(self, body, status_code=200, extra_headers={}, msg_type=None, exception=None):
-        self.body = body or ''
+        self.body = str(body) if body else ''
         self.status_code = status_code
         self.extra_headers = extra_headers
         if self.body:
-            self.msg_type = msg_type or ('text/html' if body.startswith('<') else 'text')
+            self.msg_type = msg_type or ('text/html' if self.body.startswith('<') else 'text')
         else:
             self.msg_type = '?'
         self.exception = exception

@@ -79,7 +79,8 @@ def test_handler_list_changes():
     assert wsb.test_handler(path1_with_get).status_code == 404
 
     # Add a single new specific handler (that does extra checks).
-    wsb.add_handler(path1, path1_handler)
+    path1b = path1[1:]  # Trim leading "/" to make sure it still works.
+    wsb.add_handler(path1b, path1_handler)
     resp = wsb.test_handler(path1_with_get)
     assert str(resp) == '[200] new-handler'
 
