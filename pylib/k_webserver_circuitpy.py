@@ -2,14 +2,17 @@
 # adapted from https://github.com/deckerego/ampule; thanks deckerego!
 # MIT license
 
+# TODO: add POST submission parsing.
+
+
 '''Trivial web-server for Circuit Python.
    Example usage in non-blocking mode:
 
 import time
-import k_webserver_circuitpython as W
+import k_webserver_circuitpy as W
 
 def default_handler(request):
-    name = request.params['name'] if 'name' in request.params else 'world'
+    name = request.get_params['name'] if 'name' in request.get_params else 'world'
     return f'Hello {name}!'
 
 W.connect_wifi('dhcp-hostname', 'ssid', 'wifi-password')

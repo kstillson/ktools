@@ -1,6 +1,5 @@
 
 import re
-import k_common as C   # for logging
 import k_html, k_varz
 
 # A populated instance of this class is passed to handlers.
