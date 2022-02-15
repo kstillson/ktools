@@ -99,8 +99,8 @@ common_update: $(TARGETS)
 	$(MAKE) clean
 
 common_comp: FORCE
-	for t in $(PLAIN_TARGETS) $(CUSTOM_TARGETS); do diff -s "$$t" "$(INSTALL_DIR)/$$t" | sed -e "/identical/s/.*/ok: $$t/"; done
-	for t in $(SH_SOURCES); do t2=`echo $$t | sed -e 's/\.sh//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
-	for t in $(PY_SOURCES); do t2=`echo $$t | sed -e 's/\.py//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
+	@for t in $(PLAIN_TARGETS) $(CUSTOM_TARGETS); do diff -s "$$t" "$(INSTALL_DIR)/$$t" | sed -e "/identical/s/.*/ok: $$t/"; done
+	@for t in $(SH_SOURCES); do t2=`echo $$t | sed -e 's/\.sh//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
+	@for t in $(PY_SOURCES); do t2=`echo $$t | sed -e 's/\.py//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
 
 FORCE: ;
