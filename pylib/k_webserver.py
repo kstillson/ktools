@@ -14,7 +14,6 @@ else:
 
 
 class Worker(BaseHTTPRequestHandler):
-
     def send(self, response):
         if not response.msg_type:
             response.msg_type = 'text/html' if response.body.startswith('<') else 'text'
@@ -59,9 +58,8 @@ class WebServer(B.WebServerBase):
     # Note: see WebServerBase constructor for the list of params it takes.
     # No additional params needed here, so we'll let Python pass it through.
     
-    # args & kwargs are passed along to BaseHTTPRequestHandler's constructor.
-    def start(self, port=80, listen='0.0.0.0', background=True, *args, **kwargs):
-        self.httpd = HTTPServer((listen, port), Worker)
+    def start(self, port=80, listen='0.0.0.0', background=True, server_class=HTTPServer):
+        self.httpd = server_class((listen, port), Worker)
         self.httpd._k_webserver = self  # Make my instance visible to handlers.
         if background:
             web_thread = threading.Thread(target=self.httpd.serve_forever)
