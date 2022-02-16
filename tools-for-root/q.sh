@@ -112,6 +112,21 @@ function need_ssh_agent() { A0>/dev/null || A; }
 # ----------------------------------------
 # general purpose
 
+# If stdin is empty, do nothing.  Otherwise, append title and contents to $out.
+function append_if() {
+    out="$1"
+    title="$2"
+    #
+    tmp=$(mktemp)
+    cat > $tmp
+    if [[ -s $tmp ]]; then
+	echo "" >> $out
+	echo "${title}:" >> $out
+	cat $tmp >> $out
+    fi
+    rm $tmp
+}
+
 # Expect stdin to match $2, print status decorated by title in $1 and output stdin upon mismatch.
 # For example, if you expect a file to be empty:  cat file | expect "file should be empty" ""
 function expect() {
@@ -369,6 +384,19 @@ function leases_list_orphans() {
     rm $t
 }
 
+function check_dns() {
+    out=$(mktemp)
+    egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate MAC assignments"
+    egrep '^[0-9]' $DD/dnsmasq.hosts | cut -d' ' -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate IP assignments"
+    hostnames=$(mktemp)
+    egrep '^[0-9]' $DD/dnsmasq.hosts | tr '\t' ' ' | cut -d' ' -f2- | tr -s ' ' '\n' | sort > $hostnames
+    cat $hostnames | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate hostname assignments"
+    fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | fgrep -v -f $hostnames | append_if $out "green MACs without assigned addresses"
+    rm $hostnames
+    if [[ -s $out ]]; then emitc red problems; cat "$out"; else echoc green 'all ok'; fi
+    rm $out
+}
+
 # Update the DHCP server's mapping for mac->hostname; generally needed when adding a new host to the network.
 # (I manage by DNS entries manually in this way, so new hosts will cause an alert until manually added.
 #  Because security.)
@@ -450,6 +478,7 @@ function checks_real() {
     cat $PROCQ | expect "procmon queue" ""
     fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
     $0 dup-check | expect "$0 dup cmds" "all ok"
+    check_dns | expect "dns config check" "all ok"
     /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
     /root/bin/d check-all-up |& expect "docker instances" "all ok"
     /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
@@ -703,6 +732,7 @@ function main() {
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) update_dns_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
+        dns-check | dc) check_dns ;;                                      ## check dnsmasq config for dups/missing/etc.
         dns-update | mac-update | du | mu | mac) update_dns ;;            ## add/change a mac or dhcp assignment
         exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
