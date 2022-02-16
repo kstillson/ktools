@@ -3,7 +3,7 @@
 INSTALL_DIRS = $(shell ls -1d /usr/local/lib/python*/dist-packages)
 
 # Marked as PLAIN rather than PY targets to preserve the extension.
-PLAIN_TARGETS := k_auth.py k_common.py k_gpio.py k_html.py k_log_queue.py k_uncommon.py k_varz.py k_auth.py k_webserver_base.py k_webserver.py k_webserver_circuitpy.py
+PLAIN_TARGETS := k_auth.py k_common.py k_gpio.py k_html.py k_log_queue.py k_uncommon.py k_varz.py k_webserver_base.py k_webserver.py k_webserver_circuitpy.py
 include ../common/Makefile-unstaged
 
 # ---------- testing
