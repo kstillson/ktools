@@ -1,3 +1,9 @@
+
+# TODO: add lots of docs
+
+# TODO: add v2 proto that includes command in hashed part, then rm v1
+
+
 import hashlib, socket, ssl, sys, time
 
 PY_VER = sys.version_info[0]
