@@ -31,6 +31,7 @@ set -e
 # confusing, and not uniformly implimented.
 
 # flag defaults
+DEBUG=0          # don't delete tempfiles
 ECHO=0           # print commands to stdout instead of executing them
 EXCLUDE="blue"   # csv list of hosts to exclude
 HOST_SUBST="@"   # replace this substring with hostnames in commands
@@ -112,19 +113,31 @@ function need_ssh_agent() { A0>/dev/null || A; }
 # ----------------------------------------
 # general purpose
 
+# Return a tempfile name with $1 embedded (for easier debugging)
+function gettemp() {
+    name="${1:-temp}"
+    mktemp /tmp/q-${name}-XXXX
+}
+
+function rmtemp() {
+    filename="$1"
+    if [[ $DEBUG == 1 ]]; then emitc yellow "DEBUG: leaving tempfile in place: $filename"; return; fi
+    rm $filename
+}
+
 # If stdin is empty, do nothing.  Otherwise, append title and contents to $out.
 function append_if() {
     out="$1"
     title="$2"
     #
-    tmp=$(mktemp)
+    tmp=$(gettemp appendif)
     cat > $tmp
     if [[ -s $tmp ]]; then
 	echo "" >> $out
 	echo "${title}:" >> $out
 	cat $tmp >> $out
     fi
-    rm $tmp
+    rmtemp $tmp
     return 0
 }
 
@@ -142,6 +155,7 @@ function expect() {
     echoC yellow "$title: "
     echo "$got"
 }
+
 
 # Run "$@" respecting TEST and VERBOSE flags, print exit code if not 0.
 function runner() {
@@ -179,10 +193,10 @@ function run_para() {
 
 # Assume a 1 line header and output stdin sorted but preserving the header.
 function sort_skip_header() {
-    t=$(mktemp)
+    t=$(gettemp sortskipheader)
     cat > $t
     head -n 1 $t && tail -n +2 $t | sort
-    rm $t
+    rmtemp $t
 }
 
 # ----------------------------------------
@@ -256,15 +270,15 @@ function git_pull_all() {
 # For all local PIs with git repos, pull any updates and restart dependent daemons.
 function git_update_pis() {
     set +e
-    t="/tmp/git-updates.out"
+    t=$(gettemp git-updates.out)
     hosts=$(list_pis | without hs-front,pi1,lightning)
     echo "pulling git updates..."
     echo $hosts | /usr/local/bin/run_para --output $t --plain --timeout $TIMEOUT --ssh "/bin/su pi -c 'cd /home/pi/dev; git pull'"
-    if [[ $? != 0 ]]; then cat $t; rm $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
+    if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
     echo "restarting services..."
     echo $hosts | /usr/local/bin/run_para --plain --timeout $TIMEOUT --ssh systemctl daemon-reload
     echo $hosts | /usr/local/bin/run_para --output $t --plain --timeout $TIMEOUT --ssh /home/pi/dev/Restart
-    if [[ $? != 0 ]]; then cat $t; rm $t; echo ''; emitc red "some restart failures"; return 1; fi
+    if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some restart failures"; return 1; fi
     emitc green "all done\n"
 }
 
@@ -340,7 +354,7 @@ function pinger() {
 
 # Run the ps command with preferred options, colorization, and docker container-id lookups.
 function ps_fixer() {
-    t=$(mktemp)
+    t=$(gettemp psfixer)
     cat >$t <<EOF
 s/^root /${RED}root${RESET} /
 s/^droot /${YELLOW}droot${RESET} /
@@ -349,14 +363,14 @@ s/defunct/${YELLOW}defunct${RESET}/
 EOF
     awk "{print \"s/\" \$1 \"/${CYAN}\" \$2 \"${RESET} \", \$1, \"/\"}" < /var/run/dmap >> $t
     ps aux --forest | egrep -v '\]$' | sed -f $t | less
-    rm $t
+    rmtemp $t
 }
 
 # Run apt update and upgrade on ssv list of hosts in $1
 function updater() {
     hosts="$1"
-    OUT1="/tmp/all-update.out"
-    OUT2="/tmp/all-upgrade.out"
+    OUT1="all-update.out"
+    OUT2="all-upgrade.out"
     need_ssh_agent
     echo "$hosts" | /usr/local/bin/run_para --output $OUT1 --timeout 240 --ssh 'apt-get update'
     echo "$hosts" | /usr/local/bin/run_para --output $OUT2 --timeout 999 --ssh 'apt-get -y upgrade'
@@ -379,39 +393,39 @@ function enable_rsnap() {
 
 # Output the list of DHCP leases which are not known to the local dnsmasq server's DNS list.
 function leases_list_orphans() {
-    t=$(mktemp)
+    t=$(gettemp unique-hostnames)
     fgrep -v '#' $DD/dnsmasq.hosts | cut -f2 | sed -e '/^$/d' -e 's/[0-9\.]* *//' | cut -d' ' -f1 | sort -u > $t
     fgrep -v -f $t $LEASES || emitc green 'all ok\n'
-    rm $t
+    rmtemp $t
 }
 
 function check_dns() {
-    out=$(mktemp)
+    out=$(gettemp check-dns-out)
 
     # Search for duplicates in individual config files.
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate MAC assignments"
     egrep '^[0-9]' $DD/dnsmasq.hosts | cut -d' ' -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate IP assignments"
-    hostnames=$(mktemp)
+    hostnames=$(gettemp sorted-hostnames)
     egrep '^[0-9]' $DD/dnsmasq.hosts | tr '\t' ' ' | cut -d' ' -f2- | tr -s ' ' '\n' | sort > $hostnames
     cat $hostnames | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate hostname assignments"
 
     # Search for green network MAC addresses without an assigned IP (will cause dhcp to fail because of dnsmasq 'static' config).
     fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | fgrep -v -f $hostnames | append_if $out "green MACs without assigned addresses"
-    rm $hostnames
+    rmtemp $hostnames
 
     # Search for contradictions between config files and what's actually seen in the leases.
-    allowed_mac_to_names=$(mktemp)
+    allowed_mac_to_names=$(gettemp allowed-mac-to-names)
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1,3 | tr -d ',' > $allowed_mac_to_names
     cut -d' ' -f2,4 $LEASES | fgrep -v '*' | fgrep -v -f $allowed_mac_to_names | append_if $out "MACs with incorrect hostname assigned"
-    rm $allowed_mac_to_names
-    allowed_ip_to_hostname=$(mktemp)
+    rmtemp $allowed_mac_to_names
+    allowed_ip_to_hostname=$(gettemp allowed-ip-to-hostnames)
     egrep '^[0-9]' $DD/dnsmasq.hosts | tr -s '\t' ' ' | cut -d' ' -f1,2 > $allowed_ip_to_hostname
     cut -d' ' -f3,4 $LEASES | fgrep -v '*' | fgrep -v -f $allowed_ip_to_hostname | append_if $out "MACs with incorrect IP assigned"
-    rm $allowed_ip_to_hostname
+    rmtemp $allowed_ip_to_hostname
 
     # Summarize findings.
     if [[ -s $out ]]; then emitc red problems; cat "$out"; else echoc green 'all ok'; fi
-    rm $out
+    rmtemp $out
 }
 
 # Update the DHCP server's mapping for mac->hostname; generally needed when adding a new host to the network.
@@ -434,7 +448,7 @@ function update_dns() {
 # it can be useful to remove it from the DHCP assignments to clear the alarm.
 function update_dns_rmmac() {
     search="$1"
-    t=$(mktemp)
+    t=$(gettemp leases-search)
     fgrep "$search" $LEASES > $t || true
     lines=$(wc -l $t | cut -d' ' -f1)
     if [[ "$lines" -lt 1 ]]; then emit "no change (search not found); not updating."; return; fi
@@ -473,7 +487,7 @@ function procmon_clear_cow() {
 # Update the whitelist of known-processes on the primary server.  Test the results
 # and if the test passes, restart the monitoring daemon with the new list.
 function procmon_update() {
-    t=$(mktemp)
+    t=$(gettemp procmon-queue-sorted)
     sort -u < $PROCQ > $t
     emacs /home/ken/bin/procmon_wl.csv $t
     /home/ken/bin/procmon -t | tee $t
@@ -506,14 +520,15 @@ function checks_real() {
 
 # Wrapper around checks_real that does formatting and checks for overall status.
 function checks() {
-    t1=$(mktemp)  # checks_real stdout
-    t2=$(mktemp)  # checks_real stderr
+    t1=$(gettemp checks-stdout)
+    t2=$(gettemp checks-stderr)
     checks_real >$t1 2>$t2
     bad=$(fgrep -v -e "- ok" $t2 | wc -l)   # count of failed checks from stderr
     cat $t1
     echo ""
     cat $t2 | column -s- -t
-    rm $t1 $t2
+    rmtemp $t1
+    rmtemp $t2
     echo ""
     if [[ "$bad" == "0" ]]; then echoc green "all ok\n"; else printf "failed checks: ${RED}${bad}${RESET}\n"; fi
     echo ""
@@ -636,7 +651,7 @@ function list_dynamic() {
 function without() {
     if [[ "$1" == "-" ]]; then newline=1; shift; else newline=0; fi
     if [[ "$1" == "" ]]; then cat; fi
-    t=$(mktemp)
+    t=$(gettemp without-stdin)
     cat > $t
     exp=$(echo "$@" | tr " " "|" | tr "," "|")
     removed=$(cat $t | tr ' ' '\n' | egrep "$exp" | sort | tr '\n' ' ')
@@ -647,7 +662,7 @@ function without() {
         cat $t | tr ' ' '\n' | egrep -v "$exp" | sort | tr '\n' ' '
         echo ""
     fi
-    rm $t
+    rmtemp $t
 }
 
 # ----------------------------------------
@@ -678,6 +693,7 @@ function main() {
         flag="$1"
         case "$flag" in
     # Note: flags mostly only affect multi-host commands...
+            --debug | -d) DEBUG=1 ;;                      ## leave temp files in place
             --echo | -e) ECHO=1 ;;                        ## print commands INSTEAD of executing them
             --exclude | -x) EXCLUDE=$2; shift ;;          ## csv list of substring match patterns
             --help    | -h) myhelp ;;
