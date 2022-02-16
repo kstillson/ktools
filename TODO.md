@@ -21,7 +21,7 @@
    - Tplink: generalize & publish tplink.py and related tools
 
 ## General
-   - new name for ktools ?
+   - new name for ktools ?  (Mauveine?  #8D029B)
 
 ## Prep for homectrl
    - tidy up pylib/k_gpio
