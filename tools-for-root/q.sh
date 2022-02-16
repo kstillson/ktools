@@ -125,6 +125,7 @@ function append_if() {
 	cat $tmp >> $out
     fi
     rm $tmp
+    return 0
 }
 
 # Expect stdin to match $2, print status decorated by title in $1 and output stdin upon mismatch.
@@ -386,13 +387,30 @@ function leases_list_orphans() {
 
 function check_dns() {
     out=$(mktemp)
+
+    # Search for duplicates in individual config files.
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate MAC assignments"
     egrep '^[0-9]' $DD/dnsmasq.hosts | cut -d' ' -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate IP assignments"
     hostnames=$(mktemp)
     egrep '^[0-9]' $DD/dnsmasq.hosts | tr '\t' ' ' | cut -d' ' -f2- | tr -s ' ' '\n' | sort > $hostnames
     cat $hostnames | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate hostname assignments"
+
+    # Search for green network MAC addresses without an assigned IP (will cause dhcp to fail because of dnsmasq 'static' config).
     fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | fgrep -v -f $hostnames | append_if $out "green MACs without assigned addresses"
     rm $hostnames
+
+    # Search for contradictions between config files and what's actually seen in the leases.
+    allowed_mac_to_names=$(mktemp)
+    egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1,3 | tr -d ',' > $allowed_mac_to_names
+    if [[ ! -f $allowed_mac_to_names ]]; then emitc red ouch; fi
+    cut -d' ' -f2,4 $LEASES | fgrep -v '*' | fgrep -v -f $allowed_mac_to_names | append_if $out "MACs with incorrect hostname assigned"
+    rm $allowed_mac_to_names
+    allowed_ip_to_hostname=$(mktemp)
+    egrep '^[0-9]' $DD/dnsmasq.hosts | tr -s '\t' ' ' | cut -d' ' -f1,2 > $allowed_ip_to_hostname
+    cut -d' ' -f3,4 $LEASES | fgrep -v '*' | fgrep -v -f $allowed_ip_to_hostname | append_if $out "MACs with incorrect IP assigned"
+    rm $allowed_ip_to_hostname
+
+    # Summarize findings.
     if [[ -s $out ]]; then emitc red problems; cat "$out"; else echoc green 'all ok'; fi
     rm $out
 }
