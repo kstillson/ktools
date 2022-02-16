@@ -399,8 +399,8 @@ function leases_list_orphans() {
     rmtemp $t
 }
 
-function check_dns() {
-    out=$(gettemp check-dns-out)
+function dns_check() {
+    out=$(gettemp dns-check-out)
 
     # Search for duplicates in individual config files.
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate MAC assignments"
@@ -430,10 +430,17 @@ function check_dns() {
     rmtemp $out
 }
 
+function dns_missing() {
+    leased_names=$(gettemp leased_names)
+    cut -d' ' -f4 $LEASES | fgrep -v '*' > $leased_names
+    fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | fgrep -v -f $leased_names | sort
+    rmtemp $leased_names
+}
+
 # Update the DHCP server's mapping for mac->hostname; generally needed when adding a new host to the network.
 # (I manage by DNS entries manually in this way, so new hosts will cause an alert until manually added.
 #  Because security.)
-function update_dns() {
+function dns_update() {
     s1=$(stat -t $DD/dnsmasq.macs)
     emacs $DD/dnsmasq.macs $DD/dnsmasq.hosts $LEASES
     s2=$(stat -t $DD/dnsmasq.macs)
@@ -448,7 +455,7 @@ function update_dns() {
 
 # If a dhcp misconfig or a new host has caused an alarm because of an unknown mac address,
 # it can be useful to remove it from the DHCP assignments to clear the alarm.
-function update_dns_rmmac() {
+function dns_update_rmmac() {
     search="$1"
     t=$(gettemp leases-search)
     fgrep "$search" $LEASES > $t || true
@@ -511,7 +518,7 @@ function checks_real() {
     cat $PROCQ | expect "procmon queue" ""
     fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
     $0 dup-check | expect "$0 dup cmds" "all ok"
-    check_dns | expect "dns config check" "all ok"
+    dns_check | expect "dns config check" "all ok"
     /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
     /root/bin/d check-all-up |& expect "docker instances" "all ok"
     /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
@@ -766,9 +773,10 @@ function main() {
         run-pis | rpis | rp) run_para "$(list_pis)" "$@" ;;               ## run command on all pi's
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
-        dhcp-lease-rm | lease-rm | rml | rmmac) update_dns_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
-        dns-check | dc) check_dns ;;                                      ## check dnsmasq config for dups/missing/etc.
-        dns-update | mac-update | du | mu | mac) update_dns ;;            ## add/change a mac or dhcp assignment
+        dhcp-lease-rm | lease-rm | rml | rmmac) dns_update_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
+        dns-check | dc) dns_check ;;                                      ## check dnsmasq config for dups/missing/etc.
+	dns-missing | dm) dns_missing ;;                                  ## any assigned green network hostnames missing from the leases?
+        dns-update | mac-update | du | mu | mac) dns_update ;;            ## add/change a mac or dhcp assignment
         exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
         exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue

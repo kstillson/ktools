@@ -109,7 +109,7 @@ def test_handler_wrapping():
     resp = wsb.test_handler('/')
     assert resp.status_code == -1
     assert str(resp.exception) == 'failed handler'
-    assert resp.body is ''
+    assert resp.body == ''
 
 def test_no_handler_wrapping():
     wsb = B.WebServerBase([('/', unhelpful_handler)], wrap_handlers=False, logging_adapter=None)
