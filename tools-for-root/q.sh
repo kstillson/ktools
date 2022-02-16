@@ -402,7 +402,6 @@ function check_dns() {
     # Search for contradictions between config files and what's actually seen in the leases.
     allowed_mac_to_names=$(mktemp)
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1,3 | tr -d ',' > $allowed_mac_to_names
-    if [[ ! -f $allowed_mac_to_names ]]; then emitc red ouch; fi
     cut -d' ' -f2,4 $LEASES | fgrep -v '*' | fgrep -v -f $allowed_mac_to_names | append_if $out "MACs with incorrect hostname assigned"
     rm $allowed_mac_to_names
     allowed_ip_to_hostname=$(mktemp)
