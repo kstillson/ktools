@@ -26,4 +26,4 @@ test: common_test
 
 uninstall: common_uninstall
 
-upgrade: common_update
+update: common_update

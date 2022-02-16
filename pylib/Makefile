@@ -20,7 +20,7 @@ all: common_all
 
 test: common_test
 
-upgrade: common_update
+update: common_update
 
 # ---------- local custom locic
 
