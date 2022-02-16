@@ -418,9 +418,11 @@ function check_dns() {
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1,3 | tr -d ',' > $allowed_mac_to_names
     cut -d' ' -f2,4 $LEASES | fgrep -v '*' | fgrep -v -f $allowed_mac_to_names | append_if $out "MACs with incorrect hostname assigned"
     rmtemp $allowed_mac_to_names
+    #
     allowed_ip_to_hostname=$(gettemp allowed-ip-to-hostnames)
     egrep '^[0-9]' $DD/dnsmasq.hosts | tr -s '\t' ' ' | cut -d' ' -f1,2 > $allowed_ip_to_hostname
-    cut -d' ' -f3,4 $LEASES | fgrep -v '*' | fgrep -v -f $allowed_ip_to_hostname | append_if $out "MACs with incorrect IP assigned"
+    # (note: we filter out .6. (yellow network) addrs because they're dynamically assigned and thus have no 'correct' address).
+    cut -d' ' -f3,4 $LEASES | fgrep -v '.6.' | fgrep -v '*' | fgrep -v -f $allowed_ip_to_hostname | append_if $out "MACs with incorrect IP assigned"
     rmtemp $allowed_ip_to_hostname
 
     # Summarize findings.
