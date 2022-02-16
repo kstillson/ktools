@@ -133,9 +133,9 @@ function append_if() {
     tmp=$(gettemp appendif)
     cat > $tmp
     if [[ -s $tmp ]]; then
-	echo "" >> $out
-	echo "${title}:" >> $out
-	cat $tmp >> $out
+        echo "" >> $out
+        echo "${title}:" >> $out
+        cat $tmp >> $out
     fi
     rmtemp $tmp
     return 0
@@ -297,34 +297,34 @@ function iptables_query_real() {
     params="-n -v --line-numbers "
     tables=$(iptables_list_tables | tr '\n' ' ')
     case $Search in
-	PREROUTING | PRE) iptables $params -L PREROUTING -t nat ;;
-	POSTROUTING | POST) iptables $params -L POSTROUTING -t nat ;;
-	"")
-	    for tab in $tables; do
-		echoc cyan "\nTABLE: $tab\n"
-		iptables $params -L -t $tab
-	    done
-	    ;;
-	*)
-	    # See if they specified a table-name, and if so, output that whole table.
-	    if [[ "$tables" == *"$search"* ]]; then
-		echoc cyan "\nTABLE: $search\n"
-		iptables $params -L -t $search
-		return
-	    fi
-	    # Decorate each rule line with table and chain name, then search for anything matching the given substring.
-	    for tab in $tables; do
-		echoc cyan "\nTABLE: $tab\n"
-		iptables $params -L -t $tab | awk -F" " '/^Chain/ { chain=$2 } /^[0-9]/ { print chain ":" $0 }' | fgrep --color=auto -i "$search" || true
-	    done
+        PREROUTING | PRE) iptables $params -L PREROUTING -t nat ;;
+        POSTROUTING | POST) iptables $params -L POSTROUTING -t nat ;;
+        "")
+            for tab in $tables; do
+                echoc cyan "\nTABLE: $tab\n"
+                iptables $params -L -t $tab
+            done
+            ;;
+        *)
+            # See if they specified a table-name, and if so, output that whole table.
+            if [[ "$tables" == *"$search"* ]]; then
+                echoc cyan "\nTABLE: $search\n"
+                iptables $params -L -t $search
+                return
+            fi
+            # Decorate each rule line with table and chain name, then search for anything matching the given substring.
+            for tab in $tables; do
+                echoc cyan "\nTABLE: $tab\n"
+                iptables $params -L -t $tab | awk -F" " '/^Chain/ { chain=$2 } /^[0-9]/ { print chain ":" $0 }' | fgrep --color=auto -i "$search" || true
+            done
     esac
 }
 
 function iptables_query() {
     if [[ -t 1 && "$1" == "" ]] ; then
-	iptables_query_real | less --raw-control-chars --quit-if-one-screen
+        iptables_query_real | less --raw-control-chars --quit-if-one-screen
     else
-	iptables_query_real "$1"
+        iptables_query_real "$1"
     fi
 }
 
@@ -546,9 +546,9 @@ function checks() {
 # Download the homesec keyscanner common code from git repo, parse out and tidy the keyboard commands, stripping private ones.
 function keypad_commands {
     if [[ "$1" == "" ]]; then
-	fmt="column"
+        fmt="column"
     else
-	fmt="fgrep $1"
+        fmt="fgrep $1"
     fi
     git archive --remote gitro:git/homectrl.git master ks_common.py | tar -xOf - | \
         sed -e '/[#:]/!d' -e 's/, GO//' -e 's/common.trigger//' -e 's/common.control//' -e 's@common.read_web(\"http://@(web-@' \
@@ -679,7 +679,7 @@ function without() {
 
 # Scan my own source code, find the main switch statement, extract and format showing the commands this script supports.
 function myhelp_real() {
-    awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | egrep '(^ *#)|(^ *--)|(^        [a-z])' | sed -e '/case /d' -e '/esac/d' -e 's/^    //' -e 's/##/~/' -e 's/).*;;//' | column -t -s~
+    awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | sed -e 's/\t/        /' | egrep '(^ *#)|(^ *--)|(^        [a-z])' | sed -e '/case /d' -e '/esac/d' -e 's/^    //' -e 's/##/~/' -e 's/).*;;//' | column -t -s~
 }
 
 # Wrapper around myhelp_real, optionally searching for $@ and auto-paging if on an interactive terminal.
@@ -733,10 +733,10 @@ function main() {
         es) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;             ## epoch seconds $1 to standard date format
         es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
         es-now | now) date -u +%s ;;                         ## print current epoch seconds
-	iptables-list-chains | iptc | ic) iptables_list_chains ;;  ## print list of iptables chains
-	iptables-list-tables | iptt | it) iptables_list_tables ;;  ## print list of iptables tables
-	iptables-query | iptq | iq) iptables_query $1 ;;     ## print/query iptables ($1 to search)
-	iptables-save | ipts | is) iptables_save ;;          ## save current iptables
+        iptables-list-chains | iptc | ic) iptables_list_chains ;;  ## print list of iptables chains
+        iptables-list-tables | iptt | it) iptables_list_tables ;;  ## print list of iptables tables
+        iptables-query | iptq | iq) iptables_query $1 ;;     ## print/query iptables ($1 to search)
+        iptables-save | ipts | is) iptables_save ;;          ## save current iptables
         journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
         git-check-all | gca | gc) git_check_all ;;           ## list any known git dirs with local changes
         git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;             ## git sync a single directory (defaults to .)
@@ -775,7 +775,7 @@ function main() {
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) dns_update_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
         dns-check | dc) dns_check ;;                                      ## check dnsmasq config for dups/missing/etc.
-	dns-missing | dm) dns_missing ;;                                  ## any assigned green network hostnames missing from the leases?
+        dns-missing | dm) dns_missing ;;                                  ## any assigned green network hostnames missing from the leases?
         dns-update | mac-update | du | mu | mac) dns_update ;;            ## add/change a mac or dhcp assignment
         exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
