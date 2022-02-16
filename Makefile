@@ -3,7 +3,7 @@
 
 TOP_TARGETS = all clean comp install test uninstall update
 
-SUBDIRS = $(shell ls */Makefile | cut -d/ -f1)
+SUBDIRS ?= $(shell ls */Makefile | cut -d/ -f1)
 
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
