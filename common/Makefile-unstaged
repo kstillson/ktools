@@ -61,7 +61,7 @@ $(INSTALL_SH_TARGETS): $(INSTALL_DIR)/%: %.sh
 $(INSTALL_PY_TARGETS): $(INSTALL_DIR)/%: %.py
 	  install $^ $@
 
-$(INSTALL_PLAIN_PLAIN): $(INSTALL_DIR)/%: %
+$(INSTALL_PLAIN_TARGETS): $(INSTALL_DIR)/%: %
 	  install $^ $@
 
 
