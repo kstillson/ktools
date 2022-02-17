@@ -393,10 +393,12 @@ function enable_rsnap() {
 
 # Output the list of DHCP leases which are not known to the local dnsmasq server's DNS list.
 function leases_list_orphans() {
-    t=$(gettemp unique-hostnames)
-    fgrep -v '#' $DD/dnsmasq.hosts | cut -f2 | sed -e '/^$/d' -e 's/[0-9\.]* *//' | cut -d' ' -f1 | sort -u > $t
-    fgrep -v -f $t $LEASES || emitc green 'all ok\n'
-    rmtemp $t
+    allowed_hosts=$(gettemp allowed_hosts)
+    fgrep -v '#' $DD/dnsmasq.hosts | cut -f2 | sed -e '/^$/d' -e 's/[0-9\.]* *//' | cut -d' ' -f1 | sort -u > $allowed_hosts
+    yellow_hosts=$(gettemp yellow_hosts)
+    fgrep 'set:yellow' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' > $yellow_hosts
+    fgrep -v -f $yellow_hosts $LEASES | fgrep -v -f $allowed_hosts || emitc green 'all ok\n'
+    rmtemp $allowed_hosts
 }
 
 function dns_check() {
@@ -514,7 +516,7 @@ function procmon_update() {
 # Run a series of checks on the status of my home network.
 function checks_real() {
     nag | expect "nagios checks" "all ok"
-    leases_list_orphans | fgrep -v cudy | expect "dns orphans" ""
+    leases_list_orphans |& expect "dns orphans" "all ok"
     cat $PROCQ | expect "procmon queue" ""
     fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
     $0 dup-check | expect "$0 dup cmds" "all ok"
