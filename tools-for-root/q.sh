@@ -776,8 +776,8 @@ function main() {
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) dns_update_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
-        dns-check | dc) dns_check ;;                                      ## check dnsmasq config for dups/missing/etc.
-        dns-missing | dm) dns_missing ;;                                  ## any assigned green network hostnames missing from the leases?
+        dns-check | dhcp-check | dc) dns_check ;;                         ## check dnsmasq config for dups/missing/etc.
+        dns-missing | dhcp-missing | dm) dns_missing ;;                   ## any assigned green network hostnames missing from the leases?
         dns-update | mac-update | du | mu | mac) dns_update ;;            ## add/change a mac or dhcp assignment
         exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
