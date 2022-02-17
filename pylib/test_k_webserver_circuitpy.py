@@ -1,4 +1,8 @@
 
+# NB: This launches a real web-server and talks to it via the local
+# network.  Tests will fail if firewall rules don't allow localhost high
+# port connections.
+
 import random, threading, subprocess
 import k_common as C
 import k_webserver_circuitpy as W
@@ -15,7 +19,6 @@ ROUTES = {
 def listen_loop(ws):
     while True:
         ws.listen()
-        C.stderr('@@ listen loop')
 
 def random_high_port(): return random.randrange(10000, 19999)
 
