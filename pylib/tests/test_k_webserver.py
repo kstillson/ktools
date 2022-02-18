@@ -3,6 +3,8 @@
 # network.  Tests will fail if firewall rules don't allow localhost high
 # port connections.
 
+import context1
+
 import random, subprocess
 import k_common as C
 import k_webserver as W

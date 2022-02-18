@@ -25,6 +25,8 @@
 
 ## Prep for homectrl
    - tidy up pylib/k_gpio
+     - https://learn.adafruit.com/cooperative-multitasking-in-circuitpython-with-asyncio?view=all
+     - https://circuitpython.readthedocs.io/en/latest/shared-bindings/keypad/index.html
    - add RPi.GPIO to circuitpy_sim
       - graphical interface for inputs and outputs
    - k_auth: tidy, doc, test, and add cmnd to hash

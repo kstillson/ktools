@@ -9,5 +9,5 @@ simulated calls are implemented...:
 ```
 import os, sys
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
-if not CIRCUITPYTHON: sys.path.insert(0, 'circpysim')
+if not CIRCUITPYTHON: sys.path.insert(0, 'circuitpy_sim')
 ```

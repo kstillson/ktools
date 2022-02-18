@@ -9,7 +9,7 @@
    Example usage in non-blocking mode:
 
 import time
-import k_webserver_circuitpy as W
+import k_webserver as W
 
 def default_handler(request):
     name = request.get_params['name'] if 'name' in request.get_params else 'world'

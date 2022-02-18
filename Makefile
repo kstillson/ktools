@@ -3,6 +3,8 @@
 
 TOP_TARGETS = all clean comp install test uninstall update
 
+# specify SUBDIRS as an environment variable for partial work, e.g.:
+# SUBDIRS="syslog tools-for-root" make install
 SUBDIRS ?= $(shell ls */Makefile | cut -d/ -f1)
 
 $(TOP_TARGETS): $(SUBDIRS)

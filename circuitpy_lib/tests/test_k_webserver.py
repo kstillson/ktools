@@ -3,9 +3,11 @@
 # network.  Tests will fail if firewall rules don't allow localhost high
 # port connections.
 
+import context
+
 import random, threading, subprocess
 import k_common as C
-import k_webserver_circuitpy as W
+import k_webserver as W
 
 # ---------- helpers
 
@@ -25,7 +27,6 @@ def random_high_port(): return random.randrange(10000, 19999)
 def start(ctx={}):
     global PORT
     PORT = random_high_port()
-    C.init_log('test_k_webserver', logfile=None)
     ws = W.WebServer(ROUTES, port=PORT, blocking=True, context=ctx)
     return ws
 
@@ -39,7 +40,7 @@ def test_basics():
     t.daemon = True
     t.start()
     
-    assert C.read_web(url('hi')) == 'hello world'
+    assert C.read_web(url('hi'), wrap_exceptions=False) == 'hello world'
 
     resp = C.web_get(url('get?a=b&g=h&x=y'))
     assert resp.ok
