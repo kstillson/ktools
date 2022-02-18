@@ -69,7 +69,7 @@ $(INSTALL_PLAIN_TARGETS): $(INSTALL_DIR)/%: %
 # standard targets
 
 common_clean:
-	rm -rf $(TEST_LOG) __pycache__ .pytest_cache *.pyc
+	rm -rf $(TEST_LOG) __pycache__ .pytest_cache *.pyc tests/__pycache__ tests/*.pyc
 
 common_install: $(INSTALL_TARGETS)
 

@@ -20,13 +20,15 @@ $(TEST_LOG): $(wildcard *.py)
 
 all: common_all
 
-clean: common_clean
-
 test: common_test
 
 update: common_update
 
 # ---------- local custom locic
+
+clean:
+	$(MAKE) common_clean
+	rm -rf */*.pyc */__pycache__
 
 comp: FORCE
 	for d in $(INSTALL_DIRS); do INSTALL_DIR=$$d $(MAKE) --no-print-directory common_comp; done
