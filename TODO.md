@@ -1,8 +1,4 @@
 
-## Prep
-   - test default handlers under circuitpy
-      - remote_addr & group matches
-
 ## NeoTree
    - rebind neotree to pylib and verify under circuitpy_sim
    - add fader to animation logic
@@ -22,6 +18,8 @@
 
 ## General
    - new name for ktools ?  (Mauveine?  #8D029B)
+
+## MILESTONE: ready for peer review ...?
 
 ## Prep for homectrl
    - tidy up pylib/k_gpio
