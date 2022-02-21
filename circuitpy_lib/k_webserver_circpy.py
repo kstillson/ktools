@@ -41,7 +41,7 @@ import socketpool, wifi
 BUFFER_SIZE = 256
 
 
-class WebServer(B.WebServerBase):
+class WebServerCircPy(B.WebServerBase):
     def __init__(self, handlers={}, port=80,
                  listen_address='0.0.0.0', blocking=False, timeout=30, backlog_queue_size=3, socket=None,
                  *args, **kwargs):
@@ -51,7 +51,7 @@ class WebServer(B.WebServerBase):
             log_request=Q.log_info, log_404=Q.log_info,
             log_exceptions=Q.log_error, get_logz_html=Q.last_logs_html)
         
-        super(WebServer, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
+        super(WebServerCircPy, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
 
         self.timeout = timeout
         if not socket:

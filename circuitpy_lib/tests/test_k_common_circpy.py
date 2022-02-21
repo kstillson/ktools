@@ -2,7 +2,7 @@
 import context
 
 import os
-import k_common as C
+import k_common_circpy as C
 import k_log_queue as Q
 import k_uncommon as UC
 import k_varz as varz  ## to access varz counts in tests.

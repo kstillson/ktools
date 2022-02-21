@@ -73,15 +73,6 @@ common_clean:
 
 common_install: $(INSTALL_TARGETS)
 
-#$(INSTALL_TARGETS): $(TARGETS)
-#	if [ -w ${INSTALL_DIR} ]; then \
-#	  install $^ ${INSTALL_DIR}; \
-#	else \
-#	  mount -o remount,rw $(INSTALL_MP) ; \
-#	  install $^ ${INSTALL_DIR} ; \
-#	  mount -o remount,ro $(INSTALL_MP) ; \
-#	fi
-
 common_uninstall:
 	rm $(INSTALL_TARGETS)
 

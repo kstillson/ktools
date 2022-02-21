@@ -1,7 +1,7 @@
 '''Server for test_k_webserver
 
-By default, test_k_webserver uses k_webserver to launch the webserver
-specified in this file, and then runs tests against that.
+By default, test_k_webserver_circpy uses k_webserver_circpy to launch the
+webserver specified in this file, and then runs tests against that.
 
 If you want to test against a webserver running on real circuit-py
 hardware, Adjust the params to connect_wifi() [below], and then copy this
@@ -11,11 +11,12 @@ Once the device is connected to wifi, it should print its IP number.
 On the Linux machine where you're going to run the tests, set
 the IP number to the TESTHOST variable and run the test.  
 i.e. something like:
-   TESTHOST="192.168.9.99" pytest-3 tests/test_k_webserver.py
+   TESTHOST="192.168.9.99" pytest-3 tests/test_k_webserver_circpy.py
+
 '''
 
 import time
-import k_webserver as W
+import k_webserver_circpy as W
 
 ROUTES = {
     '/context':      lambda request: request.context.get('c'),
@@ -27,7 +28,7 @@ ROUTES = {
 
 def create_ws(port):
     ctx = {'c': 'hello'}
-    ws = W.WebServer(ROUTES, port=port, blocking=True, context=ctx)
+    ws = W.WebServerCircPy(ROUTES, port=port, blocking=True, context=ctx)
     return ws
 
 

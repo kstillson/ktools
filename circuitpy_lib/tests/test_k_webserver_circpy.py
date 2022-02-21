@@ -15,7 +15,7 @@
 import context
 
 import os, random, threading, subprocess
-import k_common as C
+import k_common_circpy as C
 import server
 
 # ---------- helpers
