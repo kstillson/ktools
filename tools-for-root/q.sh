@@ -43,6 +43,8 @@ VERBOSE=0        # similar to ECHO but also execute the commands
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 DD="/root/docker-dev/dnsdock/files/etc/dnsmasq"
 GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin /rw/dv/webdock/home/ken/homesec"
+if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="kmdock:4443"; else KMHOST="jack:4443"; fi
+KM="https://${KMHOST}"
 LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
 PROCQ="/var/procmon/queue"
 RP_FLAGS='--output - --plain --quiet '
@@ -398,6 +400,7 @@ function leases_list_orphans() {
     yellow_hosts=$(gettemp yellow_hosts)
     fgrep 'set:yellow' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' > $yellow_hosts
     fgrep -v -f $yellow_hosts $LEASES | fgrep -v -f $allowed_hosts || emitc green 'all ok\n'
+    rmtemp $yellow_hosts
     rmtemp $allowed_hosts
 }
 
@@ -557,6 +560,49 @@ function keypad_commands {
             -e '/touch-home/d' -e '/disarm/d' \
             -e "s/)\',//" -e 's/#/:####/' -e "s/'//g" -e 's/"//g' -e 's/),/)/g' | \
         column -t -s: | $fmt
+}
+
+function keymanager_logs() {
+    tmp=$(gettemp km-logs)
+    zcat -f /rw/log/docker.log /rw/log/Arc/docker.log* | fgrep 'kmdock' > $tmp
+
+    emitc yellow "\nfailures"
+    fgrep 'ERR ' $tmp
+
+    emitc cyan "\nsuccesses"
+    python3 - $tmp <<EOF
+import sys
+count = {}; last = {}
+with open(sys.argv[1]) as f:
+  for line in f:
+    if not 'success' in line: continue
+    name = line.split(' ')[-1].strip()
+    date = line[0:6]
+    if name not in count: count[name] = 1; last[name] = date
+    else: count[name] += 1
+for name, cnt in sorted(count.items(), key=lambda i: i[1]):
+  print(f'{cnt:>5}  {last[name]:>8}  {name}')
+EOF
+    rmtemp $tmp
+}
+
+function keymanager_reload() {
+    stat=$(curl -ksS ${KM}/healthz)
+    if [[ "$stat" == "ok" ]]; then emitc blue "already ok"; return 0; fi
+    read -s -p "km password: " passwd
+    echo ""
+    stat=$(curl -ksS -d "password=$passwd" "${KM}/" | html2text)
+    if [[ "$stat" == "ok" ]]; then col="green"; else col="red"; fi
+    emitc "$col" "$stat"
+}
+
+function keymanager_zap() {
+    stat=$(curl -ksS ${KM}/healthz)
+    if [[ "$stat" == *"not ready"* ]]; then emitc blue "already zapped"; return 0; fi
+    curl -ksS ${KM}/zap >/dev/null
+    stat=$(curl -ksS ${KM}/healthz)
+    if [[ "$stat" == *"not ready"* ]]; then emitc orange "zapped"; return 0; fi
+    emitc red "zap failed: $stat"
 }
 
 # Run $1 as if it was typed into a keypad.
@@ -786,6 +832,9 @@ function main() {
         lease-query-red | lqr | 9) fgrep --color=auto -F ".9." $LEASES || echoc green "ok\n" ;;  ## list red network leases
         keypad | key | k) run_keypad_command "$1" ;;                      ## run command $1 as if typed on homectrl keypad
         keypad-commands | kc) keypad_commands "$1" ;;                     ## list homesec keypad common commands ($1 to search)
+	keymanager-reload | kmr | kms) keymanager_reload ;;               ## load/reload keymanager state (requires password)
+	keymanager-logs | kml | kmq) keymanager_logs ;;                   ## analyze km logs
+	keymanager-zap | kmz) keymanager_zap ;;                           ## clear keymanager state (and raise alerts)
         panic-reset | PR) runner /usr/local/bin/panic reset ;;            ## recover from a homesec panic
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
         procmon-query | pq) curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;   ## check procmon status
