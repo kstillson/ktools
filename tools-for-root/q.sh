@@ -731,10 +731,10 @@ function main() {
     case "$cmd" in
     # general linux maintenance routines for localhost
         df) df -h | egrep -v '/docker|/snap|tmpfs|udev' ;;   ## df with only interesting output
-        ed) date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;       ## epoch day $1 to m/d/y
-        es) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;             ## epoch seconds $1 to standard date format
-        es-day-now | es-now-day | day) echo $(( $(date -u +%s) / 86400 )) ;;  ## print current epoch day
-        es-now | now) date -u +%s ;;                         ## print current epoch seconds
+        epoch-day | ed | ED) date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;                 ## epoch day $1 to m/d/y
+        epoch-seconds | es | ES) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;  ## epoch seconds $1 to standard date format
+        es-day-now | es-now-day | EDnow | day) echo $(( $(date -u +%s) / 86400 )) ;;    ## print current epoch day
+        es-now | ESnow | now) date -u +%s ;;                       ## print current epoch seconds
         iptables-list-chains | iptc | ic) iptables_list_chains ;;  ## print list of iptables chains
         iptables-list-tables | iptt | it) iptables_list_tables ;;  ## print list of iptables tables
         iptables-query | iptq | iq) iptables_query $1 ;;     ## print/query iptables ($1 to search)
@@ -759,15 +759,6 @@ function main() {
         list-pis | lp) list_pis | without $EXCLUDE ;;                 ## list all pi's (hard-coded list)
         list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;      ## list all hosts using rsnapshot (hard-coded list)
         list-tps | ltp | lt) list_tps | without $EXCLUDE ;;           ## list all tplink hosts (via dhcp leases prefix search)
-    # general linux maintenance routines - for multiple hosts
-        disk-free-all | dfa | linux-free | lf) run_para "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;   ## root disk free for all linux hosts
-        ping-pis | pp | p) pinger "$(list_pis)" ;;                    ## ping all pis
-        ping-tps | ptp) pinger "$(list_tps)" ;;                       ## ping all tplinks
-        reboot-counts-month | rcm) m=$(date +%b); run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;  ## count of reboots this month on all pi's
-        reboot-counts | rc) d=$(date "+%b %d " | sed -e "s/ 0/  /"); echo "$d"; run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep '$d' | wc -l" ;;  ## count of reboots today on all pi's
-        re-wifi-pi | rwp) run_para "$(list_pis)" "wpa_cli -i wlan0 reconfigure" ;;             ## reconf wifi ap on pis
-        update-all | update_all | ua) updater "$(list_linux | without jack,blue,mc2)" ;;       ## run apt-get upgrade on all linux hosts
-        uptime | uta | ut) run_para "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;  ## uptime for all linux hosts
     # run arbitrary commands on multiple hosts
         listp) run_para LOCAL "$(cat)" "$@" ;;      ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
         run | run-remote | rr | r) hostspec=$1; shift; run_para "$(list_dynamic $hostspec)" "$@" ;;  ## run cmd $2+ on listed hosts $1
