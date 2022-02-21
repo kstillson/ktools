@@ -281,7 +281,7 @@ case "$cmd" in
   list-up | lu | ls | l | ps | p)      ## List all up containers
     docker ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
       sed -e 's/0.0.0.0/*/g' -e 's:/tcp::g' | \
-      column -s @ -t | cut -c-$COLUMNS | sort
+      column -s @ -t | cut -c-${COLUMNS:-200} | sort
     ;;
   log | logs) docker logs -ft --details $(pick_container_from_dev $spec) ;;  ## Print logs for $1
   pid) docker inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;  ## Print main PID for $1
