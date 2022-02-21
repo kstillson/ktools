@@ -45,6 +45,8 @@ DD="/root/docker-dev/dnsdock/files/etc/dnsmasq"
 GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin /rw/dv/webdock/home/ken/homesec"
 if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="kmdock:4443"; else KMHOST="jack:4443"; fi
 KM="https://${KMHOST}"
+KMD="/root/docker/dev/kmdock"
+KMD_P="/root/docker-dev/kmdock/files/home/km/km.data.gpg"
 LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
 PROCQ="/var/procmon/queue"
 RP_FLAGS='--output - --plain --quiet '
@@ -597,8 +599,31 @@ function keymanager_reload() {
     read -s -p "km password: " passwd
     echo ""
     stat=$(curl -ksS -d "password=$passwd" "${KM}/" | html2text)
-    if [[ "$stat" == "ok" ]]; then col="green"; else col="red"; fi
-    emitc "$col" "$stat"
+    if [[ "$stat" != "ok" ]]; then emitc red "$stat"; return 1; fi
+    emitc green ok
+}
+
+# Decrypt, edit, and re-encrypt the KM database, then rebuild and restart KM.
+function keymanager_update() {
+    read -s -p "km password: " passwd
+    tmp=$(gettemp km-temp)
+    echo "$passwd" | gpg -d --batch --passphrase-fd 0 $KMD_P > $tmp
+    s1=$(stat -t $tmp)
+    emacs $tmp
+    s2=$(stat -t $tmp)
+    if [[ "$s1" == "$s2" ]]; then emitc yellow "no changes; abandoning."; rm $tmp; return; fi
+    read -p "ok to proceed? " ok
+    if [[ "$ok" != "y" ]]; then emitc yellow "aborted."; rm $tmp; return; fi
+    mv -f $KMD_P ${KMD_P}.prev
+    echo "$passwd" | gpg -c --batch --output $KMD_P --passphrase-fd 0 $tmp
+    killall gpg-agent || true
+    emitc green "re-encryption done; attempting to rebuild kmdock"
+    d u kmdock   # allow -e to abort if this fails.
+    rm $tmp
+    emitc blue "waiting for km to stabalize..."
+    sleep 2
+    echo "$passwd" | keymanager_reload
+    emitc green "keymanager update done."
 }
 
 # Disable the keymanager.
@@ -776,6 +801,15 @@ function main() {
     set -- "${POSITIONAL[@]}" # restore positional parameters
 
     # --------------------
+    # clean up after any previous runs that left messes behind.
+
+    mess=$(ls /tmp/q-* 2>/dev/null || true)
+    if [[ "$mess" != "" ]]; then
+	emitc yellow "cleaning up previous run's mess: $mess"
+	rm /tmp/q-*
+    fi
+
+    # --------------------
 
     cmd="$1"
     if [[ "$cmd" == "" ]]; then myhelp; exit 0; fi
@@ -840,6 +874,7 @@ function main() {
         keypad-commands | kc) keypad_commands "$1" ;;                     ## list homesec keypad common commands ($1 to search)
 	keymanager-reload | kmr | kms) keymanager_reload ;;               ## load/reload keymanager state (requires password)
 	keymanager-logs | kml | kmq) keymanager_logs ;;                   ## analyze km logs
+	keymanager-update | kmu) keymanager_update ;;                     ## edit keymanager encrypted data and restart
 	keymanager-zap | kmz) keymanager_zap ;;                           ## clear keymanager state (and raise alerts)
         panic-reset | PR) keymanager_reload; /usr/local/bin/panic reset ;;        ## recover from a homesec panic
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
