@@ -322,6 +322,7 @@ function iptables_query_real() {
     esac
 }
 
+# Wraps iptables_query_real to provide paging if on a terminal.
 function iptables_query() {
     if [[ -t 1 && "$1" == "" ]] ; then
         iptables_query_real | less --raw-control-chars --quit-if-one-screen
@@ -404,6 +405,7 @@ function leases_list_orphans() {
     rmtemp $allowed_hosts
 }
 
+# Run a series of dns configuration and status checks.
 function dns_check() {
     out=$(gettemp dns-check-out)
 
@@ -435,6 +437,7 @@ function dns_check() {
     rmtemp $out
 }
 
+# Check for defined hosts not in dhcp leases list (machines could just be off).
 function dns_missing() {
     leased_names=$(gettemp leased_names)
     cut -d' ' -f4 $LEASES | fgrep -v '*' > $leased_names
@@ -562,6 +565,7 @@ function keypad_commands {
         column -t -s: | $fmt
 }
 
+# Scan the keymanager logs.  List all errors and a summary of successes.
 function keymanager_logs() {
     tmp=$(gettemp km-logs)
     zcat -f /rw/log/docker.log /rw/log/Arc/docker.log* | fgrep 'kmdock' > $tmp
@@ -586,6 +590,7 @@ EOF
     rmtemp $tmp
 }
 
+# Enter the keymanager password to get the service ready.
 function keymanager_reload() {
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == "ok" ]]; then emitc blue "already ok"; return 0; fi
@@ -596,6 +601,7 @@ function keymanager_reload() {
     emitc "$col" "$stat"
 }
 
+# Disable the keymanager.
 function keymanager_zap() {
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc blue "already zapped"; return 0; fi
@@ -835,7 +841,7 @@ function main() {
 	keymanager-reload | kmr | kms) keymanager_reload ;;               ## load/reload keymanager state (requires password)
 	keymanager-logs | kml | kmq) keymanager_logs ;;                   ## analyze km logs
 	keymanager-zap | kmz) keymanager_zap ;;                           ## clear keymanager state (and raise alerts)
-        panic-reset | PR) runner /usr/local/bin/panic reset ;;            ## recover from a homesec panic
+        panic-reset | PR) keymanager_reload; /usr/local/bin/panic reset ;;        ## recover from a homesec panic
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
         procmon-query | pq) curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;   ## check procmon status
         procmon-rescan | pr) curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;      ## procmon re-scan and show status

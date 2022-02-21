@@ -90,7 +90,7 @@ function down() {
 
 function up() {
   sel="$1"
-  echo "Starting: $sel ${extra_flags}"
+  echo -n "Starting: $sel ${extra_flags}    "
   cd ${D_SRC_DIR}/$sel
   if [[ -x ./Run ]]; then
    echo "launching via legacy Run file"
@@ -98,7 +98,7 @@ function up() {
   else
     # This substitution only supports a single param to the right of the "--".
     extra_flags=${extra_flags/-- /--extra-init=}
-    /root/bin/d-run ${extra_flags}
+    /root/bin/d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
   fi
 }
 
@@ -247,7 +247,7 @@ case "$cmd" in
   run-in-all | ria)                  list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;; ## Run $1+ in root shell in all up containers
   test-all | ta)                     list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;     ## Test all testable containers (#latest)
   test-all-prod | tap)               list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;  ## Test all testable production containers
-  up-all | start-all | 1a | 11)      for i in $(list-autostart); do up "$i"; done ;;                                          ## Launch all autostart containers
+  up-all | start-all | 1a | 11)      set +e; for i in $(list-autostart); do up "$i"; done ;;                                  ## Launch all autostart containers
 
 # various queries
   check-all-up | cau | ca | qa)       ## Check that all autostart containers are up.
