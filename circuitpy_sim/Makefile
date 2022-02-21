@@ -4,28 +4,31 @@
 BASE_DIRS = $(shell ls -1d /usr/local/lib/python3*/dist-packages)
 INSTALL_DIRS = $(patsubst %,%/circuitpy_sim,$(BASE_DIRS))
 
+# TODO: need to include subdirs (e.g. adafruit_esp32spi) and their contents.
+
 # Marked as PLAIN rather than PY targets to preserve the extension.
-PLAIN_TARGETS := adafruit_requests.py board.py circpysim_logging.py neopixel.py rtc.py socketpool.py wifi.py
+PLAIN_TARGETS := $(wildcard *.py)
 include ../common/Makefile-unstaged
 
 # ---------- testing
 
-# Test everything under both python 2 & 3.
 # Uses 'script' to avoid stripping the color (as output redirection would).
 $(TEST_LOG): $(wildcard *.py)
-	script -eq -c "pytest-3 test_*.py" $(TEST_LOG)
+	script -eq -c "pytest-3 tests/test_*.py" $(TEST_LOG)
 
 # ---------- pass-throughs
 
 all: common_all
-
-clean: common_clean
 
 test: common_test
 
 update: common_update
 
 # ---------- local custom locic
+
+clean:
+	$(MAKE) common_clean
+	rm -rf */*.pyc */__pycache__
 
 comp: FORCE
 	for d in $(INSTALL_DIRS); do INSTALL_DIR=$$d $(MAKE) --no-print-directory common_comp; done

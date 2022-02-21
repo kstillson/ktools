@@ -814,13 +814,13 @@ function main() {
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) dns_update_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
         dns-check | dhcp-check | dc) dns_check ;;                         ## check dnsmasq config for dups/missing/etc.
-        dns-missing | dhcp-missing | dm) dns_missing ;;                   ## any assigned green network hostnames missing from the leases?
+        dns-missing | dhcp-missing | who-is-off | dm) dns_missing ;;      ## any assigned green network hostnames missing from the leases?
         dns-update | mac-update | du | mu | mac) dns_update ;;            ## add/change a mac or dhcp assignment
         exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
         exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
         exim-queue-zap | eqrm) d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm' ;;  ## clear the exim queue
-        exim-queue-zap-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d" " | xargs exim -Mrm' ;;   ## clear frozen msgs from queue
+        exim-queue-zap-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d" " | xargs exim -Mrm' ;;      ## clear frozen msgs from queue
         exim-queue-run | eqr) d run eximdock exim -qff ;;                 ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo $1 to gitdock
