@@ -359,6 +359,8 @@ function pinger() {
 
 # Run the ps command with preferred options, colorization, and docker container-id lookups.
 function ps_fixer() {
+    dmap=$(gettemp dmap)
+    /usr/bin/sudo /root/bin/d-map > $dmap
     t=$(gettemp psfixer)
     cat >$t <<EOF
 s/^root /${RED}root${RESET} /
@@ -366,8 +368,9 @@ s/^droot /${YELLOW}droot${RESET} /
 s/^dken /${BLUE}dken${RESET} /
 s/defunct/${YELLOW}defunct${RESET}/
 EOF
-    awk "{print \"s/\" \$1 \"/${CYAN}\" \$2 \"${RESET} \", \$1, \"/\"}" < /var/run/dmap >> $t
+    awk "{print \"s/\" \$1 \"/${CYAN}\" \$2 \"${RESET} \", \$1, \"/\"}" < $dmap >> $t
     ps aux --forest | egrep -v '\]$' | sed -f $t | less
+    rmtemp $dmap
     rmtemp $t
 }
 
