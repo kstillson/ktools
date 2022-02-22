@@ -832,6 +832,15 @@ function main() {
         systemd-status | ss | sq) systemctl status ${1:-procmon} ;;   ## check service status (procmon by default)
         systemd-up | s1) systemctl start ${1:-procmon} ;;             ## start a specified service (procmon by default)
         without | wo) cat | without "$@" ;;                           ## remove args (csv or regexp) from stdin (space, csv, or line separated)
+    # general linux maintenance routines - for multiple hosts
+        disk-free-all | dfa | linux-free | lf) run_para "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;   ## root disk free for all linux hosts
+        ping-pis | pp | p) pinger "$(list_pis)" ;;                    ## ping all pis
+        ping-tps | ptp) pinger "$(list_tps)" ;;                       ## ping all tplinks
+        reboot-counts-month | rcm) m=$(date +%b); run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;  ## count of reboots this month on all pi's
+        reboot-counts | rc) d=$(date "+%b %d " | sed -e "s/ 0/  /"); echo "$d"; run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep '$d' | wc -l" ;;  ## count of reboots today on all pi's
+        re-wifi-pi | rwp) run_para "$(list_pis)" "wpa_cli -i wlan0 reconfigure" ;;             ## reconf wifi ap on pis
+        update-all | update_all | ua) updater "$(list_linux | without jack,blue,mc2)" ;;       ## run apt-get upgrade on all linux hosts
+        uptime | uta | ut) run_para "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;  ## uptime for all linux hosts
     # list multiple hosts (or multiple other things)
         list-all | la) list_all | without $EXCLUDE ;;                 ## list all known local-network hosts (respecting -x) via dhcp server leases
         list-git-dirs | lg) echo $GIT_DIRS ;;                         ## list all known git dirs (hard-coded list)
