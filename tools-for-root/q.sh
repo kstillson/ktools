@@ -801,15 +801,6 @@ function main() {
     set -- "${POSITIONAL[@]}" # restore positional parameters
 
     # --------------------
-    # clean up after any previous runs that left messes behind.
-
-    mess=$(ls /tmp/q-* 2>/dev/null || true)
-    if [[ "$mess" != "" ]]; then
-	emitc yellow "cleaning up previous run's mess: $mess"
-	rm /tmp/q-*
-    fi
-
-    # --------------------
 
     cmd="$1"
     if [[ "$cmd" == "" ]]; then myhelp; exit 0; fi
