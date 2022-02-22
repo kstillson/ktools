@@ -34,7 +34,7 @@ comp: FORCE
 	for d in $(INSTALL_DIRS); do INSTALL_DIR=$$d $(MAKE) --no-print-directory common_comp; done
 
 install:
-	for d in $(INSTALL_DIRS); do mkdir -p $$d; INSTALL_DIR=$$d $(MAKE) --no-print-directory common_install; done
+	for d in $(INSTALL_DIRS); do mkdir -p -m 0755 $$d; INSTALL_DIR=$$d $(MAKE) --no-print-directory common_install; done
 
 uninstall:
 	for d in $(INSTALL_DIRS); do cd $$d; rm $(PLAIN_TARGETS); rmdir $$d; done

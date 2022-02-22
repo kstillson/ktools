@@ -13,3 +13,6 @@
 
   - server layering and purposes: docker, disposable host containers, etc.
 
+  - separate browser uids
+    - cookie stealing, logic injection, xsrf, password separation
+
