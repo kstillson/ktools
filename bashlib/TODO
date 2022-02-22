@@ -1,0 +1,31 @@
+# ======================================================================
+# colorization
+
+BLACK='\u001b[30m'
+BLUE='\033[01;34m'
+CYAN='\u001b[36m'
+GREEN='\033[01;32m'
+MAGENTA='\u001b[35m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+WHITE='\u001b[37m'
+RESET='\033[00m'
+
+# Print $2+ in color named by $1. insert "-" as $1 to skip ending newline.
+function echoC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}"; }
+# Print $2+ in color named by $1, but only if stdin is a terminal.
+function echoc() { color=${1^^}; shift; if [[ -t 1 ]]; then echoC "$color" "$@"; else printf "$@\n"; fi; }
+
+# Same as above, but send to stderr.
+function emit() { echo ">> $@" >&2; }
+function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
+function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
+
+# ======================================================================
+
+function cols() {
+  local c
+  for x in $@; do c="$c \$$x \",\""; done
+  awk -F, "{print $c}" | tr -d " " | sed -e 's/,$//'
+}
+
