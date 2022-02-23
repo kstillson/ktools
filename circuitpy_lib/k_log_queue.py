@@ -22,12 +22,14 @@ LEVEL_DICT = {'ALERT': 50, 'CRIT': 50,  'CRITICAL': 50,
 NAME_TO_NUM = {}   # Populated by LEVELS singleton during construction.
 
 class Levels(object):
-    def __init__(self):
+    def __init__(self): self.populate()
+        
+    def populate(self, target_ns=globals()):
         global NAME_TO_NUM
         for text in sorted(LEVEL_DICT):
             num = LEVEL_DICT[text]
-            setattr(self, text, num)    # e.g.  k_log_queue.LEVELS.INFO
-            globals()[text] = num       # e.g.  k_log_queue.INFO
+            setattr(self, text, num)    # e.g. k_log_queue.LEVELS.INFO
+            target_ns[text] = num       # e.g. k_log_queue.INFO
             NAME_TO_NUM[num] = text     # last entry rules for dups.
             
     @staticmethod

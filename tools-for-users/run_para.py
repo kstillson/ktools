@@ -219,9 +219,12 @@ def generate_commands(main_stdin):
 
 
 def get_term_width():
-  with open('/dev/tty') as tty:
-    rows_b, columns_b = subprocess.check_output(['stty', 'size'], stdin=tty).split()
-  return int(columns_b)
+  try:
+    with open('/dev/tty') as tty:
+      rows_b, columns_b = subprocess.check_output(['stty', 'size'], stdin=tty).split()
+      return int(columns_b)
+  except OSError:   # non-interactive connection; let's guess.
+    return 99
 
 
 def generate_output(job_ids):

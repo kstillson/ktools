@@ -32,11 +32,14 @@ PY_VER = sys.version_info[0]
 
 # ----------
 # Are we running CircuitPython? If not, inject path to the simulator.
+import os, sys
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
-if not CIRCUITPYTHON: sys.path.insert(0, 'circuitpy_sim')
+if not CIRCUITPYTHON: 
+    simpath = os.path.dirname(__file__).replace('py_lib', 'py_sim')
+    if not simpath in sys.path: sys.path.insert(0, simpath)
+# ----------
 
 import socketpool, wifi
-# ----------
 
 BUFFER_SIZE = 256
 

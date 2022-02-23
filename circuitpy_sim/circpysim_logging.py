@@ -18,6 +18,7 @@ LOGFILE_NAME = 'circuitpy_sim.log'
 
 Levels = Q.Levels
 LEVELS = Q.LEVELS
+LEVELS.populate(globals())
 
 # ---------- 
 

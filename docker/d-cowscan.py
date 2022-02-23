@@ -65,7 +65,7 @@ def check(container, real_root, root, name):
     path = os.path.join(root, name)
     full_path = os.path.join(real_root, name)
     spec = '%s:%s' % (container, path)
-    if ARGS.debug >= 3: print('@@@ checking: %s (%s)' % (spec, full_path))
+    if ARGS.debug >= 3: print('DEBUG checking: %s (%s)' % (spec, full_path))
 
     # Special logic for the token file.
     if container == TOKEN_CONTAINER and path == TOKEN_FILE:
@@ -120,7 +120,7 @@ def main():
         container, id_prefix = temp.split(' ')
         mount_id = read_file(resolve_glob(DLIB + '/image/overlay2/layerdb/mounts/%s*/mount-id' % id_prefix))
         cow_dir = DLIB + '/overlay2/%s/diff' % mount_id
-        if ARGS.debug: print('@@ working on %s -> %s' % (container, cow_dir))
+        if ARGS.debug: print('DEBUG: working on %s -> %s' % (container, cow_dir))
         for real_root, dirs, files in os.walk(cow_dir):
             root = real_root[len(cow_dir):]
             for f in files:
