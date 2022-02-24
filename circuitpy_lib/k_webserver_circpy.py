@@ -63,7 +63,7 @@ class WebServerCircPy(B.WebServerBase):
             self.socket = pool.socket()
         else:
             self.socket = socket
-        self.log_general('starting circpy webserver on port %d' % port)
+        self.logger.log_general('starting circpy webserver on port %d' % port)
         self.socket.bind((listen_address, port))
         self.socket.listen(backlog_queue_size)
         self.socket.setblocking(blocking)

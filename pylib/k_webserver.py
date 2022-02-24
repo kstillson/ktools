@@ -66,7 +66,7 @@ class WebServer(B.WebServerBase):
     def start(self, port=80, listen='0.0.0.0', background=True, server_class=HTTPServer):
         self.httpd = server_class((listen, port), Worker)
         self.httpd._k_webserver = self  # Make my instance visible to handlers.
-        self.log_general('starting webserver on port %d' % port)
+        self.logger.log_general('starting webserver on port %d' % port)
         if background:
             web_thread = threading.Thread(target=self.httpd.serve_forever)
             web_thread.daemon = True
