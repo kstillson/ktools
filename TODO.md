@@ -1,6 +1,5 @@
 
 ## NeoTree
-   - rebind neotree to pylib and verify under circuitpy_sim
    - add fader to animation logic
    - add proper web interface
 

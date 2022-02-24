@@ -58,13 +58,15 @@ class WebServer(B.WebServerBase):
     def __init__(self, *args, **kwargs):
         logging_adapter = B.LoggingAdapter(
             log_request=C.log_info, log_404=C.log_info,
-            log_exceptions=C.log_error, get_logz_html=C.last_logs_html)
+            log_general=C.log_info, log_exceptions=C.log_error,
+            get_logz_html=C.last_logs_html)
         super(WebServer, self).__init__(logging_adapter=logging_adapter, *args, **kwargs)
 
     
     def start(self, port=80, listen='0.0.0.0', background=True, server_class=HTTPServer):
         self.httpd = server_class((listen, port), Worker)
         self.httpd._k_webserver = self  # Make my instance visible to handlers.
+        self.log_general('starting webserver on port %d' % port)
         if background:
             web_thread = threading.Thread(target=self.httpd.serve_forever)
             web_thread.daemon = True

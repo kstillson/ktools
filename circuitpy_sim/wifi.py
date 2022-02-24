@@ -1,5 +1,5 @@
 
-import socket, sys, uuid
+import time, socket, sys, uuid
 import circpysim_logging as L
 
 PY_VER = sys.version_info[0]
@@ -16,6 +16,7 @@ class Radio:
     @staticmethod
     def connect(unused_ssid, unused_wifi_password):
         L.log('wifi.connect called')
+        time.sleep(1)
 
 # Singleton class instance.
 radio = Radio()

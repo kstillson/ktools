@@ -52,9 +52,10 @@ class _HandlerData:
 # WebServerBase expects an instance of this as logging_adapter.
 # This is taken care of by the subclasses of WebServerBase.
 class LoggingAdapter:
-    def __init__(self, log_request, log_404, log_exceptions, get_logz_html):
+    def __init__(self, log_request, log_404, log_general, log_exceptions, get_logz_html):
         self.log_request = log_request
         self.log_404 = log_404
+        self.log_general = log_general
         self.log_exceptions = log_exceptions
         self.get_logz_html = get_logz_html
         

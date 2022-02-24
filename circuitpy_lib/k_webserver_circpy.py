@@ -52,7 +52,8 @@ class WebServerCircPy(B.WebServerBase):
         # Create a logging adapter that uses the low-dep system from k_log_queue.
         logging_adapter = B.LoggingAdapter(
             log_request=Q.log_info, log_404=Q.log_info,
-            log_exceptions=Q.log_error, get_logz_html=Q.last_logs_html)
+            log_general=Q.log_info, log_exceptions=Q.log_error,
+            get_logz_html=Q.last_logs_html)
         
         super(WebServerCircPy, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
 
@@ -62,6 +63,7 @@ class WebServerCircPy(B.WebServerBase):
             self.socket = pool.socket()
         else:
             self.socket = socket
+        self.log_general('starting circpy webserver on port %d' % port)
         self.socket.bind((listen_address, port))
         self.socket.listen(backlog_queue_size)
         self.socket.setblocking(blocking)
