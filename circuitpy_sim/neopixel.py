@@ -56,6 +56,8 @@ class NeoPixel:
                 seq_index += 1
             return
         if isinstance(val, int): val=(val, val, val)
+        if self.brightness != 1.0:
+            val = (int(val[0] * self.brightness), int(val[1] * self.brightness), int(val[2] * self.brightness))
         if LOG_LEVEL_SET_PIXEL: L.log(f'NeoPixel: set {index} to {val}', LOG_LEVEL_SET_PIXEL)
         if not GRAPHICS: return
         col = (val[0] << 16) + (val[1] << 8) + val[2]

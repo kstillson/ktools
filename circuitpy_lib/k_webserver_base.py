@@ -27,15 +27,21 @@ class Request:
 # this to communicate up the stack (eventually causing a status 500 reply).
 # If the web-server has wrap_handlers turned on, it does this for you.
 class Response:
-    def __init__(self, body, status_code=200, extra_headers={}, msg_type=None, exception=None):
-        self.body = str(body) if body else ''
+    def __init__(self, body, status_code=200, extra_headers={}, msg_type=None, exception=None, status_msg=None, binary=False):
+        if binary: self.body = body
+        else: self.body = str(body) if body else ''
         self.status_code = status_code
+        self.status_msg = 'OK' if status_code == 200 else 'NOTOK'
         self.extra_headers = extra_headers
-        if self.body:
-            self.msg_type = msg_type or ('text/html' if self.body.startswith('<') else 'text')
+        if msg_type:
+            self.msg_type = msg_type
         else:
-            self.msg_type = '?'
+            if self.body:
+                self.msg_type = msg_type or ('text/html' if self.body.startswith('<') else 'text')
+            else:
+                self.msg_type = '?'
         self.exception = exception
+        self.binary = binary
 
     def __str__(self): return '[%d] %s' % (self.status_code, self.body[:70].replace('\n', '\\n'))
 
@@ -146,7 +152,7 @@ class WebServerBase(object):
         else:
             answer = handler_data.func(request)
         
-        if not isinstance(answer, Response): answer = Response(answer)
+        if isinstance(answer, str): answer = Response(answer)
         if self.varz: k_varz.bump('web-status-%d' % answer.status_code)
         return answer
 

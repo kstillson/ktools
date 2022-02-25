@@ -15,13 +15,14 @@ else:
 
 class Worker(BaseHTTPRequestHandler):
     def send(self, response):
-        if not response.msg_type:
-            response.msg_type = 'text/html' if response.body.startswith('<') else 'text'
-        self.send_response(response.status_code)
+        if PY_VER == 3: response.body = response.body.encode('utf-8')
+        self.send_response(response.status_code, response.status_msg)
+        self.send_header("Server", 'k_webserver')
+        self.send_header("Connection", 'close')
         self.send_header("Content-type", response.msg_type)
+        self.send_header("Content-Length", len(response.body))
         for k, v in response.extra_headers.items(): self.send_header(k, v)
         self.end_headers()
-        if PY_VER == 3: response.body = response.body.encode('utf-8')
         self.wfile.write(response.body)
         return True
         

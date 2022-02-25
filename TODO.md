@@ -1,6 +1,5 @@
 
 ## NeoTree
-   - add fader to animation logic
    - add proper web interface
 
 ## ++ktools

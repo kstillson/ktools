@@ -23,7 +23,7 @@ ROUTES = {
     '/get':          lambda request: request.get_params.get('g'),
     '/hi':           lambda _: 'hello world',
     r'/match/(\w+)': lambda request: request.route_match_groups[0],
-    '/ra':           lambda request: request.remote_address,
+    '/ra':           lambda request: str(request.remote_address),
 }
 
 def create_ws(port):

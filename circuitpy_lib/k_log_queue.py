@@ -39,13 +39,19 @@ LEVELS = Levels()                       # global singleton available to all.
 
 FORCE_TIME = None
 
+# User can override this to print log messags at or above a given level.
+# This goes to stdout, which on a circ-py board, goes to serial.
+PRINT_LEVEL = LEVEL_DICT['NEVER']
+
 # ---------- Logging and controls
 
 def log(msg, level=LEVELS.INFO):
     if isinstance(level, str): level = LEVEL_DICT.get(level.upper(), LEVELS.INFO)
     global LOG_QUEUE
     if LOG_QUEUE_LEN_MAX and len(LOG_QUEUE) >= LOG_QUEUE_LEN_MAX: del LOG_QUEUE[LOG_QUEUE_LEN_MAX - 1]
-    LOG_QUEUE.insert(0, decorate_msg(msg, level))
+    msg2 = decorate_msg(msg, level)
+    LOG_QUEUE.insert(0, msg2)
+    if level >= PRINT_LEVEL: print(msg2)
 
 def decorate_msg(msg, level):
     return '%s: %s: %s' % (Levels.name(level), get_time(), msg)
@@ -54,6 +60,11 @@ def clear():
     global LOG_QUEUE
     LOG_QUEUE = []
 
+def set_print_level(level):
+    if isinstance(level, str): level = LEVEL_DICT.get(level.upper(), LEVELS.INFO)
+    global PRINT_LEVEL
+    PRINT_LEVEL = level
+    
 def set_queue_len(new_len):
     global LOG_QUEUE, LOG_QUEUE_LEN_MAX
     LOG_QUEUE_LEN_MAX = new_len

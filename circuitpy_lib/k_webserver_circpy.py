@@ -139,21 +139,27 @@ class WebServerCircPy(B.WebServerBase):
 
     def _send_response(self, client, response):
         headers = response.extra_headers.copy()
-        headers["Server"] = "kds-circpy-server"
+        headers["Server"] = "kds_webserver_circpy"
         headers["Connection"] = "close"
+        headers["Content-Type"] = response.msg_type
         headers["Content-Length"] = len(response.body)
 
-        out = "HTTP/1.1 %i OK\r\n" % response.status_code
+        out = "HTTP/1.1 %i %s\r\n" % (response.status_code, response.status_msg)
         for k, v in headers.items():
             out += "%s: %s\r\n" % (k, v)
-        out += "\r\n" + response.body + "\r\n"
+        out += '\r\n'
+        out1 = bytes(out) if PY_VER == 2 else bytes(out, 'utf-8')
+        if response.binary: out2 = response.body
+        elif PY_VER == 2: out2 = bytes(response.body) 
+        else: out2= bytes(response.body, 'utf-8')
+        out = out1 + out2
 
         # unreliable sockets on ESP32-S2: see https://github.com/adafruit/circuitpython/issues/4420#issuecomment-814695753
         out_length = len(out)
         bytes_sent_total = 0
         while True:
             try:
-                b = bytes(out) if PY_VER == 2 else bytes(out, 'utf-8')
+                b = out # b = bytes(out) if PY_VER == 2 else bytes(out, 'utf-8')
                 bytes_sent_total += client.send(b)
                 if bytes_sent_total >= out_length:
                     return bytes_sent_total
