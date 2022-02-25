@@ -68,6 +68,14 @@ class LoggingAdapter:
 
 class WebServerBase(object):
     # TODO: doc
+    
+    # Subtle API note: handlers added by the constructor are processed before
+    # the default handlers.  Handlers added by calls to the add_handler[s]
+    # methods are added after.  i.e., if you add a '.*' handler via the
+    # constructor, it will implicity cancel the default handlers, because your
+    # handler is always used.  conversely, if you add a '.*' handler via the
+    # methods, any paths handled by the default handlers will override yours.
+    
     def __init__(self, handlers={}, context={},
                  wrap_handlers=True, add_default_handlers=True,
                  varz=True, varz_path_trim=14,
@@ -84,7 +92,6 @@ class WebServerBase(object):
         self.varz_path_trim = varz_path_trim
         self.wrap_handlers = wrap_handlers
         if varz: k_varz.stamp('web-server-start')
-
 
     def add_handlers(self, handlers):
         if isinstance(handlers, dict):
