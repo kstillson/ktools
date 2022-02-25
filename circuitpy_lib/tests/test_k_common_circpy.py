@@ -1,5 +1,5 @@
 
-import context
+import context_circuitpy_lib   # fixup Python include path
 
 import os
 import k_common_circpy as C

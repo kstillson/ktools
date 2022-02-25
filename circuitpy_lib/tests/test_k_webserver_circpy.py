@@ -12,7 +12,7 @@
 # print it's IP address.  Set that IP address in the environment variable
 # TESTHOST, and then run this test script under pytest-3.
 
-import context
+import context_circuitpy_lib   # fixup Python include path
 
 import os, random, threading, subprocess
 import k_common_circpy as C
