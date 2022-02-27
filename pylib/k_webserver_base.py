@@ -1,6 +1,10 @@
 
-import re
+import re, sys
 import k_html, k_varz
+
+PY_VER = sys.version_info[0]
+if PY_VER == 2: import urllib
+else: import urllib.parse
 
 # A populated instance of this class is passed to handlers.
 class Request:
@@ -159,7 +163,9 @@ class WebServerBase(object):
         else:
             answer = handler_data.func(request)
         
-        if isinstance(answer, str): answer = Response(answer)
+        if isinstance(answer, int):   answer = Response(str(answer))
+        if isinstance(answer, float): answer = Response(str(answer))
+        if isinstance(answer, str):   answer = Response(answer)
         if self.varz: k_varz.bump('web-status-%d' % answer.status_code)
         return answer
 
@@ -214,7 +220,13 @@ def parse_get_params(full_path):
     for param in param_list:
         if '=' not in param: continue
         key, val = param.split('=')
-        params[key] = val    # TODO: decoding...?
+        if PY_VER == 2:
+            key = urllib.unquote(key)
+            val = urllib.unquote(val)
+        else:
+            key = urllib.parse.unquote(key)
+            val = urllib.parse.unquote(val)
+        params[key] = val
     return params
 
 
