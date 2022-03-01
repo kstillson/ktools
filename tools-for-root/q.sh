@@ -416,14 +416,20 @@ function dns_check() {
 
     # Search for duplicates in individual config files.
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate MAC assignments"
-    egrep '^[0-9]' $DD/dnsmasq.hosts | cut -d' ' -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate IP assignments"
+    egrep '^[0-9]' $DD/dnsmasq.hosts | tr '\t' ' ' | cut -d' ' -f1 | fgrep -v '192.168.1.2' | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate IP assignments"
     hostnames=$(gettemp sorted-hostnames)
     egrep '^[0-9]' $DD/dnsmasq.hosts | tr '\t' ' ' | cut -d' ' -f2- | tr -s ' ' '\n' | sort > $hostnames
     cat $hostnames | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate hostname assignments"
 
+    # Search for autostart docker containers without assigned addresses.
+    hostnames_re=$(gettemp hostnames_re)
+    cat $hostnames | sed -e 's/^/^/' -e 's/$/$/' > $hostnames_re
+    d la | egrep -v -f $hostnames_re | append_if $out "containers without assigned IP addresses"
+
     # Search for green network MAC addresses without an assigned IP (will cause dhcp to fail because of dnsmasq 'static' config).
-    fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | fgrep -v -f $hostnames | append_if $out "green MACs without assigned addresses"
+    fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | egrep -v -f $hostnames_re | append_if $out "green MACs without assigned addresses"
     rmtemp $hostnames
+    rmtemp $hostnames_re
 
     # Search for contradictions between config files and what's actually seen in the leases.
     allowed_mac_to_names=$(gettemp allowed-mac-to-names)
