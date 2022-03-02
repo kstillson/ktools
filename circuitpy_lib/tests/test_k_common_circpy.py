@@ -41,13 +41,13 @@ def test_web_get():
     ##assert str(resp) == ''
 
     # Test manually construct get params.
-    assert '\na=b\n\nx=y\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test?a=b&x=y').text
+    assert '\na=b\n\nx=y\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test-get?a=b&x=y').text
 
     # Test get_dict.
-    assert '\nc=d\n\ne=f\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test', get_dict={'c': 'd', 'e': 'f'}).text
+    assert '\nc=d\n\ne=f\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test-get', get_dict={'c': 'd', 'e': 'f'}).text
 
     # Test post_dict.
-    assert '\ng=h\n\ni=j\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test', post_dict={'g': 'h', 'i': 'j'}).text
+    assert '\ng=h\n\ni=j\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test-get', post_dict={'g': 'h', 'i': 'j'}).text
 
 
 def test_read_web():

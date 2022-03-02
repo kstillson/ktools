@@ -41,7 +41,7 @@ if not CIRCUITPYTHON:
 
 import socketpool, wifi
 
-BUFFER_SIZE = 256
+BUFFER_SIZE = 2048
 
 
 class WebServerCircPy(B.WebServerBase):
@@ -103,12 +103,20 @@ class WebServerCircPy(B.WebServerBase):
     def _parse_body(self, reader):
         data = bytearray()
         for line in reader:
-            if line == b'\r\n': break
+            ## kds disabled; breaks POST receipt and doesn't appear to have any positive value:
+            ## if line == b'\r\n': break
             data.extend(line)
         if PY_VER == 3: data = str(data, 'utf-8')
         return data
 
+    # Loop until we get something valid.
     def _read_request(self, client, remote_address=None):
+        req = None
+        while not req:
+            req = self._read_request_real(client, remote_address)
+        return req
+        
+    def _read_request_real(self, client, remote_address=None):
         message = bytearray()
         client.settimeout(self.timeout)
         socket_recv = True
@@ -129,6 +137,7 @@ class WebServerCircPy(B.WebServerBase):
         reader = io.BytesIO(message)
         line = reader.readline()
         if PY_VER == 3: line = str(line, "utf-8")
+        if not line: return None  # caller will loop to read more bytes.
             
         (method, full_path, version) = line.rstrip("\r\n").split(None, 2)
 
