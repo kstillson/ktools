@@ -181,7 +181,7 @@ function runner() {
 # Wrapper around /usr/local/bin/run_para which assumes --ssh mode unless
 # $1 is "LOCAL", in which case it uses --cmd mode.  ssv hosts in $1,
 # command to run in $2+.
-function run_para() {
+function RUN_PARA() {
     if [[ "$1" == "LOCAL" ]]; then
         type="--cmd"
         shift
@@ -345,13 +345,13 @@ function iptables_save() {
 function pinger() {
     set +e
     RP_FLAGS="$RP_FLAGS -q -m 99 "
-    problems=$(run_para LOCAL "$@" "set -o pipefail; ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
+    problems=$(RUN_PARA LOCAL "$@" "set -o pipefail; ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emitc green "all ok\n"; return; fi
     for try in 1 2 3; do
         echo ""
         emit $(printf "problems: [ $(echo $problems | tr '\n' ' ') ]... ${RED} retry #${try}/3... ${RESET}")
         sleep 1
-        problems=$(run_para LOCAL "$problems" "ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
+        problems=$(RUN_PARA LOCAL "$problems" "ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emit "fixed; $(echoC green 'all ok\n')"; return; fi
     done
     emitc red ":-("
@@ -393,7 +393,7 @@ function updater() {
 # unprivlidged account.  Sometimes upgrades remove those capabilities, so this puts them back.
 # I keep the root dir read-only on my primary server, so need to temp-enable writes...
 function enable_rsnap() {
-    run_para "$(list_rsnap_hosts | without jack)" "/sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
+    RUN_PARA "$(list_rsnap_hosts | without jack)" "/sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
     mount -o remount,rw /
     /sbin/setcap cap_dac_read_search+ei /usr/bin/rsync
     mount -o remount,ro /
@@ -416,14 +416,20 @@ function dns_check() {
 
     # Search for duplicates in individual config files.
     egrep '^[0-9a-f]' $DD/dnsmasq.macs | cut -d, -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate MAC assignments"
-    egrep '^[0-9]' $DD/dnsmasq.hosts | cut -d' ' -f1 | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate IP assignments"
+    egrep '^[0-9]' $DD/dnsmasq.hosts | tr '\t' ' ' | cut -d' ' -f1 | fgrep -v '192.168.1.2' | sort | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate IP assignments"
     hostnames=$(gettemp sorted-hostnames)
     egrep '^[0-9]' $DD/dnsmasq.hosts | tr '\t' ' ' | cut -d' ' -f2- | tr -s ' ' '\n' | sort > $hostnames
     cat $hostnames | uniq -c | fgrep -v '  1 ' | append_if $out "duplicate hostname assignments"
 
+    # Search for autostart docker containers without assigned addresses.
+    hostnames_re=$(gettemp hostnames_re)
+    cat $hostnames | sed -e 's/^/^/' -e 's/$/$/' > $hostnames_re
+    d la | egrep -v -f $hostnames_re | append_if $out "containers without assigned IP addresses"
+
     # Search for green network MAC addresses without an assigned IP (will cause dhcp to fail because of dnsmasq 'static' config).
-    fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | fgrep -v -f $hostnames | append_if $out "green MACs without assigned addresses"
+    fgrep 'set:green' $DD/dnsmasq.macs | cut -d, -f3 | tr -d ' ' | egrep -v -f $hostnames_re | append_if $out "green MACs without assigned addresses"
     rmtemp $hostnames
+    rmtemp $hostnames_re
 
     # Search for contradictions between config files and what's actually seen in the leases.
     allowed_mac_to_names=$(gettemp allowed-mac-to-names)
@@ -833,14 +839,15 @@ function main() {
         systemd-up | s1) systemctl start ${1:-procmon} ;;             ## start a specified service (procmon by default)
         without | wo) cat | without "$@" ;;                           ## remove args (csv or regexp) from stdin (space, csv, or line separated)
     # general linux maintenance routines - for multiple hosts
-        disk-free-all | dfa | linux-free | lf) run_para "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;   ## root disk free for all linux hosts
-        ping-pis | pp | p) pinger "$(list_pis)" ;;                    ## ping all pis
+        disk-free-all | dfa | linux-free | lf) RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;   ## root disk free for all linux hosts
+        ping-pis | p) pinger "$(list_pis)" ;;                    ## ping all pis
+        ping-pis-continuous | ppc | pp) RP_FLAGS="--quiet"; RUN_PARA LOCAL "$(list_pis)" "ping @" ;;                  ## ping all pi's continuously until stopped
         ping-tps | ptp) pinger "$(list_tps)" ;;                       ## ping all tplinks
-        reboot-counts-month | rcm) m=$(date +%b); run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;  ## count of reboots this month on all pi's
-        reboot-counts | rc) d=$(date "+%b %d " | sed -e "s/ 0/  /"); echo "$d"; run_para "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep '$d' | wc -l" ;;  ## count of reboots today on all pi's
-        re-wifi-pi | rwp) run_para "$(list_pis)" "wpa_cli -i wlan0 reconfigure" ;;             ## reconf wifi ap on pis
+        reboot-counts-month | rcm) m=$(date +%b); RUN_PARA "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;  ## count of reboots this month on all pi's
+        reboot-counts | rc) d=$(date "+%b %d " | sed -e "s/ 0/  /"); echo "$d"; RUN_PARA "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep '$d' | wc -l" ;;  ## count of reboots today on all pi's
+        re-wifi-pi | rwp) RUN_PARA "$(list_pis)" "wpa_cli -i wlan0 reconfigure" ;;             ## reconf wifi ap on pis
         update-all | update_all | ua) updater "$(list_linux | without jack,blue,mc2)" ;;       ## run apt-get upgrade on all linux hosts
-        uptime | uta | ut) run_para "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;  ## uptime for all linux hosts
+        uptime | uta | ut) RUN_PARA "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;  ## uptime for all linux hosts
     # list multiple hosts (or multiple other things)
         list-all | la) list_all | without $EXCLUDE ;;                 ## list all known local-network hosts (respecting -x) via dhcp server leases
         list-git-dirs | lg) echo $GIT_DIRS ;;                         ## list all known git dirs (hard-coded list)
@@ -849,10 +856,10 @@ function main() {
         list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;      ## list all hosts using rsnapshot (hard-coded list)
         list-tps | ltp | lt) list_tps | without $EXCLUDE ;;           ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
-        listp) run_para LOCAL "$(cat)" "$@" ;;      ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
-        run | run-remote | rr | r) hostspec=$1; shift; run_para "$(list_dynamic $hostspec)" "$@" ;;  ## run cmd $2+ on listed hosts $1
-        run-local | rl) hostspec=$1; shift; run_para LOCAL "$(list_dynamic $hostspec)" "$@" ;;       ## eg: q run-local linux scp localfile @:/destdir
-        run-pis | rpis | rp) run_para "$(list_pis)" "$@" ;;               ## run command on all pi's
+        listp) RUN_PARA LOCAL "$(cat)" "$@" ;;      ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
+        run | run-remote | rr | r) hostspec=$1; shift; RUN_PARA "$(list_dynamic $hostspec)" "$@" ;;  ## run cmd $2+ on listed hosts $1
+        run-local | rl) hostspec=$1; shift; RUN_PARA LOCAL "$(list_dynamic $hostspec)" "$@" ;;       ## eg: q run-local linux scp localfile @:/destdir
+        run-pis | rpis | rp) RUN_PARA "$(list_pis)" "$@" ;;               ## run command on all pi's
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) dns_update_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
