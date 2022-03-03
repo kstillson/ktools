@@ -33,9 +33,9 @@ class TimedEvent:
 class TimeQueue:
     def __init__(self, list_of_timed_events, use_daymins=None):
         self.queue = sorted(list_of_timed_events, key=lambda i: i.daymins)
-        now = use_daymins or buildtime_ts(time.localtime())
+        now = use_daymins or daymins_ts(time.localtime())
         self.last_check = now
-        self.next_event_index = 0
+        self.next_event_index = len(self.queue)  # Default to 1 beyond valid index, in-case all events have passed.
         for i, event in enumerate(self.queue):
             if not self.queue[i].is_past(now):
                 self.next_event_index = i
@@ -43,7 +43,7 @@ class TimeQueue:
 
     def check(self, use_daymins=None):
         fired = 0
-        now = use_daymins or buildtime_ts(time.localtime())
+        now = use_daymins or daymins_ts(time.localtime())
         if now < self.last_check:
             # We've wrapped to the next day. Empty any left-over queue.
             while self.next_event_index < len(self.queue):
@@ -58,7 +58,7 @@ class TimeQueue:
             self.queue[self.next_event_index].fire()
             fired += 1
             self.next_event_index += 1
-            if self.next_event_index > len(self.queue):
+            if self.next_event_index >= len(self.queue):
                 self.next_event_index = None   # Queue exhausted for today.
                 break
         return fired

@@ -14,7 +14,7 @@ include ../common/Makefile-unstaged
 
 # Test everything under both python 2 & 3.
 # Uses 'script' to avoid stripping the color (as output redirection would).
-$(TEST_LOG): $(wildcard *.py)
+$(TEST_LOG): $(wildcard *.py) $(wildcard tests/*.py)
 	script -eq -c "pytest-3 tests/test_*.py" $(TEST_LOG)
 
 # ---------- pass-throughs

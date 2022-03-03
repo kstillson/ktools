@@ -48,7 +48,7 @@ def test_basics():
     assert tq.check(Q.daymins(4, 1)) == 2
     assert VALUE == 400
     assert tq.next_event_index == 4
-    
+
     # Wrap around to a call the next morning before 0100 and confirm the
     # final event ran, and we're queued for 0100.
     assert tq.check(Q.daymins(0, 1)) == 1
@@ -60,9 +60,30 @@ def test_basics():
     assert VALUE == 100
 
 
-def test_oddities():
+def test_empty_queue():
     tq = Q.TimeQueue([], use_daymins = Q.daymins(1, 30))
     assert tq.check(Q.daymins(1, 31)) == 0
     assert tq.check(Q.daymins(23, 59)) == 0
     assert tq.check(Q.daymins(4, 0)) == 0
+
+
+def test_only_one_event_and_it_is_passed():
+    global VALUE
+    VALUE = -2
+    tq = Q.TimeQueue([
+        Q.TimedEvent(2, 0,   setter, [200])],
+                     use_daymins = Q.daymins(2, 30))
+    assert VALUE == -2  # event should not have run.
+
+    # Advance clock a few mins and call check.  Event should still not have run.
+    assert tq.check(Q.daymins(2, 45)) == 0
+    assert VALUE == -2
+
+    # Now wrap to before the event time.  Still should not have run.
+    assert tq.check(Q.daymins(1, 1)) == 0
+    assert VALUE == -2
+
+    # Finally wrap until after the event time, and it should have run.
+    assert tq.check(Q.daymins(2, 1)) == 1
+    assert VALUE == 200
 
