@@ -39,3 +39,11 @@ install:
 
 uninstall:
 	for d in $(INSTALL_DIRS); do cd $$d; rm $(PLAIN_TARGETS); rmdir $$d; done
+
+# ---------- specialized target local logic
+
+install-hw:
+	install $(PLAIN_TARGETS) /media/$(shell whoami)/CIRCUITPY/lib
+	install ../pylib/k_*.py /media/$(shell whoami)/CIRCUITPY/lib
+	rm /media/$(shell whoami)/CIRCUITPY/lib/k_webserver.py
+
