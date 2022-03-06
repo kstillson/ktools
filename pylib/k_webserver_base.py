@@ -1,10 +1,13 @@
 
-import re, sys
+import re, os, sys
 import k_html, k_varz
 
+CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
 PY_VER = sys.version_info[0]
-if PY_VER == 2: import urllib
-else: import urllib.parse
+
+if not CIRCUITPYTHON:   # urllib not currently available in circuitpy
+    if PY_VER == 2: import urllib
+    else: import urllib.parse
 
 # A populated instance of this class is passed to handlers.
 class Request:
@@ -211,6 +214,20 @@ class WebServerBase(object):
 
 # ---------- Other helper functions
 
+REPLACEMENTS = {
+    '%20': ' ',    '%22': '"',    '%2b': '+',    '%2c': ',',
+    '%2d': '-',    '%2e': '.',    '%2f': '/',    '%3a': ':',
+    '%3d': '=',    '%5b': '(',    '%5d': ')',    '%5f': '_',
+}
+
+def poor_mans_unquote(s):
+    s = s.replace('+', ' ')   # gotta go first...
+    for srch, repl in REPLACEMENTS.items():
+        s = s.replace(srch, repl)
+        s = s.replace(srch.upper(), repl)
+    return s
+
+
 # in: full url with get params, out: dict of get params.
 def parse_get_params(full_path):
     if '?' not in full_path: return {}
@@ -220,7 +237,11 @@ def parse_get_params(full_path):
     for param in param_list:
         if '=' not in param: continue
         key, val = param.split('=')
-        if PY_VER == 2:
+        if CIRCUITPYTHON:
+            # urllib not available; let's make a few basic fixes manually and hope for the best.
+            key = poor_mans_unquote(key)
+            val = poor_mans_unquote(val)
+        elif PY_VER == 2:
             key = urllib.unquote(key)
             val = urllib.unquote(val)
         else:

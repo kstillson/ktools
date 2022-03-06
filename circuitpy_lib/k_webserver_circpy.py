@@ -34,7 +34,7 @@ PY_VER = sys.version_info[0]
 # Are we running CircuitPython? If not, inject path to the simulator.
 import os, sys
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
-if not CIRCUITPYTHON: 
+if not CIRCUITPYTHON:
     simpath = os.path.dirname(__file__).replace('py_lib', 'py_sim')
     if not simpath in sys.path: sys.path.insert(0, simpath)
 # ----------
@@ -53,7 +53,7 @@ class WebServerCircPy(B.WebServerBase):
             log_request=Q.log_info, log_404=Q.log_info,
             log_general=Q.log_info, log_exceptions=Q.log_error,
             get_logz_html=Q.last_logs_html)
-        
+
         super(WebServerCircPy, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
 
         self.timeout = timeout
@@ -68,6 +68,7 @@ class WebServerCircPy(B.WebServerBase):
         self.socket.setblocking(blocking)
 
     # Returns: -3 if no suitable handler was found
+    #          -2 if exception occured during other processing (not handler)
     #          -1 if exception during handler
     #           0 if non-blocking and no client connected yet
     #           1 if handler ran ok.
@@ -78,7 +79,11 @@ class WebServerCircPy(B.WebServerBase):
             if e.args[0] == 11: return 0  # errno.EAGAIN
             else: raise
 
-        request = self._read_request(client, remote_address)
+        try:
+            request = self._read_request(client, remote_address)
+        except Exception as e:
+            self.logger.log_exceptions('error reading request: %s' % str(e))
+            return -2
         response = self.find_and_run_handler(request)
         self._send_response(client, response)
 
@@ -107,14 +112,15 @@ class WebServerCircPy(B.WebServerBase):
         return data
 
     def _read_request(self, client, remote_address=None):
-        buffer_size = 4096
         client.settimeout(self.timeout)
         message = bytearray()
+        buffer_size = 4096
+        buffer = bytearray(buffer_size)
         try:
             while True:
-                buffer = client.recv(buffer_size)
-                message.extend(buffer)
-                if len(buffer) < buffer_size: break
+                got = client.recv_into(buffer)
+                for byte in buffer: message.append(byte)   # circuitpython doesn't support bytearray.extend()
+                if got < buffer_size: break
         except OSError as error:
             print("Error reading from socket: ", error)
 
@@ -122,7 +128,7 @@ class WebServerCircPy(B.WebServerBase):
         line = reader.readline()
         if not line: line = reader.readline()
         if PY_VER == 3: line = str(line, "utf-8")
-            
+
         (method, full_path, version) = line.rstrip("\r\n").split(None, 2)
 
         request = B.Request(method, full_path, remote_address=remote_address)
@@ -143,7 +149,7 @@ class WebServerCircPy(B.WebServerBase):
         out += '\r\n'
         out1 = bytes(out) if PY_VER == 2 else bytes(out, 'utf-8')
         if response.binary: out2 = response.body
-        elif PY_VER == 2: out2 = bytes(response.body) 
+        elif PY_VER == 2: out2 = bytes(response.body)
         else: out2= bytes(response.body, 'utf-8')
         out = out1 + out2
 
@@ -153,7 +159,8 @@ class WebServerCircPy(B.WebServerBase):
         while True:
             try:
                 b = out # b = bytes(out) if PY_VER == 2 else bytes(out, 'utf-8')
-                bytes_sent_total += client.send(b)
+                bytes_sent = client.send(b)
+                bytes_sent_total += bytes_sent
                 if bytes_sent_total >= out_length:
                     return bytes_sent_total
                 else:

@@ -58,6 +58,21 @@ def test_parse_get_params():
     assert d['x1'] == 'y1'
     assert d['x2'] == 'y2'
 
+def test_unquote_get_params():
+    orig = B.CIRCUITPYTHON
+    
+    B.CIRCUITPYTHON = False
+    d = B.parse_get_params(path1 + '?x1=a%20b')
+    assert len(d) == 1
+    assert d['x1'] == 'a b'
+
+    B.CIRCUITPYTHON = True
+    d = B.parse_get_params(path1 + '?x1=a%20b+c%2Bd e')
+    assert len(d) == 1
+    assert d['x1'] == 'a b c+d e'
+
+    orig = B.CIRCUITPYTHON
+    
 def test_finding_handlers():
     wsb = B.WebServerBase(paths, logging_adapter=None)
     assert wsb.test_handler(path1).body == '1'

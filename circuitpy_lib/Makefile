@@ -43,7 +43,9 @@ uninstall:
 # ---------- specialized target local logic
 
 install-hw:
-	install $(PLAIN_TARGETS) /media/$(shell whoami)/CIRCUITPY/lib
-	install ../pylib/k_*.py /media/$(shell whoami)/CIRCUITPY/lib
-	rm /media/$(shell whoami)/CIRCUITPY/lib/k_webserver.py
+	export D="/media/$(shell whoami)/CIRCUITPY/lib"; \
+	  mkdir -p $$D/circuitpy_lib ; \
+	  install $(PLAIN_TARGETS) $$D/circuitpy_lib ; \
+	  install ../pylib/k_*.py $$D ; \
+	  rm $$D/k_webserver.py
 
