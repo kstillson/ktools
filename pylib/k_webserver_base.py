@@ -215,11 +215,10 @@ class WebServerBase(object):
 # ---------- Other helper functions
 
 REPLACEMENTS = {
-    '%20': ' ',    '%22': '"',    '%2b': '+',    '%2c': ',',
-    '%2d': '-',    '%2e': '.',    '%2f': '/',    '%3a': ':',
-    '%3d': '=',    '%5b': '(',    '%5d': ')',    '%5f': '_',
+    '%20': ' ',    '%22': '"',    '%28': '(',    '%29': ')',
+    '%2b': '+',    '%2c': ',',    '%2d': '-',    '%2e': '.',
+    '%2f': '/',    '%3a': ':',    '%3d': '=',    '%5f': '_',
 }
-
 def poor_mans_unquote(s):
     s = s.replace('+', ' ')   # gotta go first...
     for srch, repl in REPLACEMENTS.items():
