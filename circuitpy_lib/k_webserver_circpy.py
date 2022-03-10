@@ -45,7 +45,7 @@ MSG_DONTWAIT = 64   # from socket.MSG_DONTWAIT (so we don't have to import socke
 
 class WebServerCircPy(B.WebServerBase):
     def __init__(self, handlers={}, port=80,
-                 listen_address='0.0.0.0', blocking=False, timeout=30, backlog_queue_size=3, socket=None,
+                 listen_address='0.0.0.0', blocking=False, timeout=5, backlog_queue_size=3, socket=None,
                  *args, **kwargs):
 
         # Create a logging adapter that uses the low-dep system from k_log_queue.
@@ -65,6 +65,7 @@ class WebServerCircPy(B.WebServerBase):
         self.logger.log_general('starting circpy webserver on port %d' % port)
         self.socket.bind((listen_address, port))
         self.socket.listen(backlog_queue_size)
+        self.blocking = blocking
         self.socket.setblocking(blocking)
 
     # Returns: -3 if no suitable handler was found
@@ -80,6 +81,7 @@ class WebServerCircPy(B.WebServerBase):
             else: raise
 
         try:
+            client.setblocking(self.blocking)
             request = self._read_request(client, remote_address)
         except Exception as e:
             self.logger.log_exceptions('error reading request: %s' % str(e))
