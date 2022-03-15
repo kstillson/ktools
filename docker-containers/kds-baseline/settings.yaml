@@ -1,0 +1,7 @@
+log: NONE
+
+# Would be convenient for (rare) manual runs, but breaks the test...:
+# foreground: 1
+
+extra_docker: -ti
+

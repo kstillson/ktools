@@ -1,0 +1,6 @@
+
+# Make sure local root is not passwordless.
+sed -i -e 's/root:::/root:!::/' /etc/shadow
+
+# And no need to keep this file around anymore.
+rm -f ${0}

@@ -2,8 +2,8 @@
 # Supported meta-targets:  all, clean, test, install, update
 
 PY_TARGETS := d-cowscan d-run
-SH_TARGETS := d d-map
-PLAIN_TARGETS := d-common-opts.sh d-common.sh d_lib.py	 # Listed here to preserve extension.
+SH_TARGETS := d d-build d-map
+PLAIN_TARGETS := d_lib.py	 # Listed here to preserve extension.
 include ../common/Makefile-unstaged
 
 # ---------- testing

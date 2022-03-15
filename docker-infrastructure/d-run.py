@@ -28,6 +28,7 @@ import argparse, os, shutil, socket, subprocess, sys, yaml
 #    relative paths are relative to  /rw/dv/{name}/...                 /rw/dv/TMP/{name}/...
 
 DEFAULT_TAG = 'live'
+FALLBACK_IP = '192.168.2.99'   # Try this is all other methods fail.
 
 # ----------------------------------------
 # General purpose subroutines
@@ -148,7 +149,9 @@ def get_ip_to_use(args, settings):
             ip = get_ip(lookup_host)
         if not ip and args.name_prefix:
             ip = get_ip(lookup_host.replace(args.name_prefix, ''))
-            if not ip: return err('unable to get ip for hostname [%s].' % lookup_host)
+            if not ip:
+                err('unable to get ip for hostname [%s]; trying fallback ip %s.' % (lookup_host, FALLBACK_IP))
+                ip = FALLBACK_IP
     if args.subnet:
         if not ip or ip.count('.') != 3:
             err('unable to process --subnet flag; IP is being selected by docker.')

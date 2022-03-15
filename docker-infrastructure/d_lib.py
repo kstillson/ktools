@@ -4,16 +4,25 @@
 
 import atexit, glob, os, random, ssl, string, subprocess, sys, time, urllib, urllib2
 
-DLIB="/var/lib/docker/200000.200000"
+DLIB=os.environ.get('DLIB', None)
+if not DLIB:
+    DLIB = '/var/lib/docker/200000.200000'
+    if not os.path.isdir(DLIB): DLIB = '/var/lib/docker'
 
 OUT = sys.stdout
 
 # ----------------------------------------
 # Intended as external command targets (generally called by ~/bin/d)
 
-def get_cow_dir(container_name):
-    print(find_cow_dir(container_name))
 
+def get_cid(container_name):  # or None if container not running.
+    out = subprocess.check_output(['/usr/bin/docker', 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
+    for line in out.split('\n'):
+        if ' ' not in line: continue
+        cid, name = line.split(' ', 1)
+        if name == container_name: return cid
+    return None
+    
 
 def latest_equals_live(container_name):
     try:
@@ -26,18 +35,18 @@ def latest_equals_live(container_name):
             tag, did = lines.split(' ')
             id_map[tag.replace('"', '')] = did
         if id_map['latest'] == id_map['live']:
-            print('true')
-            return
-        print('false')
+            return 'true'
+        return 'false'
     except:
-        print('unknown')
+        return 'unknown'
+
 
 def run_command_in_container(container_name, cmd):
-    return subprocess.check_output(['/usr/bin/docker', 'exec', '-u', '0', container_name, cmd])
+    command = ['/usr/bin/docker', 'exec', '-u', '0', container_name]
+    if isinstance(cmd, list): command.extend(cmd)
+    else: command.append(cmd)
+    return subprocess.check_output(command)
 
-
-# ----------------------------------------
-# General purpose
 
 def find_cow_dir(container_name):
     try:
@@ -49,6 +58,8 @@ def find_cow_dir(container_name):
     if not files: sys.exit('ouch; docker naming convensions have changed: %s' % globname)
     with open(files[0]) as f: cow = f.read()
     return DLIB + '/overlay2/%s/diff' % cow
+
+def get_cow_dir(container_name): return find_cow_dir(container_name)  # alias for above
 
 
 # ----------------------------------------
@@ -109,11 +120,15 @@ def run_log_relay(args, out):
     emit('log relay done.')
     
 def stop_container_at_exit(args):
-    if not args.run or args.prod: return
-    if not args.real_name: return emit('Unable to stop test container; name not persisted')
-    emit('stopping container ' + args.real_name)
-    try: subprocess.check_call(['/usr/bin/docker', 'stop', args.real_name], stdout=OUT, stderr=OUT)
-    except Exception as e: emit('container already stopped: %s' % e)
+    if not args.run or args.prod: return False   # Don't stop something we didn't start.
+    if not args.real_name: return False
+    cid = get_cid(args.real_name)
+    if not cid: return False    # Already stopped
+    try:
+        subprocess.check_call(['/usr/bin/docker', 'stop', args.real_name], stdout=None, stderr=None)
+        return True
+    except Exception as e:
+        return False
 
 # filename is in the regular (jack host) filesystem.
 def file_expect(expect, filename):
@@ -207,7 +222,9 @@ def socket_exchange(sock, send_list, add_eol=False, emit_transcript=False):
 def main(args):
     args.pop(0)         # Don't care about script name
     func = args.pop(0)  # Name of function to call
-    return globals()[func](*args)
+    out = globals()[func](*args)
+    if out: print(out)
+    return 0
 
 
 if __name__ == '__main__': sys.exit(main(sys.argv))

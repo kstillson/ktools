@@ -1,0 +1,40 @@
+#!/bin/bash
+
+SCOPE="$1"
+
+HOSTNAME=$(hostname)
+if [[ $# -gt 1 ]]; then
+  CONTEXT="$2"
+else
+  CONTEXT="${HOSTNAME}-"
+fi
+
+function emit() {
+  SECRET="$1"
+  if [[ -z "${SECRET}" ]]; then return; fi
+  echo "${SECRET}"
+  exit 0
+}
+
+if [[ "${HOSTNAME}" == "dbg-"* ]]; then
+  echo "kmc network retrieval disabled by hostname."
+  KMC_NONET=1
+fi
+
+while [[ 1 ]]; do
+  if [[ -v KMC_SECRET ]]; then emit ${KMC_SECRET}; fi
+
+  if [[ ! -v KMC_NONET ]]; then
+    SECRET=$(/usr/bin/curl -ks https://km:4443/${CONTEXT}${SCOPE})
+    if [[ ! -z "${SECRET}" ]]; then emit "${SECRET}"; fi
+  fi
+
+  if [[ -t 1 ]]; then
+      echo -n "auto retrieval failed; enter km secret for ${SCOPE}: "
+      read -s SECRET
+      emit ${SECRET}
+  fi
+
+  echo "unable to get KMC secret; will try again after delay."
+  sleep 30 
+done

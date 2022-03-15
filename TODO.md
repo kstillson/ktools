@@ -1,7 +1,4 @@
 
-## NeoTree
-   - add proper web interface
-
 ## ++ktools
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
@@ -13,6 +10,7 @@
    - tools-for-root: anything to prune from "q" ?
    - tools-for-users: doc
    - Tplink: generalize & publish tplink.py and related tools
+   - add neotree or at least extracted elements...?
 
 ## General
    - new name for ktools ?  (Mauveine?  #8D029B)

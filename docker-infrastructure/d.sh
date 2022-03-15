@@ -85,7 +85,8 @@ function list-testable() {
 
 function down() {
   name="$1"
-  docker stop ${name}
+  if [[ "$name" == "" ]]; then emitc red "no such container"; return; fi
+  docker stop "${name}"
 }
 
 function up() {
@@ -173,7 +174,7 @@ function myhelp() {
 case "$cmd" in
 
 # Simple container management
-  build | b) cd ${D_SRC_DIR}/$(pick_container_from_dev $spec); ./Build ;;  ## Build container, name=$1
+  build | b) cd ${D_SRC_DIR}/$(pick_container_from_dev $spec); d-build ;;  ## Build container, name=$1
   down | stop | 0) down $(pick_container_from_up $spec) ;;                 ## Stop container $1
   restart | 01 | R)           ## Restart container $1
     name=$(pick_container_from_up $spec)

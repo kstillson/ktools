@@ -1,4 +1,0 @@
-# Docker UID mapping
-
-TODO
-
