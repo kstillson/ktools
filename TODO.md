@@ -1,9 +1,10 @@
 
 ## ++ktools
+   - docker infrastructure
+   - keymaster: generalize & publish kmdock
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - general wisdom: lots of writing
-   - keymaster: generalize & publish kmdock
    - monitoring: generalize & publish filewatchdock, nagdock, procmon
    - services: decide what to keep, generalize & publish, subst links
    - syslog: generalize & publish syslogdock

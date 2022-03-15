@@ -1,0 +1,11 @@
+
+# Custom local build logic, invoked by d-build
+
+# Update keymanager client from outside this directory branch.
+SRC="../../tools-for-users/kmc.sh"
+DEST="files/usr/local/bin/kmc"
+/bin/cp -bLpuv $SRC $DEST
+/usr/bin/diff -q $SRC $DEST && { echo "$DEST is up to date."; } || { echo "update of $DEST failed; aborting."; exit -2; }
+
+# continue with standard build logic
+CONTINUE=1

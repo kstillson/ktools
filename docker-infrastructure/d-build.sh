@@ -51,12 +51,13 @@ export VER=${VER:-${REPO}:${TAG}}
 export NETWORK=${NETWORK:-docker2}
 
 # Defer to directory local logic, if provided.
-if [[ -x ./Build ]]; then
+if [[ -r ./Build ]]; then
     export CONTINUE="0"  # set to "1" to continue with default logic after returning, if desired.
     echo "Deferring to ./Build."
     . ./Build
     status=$?
     if [[ "$CONTINUE" != "1" ]]; then exit $status; fi
+    echo "continuing after ./Build"
 fi
 
 # ----------  --setlive mode
