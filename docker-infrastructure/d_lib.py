@@ -22,7 +22,7 @@ def get_cid(container_name):  # or None if container not running.
         cid, name = line.split(' ', 1)
         if name == container_name: return cid
     return None
-    
+
 
 def latest_equals_live(container_name):
     try:
@@ -96,7 +96,9 @@ def launch_or_find_container(args, extra_run_args=None):
     if args.run:
         atexit.register(stop_container_at_exit, args)
         launch_test_container(args, extra_run_args, OUT)
-        if os.fork() == 0: run_log_relay(args, OUT)
+        if os.fork() == 0:
+            run_log_relay(args, OUT)
+            sys.exit(0)
 
     try: ip = subprocess.check_output(['/root/bin/d', 'ip', name]).strip()
     except: ip = None
@@ -118,7 +120,8 @@ def launch_test_container(args, extra_run_args, out):
 def run_log_relay(args, out):
     subprocess.check_call(['/usr/bin/docker', 'logs', '-f', args.real_name], stdout=out, stderr=out)
     emit('log relay done.')
-    
+
+
 def stop_container_at_exit(args):
     if not args.run or args.prod: return False   # Don't stop something we didn't start.
     if not args.real_name: return False
@@ -166,7 +169,7 @@ def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_
         if expect_err and expect_err not in err: d_lib.abort('Unable to find error "%s" in "%s" for: %s' % (expect_err, err, cmd))
     emit('success; expected output for %s' % cmd)
 
-    
+
 # expect can be a string or a list.  if list, accept any substring.
 def web_expect(expect, server, path, port=80, expect_status=None, post_params=None, headers={}, https=False, timeout=2, size_limit=512, proxy_host=None):
     status, contents, url = web_get(server, path, port, post_params, headers, https, timeout, size_limit, proxy_host)
