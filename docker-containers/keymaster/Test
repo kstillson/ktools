@@ -16,18 +16,25 @@ def main():
     if args.prod:
         sys.exit('cannot do in-place prod testing; test is destructive to its container.')
 
+    # Put our test database in place.
     d_lib.run_command_in_container(name, ['/bin/cp', '-f', '-a', '/home/km/km-test.data.gpg', '/home/km/km.data.gpg'])
 
+    # Try retrieving the test key before decrypting the database; should fail.
     d_lib.web_expect('not ready', ip, '/test', port=4443, https=True)
 
+    # Decrypt the database with the test password, should say we're ok.
     d_lib.web_expect('ok', ip, '/', post_params={'password': 'ken123'}, port=4443, https=True)
 
+    # Try retrieving the same test key.  Should work now.
     d_lib.web_expect('hithere', ip, '/test', port=4443, https=True)
 
+    # Check the service health.
     d_lib.web_expect('ok', ip, '/healthz', port=4443, https=True)
 
+    # On-demand clear of the decrypted database.
     d_lib.web_expect('cleared', ip, '/qqq', port=4443, https=True)
 
+    # And now a health check should indicate "not ready".
     d_lib.web_expect('not ready', ip, '/test', port=4443, https=True)
 
     print('pass')

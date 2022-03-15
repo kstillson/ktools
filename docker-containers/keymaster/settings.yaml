@@ -1,5 +1,8 @@
 
-# Port mapping done via iptables NAT rather than docker proxy,
-# because need to preserve incoming IP address.
+# Port mapping must be done via iptables NAT rather than docker proxy, because
+# we need to the preserve incoming IP address-- it's part of the access control
+# checks.
+
+
 
 

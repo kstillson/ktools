@@ -1,7 +1,75 @@
 #!/usr/bin/python
 
+'''Key Master - local network secret bootstrapper.
+
+This is a web-server that hosts a small database of secrets.  Clients request
+secrets by providing the name of the secret they want via an http GET request,
+and the server checks to see if the source-IP address of the requestor is
+allowed for that entry.
+
+The database is stored in a symmetrically encypted GPG file, and the server
+does not know the password to it.  This makes it safe to backup the source
+directory without exposing secrets (although see notes below concerning the
+security of the TLS private key).
+
+To enable the server (i.e. decrypt the database), the service owner must
+manually provide the GPG passphrase via a web client (a login-style form is
+provided).  Once this is done, the service is up and can serve secrets.
+
+The use-case is services that require some sort of password in order to
+initialize, but where you do not wish to build the password into the service.
+The service can instead contact the key-master and request its own secrets,
+then use those secrets to start-up.  Clients should be smart enough to
+auto-retry secret retieval, in-case they contact the key-master at a time when
+the database has not yet been unlocked.  A suitable CLI client is provided in
+tools_for_users/kmc.sh
+
+The vision is that in the event of a many-service restart, all the systems
+that need secerts will go into retry loops until key-master admin enters the
+one master password to unlock the database, and then all the services can
+auto-restart without further intervention.
+
+This system uses source-IP as the primary access control mechanism.  It is
+therefore not suitable for use in networks where source-IP impersonation is
+likely to work, or where multiple users have access to IP addresses authorized
+to request secrets.  The name of the secret being retrieved can also be used
+as a weak second access control, if desired.  (i.e. the client is essentially
+exchanging a low-value secret which is stored in its source-code or
+configuration for a higher-value secret stored in key-master).
+
+The server is deliberately hyper-sentitive.  A single unauthorized or
+not-understood request will cause the server to panic and clear it's decrypted
+copy of the database.  The key-master owner must then re-enter the GPG
+passphrase before any more secrets can be served.  Thus: (a) use of this
+system is not suitable in cases where curious or malicious network users might
+cause a denial-of-service by panicing the server, and (b) continuous
+monitoring of the service is probably necessary.
+
+The secrets database is formatted like a Windows-style .ini file; see
+km-test.data.gpg for an example; the passphrase is "ken123".  Note that the
+outside-container Test is currently dependent on this file's current contents.
+'''
+
 # ssl wrapper reference:
 # http://rzemieniecki.wordpress.com/2012/08/10/quick-solution-to-ssl-in-simplexmlrpcserver-python-2-6-and-2-7/
+# TODO: update to Python 3.
+
+# Note 1: the provided server.pem is an expired cert that only works for the
+# author's domain anyway.  You should either replace it with your own, or
+# disable certificate checking.  If you disable cert checking, be aware that
+# you expose this serviec to a man-in-the-middle attack, so make sure you
+# trust your network before going down that path.  (You really need to trust
+# your local network anyway, as source-IP checks are critical to the security
+# model here.)
+
+# Note 2: unless you have some sort of meta-keymaster to bootstrap the
+# keymaster, it's not possible to password protect the private key embedded in
+# the CERTKEYFILE.  So either protect your source code (think about where it's
+# getting backed up, etc), or make sure it's not a particularly valuable
+# certificate!
+# TODO: build in support for a creating a self-signed CA with matching client
+#       code to check against it.
+
 
 DATAFILE = '/home/km/km.data.gpg'
 CERTKEYFILE = '/home/km/server.pem'

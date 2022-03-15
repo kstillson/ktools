@@ -1,7 +1,6 @@
 
 ## ++ktools
-   - docker infrastructure
-   - keymaster: generalize & publish kmdock
+   - tfu/kmc: add retry loop
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - general wisdom: lots of writing

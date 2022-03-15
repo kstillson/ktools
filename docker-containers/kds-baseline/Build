@@ -1,11 +1,14 @@
-
 # Custom local build logic, invoked by d-build
 
+function copy_and_check() {
+  src="$1"
+  dest="$2"
+  /bin/cp -bLpuv $src $dest
+  /usr/bin/diff -q $src $dest && { echo "$dest is up to date."; } || { echo "update of $dest failed; aborting."; exit -2; }
+}
+
 # Update keymanager client from outside this directory branch.
-SRC="../../tools-for-users/kmc.sh"
-DEST="files/usr/local/bin/kmc"
-/bin/cp -bLpuv $SRC $DEST
-/usr/bin/diff -q $SRC $DEST && { echo "$DEST is up to date."; } || { echo "update of $DEST failed; aborting."; exit -2; }
+copy_and_check ../../tools-for-users/kmc.sh files/usr/local/bin/kmc
 
 # continue with standard build logic
 CONTINUE=1

@@ -1,6 +1,9 @@
 #!/bin/bash
 # Keymanager client
 
+# TODO: add internal retry logic
+
+
 HOSTNAME=$(hostname)
 
 # $1 is the "scope", essentially the name of the key we're trying to retrieve.

@@ -73,8 +73,15 @@ docker build --network $NETWORK -t ${VER} .
 status=$?
 if [[ "$status" != "0" ]]; then exit $status; fi
 
-# If we're not in --auto mode, then we're done.
+# ---------- next steps
 
+# If we're in --test mode, run the tests and then exit.
+if [[ "$1" == "--test" || "$1" == "-t" ]]; then
+    runtests
+    exit $?
+fi
+
+# If we're NOT in --auto mode, then we're done.
 if [[ "$1" != "--auto" && "$1" != "-a" ]]; then exit 0; fi
 
 # ---------- auto mode.  after build, test, and relabel if ok.
