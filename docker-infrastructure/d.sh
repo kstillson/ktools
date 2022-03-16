@@ -86,7 +86,7 @@ function list-testable() {
 function down() {
   name="$1"
   if [[ "$name" == "" ]]; then emitc red "no such container"; return; fi
-  docker stop "${name}"
+  docker stop -t 2 "${name}"
 }
 
 function up() {
