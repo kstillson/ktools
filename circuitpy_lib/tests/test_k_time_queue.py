@@ -87,3 +87,34 @@ def test_only_one_event_and_it_is_passed():
     assert tq.check(Q.daymins(2, 1)) == 1
     assert VALUE == 200
 
+
+def test_end_of_day_without_wrapping():
+    global VALUE
+    VALUE = -3
+    tq = Q.TimeQueue([
+        Q.TimedEvent(10, 0,   setter, [1000]),
+        Q.TimedEvent(18, 0,   setter, [1800])],
+                     use_daymins = Q.daymins(15, 30))
+
+    # Check immediately upon construction.
+    assert tq.check(Q.daymins(15, 30)) == 0
+    assert VALUE == -3
+
+    # Check again right before 18:00 event.
+    assert tq.check(Q.daymins(17, 59)) == 0
+    assert VALUE == -3
+
+    # And check at 18:00
+    assert tq.check(Q.daymins(18, 0)) == 1
+    assert VALUE == 1800
+
+    # And check again after 18:00 but before daily wrap.
+    # (this catches some bugs discovered during development)
+    assert tq.check(Q.daymins(18, 5)) == 0
+
+    # Now wrap, but to a time before the next event.
+    assert tq.check(Q.daymins(8, 0)) == 0
+
+    # And finally check after the 10:00 event passes.
+    assert tq.check(Q.daymins(10, 0)) == 1
+    assert VALUE == 1000
