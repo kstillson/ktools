@@ -50,11 +50,11 @@ def expand_log_shorthand(log, name):
             slog = 'syslog-address=tcp://localhost:5514'
         else:
             slog = 'syslog-address=udp://%s:1514' % socket.gethostbyname('syslogdock')
-        return ['--log-driver=syslog', 
-                '--log-opt', 'mode=non-blocking', 
-                '--log-opt', 'max-buffer-size=4m', 
+        return ['--log-driver=syslog',
+                '--log-opt', 'mode=non-blocking',
+                '--log-opt', 'max-buffer-size=4m',
                 '--log-opt', slog,
-                '--log-opt', 'syslog-facility=local3', 
+                '--log-opt', 'syslog-facility=local3',
                 '--log-opt', 'tag=%s' % name]
     elif ctrl in ['j', 'json']:
         return ['--log-driver=json-file',
@@ -107,7 +107,7 @@ def map_dir(destdir, name, include_tree=False, include_files=False):
     # Make sure the mapped parent dir exists.
     clone_dir(os.path.dirname(destdir), os.path.dirname(mapped))
     # Destructive replace of the mapped dir.
-    if os.path.exists(mapped): 
+    if os.path.exists(mapped):
         print('Removing previous alt dir: %s' % mapped)
         shutil.rmtree(mapped)
     # If not including the tree, the only thing to do is clone the top level dir.
@@ -134,7 +134,7 @@ def map_to_clone(destdir, name):      return map_dir(destdir, name, True, True)
 def get_ip(hostname):
     try: return socket.gethostbyname(hostname)
     except Exception: return None
-    
+
 
 def get_ip_to_use(args, settings):
     ip = args.ip or settings.get('ip', None) or ''
@@ -160,6 +160,20 @@ def get_ip_to_use(args, settings):
             temp[2] = args.subnet
             ip = '.'.join(temp)
     return ip
+
+
+# Try to find the location of the specified docker container dir.
+def search_for_dir(dir):
+    if os.path.isdir(dir): return dir
+    cd = os.getcwd()
+    if 'ktools/' in cd:
+        pre, post = cd.split('ktools/', 1)
+        candidate = '%s/ktools/docker-containers/%s' % (pre, dir)
+        if os.path.isdir(candidate): return candidate
+    candidate = '%s/docker-dev/%s' % (os.environ('HOME'), dir)
+    if os.path.isdir(candidate): return candidate
+    return None    # Out of ideas...
+    
 
 # ----------------------------------------
 
@@ -203,7 +217,7 @@ def parse_args():
     # Flags that activate an entirely different mode of operation from the usual.
     ap.add_argument('--shell', '-S', action='store_true', help='If activated, override the normal entrypoint and use foreground interactive tty-enabled bash.')
     ap.add_argument('--test', '-t', action='store_true', help='Just print the command that would be run rather than running it.')
-    
+
     args = ap.parse_args()
     if args.latest and args.tag==DEFAULT_TAG: args.tag = 'latest'
     if args.test_in_place:
@@ -241,7 +255,7 @@ def parse_settings(args):
 def gen_command(args, settings):
     cmnd = ['/usr/bin/docker', 'run']
     fg = (args.fg
-          or args.shell 
+          or args.shell
           or (settings.get('foreground',0) == 1  and not args.vol_alt))
     if not fg: cmnd.append('-d')
     settings['basename'] = basename = settings['settings_leaf_dir']
@@ -272,7 +286,7 @@ def gen_command(args, settings):
     if settings.get('extra_docker'): cmnd.extend(settings['extra_docker'].split(' '))
     if args.rm: cmnd.append('--rm')
 
-    if args.shell: 
+    if args.shell:
         cmnd.extend(['--user', '0', '-ti', '--entrypoint', '/bin/bash'])
     else:
         if settings.get('debug_alt_cmnd') and args.vol_alt:
@@ -288,7 +302,7 @@ def gen_command(args, settings):
     if args.vol_alt:
         add_mounts(cmnd, None, False, basename, settings.get('mount_test_only'))
 
-    if 'ports' in settings: 
+    if 'ports' in settings:
         if args.dev or args.dev_test:
             print('skipping settings port mapping because in dev mode.')
         elif args.tag != 'live':
@@ -318,14 +332,17 @@ def gen_command(args, settings):
       if extra_init: cmnd.extend(extra_init.strip().split(' '))
 
     return cmnd
-    
-    
+
+
 # ----------------------------------------
 # main
 
 def main():
     args = parse_args()
-    if args.cd: os.chdir('/root/docker-dev/' + args.cd)
+    if args.cd:
+        dir = search_for_dir(args.cd)
+        if dir: os.chdir(dir)
+        else: err('dont know how to find directory: ' + dir)
     settings = parse_settings(args)
     cmnd = gen_command(args, settings)
     if args.print_cmd or args.test:
