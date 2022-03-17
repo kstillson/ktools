@@ -1,8 +1,7 @@
 
-ACCOUNTS_DONT_DELETE_REGEX="^(km)"
-GROUP_DONT_DELETE_REGEX="^(km)"
+ACCOUNTS_DONT_DELETE_REGEX="^(root|km)"
+GROUP_DONT_DELETE_REGEX="^(root|km)"
 
 # Fix km runtime specific permissions.
 chown km /home/km/.gnupg
 chgrp -R km /home/km
-

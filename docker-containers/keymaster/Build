@@ -53,14 +53,9 @@ openssl req -x509 -newkey rsa:4096 -days $DAYS \
 	    -subj "${SUBJECT}/CN=${KM_HOSTNAME}/emailAddress=${EMAIL}" \
 	    -addext "subjectAltName = DNS:${KM_HOSTNAME}"
 
-cat $TEMP_CERT_FILE $TEMP_KEY_FILE > $CERTKEY_FILE
-
-# If we're running as root, make sure other folks can read the non-sensitive cert.
-chmod o+r $TEMP_CERT_FILE
-
-echo "created ${CERT_SETTINGS}."
-echo "This file should be included by Docker, but ignored by git."
-echo ""
+# Make sure permissions are right on those files.
+chmod go+r $TEMP_CERT_FILE
+chmod go-r $TEMP_KEY_FILE
 }
 
 # ---------- main
@@ -82,5 +77,11 @@ if [[ -f $CERTKEY_FILE ]]; then
   exit -2
 fi
 
-generate_self_signed_cert
+if [[ ! -f $TEMP_KEY_FILE ]]; then
+  generate_self_signed_cert
+fi
 
+cat $TEMP_CERT_FILE $TEMP_KEY_FILE > $CERTKEY_FILE
+echo "created ${CERTKEY_FILE}."
+echo "This file should be included by Docker, but ignored by git."
+echo ""
