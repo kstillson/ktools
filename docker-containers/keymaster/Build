@@ -1,0 +1,86 @@
+
+# Custom local build logic, invoked by d-build
+
+# This script creates a self-signed certificate for the keymaster.
+# It will attempt to preserve any already existing key/cert, and will abort
+# if it gets confused, hopefully not overwriting anything it shouldn't.
+
+# Upon successful completion, files/home/km/server.pem should be available for
+# the km server, and the file private.d/server.crt should be available for
+# clients to use when checking against the server.
+
+#
+# WARNING
+#
+# Because keymaster is designed to auto-start, and assuming there's no
+# meta-keymaster to help it do so, the private key for the server (which is in
+# both files/home/km/server.pem and private.d/server.key should be protected).
+# The provided .gitingore files should exclude both these files from git, but
+# you may need to take further action to make sure things like your backup
+# procedures don't expose the key.
+
+
+# ---------- local self-signed certificate for the keymaster
+
+CERT_SETTINGS="${CERT_SETTINGS:-private.d/cert-settings}"
+
+CERTKEY_FILE="files/home/km/server.pem"
+TEMP_CERT_FILE="private.d/server.crt"
+TEMP_KEY_FILE="private.d/server.key"
+
+# -----
+
+function generate_self_signed_cert() {
+
+if [[ ! -f $CERT_SETTINGS ]]; then
+cat << EOF
+ERROR- you need a $CERT_SETTINGS file specific to your local details.
+Please create $CERT_SETTINGS with something like this:
+
+KM_HOSTNAME="keymaster"
+SUBJECT="/C=US/ST=your-state/L=your-town/O=your-org-name"
+EMAIL="admin-email-address@whatever.com"
+DAYS="365"
+EOF
+CONTINUE=0
+exit -3
+fi
+
+source $CERT_SETTINGS
+
+openssl req -x509 -newkey rsa:4096 -days $DAYS \
+            -keyout $TEMP_KEY_FILE -out $TEMP_CERT_FILE -nodes \
+	    -subj "${SUBJECT}/CN=${KM_HOSTNAME}/emailAddress=${EMAIL}" \
+	    -addext "subjectAltName = DNS:${KM_HOSTNAME}"
+
+cat $TEMP_CERT_FILE $TEMP_KEY_FILE > $CERTKEY_FILE
+
+# If we're running as root, make sure other folks can read the non-sensitive cert.
+chmod o+r $TEMP_CERT_FILE
+
+echo "created ${CERT_SETTINGS}."
+echo "This file should be included by Docker, but ignored by git."
+echo ""
+}
+
+# ---------- main
+
+CONTINUE=1   # continue with standard build logic when done
+
+if [[ -f $CERTKEY_FILE && -f $TEMP_CERT_FILE && -f $TEMP_KEY_FILE ]]; then
+  if [[ ! $CERTKEY_FILE -ot $TEMP_CERT_FILE ]]; then
+    echo "$CERTKEY_FILE already exists; leaving it alone."
+    return
+  fi
+fi
+
+if [[ -f $CERTKEY_FILE ]]; then
+  echo "$CERTKEY_FILE exists but is older than $TEMP_CERT_FILE or something else went wrong."
+  echo "cowardly refusing to continue (which would overwrite $CERTKEY_FILE ."
+  echo "You *probably* want to delete $CERTKEY_FILE and retry."
+  CONTINUE=0
+  exit -2
+fi
+
+generate_self_signed_cert
+

@@ -11,4 +11,5 @@ COPY files /
 RUN /prep
 
 USER km
+WORKDIR /home/km
 ENTRYPOINT ["/home/km/km.py"]

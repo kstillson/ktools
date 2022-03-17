@@ -9,7 +9,11 @@ __pypackages__/
 
 # ---------- kds additions
 
-# local bin/ staging dir
+# local bin/ staging dir  (see common/Makefile-staged)
 staging/
+
+# local secrets or other local specifics
 private.d/
+server.crt
+km.crt
 

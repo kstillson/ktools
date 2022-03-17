@@ -1,7 +1,7 @@
 
 # Ignore files that are pulled in or built by manual ./Build rules.
-# The canonical copies of these are elsewhere in the git dir, so no need to
-# create change with what are effectively temp files.
+# The canonical copies of these are elsewhere in the git or are local secrets.
+**/files/home/km/server.pem
 **/files/usr/local/bin/kmc
 
 # Ignore backup files (sometimes created by ./Build updates)
