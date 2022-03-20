@@ -1,6 +1,7 @@
 
 ## ++ktools
    - Tplink: generalize & publish tplink.py and related tools (change to separate docker)
+   - TOC / general intro write-up
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - general wisdom: lots of writing
