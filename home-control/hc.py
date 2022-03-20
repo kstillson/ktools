@@ -119,7 +119,7 @@ class Setting:
   default: Any
   help: str = None
   short_flag: str = None
-  
+
 INITIAL_SETTINGS = [
   Setting('debug',       False, 'print debugging info and use syncronous mode (no parallelism)', '-d'),
   Setting('plugin-args', [],    'plugin-specific settings in the form key=value', '-p'),
@@ -141,15 +141,21 @@ def _load_file_as_module(filename, desired_module_name=None):
 
 # ---------- data initialization
 
-def init_settings():
-  settings = {}
-  for s in INITIAL_SETTINGS: settings[s.name] = s.default
+def init_settings(baseline_settings):
+  global SETTINGS
+
+  SETTINGS = baseline_settings  # use our caller's instance so they can see modifications made later.  e.g. this is used by test_hc to get SETTINGS['TEST_VALS'], which is added by plugin_test.init()
+
+  # Copy over anything needed from default settings
+  for s in INITIAL_SETTINGS:
+    if s.name not in SETTINGS: SETTINGS[s.name] = s.default
+
   # In-case any plugins (e.g. plugin_delay) need to make recursive calls back into this module:
-  settings['_control'] = control
+  SETTINGS['_control'] = control
+
   # Shared list of threads, in-case we need to wait for them before exit.
-  settings['_threads'] = []
-  return settings
-    
+  SETTINGS['_threads'] = []
+
 
 # returns dict of plugin prefix strings to plugin module instances.
 def load_plugins(settings):
@@ -185,7 +191,7 @@ def find_device_action(target, command):
     WILDCARD_DEVICES = []
     for dev in DEVICES:
       if '*' in dev: WILDCARD_DEVICES.append(dev)
-  
+
   # Try a command-specific match.
   dev_command = f'{target}:{command}'
   if dev_command in DEVICES: return DEVICES[dev_command]
@@ -203,7 +209,7 @@ def find_device_action(target, command):
     if fnmatch.fnmatch(target, candidate): return DEVICES[candidate]
 
   return None  # Couldn't find a matching device.
-  
+
 
 # ---------- primary API entry
 
@@ -211,14 +217,11 @@ def control(target, command='on', settings={}):
 
    # ----- initialize our global state, if needed.
   global DEVICES, PLUGINS, SCENES, SETTINGS
-  if not SETTINGS:
-    SETTINGS = settings  # use our caller's instance so they can see modifications made later.  e.g. this is used by test_hc to get SETTINGS['TEST_VALS'], which is added by plugin_test.init()
-    SETTINGS.update(init_settings())
-  if settings: SETTINGS.update(settings)
+  if not SETTINGS: init_settings(settings)
   if not PLUGINS: PLUGINS = load_plugins(SETTINGS)
   if not DEVICES: DEVICES, SCENES = load_data()
 
-  # ----- control logic  
+  # ----- control logic
   if SETTINGS['debug']: print(f'control request {target} -> {command}')
 
   # Check if this is a simple device action, and take it if so.
@@ -227,12 +230,15 @@ def control(target, command='on', settings={}):
     plugin_name, plugin_params = device_action.split(':', 1)
     plugin_module = PLUGINS.get(plugin_name)
     if not plugin_module: return f'plugin {plugin_name} not found'
-    return plugin_module.control(plugin_name, plugin_params, target, command)
-  
+    if SETTINGS['test']:
+      return f'TEST mode: would send {target}->{command} to plugin {plugin_name}({plugin_params})'
+    else:
+      return plugin_module.control(plugin_name, plugin_params, target, command)
+
   # Check if this is a scene, and if so run its expansion.
   scene_list = SCENES.get(target)
   if not scene_list: return f'Dont know what to do with target {target}'
-  
+
   outputs = []
   for i in scene_list:
     if ':' in i:
@@ -245,17 +251,18 @@ def control(target, command='on', settings={}):
     outputs.append(answer)
   return outputs
 
-    
+
 # ---------- command-line main
 
 def main():
   # parse args
   ap = argparse.ArgumentParser(description='home controller')
   for s in INITIAL_SETTINGS:
-    ap.add_argument('--%s' % s.name,
-                    nargs='*' if isinstance(s.default, list) else '?',
-                    default=s.default, help=s.help)
-  # add fixed positional arguments.    
+    kwargs = { 'default': s.default,  'help': s.help }
+    if s.default is False: kwargs['action'] = 'store_true'
+    if isinstance(s.default, list): kwargs['nargs'] = '*'
+    ap.add_argument(f'--{s.name}', f'{s.short_flag}', **kwargs)
+  # add fixed positional arguments.
   ap.add_argument('target', help='device or scene to command')
   ap.add_argument('command', nargs='?', default='on', help='command to send to target')
   args = ap.parse_args()
@@ -269,7 +276,7 @@ def main():
 
   # if there are any lingering threads, finish them up before exiting.
   for i in SETTINGS['_threads']: i.join()
-  
+
 
 if __name__ == '__main__':
   main()

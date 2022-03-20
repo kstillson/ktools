@@ -81,7 +81,7 @@ CMD_LOOKUP = {
   'bulb-reboot'  : '{"smartlife.iot.common.system":{"reboot":{"delay":1}}}',
   'bulb-reset'   : '{"smartlife.iot.common.system":{"reset":{"delay":1}}}',
 
-  # variable white temperature bulb targets  
+  # variable white temperature bulb targets
   'bright-white': '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"color_temp":9000,"brightness":100}}}',
   'white'       : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"color_temp":9000,"brightness":50}}}',
   'med-white'   : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"color_temp":9000,"brightness":50}}}',
@@ -90,7 +90,7 @@ CMD_LOOKUP = {
   'med-warm'    : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"color_temp":3000,"brightness":50}}}',
   'dim-warm'    : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"color_temp":3000,"brightness":4}}}',
 
-  # multi-color bulb targets  
+  # multi-color bulb targets
   'red' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"hue":0,"saturation":100,"brightness":75,"color_temp":0}}}',
   'dim-red' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"hue":300,"saturation":100,"brightness":15,"color_temp":0}}}',
   'green' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"mode":"normal","on_off":1,"hue":120,"saturation":100,"brightness":75,"color_temp":0}}}',
@@ -109,11 +109,10 @@ CMD_LOOKUP = {
 
 
 def control(plugin_name, plugin_params, device_name, dev_command):
-  print(f'@@1 pn={plugin_name}, pp={plugin_params}, dn={device_name}, dv={dev_command}')
   hostname, command = plugin_params.split(':', 1)
   hostname = hostname.replace('%d', device_name)
   command = command.replace('%c', dev_command)
-  
+
   if ':' in command:
     tmp, cmd_param = command.split(':', 1)
     command = tmp + ':@@'
@@ -121,12 +120,11 @@ def control(plugin_name, plugin_params, device_name, dev_command):
     cmd_param = None
 
   tplink_cmd = CMD_LOOKUP.get(command)
-  print(f'@@2 hn={hostname}, c={command}, tpc={tplink_cmd}')
   if not tplink_cmd: return f'{device_name}: unknown tplink command: {command}'
 
   if cmd_param: tplink_cmd = tplink_cmd.replace('@@', cmd_param)
   if SETTINGS['debug']: print('sending %s : %s' % (device_name, tplink_cmd))
-  
+
   sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   try:
     sock_tcp.settimeout(SETTINGS['timeout'])
