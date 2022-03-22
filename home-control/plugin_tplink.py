@@ -145,8 +145,8 @@ CMD_LOOKUP = {
 def normalize(plugin_type, hostname_in, command_in):
   command = command_in
   # Remove any hostname hints
-  hostname = hostname_in.replace('bulb-tp-', 'tp-')
-  hostname = hostname.replace('plug-tp-', 'tp-')
+  hostname = hostname_in.replace('BULB-tp-', 'tp-')
+  hostname = hostname.replace('PLUG-tp-', 'tp-')
 
   # And map commands according to plugin-type
   if plugin_type in ['TPLINK', 'switch']:

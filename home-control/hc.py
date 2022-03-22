@@ -90,19 +90,10 @@ You would activate this via:  ./hc bedroom_for 120
 
 '''
 
-import argparse, fnmatch, glob, os
+import argparse, fnmatch, glob, os, sys
 from dataclasses import dataclass
 from typing import Any
 
-# ---------- control constants
-
-DATA_DIR = os.environ.get('DATA_DIR', '.')
-PLUGINS_DIR = os.environ.get('PLUGINS_DIR', '.')
-
-# Alternate location of plugin and data files, relative to above DIRs.  If
-# you change this, you probably need to make cooresponding .gitignore changes
-# to keep your files in this directory private.
-PRIVATE_DIR = os.environ.get('PRIVATE_DIR', 'private.d')
 
 # ---------- global state
 
@@ -128,10 +119,15 @@ class Setting:
   short_flag: str = None
 
 INITIAL_SETTINGS = [
-  Setting('debug',       False, 'print debugging info and use syncronous mode (no parallelism)', '-d'),
-  Setting('plugin-args', [],    'plugin-specific settings in the form key=value', '-p'),
-  Setting('test',        False, "Just show what would be done, don't do it.", '-T'),
-  Setting('timeout',     5,     'default timeout for external communications', '-t'),
+  Setting('data-dir',    '.',            'base directory in which to search for data files (see also private-dir)'),
+  Setting('datafiles',   ['data*.py'],   'glob-list of files (within data-dir) to load devices and scenes from', '-D'),
+  Setting('debug',       False,          'print debugging info and use syncronous mode (no parallelism)', '-d'),
+  Setting('plugin-args', [],             'plugin-specific settings in the form key=value', '-p'),
+  Setting('plugins-dir', '.',            'base directory in which to search for plugin files (see also private-dir)'),
+  Setting('plugins',     ['plugin_*.py'],'glob-list of files to load as plugins'),
+  Setting('private-dir' ,'private.d',    'extra directory (relative to data-dir and plugins-dir) in which to search for files.  Note: if you change this, you might need to make corresponding changes to .gitignore to keep your files private.', '-P'),
+  Setting('test',        False,          "Just show what would be done, don't do it.", '-T'),
+  Setting('timeout',     5,              'default timeout for external communications', '-t'),
 ]
 
 # ---------- general support
@@ -166,24 +162,31 @@ def init_settings(baseline_settings):
 
 # returns dict of plugin prefix strings to plugin module instances.
 def load_plugins(settings):
-  plugin_files = glob.glob(os.path.join(PLUGINS_DIR, 'plugin_*.py'))
-  plugin_files.extend(glob.glob(os.path.join(PLUGINS_DIR, PRIVATE_DIR, 'plugin_*.py')))
+  plugin_files = []
+  for i in settings['plugins']:
+    plugin_files.extend(glob.glob(os.path.join(settings['plugins-dir'], i)))
+    plugin_files.extend(glob.glob(os.path.join(settings['plugins-dir'], settings['private-dir'], i)))
   plugins = {}
-  for pi in plugin_files:
-    new_module = _load_file_as_module(pi)
+  for i in plugin_files:
+    new_module = _load_file_as_module(i)
     pi_names = new_module.init(settings)
     for i in pi_names: plugins[i] = new_module
+  if not plugins: print('WARNING- no plugins found.', file=sys.stderr)
   return plugins
 
 
-def load_data():
+def load_data(settings):
+  datafiles = []
+  for i in settings['datafiles']:
+    datafiles.extend(glob.glob(os.path.join(settings['data-dir'], i)))
+    datafiles.extend(glob.glob(os.path.join(settings['data-dir'], settings['private-dir'], i)))
   scenes = {}
   devices = {}
-  datafiles = glob.glob(os.path.join(DATA_DIR, 'data*.py'))
-  datafiles.extend(glob.glob(os.path.join(DATA_DIR, PRIVATE_DIR, 'data*.py')))
   for f in datafiles:
     temp_module = _load_file_as_module(f)
     devices, scenes = temp_module.init(devices, scenes)
+  if not devices: print('WARNING- no device data found.', file=sys.stderr)
+  if not scenes: print('WARNING- no scene data found.', file=sys.stderr)
   return devices, scenes
 
 
@@ -226,7 +229,10 @@ def control(target, command='on', settings={}):
   global DEVICES, PLUGINS, SCENES, SETTINGS
   if not SETTINGS: init_settings(settings)
   if not PLUGINS: PLUGINS = load_plugins(SETTINGS)
-  if not DEVICES: DEVICES, SCENES = load_data()
+  if not DEVICES: DEVICES, SCENES = load_data(SETTINGS)
+  if SETTINGS['debug']:
+    print(f'loaded {len(PLUGINS)} plugins, {len(DEVICES)} devices, and {len(SCENES)} scenes.')
+    print(f'settings: {SETTINGS}')
 
   # ----- control logic
   if SETTINGS['debug']: print(f'control request {target} -> {command}')
@@ -265,10 +271,12 @@ def main():
   # parse args
   ap = argparse.ArgumentParser(description='home controller')
   for s in INITIAL_SETTINGS:
+    args = [f'--{s.name}']
+    if s.short_flag: args.append(f'{s.short_flag}') 
     kwargs = { 'default': s.default,  'help': s.help }
     if s.default is False: kwargs['action'] = 'store_true'
     if isinstance(s.default, list): kwargs['nargs'] = '*'
-    ap.add_argument(f'--{s.name}', f'{s.short_flag}', **kwargs)
+    ap.add_argument(*args, **kwargs)
   # add fixed positional arguments.
   ap.add_argument('target', help='device or scene to command')
   ap.add_argument('command', nargs='?', default='on', help='command to send to target')

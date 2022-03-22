@@ -1,18 +1,19 @@
 
-import itertools, pytest, os, sys
-
-os.environ['DATA_DIR'] = 'testdata'
-os.environ['PLUGINS_DIR'] = 'testdata'
+import itertools, pytest, sys
 import hc
 
-# plugin_test.init() will modified this dict by our session fixture,
-# adding the key 'TEST_VALS', which provides us visibility into plugin ops.
-SETTINGS = {}
-
+SETTINGS = {
+    'data-dir': 'testdata',
+    'debug': True,
+    'plugins-dir': 'testdata',
+}
 
 @pytest.fixture(scope='session')
 def init():
-    print('@@ fixture', file=sys.stderr)
+    # Register our SETTINGS dict with hc.  This has the side-effect of hc
+    # using this dict for all subsequently set settings.  Once
+    # plugin_test.init() is called, this will give us visibility into
+    # SETTINGS['TEST_VALS'],
     hc.control('doesnt', 'matter', SETTINGS)
 
     
