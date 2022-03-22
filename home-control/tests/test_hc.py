@@ -1,5 +1,7 @@
 
 import itertools, pytest, sys
+
+import context  # adds .. to the path
 import hc
 
 SETTINGS = {
