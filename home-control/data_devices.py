@@ -1,12 +1,23 @@
 
 DEVICES = {
 
-# ---------- tplink generic
+# ---------- tplink generics
 
-  'tp-*'              : 'TPLINK:%d:%c',  
+    # The 'bulb-' and 'plug-' prefixes are plugin type 'hints' that allow us
+    # to differenciate TP-Link device types by artificially introducing the
+    # prefix into the device names.  The plugin will strip out these hint
+    # prefixes before using the device-name as an actual hostname.
+
+  'bulb-tp-*'         : 'TPLINK-BULB:%d:%c',
+  'plug-tp-*'         : 'TPLINK-PLUG:%d:%c',
+  'tp-*'              : 'TPLINK:%d:%c',
+
+# ---------- delay trigger
+
+  'delay'             : 'DELAY:%c',
 
 # ---------- web-based
-    
+
 # End-point names for web-based individual controls
   # Accent color lights (controlled by homesec)
   'accent-party:off'   : 'WEBS:home.point0.net/p0',

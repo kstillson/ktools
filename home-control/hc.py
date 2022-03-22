@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+# TODO:
+# notes- known sources:
+#  h/control:ext
+#  h/inst
+#  keypads
+#  trellis
+
 '''home-control: smart device and scene controller
 
 ---------- usage
@@ -15,7 +22,7 @@ The default command is "on" if not specified.
 
 ---------- user notes
 
-The data_* files construct two dictionaries: DEVICES and SCENES
+The data* files construct two dictionaries: DEVICES and SCENES
 
 DEVICES maps device names (or name patterns) to a plugin name and
 plugin-specific params to actuate the command.  For example, if you have a
@@ -172,8 +179,8 @@ def load_plugins(settings):
 def load_data():
   scenes = {}
   devices = {}
-  datafiles = glob.glob(os.path.join(DATA_DIR, 'data_*.py'))
-  datafiles.extend(glob.glob(os.path.join(DATA_DIR, PRIVATE_DIR, 'data_*.py')))
+  datafiles = glob.glob(os.path.join(DATA_DIR, 'data*.py'))
+  datafiles.extend(glob.glob(os.path.join(DATA_DIR, PRIVATE_DIR, 'data*.py')))
   for f in datafiles:
     temp_module = _load_file_as_module(f)
     devices, scenes = temp_module.init(devices, scenes)
@@ -275,6 +282,7 @@ def main():
   print(control(args.target, args.command, settings))
 
   # if there are any lingering threads, finish them up before exiting.
+  if SETTINGS['_threads']: print('waiting for pending threads to finish...')
   for i in SETTINGS['_threads']: i.join()
 
 
