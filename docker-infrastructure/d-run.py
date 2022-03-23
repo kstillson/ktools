@@ -162,6 +162,10 @@ def get_ip_to_use(args, settings):
     return ip
 
 
+def get_puid():
+    with open('/sys/class/dmi/id/product_uuid') as f: return f.read().strip()
+
+
 # Try to find the location of the specified docker container dir.
 def search_for_dir(dir):
     if os.path.isdir(dir): return dir
@@ -173,7 +177,7 @@ def search_for_dir(dir):
     candidate = '%s/docker-dev/%s' % (os.environ.get('HOME'), dir)
     if os.path.isdir(candidate): return candidate
     return None    # Out of ideas...
-    
+
 
 # ----------------------------------------
 
@@ -205,6 +209,7 @@ def parse_args():
     ap.add_argument('--network', '-N', default=None, help='Name of docker network to use. defaults to "docker1"')
     ap.add_argument('--ports', '-p', default=None, nargs='*', help='Port to map, host:container (can specify flag multiple times')
     ap.add_argument('--rm', action='store_true', help='Ask docker to auto-remove the container when it stops.')
+    ap.add_argument('--skip_puid', action='store_true', help='Do not set variable PUID inside container with hosts unique dmi ID')
     ap.add_argument('--subnet', default=None, help='If specified, use existing logic to determine IP number, but then map that number to this subnet.')
     ap.add_argument('--ipv6', '-6', action='store_true', help='If not specified, make port bindings specific to IPv4 only.')
 
@@ -310,6 +315,9 @@ def gen_command(args, settings):
         else:
             add_ports(cmnd, settings.get('ports'), args.ipv6)
     if args.ports: add_ports(cmnd, args.ports, args.ipv6)
+
+    if not args.skip_puid:
+        cmnd.extend(['-e', 'PUID=%s' % get_puid()])
 
     if 'image' in settings:
         image = settings.get('image')
