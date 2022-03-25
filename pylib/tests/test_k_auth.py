@@ -29,7 +29,7 @@ def test_basic_operation():
     # ---------- simple standard successful use-case
 
     # registration phase - client
-    sec = A.generate_shared_secret(use_hostname, use_username, use_password)
+    sec = A.generate_client_registration(use_hostname, use_username, use_password)
     s_ver, s_host, s_user, s_hash = sec.split(':')
     assert s_ver == 'v2'
     assert s_host == use_hostname
@@ -37,7 +37,7 @@ def test_basic_operation():
     assert len(s_hash) > 10
 
     # registration phase - server
-    A.register_shared_secret(sec, None)
+    A.register(sec, None)
 
     # client side - generate token
     token = A.generate_token(use_command, use_hostname, use_username, use_password, use_time)
@@ -62,15 +62,15 @@ def test_basic_operation():
 
     # ---------- confirm disable reply prevention
 
-    sec2 = A.get_shared_secret(use_hostname, use_username)
-    assert sec2 is not None
-    ok, status, hostname, username, sent_time = A.validate_token_from_secret(token, use_command, sec2, use_hostname, False, None)
+    regblob = A.get_registration_blob(use_hostname, use_username)
+    assert regblob is not None
+    ok, status, hostname, username, sent_time = A.validate_token_given_registration(token, use_command, regblob, use_hostname, False, None)
     assert ok
 
     # ---------- confirm single byte command change breaks verification
 
     bad_command = use_command.replace('c', 'x')
-    ok, status, hostname, username, sent_time = A.validate_token_from_secret(token, bad_command, sec2, use_hostname, False, None)
+    ok, status, hostname, username, sent_time = A.validate_token_given_registration(token, bad_command, regblob, use_hostname, False, None)
     assert not ok
     assert 'Token fails' in status
 
@@ -82,34 +82,34 @@ def test_puid_only():
     use_command = "mycommand2"
 
     os.environ['PUID'] = 'mypuid'
-    sec = A.generate_shared_secret()
-    print('generated machine-only shared secret: %s' % sec)
-    assert len(sec) > 10
+    regblob = A.generate_client_registration()
+    print('generated client reg: %s' % regblob)
+    assert len(regblob) > 10
 
-    token = A.generate_token_from_secret(use_command, sec)
+    token = A.generate_token_given_registration(use_command, regblob)
 
-    ok, status, hostname, username, sent_time = A.validate_token_from_secret(token, use_command, sec)
+    ok, status, hostname, username, sent_time = A.validate_token_given_registration(token, use_command, regblob)
     print('results: %s, %s, %s, %s, %s' % (ok, status, hostname, username, sent_time))
     assert ok
     assert status == 'ok'
     assert username == ''
 
-    # Regenerate machine secret with same $PUID, make sure it stays the same.
-    sec2 = A.generate_shared_secret()
-    assert sec == sec2
+    # Regenerate machine registration with same $PUID, make sure it stays the same.
+    regblob2 = A.generate_client_registration()
+    assert regblob == regblob2
 
-    # Regenerate machine secret with different $PUID; it should change.
+    # Regenerate machine registration with different $PUID; it should change.
     os.environ['PUID'] = 'differet-puid'
-    sec3 = A.generate_shared_secret()
-    assert sec != sec3
+    regblob3 = A.generate_client_registration()
+    assert regblob != regblob3
 
 
 # Let's confirm the sequence we claim works in the doc..
 def test_cli():
-    sec = cli(['-g', '-u', 'user1', '-p', 'pass1'])
-    assert socket.gethostname() in sec
+    regblob = cli(['-g', '-u', 'user1', '-p', 'pass1'])
+    assert socket.gethostname() in regblob
 
-    out = cli(['-r', sec])
+    out = cli(['-r', regblob])
     assert 'Done' in out
 
     token = cli(['-c', 'command1', '-u', 'user1', '-p', 'pass1'])
