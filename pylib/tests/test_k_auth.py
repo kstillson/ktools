@@ -1,9 +1,23 @@
 
-import os, time
+import os, socket, time
+import k_uncommon as Cap
 
 import context_pylib  # includes ../ in path so we can import things there.
 import k_auth as A
 
+# ---------- helpers
+
+# Run a provided list of args against k_auth main and return stdout.
+def cli(args, expect_status=0, expect_stderr=''):
+    with Cap.Capture() as cap:
+        assert A.main(args) == expect_status
+        if not expect_stderr is None:
+            if expect_stderr == '': assert cap.err == expect_stderr
+            else: assert expect_stderr in cap.err
+        return cap.out
+
+
+# ---------- tests
 
 def test_basic_operation():
     use_command = 'my command'
@@ -13,7 +27,7 @@ def test_basic_operation():
     use_time = int(time.time())
 
     # ---------- simple standard successful use-case
-    
+
     # registration phase - client
     sec = A.generate_shared_secret(use_hostname, use_username, use_password)
     s_ver, s_host, s_user, s_hash = sec.split(':')
@@ -21,15 +35,15 @@ def test_basic_operation():
     assert s_host == use_hostname
     assert s_user == use_username
     assert len(s_hash) > 10
-    
+
     # registration phase - server
     A.register_shared_secret(sec, None)
-    
+
     # client side - generate token
     token = A.generate_token(use_command, use_hostname, use_username, use_password, use_time)
-    
+
     # server side - check token
-    ok, status, hostname, username, sent_time = A.validate_token(token, use_command, use_hostname, use_username)
+    ok, status, hostname, username, sent_time = A.validate_token(token, use_command)
     # print('results: %s, %s, %s, %s, %s' % (ok, status, hostname, username, sent_time))
     assert ok
     assert status == 'ok'
@@ -39,7 +53,7 @@ def test_basic_operation():
 
     # ---------- confirm reply prevention
 
-    ok, status, hostname, username, sent_time = A.validate_token(token, use_command, use_hostname, use_username)
+    ok, status, hostname, username, sent_time = A.validate_token(token, use_command)
     assert not ok
     assert 'not later' in status
     assert hostname == use_hostname
@@ -66,7 +80,7 @@ def test_basic_operation():
 # transported to the server-side).
 def test_puid_only():
     use_command = "mycommand2"
-    
+
     os.environ['PUID'] = 'mypuid'
     sec = A.generate_shared_secret()
     print('generated machine-only shared secret: %s' % sec)
@@ -79,7 +93,7 @@ def test_puid_only():
     assert ok
     assert status == 'ok'
     assert username == ''
-    
+
     # Regenerate machine secret with same $PUID, make sure it stays the same.
     sec2 = A.generate_shared_secret()
     assert sec == sec2
@@ -89,4 +103,19 @@ def test_puid_only():
     sec3 = A.generate_shared_secret()
     assert sec != sec3
 
-    
+
+# Let's confirm the sequence we claim works in the doc..
+def test_cli():
+    sec = cli(['-g', '-u', 'user1', '-p', 'pass1'])
+    assert socket.gethostname() in sec
+
+    out = cli(['-r', sec])
+    assert 'Done' in out
+
+    token = cli(['-c', 'command1', '-u', 'user1', '-p', 'pass1'])
+    assert token.startswith('v2:')
+
+    out = cli(['-v', token, '-c', 'command1'])
+    assert 'validated? True' in out
+
+    os.unlink(A.DEFAULT_DB_FILENAME)

@@ -12,7 +12,7 @@ else: import io
 '''Temporarily captures stdout and stderr and makes them available.
 Outputs an instance with .out .err.  Conversion to string gives .out
 Example usage:
-  with k_common.Capture() as cap:
+  with k_uncommon.Capture() as cap:
     # (write stuff to stdout and/or stderr...)
     caught_stdout = cap.out
     caught_stderr = cap.err

@@ -4,7 +4,7 @@
 Inputs:
   - a string (e.g. a command to run on a server after authentication)
   - (optionally) a username
-  - (optionally) a user password
+  - (optionally) a password
 
 Implicid inputs:
   - a piece of private unique data extracted from the client machine's hardware
@@ -17,35 +17,37 @@ Output:
 
 An example session using the command-line interface:
 
->> On the client machine, we generate a machine+user+password secret:
+>> On the client machine, we generate a machine+user+password secret
+   (note the hostname "blue2" is auto-detected)
 ./k_auth.py -g -u user1 -p pass1
 v2:blue2:user1:09670f2945f669119074
-
->> (you can see the client hostname of 'blue2' was autodetected)
 
 >> On the server, we register that secret:
 ./k_auth.py -r v2:blue2:user1:09670f2945f669119074
 Done.  Secrets file now has 1 entries.
 
->> Now on the client, we generate a token that authenticates a command:
+>> Back on the client, we generate a token that authenticates a command:
 ./k_auth.py -c 'command1' -u user1 -p pass1
 v2:blue2:user1:1648098230:b59d4ab53f035815c689
 
->> and finally, on the server, we validate the token for that command:
-./k_auth.py -v v2:blue2:user1:1648098230:b59d4ab53f035815c689 -c 'command1' -u user1 -H blue2
+>> On the server, we validate the token for that command:
+./k_auth.py -v v2:blue2:user1:1648098230:b59d4ab53f035815c689 -c 'command1'
 validated? True
 
-Desirable properties:
-- a change to any of the data will cause the validation to fail.
+This successful validation demonstrates that:
 
-- a token is only accepted for a few seconds (replay protection)
+- The command was not changed between token creation and validation.
 
-- the user password was never shared with the server
+- The token was created very recently and hasn't been used before 
+  (i.e. replay protection).
 
-- the same username+password used on a different machine will generate a
-  different shared secret, i.e. validation will fail.  In other words, even if
-  the password is stolen, it doesn't work on any machine other than the one
-  where the shared secret was originally generated.  It's "hardware locked."
+- The same password was used during registration and token creation
+  (and note that password was never shared with the server).
+
+- The token was generated on the same machine as the original shared secret
+  creation.  i.e. even if the password is stolen, it won't work for token
+  generation on any machine except the one where the shared secret was
+  generated in the first step.  It's "hardware locked."
 
                   --------------------------------
 
@@ -84,8 +86,8 @@ PY_VER = sys.version_info[0]
 
 DEBUG = False
 
-DEFAULT_SECRETS_DB_FILENAME = 'k_auth_db.json'
-DEFAULT_LAST_SEEN_TIMES_DB_FILENAME = 'k_auth_times.json'
+DEFAULT_MAX_TIME_DELTA = 30
+DEFAULT_DB_FILENAME = 'k_auth_db.json'
 
 TOKEN_VERSION = 'v2'
 
@@ -200,15 +202,15 @@ def generate_token_from_secret(command, shared_secret,
 
 # ---------- server-side authN logic
 
-LAST_RECEIVED_TIMES = {}
+# This data is not persisted beyond module lifetime by default.
+# If you want to add persistenace, you can access it here.
+LAST_RECEIVED_TIMES = {}  # maps key_name() -> epoch seconds of most recent success.
 
 
-# Assumes shared secrets have already been loaded via load_secrets_db() or
-# register_shared_secret(), and uses default db and validation params.
-#
 # returns:   okay?(bool), status(text), hostname, username, sent_time
-def validate_token(token, command, hostname, username='', max_time_delta=30):
-  shared_secret = get_shared_secret(hostname, username)
+def validate_token(token, command, max_time_delta=DEFAULT_MAX_TIME_DELTA):
+  token_version, hostname, username, sent_time_str, sent_auth = token.split(':', 4)
+  shared_secret= get_shared_secret(hostname, username)
   if not shared_secret:
     return False, 'could not find registered shared secret for %s:%s' % (hostname, username), None, None, None
   return validate_token_from_secret(token, command, shared_secret, hostname, True, max_time_delta)
@@ -217,8 +219,8 @@ def validate_token(token, command, hostname, username='', max_time_delta=30):
 # returns:   okay?(bool), status(text), hostname, username, sent_time
 def validate_token_from_secret(token, command, shared_secret,
                                expect_hostname=None,
-                               must_be_later_than_last_request=True,
-                               max_time_delta=30):
+                               must_be_later_than_last_check=True,
+                               max_time_delta=DEFAULT_MAX_TIME_DELTA):
   try:
     token_version, hostname, username, sent_time_str, sent_auth = token.split(':', 4)
     sent_time = int(sent_time_str)
@@ -236,7 +238,7 @@ def validate_token_from_secret(token, command, shared_secret,
     if time_delta > max_time_delta:
       return False, 'Time difference too high.  %d > %d.' % (time_delta, max_time_delta), hostname, username, sent_time
 
-  if must_be_later_than_last_request:
+  if must_be_later_than_last_check:
     keyname = key_name(hostname, username)
     if keyname not in LAST_RECEIVED_TIMES:
       LAST_RECEIVED_TIMES[keyname] = sent_time
@@ -250,11 +252,11 @@ def validate_token_from_secret(token, command, shared_secret,
   return True, 'ok', hostname, username, sent_time
 
 
-# ---------- server-side persistence (shared secrets)
+# ---------- server-side persistence
 
 SECRETS_DB = None     # maps keyname -> shared secret
 
-def load_secrets_db(db_filename=DEFAULT_SECRETS_DB_FILENAME):
+def load_secrets_db(db_filename=DEFAULT_DB_FILENAME):
   global SECRETS_DB
   try:
     with open(db_filename) as f: SECRETS_DB = json.loads(f.read())
@@ -265,13 +267,13 @@ def load_secrets_db(db_filename=DEFAULT_SECRETS_DB_FILENAME):
 
 
 # Must have already called load_secrets_db or register_shared_secret.
-def get_shared_secret(hostname, username, db_filename=DEFAULT_SECRETS_DB_FILENAME):
+def get_shared_secret(hostname, username, db_filename=DEFAULT_DB_FILENAME):
   global SECRETS_DB
   if not SECRETS_DB and db_filename: load_secrets_db(db_filename)    
   return SECRETS_DB.get(key_name(hostname, username))
 
 
-def register_shared_secret(shared_secret, db_filename=DEFAULT_SECRETS_DB_FILENAME):
+def register_shared_secret(shared_secret, db_filename=DEFAULT_DB_FILENAME):
   token_version, hostname, username, sec_hash = shared_secret.split(':')
   if token_version != TOKEN_VERSION: return False
   
@@ -288,29 +290,10 @@ def register_shared_secret(shared_secret, db_filename=DEFAULT_SECRETS_DB_FILENAM
 
   return True
 
-# ---------- server-side persistence (last accept token times)
-
-def load_last_seen_times(db_filename=DEFAULT_LAST_SEEN_TIMES_DB_FILENAME):
-  global LAST_RECEIVED_TIMES
-  try:
-    with open(db_filename) as f: LAST_RECEIVED_TIMES = json.loads(f.read())
-    return True
-  except Exception:
-    return False
-
-
-def save_last_seen_times(db_filename=DEFAULT_LAST_SEEN_TIMES_DB_FILENAME):
-  global LAST_RECEIVED_TIMES
-  try:
-    with open(db_filename, 'w') as f: f.write(json.dumps(LAST_RECEIVED_TIMES))
-    return True
-  except Exception:
-    return False
-
 
 # ---------- command-line interface
 
-def main():
+def main(argv):
   ap = argparse.ArgumentParser(description='authN token generator')
   ap.add_argument('--username', '-u', default='', help='when using multiple-users per machine, this specifies which username to generate a secret for.  These do not need to match Linux usernames, they are arbitrary strings.')
   ap.add_argument('--password', '-p', default='', help='when using multiple-users per machine, this secret identifies a particular user')
@@ -321,14 +304,14 @@ def main():
   
   group2 = ap.add_argument_group('server-side registration', 'register a secret')
   group2.add_argument('--register', '-r', default=None, metavar='SECRET', help='register the specified shared secret (which must be generated on the client machine)')
-  group2.add_argument('--filename', '-f', default=DEFAULT_SECRETS_DB_FILENAME, help='name of file in which to save registrations')
+  group2.add_argument('--filename', '-f', default=DEFAULT_DB_FILENAME, help='name of file in which to save registrations')
 
   group3 = ap.add_argument_group('token', 'creating or verifying tokens for a command')
   group3.add_argument('--command', '-c', default=None, help='specify the command to generate or verify a token for')
   group3.add_argument('--verify', '-v', default=None, metavar='TOKEN', help='verify the provided token for the specified command')
-  group3.add_argument('--max-time-delta', '-m', default=60, type=int, help='max # seconds between token generation and consumption.')
+  group3.add_argument('--max-time-delta', '-m', default=DEFAULT_MAX_TIME_DELTA, type=int, help='max # seconds between token generation and consumption.')
   
-  args = ap.parse_args()
+  args = ap.parse_args(argv)
 
   if args.generate:
     if not args.username: sys.exit('WARNING: username/password not specified.  Registering a host without usernames and passwords will allow anyone with access to the host to authenticate as the host.  If this is really what you want, specify "-" as the username.')
@@ -351,8 +334,7 @@ def main():
     return 0
 
   elif args.verify:
-    if not args.hostname: sys.exit('must provide --hostname, no way to guess what client hostname this was generated on')
-    ok, status, hostname, username, sent = validate_token(args.verify, args.command, args.hostname, args.username, args.max_time_delta)
+    ok, status, hostname, username, sent = validate_token(args.verify, args.command, args.max_time_delta)
     print('validated? %s\nstatus: %s\ngenerated on host: %s\ngenerated by user: %s\ntime sent: %s (%s)' % (
       ok, status, hostname, username, sent, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(sent))))
     return 0
@@ -363,5 +345,5 @@ def main():
   
 
 if __name__ == '__main__':
-  sys.exit(main())
+  sys.exit(main(sys.argv[1:]))
 
