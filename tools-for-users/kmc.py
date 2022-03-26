@@ -24,17 +24,17 @@ client that owns/retrieves the key, followed by a dash, i.e. [hostname-keyname]
 Change keyname_prefix if you don't want this.
 
 Set km_cert to None to disable TLS (i.e. use http). Not recommended for
-transferring secrets!!  Set km_cert to blank to use TLS but not validate the
+transferring secrets!!  Set km_cert to '' to use TLS but not validate the
 server side certificate.  This opens you up to man-in-the-middle attacks, but
 might be ok on trusted networks.
 
 retry_limit=None will retry forever.  Set to 0 to disables retries.  Remember
-that the keymaster needs to be manually initialized before it serves keys, so
-retrying for a long time is a good idea.
+that the keymaster needs to be manually initialized before it can serve keys,
+so retrying for a long time is a good idea.
 
 If a key was registered with override_hostname='*', you must also provide that
 parameter here.  This special value has the side-effect of disabling
-server-side client host identity checking.
+server-side source-IP checking.
 
 Returns the retrieved secret/key (as a string), or None upon failure.
 '''
@@ -74,28 +74,42 @@ def query_km(keyname,
   return None
 
 
-# ---------- key generation API (run on the km client or with $PUID set)
+# ---------- key registration API
 
-# Set override_hostname to '*' to allow key retireval from any host.
-# Note that keys with hostname '*' and no password are completely unprotected.
+# This uses k_auth to generate a shared secret used in key retrieval.  That
+# shared secret includes private data from the host on which it is run, so you
+# must run this command on the host that will eventually request the key,
+# of arrange for $PUID to be set (see k_auth.py for details)
+
+# I f you set override_hostname to '*', it disables source-IP checking on the
+# keymaster server.  However, it doesn't actually allow the key to be
+# requested from any host, because of the machine-specific-data encoded into
+# the shared secret.  If you really want a key to be retrievable from multiple
+# hosts, you'll need to arrange for $PUID to be the same on all clients.
+
+# Note that if you don't use passwords and you override $PUID, then your key
+# is only as protected as your overriden $PUID is kept secret.  Be aware that
+# if you hard-code your special $PUID value into the clients' code, you're
+# undermining the purpose of k_auth.
+
+# If you leave key=None, a random 20 digit secret is generated for you.
 
 def generate_key_registration(
-        keyname, keyname_prefix='%h-',
-        key = None,
-        override_hostname=None, username='', password=''):
+    keyname, key=None,
+    keyname_prefix='%h-',
+    override_hostname=None, username='', password=''):
 
   hostname = override_hostname or socket.gethostname()
-  if hostname == '*': os.environ['PUID'] = '*'
 
   if keyname_prefix is None: keyname_prefix = ''
   full_keyname = keyname_prefix.replace('%h', hostname) + keyname
 
-  authn_reg = k_auth.generate_client_registration(hostname, username, password)
+  authn_secret = k_auth.generate_shared_secret(hostname, username, password)
 
   if not key:
     key = ''.join(random.choice(string.ascii_letters) for i in range(20))
 
-  return '[%s]\nsecret=%s\nhost=%s\nauthn=%s\n' % (full_keyname, key, hostname, authn_reg)
+  return '[%s]\nsecret=%s\nhost=%s\nauthn_secret=%s\n' % (full_keyname, key, hostname, authn_secret)
 
 
 # ---------- main for CLI
@@ -106,7 +120,7 @@ def main(argv):
   ap.add_argument('--password', '-p', default='', help='when using multiple-users per machine, this secret identifies a particular user')
   ap.add_argument('--password-env', '-e', default='', help='name of environment variable with password')
   ap.add_argument('--hostname', '-H', default=None, help='hostname to generate/save registration for.  Defaults to system hostname.  If retrieving an "any host" key, must be set to "*"')
-  ap.add_argument('--prefix', '-P', default='%h-', help='prefix for key name. Defaults to "hostname=", which is usually what you want.')
+  ap.add_argument('--prefix', '-P', default='%h-', help='prefix for key name. Defaults to "hostname-", which is usually what you want.')
   ap.add_argument('keyname', default=None, help='name of the key to retrieve/create')
 
   group1 = ap.add_argument_group('advanced', 'advanced settings for key retrival')
@@ -117,8 +131,8 @@ def main(argv):
   group1.add_argument('--retry-delay', default=5, type=int, help='seconds to wait between retries')
 
   group2 = ap.add_argument_group('special', 'alternate modes associated with key/secret registration, rather than retrieval')
-  group2.add_argument('--generate-secret-registration', '-g', metavar='SECRET', default=None, help='generate and output a keymaster registration for the specified secret.  You will need to copy this over to the km server and add it to the encrypted database file.')
-  group2.add_argument('--extract-machine-secret', '-E', action='store_true', help='output the machine-unique-private data and stop.  Allows you to run key registations on the km server by manually transporting this value to the server.')
+  group2.add_argument('--generate-key-registration', '-g', metavar='SECRET', default=None, help='generate and output a keymaster registration for the specified secret.  You will need to copy this over to the km server and add it to the encrypted database file.')
+  group2.add_argument('--extract-machine-secret', '-E', action='store_true', help='output the machine-unique-private data and stop.  Allows you to run key registations on the km server by transporting this value to the server (rather than a fully-formed key registration from "-g").')
 
   args = ap.parse_args(argv)
 
@@ -132,17 +146,17 @@ def main(argv):
       args.password = os.environ.get(args.password_env)
       if not args.password: sys.exit('--password-env flag used, but $%s is not set.' % args.password_env)
 
-  if args.generate_secret_registration:
-    print(generate_key_registration(args.keyname, args.prefix, args.generate_secret_registration, args.hostname, args.username, args.password))
+  if args.generate_key_registration:
+    print(generate_key_registration(keyname=args.keyname, key=args.generate_key_registration, keyname_prefix=args.prefix, override_hostname=args.hostname, username=args.username, password=args.password))
     return 0
 
   # Looks like we're doing a key retrieval.
   if args.km_cert == '-': args.km_cert = None
 
-  print(query_km(args.keyname, args.prefix,
-                 args.hostname, args.usename, args.password,
-                 args.km_host_port, args.km_cert,
-                 args.timeout, args.retry_limit, args.retry_delay))
+  print(query_km(keyname=args.keyname, keyname_prefix=args.prefix,
+                 override_hostname=args.hostname, username=args.usename, password=args.password,
+                 km_host_port=args.km_host_port, km_cert=args.km_cert,
+                 timeout=args.timeout, retry_limit=args.retry_limit, retry_delay=args.retry_delay))
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
