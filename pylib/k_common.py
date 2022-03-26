@@ -164,18 +164,19 @@ class FakeResponse:
         #                iter_content, iter_lines, json, links, next, history,
         #                raise_for_status, request, raw
 
+
+def dump_response(resp):
+    return 'ok:%s, code:%s, exception:%s, text:%s, headers:%s, url:%s, elapsed:%s' % (resp.ok, resp.status_code, resp.exception, resp.text, resp.headers, resp.url, resp.elapsed)
+
+
 # For python2, this emulates the python3 requests framework.  i.e. the caller
 # can use web_get to provide the same API regardless of Python version.
 
-def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True):
+def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, cafile=None):
     reader = _read_web2 if PY_VER == 2 else _read_web3
-    ctx = ssl.create_default_context()
-    if not verify_ssl:
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
     if wrap_exceptions:
         try:
-            return reader(url, get_dict, post_dict, timeout, verify_ssl)
+            return reader(url, get_dict, post_dict, timeout, verify_ssl, cafile)
         except Exception as e:
             r = FakeResponse()
             r.exception = e
@@ -202,17 +203,17 @@ def quote_plus(url):
 
 # ---------- internals
 
-def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True):
+def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, cafile=None):
     if get_dict:
         data = urllib.urlencode(get_dict)
         url += '%s%s' % ('&' if '?' in url else '?', data)
-    ctx = ssl.create_default_context()
+    ssl_ctx = ssl.create_default_context(cafile=cafile)
     if not verify_ssl:
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
     req = urllib2.Request(url, urllib.urlencode(post_dict) if post_dict else None)
     start_time = datetime.datetime.now()
-    res = urllib2.urlopen(req, timeout=timeout, context=ctx)
+    res = urllib2.urlopen(req, timeout=timeout, context=ssl_ctx)
     resp = FakeResponse()
     resp.elapsed = datetime.datetime.now() - start_time
     resp.exception = None
@@ -223,7 +224,7 @@ def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True):
     resp.url = url
     return resp
 
-def _read_web3(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True):
+def _read_web3(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, cafile=None):
     setattr(requests.models.Response, '__str__', lambda _self: _self.text)
     if not verify_ssl:
         import urllib3
@@ -234,6 +235,6 @@ def _read_web3(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True):
     if post_dict:
         resp = requests.post(url, data=post_dict, timeout=timeout, verify=None if verify_ssl else False)
     else:
-        resp = requests.get(url, timeout=timeout, verify=None if verify_ssl else False)
+        resp = requests.get(url, timeout=timeout, verify=cafile if verify_ssl else False)
     resp.exception = None
     return resp

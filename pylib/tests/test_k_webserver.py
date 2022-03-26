@@ -22,15 +22,17 @@ ROUTES = {
 
 def random_high_port(): return random.randrange(10000, 19999)
 
-def start(ctx={}):
+def start(ctx={}, start_kwargs={}):
     global PORT
     PORT = random_high_port()
     C.init_log('test_k_webserver', logfile=None)
     ws = W.WebServer(ROUTES, context=ctx)
-    ws.start(port=PORT)
+    ws.start(port=PORT, **start_kwargs)
     return ws
 
-def url(path): return 'http://localhost:%d/%s' % (PORT, path)
+def url(path, tls=False):
+    protocol = 'https' if tls else 'http'
+    return '%s://localhost:%d/%s' % (protocol, PORT, path)
 
 # ---------- tests
 
@@ -57,3 +59,13 @@ def test_basics():
     assert C.web_get(url('match/v1')).text == 'v1'
 
 # TODO: test shutdown
+
+
+def test_tls():
+    ws = start({},
+               {'tls_cert_file': 'tests/server-cn=localhost.crt',
+                'tls_key_file': 'tests/server-cn=localhost.pem'})
+    my_url = url('hi', tls=True)
+    assert 'https' in my_url
+    got = C.web_get(my_url, verify_ssl=True, cafile='tests/server-cn=localhost.crt')
+    assert got.text == 'hello world'

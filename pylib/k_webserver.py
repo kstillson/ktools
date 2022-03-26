@@ -1,5 +1,5 @@
 
-import cgi, threading, sys
+import cgi, threading, ssl, sys
 
 import k_common as C           # for logging.
 import k_webserver_base as B
@@ -25,7 +25,7 @@ class Worker(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(response.body)
         return True
-        
+
     def do_GET(self):
         request = B.BaseHTTPRequestHandler_to_Request(self, 'GET')
         return self.send(self.server._k_webserver.find_and_run_handler(request))
@@ -33,7 +33,7 @@ class Worker(BaseHTTPRequestHandler):
     def do_POST(self):
         request = B.BaseHTTPRequestHandler_to_Request(self, 'POST', post_params=self.parse_post())
         return self.send(self.server._k_webserver.find_and_run_handler(request))
-        
+
     def parse_post(self):
         if PY_VER == 2: ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
         else: ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
@@ -54,7 +54,7 @@ class Worker(BaseHTTPRequestHandler):
         else: postvars = {}
         return postvars
 
-    
+
 class WebServer(B.WebServerBase):
     def __init__(self, *args, **kwargs):
         logging_adapter = B.LoggingAdapter(
@@ -63,9 +63,16 @@ class WebServer(B.WebServerBase):
             get_logz_html=C.last_logs_html)
         super(WebServer, self).__init__(logging_adapter=logging_adapter, *args, **kwargs)
 
-    
-    def start(self, port=80, listen='0.0.0.0', background=True, server_class=HTTPServer):
+
+    def start(self, port=80, listen='0.0.0.0', background=True,
+              tls_cert_file=None, tls_key_file=None, tls_key_password=None,
+              server_class=HTTPServer):
         self.httpd = server_class((listen, port), Worker)
+
+        if tls_key_password: raise RuntimeException('TODO: support tls_key_password')
+        if tls_key_file:
+            self.httpd.socket = ssl.wrap_socket(self.httpd.socket, certfile=tls_cert_file, keyfile=tls_key_file, server_side=True)
+
         self.httpd._k_webserver = self  # Make my instance visible to handlers.
         self.logger.log_general('starting webserver on port %d' % port)
         if background:
