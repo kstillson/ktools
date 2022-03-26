@@ -1,18 +1,16 @@
 
 # Supported meta-targets:  all, clean, test, install, update
 
-PY_TARGETS := ratelimiter run_para
-SH_TARGETS := kmc pb-push
-PLAIN_TARGETS := km.crt
+PY_TARGETS := kmc ratelimiter run_para
+SH_TARGETS := pb-push
 INSTALL_DIR := /usr/local/bin
 include ../common/Makefile-unstaged
 
 # ---------- testing
 
 # uses 'script' to avoid stripping the color (as output redirection would).
-$(TEST_LOG): $(wildcard *.py) $(wildcard *.sh) $(STAGING_DIR)
-	script -eq -c "pytest-3 test_*.py" $(TEST_LOG)
-	./test_kmc.sh >> $(TEST_LOG)
+$(TEST_LOG): $(wildcard *.py) $(wildcard tests/*.py) $(wildcard *.sh) $(STAGING_DIR)
+	script -eq -c "pytest-3 tests/test_*.py" $(TEST_LOG)
 
 # ---------- pass-throughs
 

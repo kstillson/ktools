@@ -2,6 +2,7 @@
 
 import os, tempfile, time
 
+import context        # includes ../ in path so we can import things there.
 import ratelimiter
 
 
