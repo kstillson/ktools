@@ -20,25 +20,25 @@ An example session using the command-line interface:
 >> On the client machine, we generate a machine+user+password registration:
    (note the hostname "blue2" is auto-detected)
 ./k_auth.py -g -u user1 -p pass1
-v2:blue2:user1:09670f2945f669119074
+v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
 
 >> On the server, we register that host+user:
-./k_auth.py -r v2:blue2:user1:09670f2945f669119074
+./k_auth.py -r v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
 Done.  Registration file now has 1 entries.
 
 >> Back on the client, we generate a token that authenticates a command:
 ./k_auth.py -c 'command1' -u user1 -p pass1
-v2:blue2:user1:1648098230:b59d4ab53f035815c689
+v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7
 
 >> On the server, we validate the token for that command:
-./k_auth.py -v v2:blue2:user1:1648098230:b59d4ab53f035815c689 -c 'command1'
+./k_auth.py -v v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7 -c 'command1'
 validated? True
 
 This successful validation demonstrates that:
 
 - The command was not changed between token creation and validation.
 
-- The token was created very recently and hasn't been used before 
+- The token was created very recently and hasn't been used before
   (i.e. replay protection).
 
 - The same password was used during registration and token creation
@@ -158,6 +158,7 @@ def get_machine_private_data():
   # because it's not guaranteed to be unique against major upgrade changes
   # and is sometimes available on disk in the boot logs).
   blk_ids = subprocess.check_output(['lsblk', '-nro', 'UUID,MOUNTPOINT'])
+  if PY_VER == 3: blk_ids = blk_ids.decode(sys.stdout.encoding)
   for line in blk_ids.split('\n'):
     if line.endswith(' /'):
       puid, _ = line.split(' ', 1)
@@ -166,9 +167,9 @@ def get_machine_private_data():
   raise AuthNError('unable to find suitable machine private data. consider setting $PUID.')
 
 
-def hasher(plaintext, trunc_len=20):
+def hasher(plaintext):
   if PY_VER == 3: plaintext = plaintext.encode('utf-8')
-  return hashlib.sha1(plaintext).hexdigest()[:trunc_len]
+  return hashlib.sha1(plaintext).hexdigest()
 
 
 def key_name(hostname, username): return '%s:%s' % (hostname, username)
@@ -269,14 +270,14 @@ def load_registration_db(db_filename=DEFAULT_DB_FILENAME):
 
 def get_registration_blob(hostname, username, db_filename=DEFAULT_DB_FILENAME):
   global REGISTRATION_DB
-  if not REGISTRATION_DB and db_filename: load_registration_DB(db_filename)    
+  if not REGISTRATION_DB and db_filename: load_registration_db(db_filename)
   return REGISTRATION_DB.get(key_name(hostname, username))
 
 
 def register(registration_blob, db_filename=DEFAULT_DB_FILENAME):
   token_version, hostname, username, _hash = registration_blob.split(':')
   if token_version != TOKEN_VERSION: return False
-  
+
   global REGISTRATION_DB
   if REGISTRATION_DB is None:
     if db_filename: load_registration_db(db_filename)
@@ -298,10 +299,10 @@ def main(argv):
   ap.add_argument('--username', '-u', default='', help='when using multiple-users per machine, this specifies which username to generate a registration for.  These do not need to match Linux usernames, they are arbitrary strings.')
   ap.add_argument('--password', '-p', default='', help='when using multiple-users per machine, this secret identifies a particular user')
   ap.add_argument('--hostname', '-H', default=None, help='hostname to generate/save registration for. (required for server-side commands;  autodetected if not specified for client-side commands)')
-  
+
   group1 = ap.add_argument_group('client-side registration', 'client registration')
   group1.add_argument('--generate', '-g', action='store_true', help='generate a client registration that includes a hashed machine-specific secret from this machine (i.e. must be run on the machine where future client requests will originate)')
-  
+
   group2 = ap.add_argument_group('server-side registration', 'register a client (enable token validation from that client)')
   group2.add_argument('--register', '-r', default=None, metavar='REGISTRATION_BLOB', help='register the output of --generate (which must be generated on the client machine)')
   group2.add_argument('--filename', '-f', default=DEFAULT_DB_FILENAME, help='name of file in which to save registrations')
@@ -311,10 +312,10 @@ def main(argv):
   group3.add_argument('--verify', '-v', default=None, metavar='TOKEN', help='verify the provided token for the specified command')
   group3.add_argument('--max-time-delta', '-m', default=DEFAULT_MAX_TIME_DELTA, type=int, help='max # seconds between token generation and consumption.')
 
-  group4 = ap.add_argument_group('special' 'other alterante modes')
+  group4 = ap.add_argument_group('special' 'other alternate modes')
   group4.add_argument('--extract-machine-secret', '-e', action='store_true', help='output the machine-unique-private data and stop.  Use -e on a would-be client machine, and then you can use that data with -s to generate shared secrets or tokens on a machine other than the real client machine.')
   group4.add_argument('--use-machine-secret', '-s', default=None, help='use the provided secret rather than querying the current machine for its real secret.  Equivalent to setting $PUID to the secret value.')
-  
+
   args = ap.parse_args(argv)
 
   if args.extract_machine_secret:
@@ -347,11 +348,11 @@ def main(argv):
     print('validated? %s\nstatus: %s\ngenerated on host: %s\ngenerated by user: %s\ntime sent: %s (%s)' % (
       ok, status, hostname, username, sent, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(sent))))
     return 0
-    
+
   else:
     print('nothing to do...  specify one of --generate, --register, --command, --verify')
     return -2
-  
+
 
 if __name__ == '__main__':
   sys.exit(main(sys.argv[1:]))
