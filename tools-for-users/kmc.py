@@ -60,15 +60,15 @@ def query_km(keyname,
 
   retry = 0
   while retry_limit is None or retry <= retry_limit:
+    if retry > 0: time.sleep(retry_delay)
     try:
       resp = requests.get(url, timeout=timeout, verify=verify)
       if resp.status_code == 200: return resp.text
-      err = 'status %d (%s)' % (resp.status_code, resp.text)
+      err = 'ERROR: status %d (%s)' % (resp.status_code, resp.text)
     except Exception as e:
-        err = 'error: %s' % e
+        err = 'ERROR: %s' % e
     if errors_to: print(err, file=errors_to)
     retry += 1
-    time.sleep(retry_delay)
 
   if errors_to: print('out of retries; giving up.', file=errors_to)
   return None
@@ -155,10 +155,14 @@ def main(argv):
   # Looks like we're doing a key retrieval.
   if args.km_cert == '-': args.km_cert = None
 
-  print(query_km(keyname=args.keyname, keyname_prefix=args.prefix,
-                 override_hostname=args.hostname, username=args.usename, password=args.password,
-                 km_host_port=args.km_host_port, km_cert=args.km_cert,
-                 timeout=args.timeout, retry_limit=args.retry_limit, retry_delay=args.retry_delay))
+  secret = query_km(keyname=args.keyname, keyname_prefix=args.prefix,
+                    override_hostname=args.hostname, username=args.username, password=args.password,
+                    km_host_port=args.km_host_port, km_cert=args.km_cert,
+                    timeout=args.timeout, retry_limit=args.retry_limit, retry_delay=args.retry_delay)
+  if not secret: return 1
+  print(secret)
+  return 0
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
