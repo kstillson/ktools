@@ -5,6 +5,7 @@ import io, os, sys
 import k_uncommon as UC
 import k_varz
 
+
 def test_capture():
     with UC.Capture(strip=False) as cap:
         print('test1')
@@ -34,3 +35,19 @@ def test_exec_wrapper():
     # Try pulling something out of global namespace.
     k_varz.set('x', 'y')
     assert UC.exec_wrapper('print(k_varz.VARZ["x"])', globals()).out == 'y'
+
+
+def test_gpg():
+    # not supported in python2
+    if sys.version_info[0] == 2: return
+
+    crypted = UC.gpg_symmetric('hello', 'password1', decrypt=False)
+    assert 'PGP MESSAGE' in crypted
+    assert not 'hello' in crypted
+
+    plain = UC.gpg_symmetric(crypted, 'password1')
+    assert plain == 'hello'
+
+    err = UC.gpg_symmetric(crypted, 'bad-password')
+    assert err.startswith('ERROR:')
+

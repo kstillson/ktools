@@ -1,5 +1,5 @@
 
-import grp, os, pwd, sys
+import grp, os, pwd, subprocess, sys
 
 PY_VER = sys.version_info[0]
 if PY_VER == 2: import StringIO as io
@@ -52,6 +52,24 @@ def exec_wrapper(cmd, locals=globals(), strip=True):
         except Exception as e:
             cap.exception = e
             return cap
+
+
+# ----------------------------------------
+# GPG passthrough
+
+def gpg_symmetric(plaintext, password, decrypt=True):
+    if PY_VER == 2: return 'ERROR: not supported for python2'  # need pass_fds
+    readfd, writefd = os.pipe()
+    password += '\n'
+    os.write(writefd, bytes(password + '\n', 'utf-8'))
+
+    op = ['--decrypt'] if decrypt else ['--symmetric', '-a']
+    cmd = ['/usr/bin/gpg'] + op + ['--passphrase-fd', str(readfd), '-o', '-', '--batch']
+    p = subprocess.Popen(
+        cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        pass_fds=[readfd, writefd])
+    out, err = p.communicate(bytes(plaintext, 'utf-8'))
+    return out.decode() if p.returncode == 0 else 'ERROR: ' + err.decode()
 
 
 # ----------------------------------------

@@ -38,6 +38,7 @@ class Response:
         if binary: self.body = body
         else: self.body = str(body) if body else ''
         self.status_code = status_code
+        self.ok = (status_code == 200)
         self.status_msg = 'OK' if status_code == 200 else 'NOTOK'
         self.extra_headers = extra_headers
         if msg_type:
