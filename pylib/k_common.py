@@ -172,6 +172,7 @@ def dump_response(resp):
 # For python2, this emulates the python3 requests framework.  i.e. the caller
 # can use web_get to provide the same API regardless of Python version.
 
+# returns a Response-like object
 def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, cafile=None):
     reader = _read_web2 if PY_VER == 2 else _read_web3
     if wrap_exceptions:
