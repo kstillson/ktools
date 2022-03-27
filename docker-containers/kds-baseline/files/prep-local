@@ -1,4 +1,18 @@
 
+# This is the hardening script specific to the kds-baseline image.
+
+# Note that kds-baseline/Dockerfile executes this script (rather than /prep,
+# as is usually done), because we only want minimal hardening at this stage;
+# other images that inhereit from kds-baseline will need a fully-functioning
+# Alpine image in order to install and customize their packages.
+
+# Once this script completes it's limited hardening, it self-deletes, so
+# it doesn't conflict with /prep-local files in images that inhereit from
+# kds-baseline.  The purpose of those files is to customize /prep actions
+# for particular images, so we don't want to interfere with them.
+
+# ----------
+
 # Make sure local root is not passwordless.
 sed -i -e 's/root:::/root:!::/' /etc/shadow
 

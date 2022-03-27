@@ -20,6 +20,15 @@
 # procedures don't expose the key.
 
 
+# ---------- general purpose helpers
+
+function copy_and_check() {
+  src="$1"
+  dest="$2"
+  /bin/cp -bLpuv $src $dest
+  /usr/bin/diff -q $src $dest && { echo "$dest is up to date."; } || { echo "update of $dest failed; aborting."; exit -2; }
+}
+
 # ---------- local self-signed certificate for the keymaster
 
 CERT_SETTINGS="${CERT_SETTINGS:-private.d/cert-settings}"
@@ -58,7 +67,16 @@ chmod go+r $TEMP_CERT_FILE
 chmod go-r $TEMP_KEY_FILE
 }
 
-# ---------- main
+
+# ---------- copy the keymaster software and baseline data into our Docker context
+
+copy_and_check ../../services/keymaster/km.py            files/home/km/km.py
+copy_and_check ../../services/keymaster/ratelimiter.py   files/home/km/ratelimiter.py
+copy_and_check ../../services/keymaster/km-test.data.gpg files/home/km/km-test.data.gpg
+copy_and_check ../../services/keymaster/private.d/km.data.gpg files/home/km/km.data.gpg
+
+
+# ---------- create a TLS certificate if needed
 
 CONTINUE=1   # continue with standard build logic when done
 
@@ -83,5 +101,5 @@ fi
 
 cat $TEMP_CERT_FILE $TEMP_KEY_FILE > $CERTKEY_FILE
 echo "created ${CERTKEY_FILE}."
-echo "This file should be included by Docker, but ignored by git."
+echo "This is included in the Docker image, but should be ignored by git (it contains a private key)."
 echo ""

@@ -8,7 +8,7 @@ function copy_and_check() {
 }
 
 # Update keymanager client from outside this directory branch.
-copy_and_check ../../tools-for-users/kmc.sh files/usr/local/bin/kmc
+copy_and_check ../../tools-for-users/kmc.py files/usr/local/bin/kmc
 
 # continue with standard build logic
 CONTINUE=1

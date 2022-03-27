@@ -1,10 +1,24 @@
 #!/bin/bash
 
+# This script performs a customizable set of hardening procedures on an Alpine
+# Docker image, during image construction.  It is executed by the Dockerfile
+# after any additional packages are installed and customized (as it
+# potentially removes some of the tools packages may need to install
+# properly).
+#
+# To customize, add a file /prep-local in your image that overrides the
+# hardening environment variables in the section below.  To temporarily
+# disable all hardening, simply place "exit 0" into your /prep-local file;
+# this will exit the hardening process, but leave the pieces in place so you
+# can enable them later or experiement with them piecewise.
+#
+# When this script completes, it will tidy-up by deleting itself and
+# /prep-local (unless HARDEN_SELF_REMOVE is set to "0").
+
+# ---------- hardening setting defaults
+
 set -e
 set -x
-
-# --------------------
-# Set the hardening defaults.
 
 ACCOUNTS_DONT_DELETE_REGEX="^(user1|user2)"
 APK_CLEANUP=1
