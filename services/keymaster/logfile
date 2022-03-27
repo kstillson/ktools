@@ -1,0 +1,132 @@
+INFO:log:2022-03-27 11:20:28: starting webserver on port 4443
+INFO:log:2022-03-27 11:25:53: GET: /nohost-testkey?a=v2:nohost::1648394753:bea33ff9351a44cd6ab78272b2f248cbebf43a1d
+INFO:log:2022-03-27 11:26:09: GET: /
+INFO:log:2022-03-27 11:26:13: POST: /load
+ERROR:log:2022-03-27 11:26:13: handler exception. path=/load, error='Secrets' object has no attribute 'read_from_gpg_file'
+INFO:log:2022-03-27 11:27:19: starting webserver on port 4443
+INFO:log:2022-03-27 11:27:24: GET: /
+INFO:log:2022-03-27 11:27:25: POST: /load
+ERROR:log:2022-03-27 11:27:25: handler exception. path=/load, error='Secrets' object has no attribute 'from_string'
+INFO:log:2022-03-27 11:27:56: starting webserver on port 4443
+INFO:log:2022-03-27 11:27:59: POST: /load
+ERROR:log:2022-03-27 11:27:59: handler exception. path=/load, error=name 'UC' is not defined
+INFO:log:2022-03-27 11:28:15: starting webserver on port 4443
+INFO:log:2022-03-27 11:28:17: POST: /load
+ERROR:log:2022-03-27 11:28:17: handler exception. path=/load, error=module 'k_uncommon' has no attribute 'gpg_symmetric'
+INFO:log:2022-03-27 11:39:43: starting webserver on port 4443
+INFO:log:2022-03-27 11:39:45: POST: /load
+ERROR:log:2022-03-27 11:39:46: handler exception. path=/load, error='Secret' object has no attribute 'name'
+INFO:log:2022-03-27 11:40:16: starting webserver on port 4443
+INFO:log:2022-03-27 11:40:18: POST: /load
+ERROR:log:2022-03-27 11:40:18: handler exception. path=/load, error=unexpected EOF while parsing (<string>, line 0)
+ERROR:log:2022-03-27 11:40:18: handler exception. path=/favicon.ico, error='dict' object is not callable
+INFO:log:2022-03-27 11:41:22: starting webserver on port 4443
+INFO:log:2022-03-27 11:41:23: POST: /load
+INFO:log:2022-03-27 11:42:17: starting webserver on port 4443
+INFO:log:2022-03-27 11:42:19: POST: /load
+INFO:log:2022-03-27 11:42:51: starting webserver on port 4443
+INFO:log:2022-03-27 11:42:52: POST: /load
+INFO:log:2022-03-27 11:43:22: starting webserver on port 4443
+INFO:log:2022-03-27 11:43:24: POST: /load
+INFO:log:2022-03-27 11:43:47: starting webserver on port 4443
+INFO:log:2022-03-27 11:43:48: POST: /load
+INFO:log:2022-03-27 11:43:54: GET: /varz
+INFO:log:2022-03-27 11:44:08: GET: /logz
+INFO:log:2022-03-27 11:45:44: starting webserver on port 4443
+INFO:log:2022-03-27 11:45:50: GET: /varz
+INFO:log:2022-03-27 11:46:04: GET: /logz
+INFO:log:2022-03-27 11:46:05: GET: /
+INFO:log:2022-03-27 11:46:07: POST: /load
+INFO:log:2022-03-27 11:46:09: GET: /varz
+INFO:log:2022-03-27 11:46:32: GET: /testkey
+INFO:log:2022-03-27 11:46:51: GET: /nohost-testkey
+INFO:log:2022-03-27 11:47:33: GET: /nohost-testkey?a=v2:nohost::1648396053:33b1f7af226ba99dcb6c117911c9ca58024d5306
+INFO:log:2022-03-27 12:47:42: starting webserver on port 4443
+INFO:log:2022-03-27 12:47:46: GET: /nohost-testkey
+INFO:log:2022-03-27 12:47:49: GET: /
+INFO:log:2022-03-27 12:47:50: POST: /load
+INFO:log:2022-03-27 12:48:01: POST: /load
+INFO:log:2022-03-27 12:48:08: GET: /varz
+INFO:log:2022-03-27 12:48:08: GET: /varz
+INFO:log:2022-03-27 12:48:20: GET: /T
+INFO:log:2022-03-27 12:48:21: GET: /T
+INFO:log:2022-03-27 12:48:26: GET: /T
+INFO:log:2022-03-27 12:48:45: starting webserver on port 4443
+INFO:log:2022-03-27 12:48:50: POST: /load
+INFO:log:2022-03-27 12:48:52: GET: /T
+INFO:log:2022-03-27 12:49:22: GET: /T
+INFO:log:2022-03-27 12:49:38: starting webserver on port 4443
+INFO:log:2022-03-27 12:49:41: POST: /load
+INFO:log:2022-03-27 12:49:43: GET: /T
+INFO:log:2022-03-27 12:50:03: starting webserver on port 4443
+INFO:log:2022-03-27 12:50:07: POST: /load
+INFO:log:2022-03-27 12:50:08: GET: /T
+INFO:log:2022-03-27 12:50:43: GET: /nohost-testkey?a=v2:nohost::1648399843:d2f8fc83f7f87de5c16493375f37d33f18f08402
+INFO:log:2022-03-27 12:50:57: GET: /varz
+INFO:log:2022-03-27 12:53:15: starting webserver on port 4443
+INFO:log:2022-03-27 12:53:18: POST: /load
+INFO:log:2022-03-27 12:53:21: GET: /varz
+INFO:log:2022-03-27 12:53:24: GET: /nohost-testkey?a=v2:nohost::1648400004:420f4c6229d47ded74c97e43981f2d86b7344755
+INFO:log:2022-03-27 12:53:53: starting webserver on port 4443
+INFO:log:2022-03-27 12:53:56: POST: /load
+INFO:log:2022-03-27 12:53:59: GET: /nohost-testkey?a=v2:nohost::1648400039:5756297f38521405eade4eb316cb9e3b29502483
+INFO:log:2022-03-27 12:54:23: starting webserver on port 4443
+INFO:log:2022-03-27 12:54:25: POST: /load
+INFO:log:2022-03-27 12:54:30: GET: /nohost-testkey?a=v2:nohost::1648400070:b119a7ba9d1f8103e445625c38d60ce2612849da
+INFO:log:2022-03-27 12:55:14: starting webserver on port 4443
+INFO:log:2022-03-27 12:55:16: POST: /load
+INFO:log:2022-03-27 12:55:17: GET: /nohost-testkey?a=v2:nohost::1648400117:55436f75b93ee193de271944974c361ba875d8f8
+CRITICAL:log:2022-03-27 12:55:17: unsuccessful key retrieval attempt (keyname=nohost-testkey, hostname=nohost, username=, problem=Wrong hostname.  Saw "nohost", expected "localhost:4443".
+INFO:log:2022-03-27 12:57:13: starting webserver on port 4443
+INFO:log:2022-03-27 12:57:18: GET: /
+INFO:log:2022-03-27 12:57:20: POST: /load
+INFO:log:2022-03-27 12:58:04: GET: /
+INFO:log:2022-03-27 12:58:06: POST: /load
+INFO:log:2022-03-27 12:58:21: GET: /localhost-testkey?a=v2:localhost::1648400301:4cecbe3c8834c55af2798b167db012da6434c129
+CRITICAL:log:2022-03-27 12:58:21: unsuccessful key retrieval attempt (keyname=localhost-testkey, hostname=localhost, username=, problem=Wrong hostname.  Saw "localhost", expected "localhost:4443".
+INFO:log:2022-03-27 13:00:24: starting webserver on port 4443
+INFO:log:2022-03-27 13:00:26: POST: /load
+INFO:log:2022-03-27 13:00:28: GET: /localhost-testkey?a=v2:localhost::1648400428:f00840f124555609d3e7b4e49d010b0bb4ba3dd7
+INFO:log:2022-03-27 13:00:28: successful key retrieval: localhost-testkey
+INFO:log:2022-03-27 13:00:41: GET: /varz
+INFO:log:2022-03-27 13:01:47: starting webserver on port 4443
+INFO:log:2022-03-27 13:01:49: GET: /localhost-testkey?a=v2:localhost::1648400509:cd4a6392a7ba46144e254cbfd7bfa129d97aac7a
+INFO:log:2022-03-27 13:05:02: starting webserver on port 4443
+INFO:log:2022-03-27 13:05:07: GET: /localhost-testkey?a=v2:localhost::1648400707:929082d436e01bf1d4e9ba920e578980636bca94
+INFO:log:2022-03-27 13:05:12: GET: /localhost-testkey?a=v2:localhost::1648400707:929082d436e01bf1d4e9ba920e578980636bca94
+INFO:log:2022-03-27 13:05:17: GET: /localhost-testkey?a=v2:localhost::1648400707:929082d436e01bf1d4e9ba920e578980636bca94
+INFO:log:2022-03-27 13:05:38: GET: /localhost-testkey?a=v2:localhost::1648400738:5057d09c94ed6367721a2e5143501898ee44ade0
+INFO:log:2022-03-27 13:05:40: POST: /load
+INFO:log:2022-03-27 13:05:43: GET: /localhost-testkey?a=v2:localhost::1648400738:5057d09c94ed6367721a2e5143501898ee44ade0
+INFO:log:2022-03-27 13:05:43: successful key retrieval: localhost-testkey
+INFO:log:2022-03-27 13:06:07: GET: /localhost-testkey?a=v2:localhost::1648400767:d02f84b24c5a941de277826b31b08358bf70e2f4
+INFO:log:2022-03-27 13:06:07: successful key retrieval: localhost-testkey
+INFO:log:2022-03-27 13:06:20: GET: /qqq
+CRITICAL:log:2022-03-27 13:06:20: km database cleared by GET request
+INFO:log:2022-03-27 13:06:25: GET: /localhost-testkey?a=v2:localhost::1648400785:b17de6d6e2fdf58b89782c3352e5aeae48e2ea6a
+INFO:log:2022-03-27 13:06:30: GET: /localhost-testkey?a=v2:localhost::1648400785:b17de6d6e2fdf58b89782c3352e5aeae48e2ea6a
+INFO:log:2022-03-27 13:06:45: GET: /localhost-testkey?a=v2:localhost::1648400805:53d819725ff8093984ab36d348a54c95a23aebb8
+INFO:log:2022-03-27 13:09:29: GET: /localhost-testkey?a=v2:localhost::1648400969:7db22582252c5337cc866a7e2b0d894b5180993a
+INFO:log:2022-03-27 13:09:34: GET: /localhost-testkey?a=v2:localhost::1648400969:7db22582252c5337cc866a7e2b0d894b5180993a
+INFO:log:2022-03-27 13:09:41: GET: /localhost-testkey?a=v2:localhost::1648400981:cd6614a1d632b64e615897b00039785a87a0b127
+INFO:log:2022-03-27 13:09:44: POST: /load
+INFO:log:2022-03-27 13:09:46: GET: /localhost-testkey?a=v2:localhost::1648400981:cd6614a1d632b64e615897b00039785a87a0b127
+INFO:log:2022-03-27 13:09:46: successful key retrieval: localhost-testkey
+INFO:log:2022-03-27 13:10:10: GET: /localhost-testkey?a=v2:localhost::1648401010:505b63c4ab31d530566f29517c69b08a6487f401
+INFO:log:2022-03-27 13:10:10: successful key retrieval: localhost-testkey
+INFO:log:2022-03-27 13:10:44: GET: /qqq
+CRITICAL:log:2022-03-27 13:10:44: km database cleared by GET request
+INFO:log:2022-03-27 13:10:55: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:10:56: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:10:57: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:10:58: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:10:59: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:11:00: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:11:01: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:11:02: POST: /load
+INFO:log:2022-03-27 13:11:03: GET: /localhost-testkey?a=v2:localhost::1648401055:80314d9a7799fd601b91903eb7443851f3573e73
+INFO:log:2022-03-27 13:11:03: successful key retrieval: localhost-testkey
+INFO:log:2022-03-27 13:15:51: GET: /varz
+INFO:log:2022-03-27 13:15:52: GET: /varz
+INFO:log:2022-03-27 13:16:00: GET: /varz?loaded-keys
+INFO:log:2022-03-27 13:18:33: GET: /blue2-testkey?a=v2:blue2::1648401513:411c526fe8a525b46007ff548162c48dadc090f7
