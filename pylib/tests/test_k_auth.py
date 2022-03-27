@@ -1,8 +1,9 @@
 
+import context_pylib  # includes ../ in path so we can import things there.
+
 import os, socket, time
 import k_uncommon as Cap
 
-import context_pylib  # includes ../ in path so we can import things there.
 import k_auth as A
 
 # ---------- helpers

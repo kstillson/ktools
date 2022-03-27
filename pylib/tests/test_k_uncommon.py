@@ -1,10 +1,9 @@
 
-import context_pylib  # includes ../ in path so we can import things there.
-
 import io, os, sys
-import k_uncommon as UC
 import k_varz
 
+import context_pylib  # includes ../ in path so we can import things there.
+import k_uncommon as UC
 
 def test_capture():
     with UC.Capture(strip=False) as cap:
