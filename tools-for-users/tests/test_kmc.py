@@ -15,7 +15,7 @@ RESP = (200, 'response-content')
 KWARGS = {
     'km_host_port': 'localhost:%d' % PORT,
     'keyname_prefix': 'test-',
-    'km_cert': 'tests/server.crt',
+    'km_cert': 'tests/server-cn=localhost.crt',
     'retry_delay': 0, 'retry_limit': 0 }
 
 class MyHandler(http.server.BaseHTTPRequestHandler):
@@ -33,7 +33,7 @@ def web_server():
     httpd = http.server.HTTPServer(server_address, MyHandler)
     httpd.socket = ssl.wrap_socket(
         httpd.socket, server_side=True,
-        certfile='tests/server.pem', ssl_version=ssl.PROTOCOL_TLS)
+        certfile='tests/server-cn=localhost.pem', ssl_version=ssl.PROTOCOL_TLS)
     # daemon thread will die when main program exits.
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 

@@ -109,7 +109,9 @@ def generate_key_registration(
   if not key:
     key = ''.join(random.choice(string.ascii_letters) for i in range(20))
 
-  return '[%s]\nsecret=%s\nhost=%s\nauthn_secret=%s\n' % (full_keyname, key, hostname, authn_secret)
+  # Note: this format is a manual recreation of the @dataclass string export
+  # format for services/keymaster/km.py:Secret.  It needs to be kept in-sync.
+  return f"Secret(keyname='{full_keyname}', secret='{key}', kauth_secret='{authn_secret}')"
 
 
 # ---------- main for CLI
