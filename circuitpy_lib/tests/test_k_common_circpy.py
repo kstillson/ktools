@@ -2,11 +2,11 @@
 import context_circuitpy_lib   # fixup Python include path
 
 import os
-import k_common_circpy as C
-import k_log_queue as Q
-import k_uncommon as UC
-import k_varz as varz  ## to access varz counts in tests.
+import kcore.log_queue as Q
+import kcore.uncommon as UC
+import kcore.varz as varz  ## to access varz counts in tests.
 
+import common_circpy as C
 
 # NB: relies on the author's personal web-server.  TODO: find something better.
 def test_web_get():

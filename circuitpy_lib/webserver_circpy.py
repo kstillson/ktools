@@ -9,7 +9,7 @@
    Example usage in non-blocking mode:
 
 import time
-import k_webserver as W
+import kcore.webserver as W
 
 def default_handler(request):
     name = request.get_params['name'] if 'name' in request.get_params else 'world'
@@ -25,8 +25,8 @@ while True:
 '''
 
 import io, os, re, sys
-import k_log_queue as Q
-import k_webserver_base as B
+import kcore.log_queue as Q
+import kcore.webserver_base as B
 
 PY_VER = sys.version_info[0]
 
@@ -35,7 +35,7 @@ PY_VER = sys.version_info[0]
 import os, sys
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
 if not CIRCUITPYTHON:
-    simpath = os.path.dirname(__file__).replace('py_lib', 'py_sim')
+    simpath = os.path.join(os.path.dirname(__file__), 'circuitpy_sim')
     if not simpath in sys.path: sys.path.insert(0, simpath)
 # ----------
 
@@ -48,7 +48,7 @@ class WebServerCircPy(B.WebServerBase):
                  listen_address='0.0.0.0', blocking=False, timeout=5, backlog_queue_size=3, socket=None,
                  *args, **kwargs):
 
-        # Create a logging adapter that uses the low-dep system from k_log_queue.
+        # Create a logging adapter that uses the low-dep system from kcore.log_queue.
         logging_adapter = B.LoggingAdapter(
             log_request=Q.log_info, log_404=Q.log_info,
             log_general=Q.log_info, log_exceptions=Q.log_error,

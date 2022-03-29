@@ -1,4 +1,11 @@
 
+## finish pylib refactor
+   - d_lib still referened
+   - circuitpy_lib tests fail
+   - make sure all make targets propogate
+   - confirm km server and client working well together
+   - finalize km docker
+
 ## ++ktools
    - Tplink: generalize & publish tplink.py and related tools (change to separate docker)
    - TOC / general intro write-up

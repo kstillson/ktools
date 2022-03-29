@@ -15,7 +15,7 @@
 import context_circuitpy_lib   # fixup Python include path
 
 import os, random, threading, subprocess
-import k_common_circpy as C
+import common_circpy as C
 import server
 
 # ---------- helpers

@@ -1,11 +1,11 @@
 
-from k_common_base import *
+from kcore.common_base import *
 
 import os, ssl, sys
-import k_log_queue as Q
-import k_varz as varz
+import kcore.log_queue as Q
+import kcore.varz as varz
 
-from k_log_queue import Levels, LEVELS
+from kcore.log_queue import Levels, LEVELS
 
 
 # ----------

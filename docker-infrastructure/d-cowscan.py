@@ -10,6 +10,8 @@ TOKEN = str(datetime.datetime.now())
 TOKEN_CONTAINER = 'mysql-a' if HOSTNAME.startswith('a2') else 'eximdock'
 TOKEN_FILE = '/tmp/.stamp'
 
+# TODO: move ignore list to private.d
+
 IGNORE_LIST = [
     'dbg-',
     '.pid',
