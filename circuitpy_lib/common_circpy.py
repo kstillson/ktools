@@ -13,7 +13,7 @@ from kcore.log_queue import Levels, LEVELS
 import os, sys
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
 if not CIRCUITPYTHON: 
-    simpath = os.path.dirname(__file__).replace('py_lib', 'py_sim')
+    simpath = os.path.join(os.path.dirname(__file__), 'circuitpy_sim')
     if not simpath in sys.path: sys.path.insert(0, simpath)
 # ----------
 

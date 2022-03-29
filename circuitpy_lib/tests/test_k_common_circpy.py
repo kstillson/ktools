@@ -16,7 +16,8 @@ def test_web_get():
 
     # Test standard response fields (check my wrapping didn't break anything).
     url = 'http://a1.point0.net/test.html'
-    resp = C.web_get(url)
+    resp = C.web_get(url, wrap_exceptions=False)
+
     assert resp.elapsed.microseconds > 0
     assert resp.ok
     assert 'date' in resp.headers

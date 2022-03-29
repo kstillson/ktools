@@ -5,14 +5,10 @@ TEST_LOG := test.log
 
 # ---------- standard targets
 
-clean:
-	rm -rf $(TEST_LOG)
-
-# ---------- do-nothing standard targets
-
 all:
 
 clean:
+	rm -rf $(TEST_LOG)
 
 comp:
 
