@@ -160,13 +160,13 @@ def container_file_expect(expect, container_name, filename):
 def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate(send_in)
-    if expect_returncode is not None and p.returncode != expect_returncode: d_lib.abort('wrong return code: %d <> %d for %s' % (p.returncode, expect_returncode, cmd))
+    if expect_returncode is not None and p.returncode != expect_returncode: abort('wrong return code: %d <> %d for %s' % (p.returncode, expect_returncode, cmd))
     if expect_out is not None:
-        if out and not expect_out: d_lib.abort('Unexpected output "%s" for: %s' % (out, cmd))
-        if expect_out not in out: d_lib.abort('Unable to find output "%s" in "%s" for: %s' % (expect_out, out, cmd))
+        if out and not expect_out: abort('Unexpected output "%s" for: %s' % (out, cmd))
+        if expect_out not in out: abort('Unable to find output "%s" in "%s" for: %s' % (expect_out, out, cmd))
     if expect_err is not None:
-        if err and not expect_err: d_lib.abort('Unexpected error output "%s" for: %s', (err, cmd))
-        if expect_err and expect_err not in err: d_lib.abort('Unable to find error "%s" in "%s" for: %s' % (expect_err, err, cmd))
+        if err and not expect_err: abort('Unexpected error output "%s" for: %s', (err, cmd))
+        if expect_err and expect_err not in err: abort('Unable to find error "%s" in "%s" for: %s' % (expect_err, err, cmd))
     emit('success; expected output for %s' % cmd)
 
 

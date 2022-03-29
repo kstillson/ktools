@@ -33,8 +33,8 @@ update:  # TODO
 # ---------- custom sub-rules for the standard targets
 
 # :all 
-dist/build-touch: $(wildcard */.py)
-	python3 -m build || { echo "didn't work; try 'make venv' to create an updated virtual Python build environment"; exit 1; }
+dist/build-touch: $(wildcard */.py) venv/bin/activate
+	source venv/bin/activate && python3 -m build
 	touch dist/build-touch
 
 # :test
