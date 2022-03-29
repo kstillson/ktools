@@ -9,8 +9,8 @@ include ../common/Makefile-unstaged
 
 # uses 'script' to avoid stripping the color (as output redirection would).
 $(TEST_LOG): $(wildcard *.py) $(wildcard *.sh) $(STAGING_DIR)
-	script -eq -c "pytest-3 test_*.py" $(TEST_LOG)
-	script -aeq -c "./test_q.sh" $(TEST_LOG)
+	script -eq -c "pytest-3 tests/test_*.py" $(TEST_LOG)
+	script -aeq -c "./tests/test_q.sh" $(TEST_LOG)
 
 # ---------- pass-throughs
 

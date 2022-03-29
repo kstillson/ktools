@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import context_tfr     # fix path to includes work as expected in tests
+
 import iptables_log_sum as base
 
 def test1():
