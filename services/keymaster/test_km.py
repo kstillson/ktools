@@ -1,16 +1,14 @@
 
 import os, random, sys, threading, time
 
-import k_common as C
-
-sys.path.insert(0, '/usr/local/bin')
-import kmc
+import kcore.common as C
+import ktools.kmc as kmc
 
 import km
 
 def test_basic_opration():
     random_high_port = random.randrange(10000,29999)
-    argv = ['--certkeyfile', 'server-cn=localhost.pem', '--logfile', '', '--port', str(random_high_port)]
+    argv = ['--certkeyfile', 'server-cn=localhost.pem', '--datafile', 'km-test.data.gpg', '--logfile', '', '--port', str(random_high_port)]
     threading.Thread(target=km.main, args=(argv,), daemon=True).start()
     time.sleep(0.5)   # time for webserver to start-up
 
@@ -18,7 +16,6 @@ def test_basic_opration():
     
     # password not entered yet; confirm we're "not ready"
     resp = C.web_get(baseurl + '/healthz', cafile='server-cn=localhost.pem')
-    print("exception: " + str(resp.exception))
     assert resp.ok
     assert 'not ready' in resp.text
 

@@ -5,9 +5,9 @@ This is a web-server that hosts a small database of secrets.  Clients request
 secrets by providing the name of the secret they want via an https GET
 request.
 
-Clients are authenticated using k_auth.py tokens, which include a private
+Clients are authenticated using kcore.auth.py tokens, which include a private
 client-machine unique identifier and an optional username/password.  That is,
-each keymaster secret is associated with a k_auth "shared secret" (shared
+each keymaster secret is associated with a kcore.auth "shared secret" (shared
 between the client machine and the keymaster server), and that secret is
 hardware-locked to the machine on which it was generated, which should be the
 machine that km requests are going to come from.
@@ -34,15 +34,15 @@ that need secerts will go into retry loops until key-master admin enters the
 one master password to unlock the KM database, and then all the services can
 auto-restart without further intervention.
 
-In addition to k_auth tokens, KM also checks the requesting client's source-IP
-address.  If you don't want this, override the hostname with "*" when
-registering a secret.  Make sure to do this on the client side when generating
-the key registration (kmc.py -g ...), and when retrieving secrets, as the
-hostname is mixed-in to the k_auth shared-secret generation.  Also note that
-while a hostname of "*" disables source-ip checking, a k_auth shared secret
-still has machine-specific data mixed in, and so by default will only work for
-key retireval requests generated from the same machine as where the key
-registration was generated.
+In addition to kcore.auth tokens, KM also checks the requesting client's
+source-IP address.  If you don't want this, override the hostname with "*"
+when registering a secret.  Make sure to do this on the client side when
+generating the key registration (kmc.py -g ...), and when retrieving secrets,
+as the hostname is mixed-in to the kcore.auth shared-secret generation.  Also
+note that while a hostname of "*" disables source-ip checking, a kcore.auth
+shared secret still has machine-specific data mixed in, and so by default will
+only work for key retireval requests generated from the same machine as where
+the key registration was generated.
 
 If you really want to be able to retrieve a secret from multiple different
 client machines, you'll need to set the $PUID environment variable to some
@@ -65,19 +65,19 @@ km-test.data.gpg for an example; the passphrase is "test123".  Note that
 various tests are dependent on this file's current contents, so probably best
 not to change it.  Your real secrets database goes in private.d/km.data.gpg.
 
-Note on TLS private key: 
+Note on TLS private key:
 
 '''
 
 import argparse, getpass, os, subprocess, sys, tempfile
 from dataclasses import dataclass
 
-import k_auth as A
-import k_common as C
-import k_uncommon as UC
-import k_varz as V
-import k_webserver as W
-import k_webserver_base as WB
+import kcore.auth as A
+import kcore.common as C
+import kcore.uncommon as UC
+import kcore.varz as V
+import kcore.webserver as W
+import kcore.webserver_base as WB
 
 
 # ---------- the secrets database
@@ -266,9 +266,17 @@ def main(argv):
   args = parse_argv(argv)
 
   global ARGS
-  ARGS = args  # easy communication to things like logging
+  ARGS = args  # easy communication to things like the handlers.
 
-  # TODO: handle args.logfile and args.syslog
+  if args.logfile == '-':
+    args.logfile = None
+    stderr_level = C.logging.INFO
+  else:
+    stderr_level = C.logging.NEVER
+      
+  C.init_log('km server', args.logfile,
+             filter_level_logfile=C.logging.INFO, filter_level_stderr=stderr_level,
+             filter_level_syslog=C.logging.ALERT if args.syslog else C.logging.NEVER)
   
   if args.register: return register_new_key(args)
 
