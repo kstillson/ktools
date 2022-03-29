@@ -16,3 +16,8 @@
   - separate browser uids
     - cookie stealing, logic injection, xsrf, password separation
 
+  - passwords
+    - forumulas, passwd mgr (incomplete entries)
+
+  - phone security
+

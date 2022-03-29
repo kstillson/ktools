@@ -1,9 +1,13 @@
 
+# NOTE: most of these targets depend on ../pylib/kcore/docker_lib,
+# which should be installed before trying to get any of these to work.
+
+# ----------
+
 # Supported meta-targets:  all, clean, test, install, update
 
 PY_TARGETS := d-cowscan d-run
 SH_TARGETS := d d-build d-map
-PLAIN_TARGETS := d_lib.py	 # Listed here to preserve extension.
 include ../common/Makefile-unstaged
 
 # ---------- testing
