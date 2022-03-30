@@ -1,3 +1,12 @@
+'''Common Python helpers: mostly logging and a web fetcher.
+
+TODO: doc
+
+TODO: is the standard Python logging module buying us much?  Would removing it
+simpliy things and/or allow merging with the circuitpy_lib version..?
+
+'''
+
 
 from kcore.common_base import *
 
@@ -169,25 +178,40 @@ def dump_response(resp):
     return 'ok:%s, code:%s, exception:%s, text:%s, headers:%s, url:%s, elapsed:%s' % (resp.ok, resp.status_code, resp.exception, resp.text, resp.headers, resp.url, resp.elapsed)
 
 
-# For python2, this emulates the python3 requests framework.  i.e. the caller
-# can use web_get to provide the same API regardless of Python version.
+def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, cafile=None, proxy_host=None):
+    '''Retrieve web data.  Works for both Python 2 & 3, and hides the differences.
 
-# returns a Response-like object
-def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, cafile=None):
+       For Python 3, this is basically a trivial wrapper around "requests",
+       mostly just converting annoying byte strings into regular strings.
+
+       For Python 2, this makes an attempt to emulate the requests module.
+       Returns a Response-like object.'''
     reader = _read_web2 if PY_VER == 2 else _read_web3
     if wrap_exceptions:
         try:
-            return reader(url, get_dict, post_dict, timeout, verify_ssl, cafile)
+            return reader(url=url, get_dict=get_dict, post_dict=post_dict,
+                          timeout=timeout, verify_ssl=verify_ssl,
+                          cafile=cafile, proxy_host=proxy_host)
         except Exception as e:
             r = FakeResponse()
             r.exception = e
             r.url = url
             return r
     else:
-        return reader(url, get_dict, post_dict, timeout, verify_ssl)
+        return reader(url=url, get_dict=get_dict, post_dict=post_dict,
+                      timeout=timeout, verify_ssl=verify_ssl,
+                      cafile=cafile, proxy_host=proxy_host)
 
+    
+def web_get_e(url, *args, **kwargs):
+    '''Same as web_get, except will print any exceptions to stderr.'''
+    resp = web_get(url, *args, **kwargs)
+    if resp.exception: stderr('web_get exception: %s: %s' % (url, resp.exception))
+    return resp
+    
+    
 # For a really simple interface: returns a string or None upon error.
-def read_web(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True):
+def read_web(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, extra_headers={}):
     return web_get(url, timeout, get_dict, post_dict, verify_ssl, wrap_exceptions).text
 
 
@@ -204,7 +228,7 @@ def quote_plus(url):
 
 # ---------- internals
 
-def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, cafile=None):
+def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, cafile=None, proxy_host=None, extra_headers={}):
     if get_dict:
         data = urllib.urlencode(get_dict)
         url += '%s%s' % ('&' if '?' in url else '?', data)
@@ -212,7 +236,9 @@ def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, c
     if not verify_ssl:
         ssl_ctx.check_hostname = False
         ssl_ctx.verify_mode = ssl.CERT_NONE
-    req = urllib2.Request(url, urllib.urlencode(post_dict) if post_dict else None)
+    req = urllib2.Request(url, urllib.urlencode(post_dict) if post_dict else None, headers=extra_headers)
+    if proxy_host:
+        req.set_proxy(proxy_host, 'https' if 'https' in url else 'http')
     start_time = datetime.datetime.now()
     res = urllib2.urlopen(req, timeout=timeout, context=ssl_ctx)
     resp = FakeResponse()
@@ -225,17 +251,19 @@ def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, c
     resp.url = url
     return resp
 
-def _read_web3(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, cafile=None):
+def _read_web3(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, cafile=None, proxy_host=None, extra_headers={}):
     setattr(requests.models.Response, '__str__', lambda _self: _self.text)
     if not verify_ssl:
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    # nb: only support http-based proxy...
+    proxies = { 'http': 'http://%s' % proxy_host } if proxy_host else None
     if get_dict:
         data = urllib.parse.urlencode(get_dict, quote_via=urllib.parse.quote_plus)
         url += '%s%s' % ('&' if '?' in url else '?', data)
     if post_dict:
-        resp = requests.post(url, data=post_dict, timeout=timeout, verify=None if verify_ssl else False)
+        resp = requests.post(url, data=post_dict, timeout=timeout, verify=cafile if verify_ssl else False, proxies=proxies, headers=extra_headers)
     else:
-        resp = requests.get(url, timeout=timeout, verify=cafile if verify_ssl else False)
+        resp = requests.get(url, timeout=timeout, verify=cafile if verify_ssl else False, proxies=proxies, headers=extra_headers)
     resp.exception = None
     return resp

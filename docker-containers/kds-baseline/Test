@@ -1,9 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import argparse, subprocess, sys, time
-
-sys.path.append('/root/bin')
-import d_lib
+import kcore.docker_lib as d_lib
 
 
 def main():
@@ -11,7 +9,7 @@ def main():
     d_lib.add_testing_args(ap)
     args = ap.parse_args()
     name, ip, cow, dv = d_lib.launch_or_find_container(
-        args, ['--cmd=/bin/sleep 5'])
+        args, ['--cmd=/bin/sleep 3'])
     if not cow or not ip: sys.exit('cannot find container %s (try re-running test with "-r"..?)' % name)
 
     # Check that our files/prep got put into place.

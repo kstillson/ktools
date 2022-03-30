@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import argparse, os, shutil, socket, subprocess, sys, yaml
 
@@ -70,7 +70,7 @@ def expand_log_shorthand(log, name):
 def add_mounts(cmnd, mapper, readonly, name, mount_list):
     if not mount_list: return cmnd
     for i in mount_list:
-        for k, v in i.iteritems():
+        for k, v in i.items():
             if '/' not in k:
                 k = os.path.join('/rw/dv/%s' % name, k)
             cmnd.extend(['--mount',
@@ -212,7 +212,7 @@ def parse_args():
     ap.add_argument('--network', '-N', default=None, help='Name of docker network to use. defaults to "docker1"')
     ap.add_argument('--ports', '-p', default=None, nargs='*', help='Port to map, host:container (can specify flag multiple times')
     ap.add_argument('--rm', action='store_true', help='Ask docker to auto-remove the container when it stops.')
-    ap.add_argument('--puid', default=None, help='Use give value for $PUID rather than auto-generating.  Remember you probably want this to be container-specific.  Set blank to skip assignment.  See k_auth.py for details.')
+    ap.add_argument('--puid', default='auto', help='Use give value for $PUID rather than auto-generating.  Remember you probably want this to be container-specific.  Set blank to skip assignment.  See kcore/auth.py for details.')
     ap.add_argument('--subnet', default=None, help='If specified, use existing logic to determine IP number, but then map that number to this subnet.')
     ap.add_argument('--ipv6', '-6', action='store_true', help='If not specified, make port bindings specific to IPv4 only.')
 
@@ -319,8 +319,8 @@ def gen_command(args, settings):
             add_ports(cmnd, settings.get('ports'), args.ipv6)
     if args.ports: add_ports(cmnd, args.ports, args.ipv6)
 
-    if args.puid != '':
-        cmnd.extend(['-e', 'PUID=%s' % args.puid or get_puid(name)])
+    if args.puid:
+        cmnd.extend(['--env', 'PUID=%s' % (args.puid if args.puid != 'auto' else get_puid(name))])
 
     if 'image' in settings:
         image = settings.get('image')
@@ -359,7 +359,7 @@ def main():
     if args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
         last_space = temp.rfind(' ')
-        print temp[:last_space] + '\t\\\n ' + temp[last_space:]
+        print(temp[:last_space] + '\t\\\n ' + temp[last_space:])
         if args.test: sys.exit(0)
     if not args.fail_on_exists:
         with open('/dev/null', 'w') as z:

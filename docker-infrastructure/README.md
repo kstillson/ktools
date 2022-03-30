@@ -132,7 +132,7 @@ Here are the contents expected for each container source directory:
     If a test fails, it should output a human-readable explanation of what
     went wrong, and exit with non-0 status.
 
-    [d_lib.py][] provides a whole bunch of useful helper tools to make
+    [kcore.docker_lib] provides a whole bunch of useful helper tools to make
     testing easier.  See the provided `Test` files for examples.
 
 

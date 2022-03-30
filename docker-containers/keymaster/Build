@@ -1,105 +1,25 @@
-
 # Custom local build logic, invoked by d-build
 
-# This script creates a self-signed certificate for the keymaster.
-# It will attempt to preserve any already existing key/cert, and will abort
-# if it gets confused, hopefully not overwriting anything it shouldn't.
+# by default, continue with standard build logic once we're done here.
+CONTINUE=1
 
-# Upon successful completion, files/home/km/server.pem should be available for
-# the km server, and the file private.d/server.crt should be available for
-# clients to use when checking against the server.
+# ---------- extern deps ----------
 
-#
-# WARNING
-#
-# Because keymaster is designed to auto-start, and assuming there's no
-# meta-keymaster to help it do so, the private key for the server (which is in
-# both files/home/km/server.pem and private.d/server.key should be protected).
-# The provided .gitingore files should exclude both these files from git, but
-# you may need to take further action to make sure things like your backup
-# procedures don't expose the key.
+SRC_CERT="../kds-baseline/private.d/km.crt"
+SRC_KEY="../kds-baseline/private.d/km.key"
 
-
-# ---------- general purpose helpers
-
-function copy_and_check() {
-  src="$1"
-  dest="$2"
-  /bin/cp -bLpuv $src $dest
-  /usr/bin/diff -q $src $dest && { echo "$dest is up to date."; } || { echo "update of $dest failed; aborting."; exit -2; }
-}
-
-# ---------- local self-signed certificate for the keymaster
-
-CERT_SETTINGS="${CERT_SETTINGS:-private.d/cert-settings}"
-
-CERTKEY_FILE="files/home/km/server.pem"
-TEMP_CERT_FILE="private.d/server.crt"
-TEMP_KEY_FILE="private.d/server.key"
-
-# -----
-
-function generate_self_signed_cert() {
-
-if [[ ! -f $CERT_SETTINGS ]]; then
-cat << EOF
-ERROR- you need a $CERT_SETTINGS file specific to your local details.
-Please create $CERT_SETTINGS with something like this:
-
-KM_HOSTNAME="keymaster"
-SUBJECT="/C=US/ST=your-state/L=your-town/O=your-org-name"
-EMAIL="admin-email-address@whatever.com"
-DAYS="365"
-EOF
-CONTINUE=0
-exit -3
+if [[ ! -r $SRC_CERT || ! -r $SRC_KEY ]]; then
+  echo "cannot read $SRC_CERT and/or ${SRC_KEY}.  Please build ../kds-baseline first to make sure these files exist before building this container."
+  exit 2
 fi
 
-source $CERT_SETTINGS
+cat $SRC_KEY $SRC_CERT > files/home/km/server.pem
+chmod 640 files/home/km/server.pem
 
-openssl req -x509 -newkey rsa:4096 -days $DAYS \
-            -keyout $TEMP_KEY_FILE -out $TEMP_CERT_FILE -nodes \
-	    -subj "${SUBJECT}/CN=${KM_HOSTNAME}/emailAddress=${EMAIL}" \
-	    -addext "subjectAltName = DNS:${KM_HOSTNAME}"
+# ----- km server source and data
 
-# Make sure permissions are right on those files.
-chmod go+r $TEMP_CERT_FILE
-chmod go-r $TEMP_KEY_FILE
-}
+source ../build-helper.sh
+copy_and_check ../../services/keymaster/km.py                  files/home/km/km.py	     750
+copy_and_check ../../services/keymaster/tests/km-test.data.gpg files/home/km/km-test.data.gpg 640
+copy_and_check ../../services/keymaster/private.d/km.data.gpg  files/home/km/km.data.gpg      640
 
-
-# ---------- copy the keymaster software and baseline data into our Docker context
-
-copy_and_check ../../services/keymaster/km.py            files/home/km/km.py
-copy_and_check ../../services/keymaster/ratelimiter.py   files/home/km/ratelimiter.py
-copy_and_check ../../services/keymaster/km-test.data.gpg files/home/km/km-test.data.gpg
-copy_and_check ../../services/keymaster/private.d/km.data.gpg files/home/km/km.data.gpg
-
-
-# ---------- create a TLS certificate if needed
-
-CONTINUE=1   # continue with standard build logic when done
-
-if [[ -f $CERTKEY_FILE && -f $TEMP_CERT_FILE && -f $TEMP_KEY_FILE ]]; then
-  if [[ ! $CERTKEY_FILE -ot $TEMP_CERT_FILE ]]; then
-    echo "$CERTKEY_FILE already exists; leaving it alone."
-    return
-  fi
-fi
-
-if [[ -f $CERTKEY_FILE ]]; then
-  echo "$CERTKEY_FILE exists but is older than $TEMP_CERT_FILE or something else went wrong."
-  echo "cowardly refusing to continue (which would overwrite $CERTKEY_FILE ."
-  echo "You *probably* want to delete $CERTKEY_FILE and retry."
-  CONTINUE=0
-  exit -2
-fi
-
-if [[ ! -f $TEMP_KEY_FILE ]]; then
-  generate_self_signed_cert
-fi
-
-cat $TEMP_CERT_FILE $TEMP_KEY_FILE > $CERTKEY_FILE
-echo "created ${CERTKEY_FILE}."
-echo "This is included in the Docker image, but should be ignored by git (it contains a private key)."
-echo ""

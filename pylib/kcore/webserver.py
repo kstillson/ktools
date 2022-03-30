@@ -3,6 +3,7 @@ import cgi, threading, ssl, sys
 
 import kcore.common as C           # for logging.
 import kcore.webserver_base as B
+# TODO: can we import webserver_base directly into our namespace, so clients don't need to separately import webserver_base to reference Request and Response..?
 
 PY_VER = sys.version_info[0]
 if PY_VER == 2:

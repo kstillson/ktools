@@ -1,44 +1,54 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import argparse, os, subprocess, sys, time
-
-sys.path.append('/root/bin')
-import d_lib
-
+import kcore.docker_lib as d_lib
+import ktools.kmc as kmc
 
 def main():
     ap = argparse.ArgumentParser(description='kmdock test')
     d_lib.add_testing_args(ap)
     args = ap.parse_args()
-    name, ip, cow, dv = d_lib.launch_or_find_container(args, ['--extra-docker', '-e DATA=km-test.data.gpg'])
+    name, ip, cow, dv = d_lib.launch_or_find_container(args, ['--extra-docker', '--env DATA=km-test.data.gpg --env TEST=1'])
     if not cow or not ip: sys.exit('cannot find container %s' % name)
 
     if args.prod:
         sys.exit('cannot do in-place prod testing; test is destructive to its container.')
 
+    # Give the server a moment to start up.
+    time.sleep(0.8)
+    
     # Try retrieving the test key before decrypting the database; should fail.
-    d_lib.web_expect('not ready', ip, '/test', port=4443, https=True)
+    d_lib.web_expect('not ready', ip, '/test', port=4443, https=True, verify_ssl=False)
 
     # Decrypt the database with the test password, should say we're ok.
-    d_lib.web_expect('ok', ip, '/', post_params={'password': 'ken123'}, port=4443, https=True)
+    d_lib.web_expect('ok', ip, '/load', post_params={'password': 'test123'}, port=4443, https=True, verify_ssl=False)
 
     # Try retrieving the same test key.  Should work now.
-    d_lib.web_expect('hithere', ip, '/test', port=4443, https=True)
+    os.environ['PUID'] = 'test'
+    kmc.DEBUG = True
+    hostport = '%s:%d' % (ip, 4443)
+    answer = kmc.query_km('testkey', override_hostname='*', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    if answer != 'mysecret': d_lib.abort('expected "mysecret", but saw "%s"' % answer)
 
     # Check the service health.
-    d_lib.web_expect('ok', ip, '/healthz', port=4443, https=True)
+    d_lib.web_expect('ok', ip, '/healthz', port=4443, https=True, verify_ssl=False)
 
     # On-demand clear of the decrypted database.
-    d_lib.web_expect('cleared', ip, '/qqq', port=4443, https=True)
+    d_lib.web_expect('zapped', ip, '/qqq', port=4443, https=True, verify_ssl=False)
 
     # And now a health check should indicate "not ready".
-    d_lib.web_expect('not ready', ip, '/test', port=4443, https=True)
+    d_lib.web_expect('not ready', ip, '/test', port=4443, https=True, verify_ssl=False)
 
-    # Now lets re-start the database and try for test2, which should fail
+    # Now lets re-start the database and try for a bad key, which should fail
     # and leave the system locked due to a source IP check failure.
-    d_lib.web_expect('ok', ip, '/', post_params={'password': 'ken123'}, port=4443, https=True)
-    d_lib.web_expect('ERR error performing host verification', ip, '/test2', port=4443, https=True)
-    d_lib.web_expect('not ready', ip, '/test', port=4443, https=True)
+    d_lib.web_expect('ok', ip, '/load', post_params={'password': 'test123'}, port=4443, https=True, verify_ssl=False)
+    answer = kmc.query_km('nonexistent-key', override_hostname='*', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    if answer: d_lib.abort('got unexpected answer for non-existent key: %s' % answer)
+
+    # The system should now be locked.
+    answer = kmc.query_km('testkey', override_hostname='*', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    if answer: d_lib.abort('got unexpected answer for non-existent key: %s' % answer)
+    d_lib.web_expect('not ready', ip, '/test', port=4443, https=True, verify_ssl=False)
 
     print('pass')
     

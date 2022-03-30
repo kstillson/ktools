@@ -5,6 +5,7 @@
 **/files/home/km/*.py
 **/files/home/km/*.gpg
 **/files/usr/local/bin/kmc
+**/files/usr/lib/python**
 
 # Ignore backup files (sometimes created by ./Build updates)
 *~

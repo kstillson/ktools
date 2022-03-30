@@ -3,9 +3,10 @@
 
 TOP_TARGETS = all clean comp install test uninstall update
 
-# specify SUBDIRS as an environment variable for partial work, e.g.:
-# SUBDIRS="syslog tools-for-root" make install
-SUBDIRS ?= $(shell ls */Makefile | cut -d/ -f1)
+# specify SUBDIRS as an environment variable for partial work.
+# remember that order matters.
+#SUBDIRS ?= $(shell ls */Makefile | cut -d/ -f1)
+SUBDIRS ?= pylib circuitpy_lib home-control tools-for-root services docker-infrastructure docker-containers
 
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):

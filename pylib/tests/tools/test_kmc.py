@@ -65,7 +65,7 @@ def test_full_authn_cycle(web_server):
     #  still test now whether what it should have done would have worked).
     path, token = INCOMING_PATH.split('?a=', 1)
     assert path == '/test-key4'
-    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key4', reg_blob)
+    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key4', reg_blob, client_addr=None)
     assert status == 'ok'
     assert okay
     assert not username
@@ -83,21 +83,21 @@ def test_full_authn_cycle_with_password(web_server):
     # Let's try it with no password and confirm it fails.
     answer = kmc.query_km('key5', **KWARGS)
     path, token = INCOMING_PATH.split('?a=', 1)
-    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key5', reg_blob, must_be_later_than_last_check=False)
+    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key5', reg_blob, client_addr=None, must_be_later_than_last_check=False)
     assert 'fails to validate' in status
     assert not okay
 
     # And try again with the wrong password and confirm it fails.
     answer = kmc.query_km('key5', password='wrong-password', **KWARGS)
     path, token = INCOMING_PATH.split('?a=', 1)
-    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key5', reg_blob, must_be_later_than_last_check=False)
+    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key5', reg_blob, client_addr=None, must_be_later_than_last_check=False)
     assert 'fails to validate' in status
     assert not okay
 
     # And finally use the right password and make sure it works.
     answer = kmc.query_km('key5', password='pass123', **KWARGS)
     path, token = INCOMING_PATH.split('?a=', 1)
-    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key5', reg_blob, must_be_later_than_last_check=False)
+    okay, status, hostname, username, sent_time = kcore.auth.validate_token_given_shared_secret(token, 'test-key5', reg_blob, client_addr=None, must_be_later_than_last_check=False)
     assert status == 'ok'
     assert okay
     assert answer == 'mysecret'

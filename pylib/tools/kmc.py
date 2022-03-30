@@ -15,6 +15,21 @@ import argparse, os, random, requests, socket, sys, time
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import kcore.auth
 
+
+# ---------- global settings
+
+DEBUG = False   # warning: outputs lots of secrets to stderr.
+
+
+# ---------- general helpers
+
+def find_cert(filename):
+  if os.path.exists(filename): return filename
+  candidate = os.path.join(os.path.dirname(__file__), filename)
+  if os.path.exists(candidate): return candidate
+  return None  
+  
+
 # ---------- key request API (run on the km client)
 
 '''query the keymaster for a key
@@ -46,16 +61,21 @@ def query_km(keyname,
              timeout=5, retry_limit=None, retry_delay=5, errors_to=sys.stderr):
 
   hostname = override_hostname or socket.gethostname()
-  if hostname == '*': os.environ['PUID'] = '*'
 
   if keyname_prefix is None: keyname_prefix = ''
   full_keyname = keyname_prefix.replace('%h', hostname) + keyname
 
+  if km_cert:
+    verify = find_cert(km_cert)
+    if not verify and errors_to: print('unable to find certificate %s' % km_cert, file=errors_to)
+  else: # km_cert is either '' (tls but don't verify) or None (no tls).
+    verify = False
+  
   authn_token = kcore.auth.generate_token(full_keyname, hostname, username, password)
-
+  if DEBUG: print(f'DEBUG: query_km token regeneration: {full_keyname=} {hostname=} {username=} {password=} PUID={os.environ.get("PUID")} {authn_token=}', file=sys.stderr)
+  
   protocol = 'http' if km_cert is None else 'https'
   url = '%s://%s/%s?a=%s' % (protocol, km_host_port, full_keyname, authn_token)
-  verify = km_cert or False
   if not verify: requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
   retry = 0

@@ -1,3 +1,9 @@
+'''A few simple common helper methods.
+
+Works for both Python 2 & 3.  Separated out from common.py because
+Circuit Python doesn't include the "logging" module, and these
+methods should be available to both Cpython and Circuit Python.
+'''
 
 import sys
 
@@ -11,9 +17,9 @@ def dict_to_list_of_pairs(d):
     return out
 
 
-# Actually takes a list of lists and output lines of csv.
-# (Designed to take the output of dict_to_list_of_pairs())
 def list_to_csv(list_in, field_sep=', ', line_sep='\n'):
+    '''Takes a list of lists and outputs lines of csv.
+       Works well with the output from dict_to_list_of_pairs().'''
     out = ''
     for i in list_in:
         for j in range(len(i)):
@@ -38,9 +44,9 @@ def stderr(msg):
     sys.stderr.write("%s\n" % msg)
 
 
-# Returns contents as string or list of strings (as-per list_of_lines), and
-# returns None on error.  list_of_lines + strip will strip all lines.
 def read_file(filename, list_of_lines=False, strip=False, wrap_exceptions=True):
+    '''Returns contents as a string or list of strings (as-per "list_of_lines")
+       Returns None on error.  list_of_lines + strip will strip all lines.'''
     if wrap_exceptions:
         try:
             with open(filename) as f: data = f.read()

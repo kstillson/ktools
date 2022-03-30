@@ -1,8 +1,7 @@
-#!/usr/bin/python
-
 # Docker related support library
 
-import atexit, glob, os, random, ssl, string, subprocess, sys, urllib, urllib2
+import atexit, glob, os, random, ssl, string, subprocess, sys
+import kcore.common as C
 
 DLIB=os.environ.get('DLIB', None)
 if not DLIB:
@@ -16,7 +15,7 @@ OUT = sys.stdout
 
 
 def get_cid(container_name):  # or None if container not running.
-    out = subprocess.check_output(['/usr/bin/docker', 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
+    out = subprocess.check_output(['/usr/bin/docker', 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name]).decode("utf-8")
     for line in out.split('\n'):
         if ' ' not in line: continue
         cid, name = line.split(' ', 1)
@@ -29,7 +28,7 @@ def latest_equals_live(container_name):
         ids = subprocess.check_output(
             ['/usr/bin/docker', 'images',
              '--filter=reference=kstillson/%s' % container_name,
-             '--format="{{.Tag}} {{.ID}}"']).strip()
+             '--format="{{.Tag}} {{.ID}}"']).decode("utf-8").strip()
         id_map = {}
         for lines in ids.split('\n'):
             tag, did = lines.split(' ')
@@ -45,12 +44,12 @@ def run_command_in_container(container_name, cmd):
     command = ['/usr/bin/docker', 'exec', '-u', '0', container_name]
     if isinstance(cmd, list): command.extend(cmd)
     else: command.append(cmd)
-    return subprocess.check_output(command)
+    return subprocess.check_output(command).decode("utf-8")
 
 
 def find_cow_dir(container_name):
     try:
-        id_prefix = subprocess.check_output(['/usr/bin/docker', 'ps', '--filter', 'name=%s' % container_name, '--format', '{{.ID}}']).replace('\n', '')
+        id_prefix = subprocess.check_output(['/usr/bin/docker', 'ps', '--filter', 'name=%s' % container_name, '--format', '{{.ID}}']).decode("utf-8").replace('\n', '')
     except:
         sys.exit('cannot find container (is it up?)')
     globname = DLIB + '/image/overlay2/layerdb/mounts/%s*/mount-id' % id_prefix
@@ -100,7 +99,7 @@ def launch_or_find_container(args, extra_run_args=None):
             run_log_relay(args, OUT)
             sys.exit(0)
 
-    try: ip = subprocess.check_output(['/root/bin/d', 'ip', name]).strip()
+    try: ip = subprocess.check_output(['/root/bin/d', 'ip', name]).decode("utf-8").strip()
     except: ip = None
     cow = find_cow_dir(name)
     dv = '/rw/dv/%s' % name if args.prod else '/rw/dv/TMP/%s' % orig_name
@@ -160,6 +159,8 @@ def container_file_expect(expect, container_name, filename):
 def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate(send_in)
+    out = out.decode("utf-8")
+    err = err.decode("utf-8")
     if expect_returncode is not None and p.returncode != expect_returncode: abort('wrong return code: %d <> %d for %s' % (p.returncode, expect_returncode, cmd))
     if expect_out is not None:
         if out and not expect_out: abort('Unexpected output "%s" for: %s' % (out, cmd))
@@ -171,36 +172,21 @@ def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_
 
 
 # expect can be a string or a list.  if list, accept any substring.
-def web_expect(expect, server, path, port=80, expect_status=None, post_params=None, headers={}, https=False, timeout=2, size_limit=512, proxy_host=None):
-    status, contents, url = web_get(server, path, port, post_params, headers, https, timeout, size_limit, proxy_host)
-    if expect_status and expect_status != status:
-        abort('Web get returned unexpected status: %s : %s <> %s' % (url, expect_status, status))
+def web_expect(expect, server, path, port=80, expect_status=None, post_params=None, headers={}, https=False, timeout=2, size_limit=512, proxy_host=None, verify_ssl=True):
+    proto = 'https' if https else 'http'
+    if path[0] == '/': path = path[1:]
+    url = '%s://%s:%d/%s' % (proto, server, port, path)
+    resp = C.web_get(url, timeout=timeout, post_dict=post_params, verify_ssl=verify_ssl, proxy_host=proxy_host)
+    if resp.exception: emit('web_get exception: %s' % resp.exception)
+    if expect_status and expect_status != resp.status_code:
+        abort('Web get returned unexpected status: %s : %s <> %s' % (url, expect_status, resp.status_code))
     if not isinstance(expect, list):
         expect = [expect]
     for e in expect:
-        if e in contents:
+        if e in resp.text:
             emit('success; saw "%s" in %s' % (e, url))
             return 0
-    abort('Unable to find "%s" in: %s; response: %s' % (expect, url, contents))
-
-def web_get(server, path, port=80, post_params=None, headers={}, https=False, timeout=2, size_limit=512, proxy_host=None):
-    url = 'http%s://%s:%s%s' % ('s' if https else '', server, port, path)
-    req = urllib2.Request(url, urllib.urlencode(post_params) if post_params else None, headers=headers)
-    if proxy_host:
-        req.set_proxy(proxy_host, 'https' if https else 'http')
-    if https:
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-    else:
-        ctx = None
-    try:
-        contents = urllib2.urlopen(req, context=ctx).read(size_limit)
-        status = 200
-    except urllib2.HTTPError as e:
-        contents = '?'
-        status = e.code
-    return status, contents, url
+    abort('Unable to find "%s" in: %s; response: %s' % (expect, url, resp.text))
 
 
 def gen_random_cookie(len=15):

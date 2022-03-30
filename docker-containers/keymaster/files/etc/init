@@ -1,0 +1,17 @@
+#!/bin/bash
+
+CMD="/home/km/km.py "
+
+if [[ -v DATA ]]; then CMD="$CMD --datafile $DATA "; fi
+
+if [[ -v TEST ]]; then
+    echo ""
+    echo "!! TEST MODE !!  (log to stderr and no syslg)"
+    echo ""
+    CMD="$CMD --logfile -"
+else
+    CMD="$CMD --logfile /var/log/km/km.log --syslog"
+fi
+
+echo "init transferring to: $CMD"
+exec $CMD

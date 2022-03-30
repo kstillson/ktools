@@ -8,7 +8,7 @@ TEST_LOG := test.log
 all:
 
 clean:
-	rm -rf $(TEST_LOG)
+	rm -rf $(TEST_LOG) __pycache__ */__pycache__ */*/__pycache__ .pytest_cache
 
 comp:
 

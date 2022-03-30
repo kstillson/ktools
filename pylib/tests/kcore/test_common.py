@@ -69,7 +69,8 @@ def test_logging(tmp_path):
 def test_web_get():
     # Test standard response fields (check my wrapping didn't break anything).
     url = 'http://a1.point0.net/test.html'
-    resp = C.web_get(url)
+    resp = C.web_get_e(url)
+    print('@@1: ' + C.dump_response(resp))
     assert resp.elapsed.microseconds > 0
     assert resp.ok
     assert 'date' in resp.headers
@@ -81,26 +82,26 @@ def test_web_get():
     assert str(resp) == 'hi-nossl\n'
 
     # Test successful ssl verification.
-    assert 'hi-ssl\n' == C.web_get('https://a1.point0.net/test.html').text
+    assert 'hi-ssl\n' == C.web_get_e('https://a1.point0.net/test.html').text
 
     # Test ssl verify failure bypass (cert is for "a1" not "a2").
-    assert 'hi-ssl\n' == C.web_get('https://a2.point0.net/test.html', verify_ssl=False).text
+    assert 'hi-ssl\n' == C.web_get_e('https://a2.point0.net/test.html', verify_ssl=False).text
 
     # Test actual ssl verification failure.
-    resp = C.web_get('https://a2.point0.net/test.html')
+    resp = C.web_get_e('https://a2.point0.net/test.html')
     assert "doesn't match" in str(resp.exception)
     assert not resp.ok
     assert not resp.status_code
     assert str(resp) == ''
 
     # Test manually construct get params.
-    assert '\na=b\n\nx=y\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test-get?a=b&x=y').text
+    assert '\na=b\n\nx=y\n\n' == C.web_get_e('https://a1.point0.net/cgi-bin/test-get?a=b&x=y').text
 
     # Test get_dict.
-    assert '\nc=d\n\ne=f\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test-get', get_dict={'c': 'd', 'e': 'f'}).text
+    assert '\nc=d\n\ne=f\n\n' == C.web_get_e('https://a1.point0.net/cgi-bin/test-get', get_dict={'c': 'd', 'e': 'f'}).text
 
     # Test post_dict.
-    assert '\ng=h\n\ni=j\n\n' == C.web_get('https://a1.point0.net/cgi-bin/test-get', post_dict={'g': 'h', 'i': 'j'}).text
+    assert '\ng=h\n\ni=j\n\n' == C.web_get_e('https://a1.point0.net/cgi-bin/test-get', post_dict={'g': 'h', 'i': 'j'}).text
 
 
 def test_read_web():

@@ -44,7 +44,7 @@ def test_basic_operation():
     token = A.generate_token(use_command, use_hostname, use_username, use_password, use_time)
 
     # server side - check token
-    ok, status, hostname, username, sent_time = A.validate_token(token, use_command)
+    ok, status, hostname, username, sent_time = A.validate_token(token, use_command, use_hostname)
     # print('results: %s, %s, %s, %s, %s' % (ok, status, hostname, username, sent_time))
     assert ok
     assert status == 'ok'
@@ -54,7 +54,7 @@ def test_basic_operation():
 
     # ---------- confirm reply prevention
 
-    ok, status, hostname, username, sent_time = A.validate_token(token, use_command)
+    ok, status, hostname, username, sent_time = A.validate_token(token, use_command, use_hostname)
     assert not ok
     assert 'not later' in status
     assert hostname == use_hostname
@@ -89,7 +89,7 @@ def test_puid_only():
 
     token = A.generate_token_given_shared_secret(use_command, shared_secret)
 
-    ok, status, hostname, username, sent_time = A.validate_token_given_shared_secret(token, use_command, shared_secret)
+    ok, status, hostname, username, sent_time = A.validate_token_given_shared_secret(token, use_command, shared_secret, None)
     print('results: %s, %s, %s, %s, %s' % (ok, status, hostname, username, sent_time))
     assert ok
     assert status == 'ok'

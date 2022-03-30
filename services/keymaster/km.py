@@ -60,13 +60,11 @@ mode, for example in cases where curious or malicious network users might
 cause a denial-of-service by panicing the server, use the --dont-panic flag to
 turn it off.
 
-The secrets database is formatted like a Windows-style .ini file; see
-km-test.data.gpg for an example; the passphrase is "test123".  Note that
-various tests are dependent on this file's current contents, so probably best
-not to change it.  Your real secrets database goes in private.d/km.data.gpg.
-
-Note on TLS private key:
-
+The secrets database is formatted as a Python serialized @dataclass.  See
+km-test.data.gpg for an example; the passphrase is "test123".  btw, that file
+was generated with $PUID="test".  Note that various tests are dependent on
+this file's current contents, so you might break them if you change it.  Your
+real secrets database goes in private.d/km.data.gpg.
 '''
 
 import argparse, getpass, os, subprocess, sys, tempfile
@@ -97,6 +95,7 @@ class Secrets:
     def reset(self):
         self._db = {}
         V.bump('resets')
+        V.set('loaded-keys', 0)
 
     def to_string(self): return '\n'.join(str(i) for i in self._db.values())
     
@@ -116,6 +115,20 @@ class Secrets:
 
 ARGS = {}
 SECRETS = Secrets()
+
+# ---------- helpers
+
+def ouch(user_msg, log_msg, varz_name):
+    if varz_name: V.bump(varz_name)
+    if ARGS.dont_panic:
+        V.bump('dont-panic')
+        C.log_error(log_msg)
+    else:
+        V.bump('panic')
+        SECRETS.reset()
+        C.log_alert(log_msg)
+    return WB.Response(user_msg, 403)
+
 
 # ---------- handlers
 
@@ -157,30 +170,23 @@ def km_default_handler(request):
 
     secret = SECRETS.get(full_keyname)
     if not secret:
-        V.bump('keyfail-notfound')
-        return 'no such key'
+        return ouch('no such key or validation error',
+                    f'attempt to get non-existent key: {full_keyname}',
+                    'keyfail-notfound')
 
     client_addr = request.remote_address.split(':')[0]
-    
+
     okay, status, hostname, username, sent_time = A.validate_token_given_shared_secret(
         token=token, command=full_keyname, shared_secret=secret.kauth_secret,
-        expect_hostname=client_addr,
+        client_addr=client_addr,
         must_be_later_than_last_check=not ARGS.noratchet,
         max_time_delta=ARGS.window)
     if not okay:
-        if 'hostname' in status: V.bump('keyfail-hostname')
-        else: V.bump('keyfail-kauth')
-        msg = f'unsuccessful key retrieval attempt (keyname={full_keyname}, hostname={hostname}, username={username}, problem={status}'
-        if ARGS.dont_panic:
-            C.log_error(msg)
-            V.bump('dontpanic')
-        else:
-            C.log_alert(msg)
-            SECRETS.reset()
-            V.bump('panic')
-        return 'no such key or validation error'
+        return ouch('no such key or validation error',
+                    f'unsuccessful key retrieval attempt {full_keyname=} {hostname=} {username=} {status=}',
+                    'keyfail-hostname' if 'hostname' in status else 'keyfail-kauth')
     
-    C.log(f'successful key retrieval: {full_keyname}')
+    C.log(f'successful key retrieval: {full_keyname=} {username=}')
     V.bump('key-success')
     return secret.secret
 
@@ -246,7 +252,7 @@ def register_new_key(args):
 
 # ---------- main
 
-def parse_argv(argv):
+def parse_args(argv):
   ap = argparse.ArgumentParser(description='key manager  server')
   ap.add_argument('--certkeyfile', '-k', default='server.pem', help='name of file with both server TLS key and matching certificate.  set to blank to serve http rather than https (NOT RECOMMENDED!)')
   ap.add_argument('--datafile', '-d', default='km.data.gpg', help='name of encrypted file with secrets database')
@@ -262,8 +268,8 @@ def parse_argv(argv):
   return ap.parse_args(argv)
 
 
-def main(argv):
-  args = parse_argv(argv)
+def main(argv=[]):
+  args = parse_args(argv or sys.argv[1:])
 
   global ARGS
   ARGS = args  # easy communication to things like the handlers.
@@ -276,7 +282,7 @@ def main(argv):
       
   C.init_log('km server', args.logfile,
              filter_level_logfile=C.logging.INFO, filter_level_stderr=stderr_level,
-             filter_level_syslog=C.logging.ALERT if args.syslog else C.logging.NEVER)
+             filter_level_syslog=C.logging.CRIT if args.syslog else C.logging.NEVER)
   
   if args.register: return register_new_key(args)
 
@@ -298,5 +304,5 @@ def main(argv):
 
   
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main())
 

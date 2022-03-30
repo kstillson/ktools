@@ -1,11 +1,4 @@
 
-## finish pylib refactor
-   - d_lib still referened
-   - circuitpy_lib tests fail
-   - make sure all make targets propogate
-   - confirm km server and client working well together
-   - finalize km docker
-
 ## ++ktools
    - Tplink: generalize & publish tplink.py and related tools (change to separate docker)
    - TOC / general intro write-up
@@ -18,6 +11,7 @@
    - tools-for-root: anything to prune from "q" ?
    - tools-for-users: doc
    - k_auth: tidy, doc, test, and add cmnd to hash
+   - make sure all python is using __doc__ friendly formatting
 
 ## General
    - new name for ktools ?  (Mauveine?  #8D029B)
