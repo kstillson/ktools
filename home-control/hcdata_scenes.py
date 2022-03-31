@@ -24,33 +24,28 @@ SCENES = {
   'gh1'         : [ 'BULB-tp-lantern:green', 'BULB-tp-garage:dim-red', 'BULB-tp-mobile-bulb:bulb-dim:2', 'tp-garage-L:off', 'tp-garage-R:off', 'out-sconce:off', 'out-front-moon:off' ],
   'home'        : [ 'office:med', 'lng:dim:30', 'tp-kitchen:dim:60', 'tp-dining-chandelier:dim:30' ],
   'panic'       : [ 'all', 'sirens' ],
-  'panic:on'    : [ 'all:full', 'sirens:on' ],
-  'party:on'    : [  'PLUG-tp-bendy:on', 'tp-breakfast-nook:dim:30', 'tp-dining-chandelier:dim:25', 'tp-family-room-left:dim:15', 
-                     'tp-family-room-right:dim:15', 'tp-kitchen-pendants:dim:40', 'tp-kitchen:dim:5', 'tp-lounge:dim:15', 
-                     'tp-office:dim:20', 'tp-window-lights:dim:30',
-                     'accent-party', 'tree', 'PLUG-tp-tree', 'twinkle', 'lightning' ],
+  'party'       : [  'PLUG-tp-bendy', 'tp-breakfast-nook', 'tp-dining-chandelier', 'tp-family-room-left', 
+                     'tp-family-room-right', 'tp-kitchen-pendants', 'tp-kitchen', 'tp-lounge', 
+                     'tp-office', 'tp-window-lights', 'accent-party', 'tree', 'PLUG-tp-tree', 'twinkle', 'lightning' ],
   'tv'          : [  'PLUG-tp-bendy:off', 'tp-breakfast-nook:off', 'tp-dining-chandelier:dim:25', 'tp-family-room-left:dim:20', 
                      'tp-family-room-right:dim:20', 'tp-kitchen-pendants:dim:30', 'tp-kitchen:off', 'tp-lounge:dim:15', 
                      'tp-office:dim:20', 'tp-window-lights:off' ],
   'warmer'      : [ 'PLUG-tp-space-heater:on', 'delay:900:PLUG-tp-space-heater:off' ],
 
- # Aliases
+ # Special command-specific overrides
+  'blue:on'     : [ 'accents:blue' ],
+  'panic:on'    : [ 'all:full', 'sirens:on' ],
+  'party:on'    : [  'PLUG-tp-bendy:on', 'tp-breakfast-nook:dim:30', 'tp-dining-chandelier:dim:25', 'tp-family-room-left:dim:15', 
+                     'tp-family-room-right:dim:15', 'tp-kitchen-pendants:dim:40', 'tp-kitchen:dim:5', 'tp-lounge:dim:15', 
+                     'tp-office:dim:20', 'tp-window-lights:dim:30',
+                     'accent-party', 'tree', 'PLUG-tp-tree', 'twinkle', 'lightning' ],
+  'red:on'     : [ 'accents:red' ],
+  
+ # Scene aliases
+  'blue'        : [ 'accents' ],
   'down-dim'    : [ 'main:dim' ],
   'leaving'     : [ 'away' ],
-
- # homesec custom actions
-  # red turned on for a few seconds when alarm triggered but not yet activated.
-  'red:on'      : [ 'accents:red' ],
-  'red:off'     : [ 'accents:bulb-off' ],
-  # blue turned on for a few seconds when transitioning to state arming-away
-  'blue:on'     : [ 'accents:blue' ],
-  'blue:off'    : [ 'accents:bulb-off' ],
-  # blue_special triggered on rcam1 motion when arm-home
-  'blue_special:on'  : [],
-  'blue_special:off' : [],
-  # pony triggered by outside trigger when arm-away
-  'pony:on'     : [ 'accents:orange' ],
-  'pony:off'    : [ 'accents:bulb-off' ],
+  'red'         : [ 'accents' ],
 }
 
 

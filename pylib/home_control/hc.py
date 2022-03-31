@@ -233,23 +233,40 @@ def find_device_action(target, command):
 
 # ---------- primary API entry
 
-def control(target, command='on', settings=None):
+def control(target, command='on', settings=None, top_level_call=True):
 
    # ----- initialize our global state, if needed.
-  global DEVICES, PLUGINS, SCENES, SETTINGS
-  init_settings(settings)   # popualtes global SETTINGS
-  if not PLUGINS: PLUGINS = load_plugins(SETTINGS)
-  if not DEVICES: DEVICES, SCENES = load_data(SETTINGS)
-  if SETTINGS['debug']:
-    print(f'DEBUG: loaded {len(PLUGINS)} plugins, {len(DEVICES)} devices, and {len(SCENES)} scenes.')
-    print(f'DEBUG: {SETTINGS=}')
+  if top_level_call:
+    init_settings(settings)   # popualtes global SETTINGS
+    global DEVICES, PLUGINS, SCENES, SETTINGS
+    if not PLUGINS: PLUGINS = load_plugins(SETTINGS)
+    if not DEVICES: DEVICES, SCENES = load_data(SETTINGS)
+    if SETTINGS['debug']:
+      print(f'DEBUG: loaded {len(PLUGINS)} plugins, {len(DEVICES)} devices, and {len(SCENES)} scenes.')
+      print(f'DEBUG: {SETTINGS=}')
 
-  # ----- control logic
-  if SETTINGS['debug']: print(f'DEBUG: control request {target} -> {command}')
-
-  # Check if this is a simple device action, and take it if so.
+  # ----- Check if this is a scene, and if so run its expansion.
+  scene_list = SCENES.get(f'{target}:{command}')
+  if not scene_list: scene_list = SCENES.get(target)
+  if scene_list:
+    if SETTINGS['debug']: print(f'DEBUG: scene {target}:{command} -> {scene_list}')
+  
+    outputs = []
+    for i in scene_list:
+      if ':' in i:
+        target_i, command_i = i.split(':', 1)
+      else:
+        target_i = i
+        command_i = command
+      answer = control(target_i, command_i, settings, False)
+      if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned {answer}')
+      outputs.append(answer)
+    return outputs
+    
+  # ----- Check if this is a simple device action, and take it if so.
   device_action = find_device_action(target, command)
   if device_action:
+    if SETTINGS['debug']: print(f'DEBUG: control device {target} -> {command}')
     plugin_name, plugin_params = device_action.split(':', 1)
     plugin_module = PLUGINS.get(plugin_name)
     if not plugin_module: return f'plugin {plugin_name} not found'
@@ -258,21 +275,8 @@ def control(target, command='on', settings=None):
     else:
       return plugin_module.control(plugin_name, plugin_params, target, command)
 
-  # Check if this is a scene, and if so run its expansion.
-  scene_list = SCENES.get(target)
-  if not scene_list: return f'Dont know what to do with target {target}'
-
-  outputs = []
-  for i in scene_list:
-    if ':' in i:
-      target_i, command_i = i.split(':', 1)
-    else:
-      target_i = i
-      command_i = command
-    answer = control(target_i, command_i)
-    if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned {answer}')
-    outputs.append(answer)
-  return outputs
+  # ----- :-(
+  return f'Dont know what to do with target {target}'
 
 
 # ---------- command-line main

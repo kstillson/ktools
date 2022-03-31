@@ -93,7 +93,14 @@ def test_scenes(init):
     check_each(hc.control('scene2', 'cmd3'),       'ok', 'host1', 'cmd3')
     checkval('host2', 'cmd3')
     checkval('wildq', 'special-off')
-    
+
+    # check that command-specific scene overrides a plain one
+    check_each(hc.control('scene2', 'x'), 'ok')
+    checkval('host1', 'x1')
+    checkval('host2', 'x1')
+    checkval('wildq', 'special-off')
+    checkval('wild1-2', 'x')
+        
     # check partially successful scene
     outputs = hc.control('scene3', 'cmd4')
     assert 'device1: ok' == outputs[0]
