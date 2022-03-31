@@ -18,7 +18,7 @@ TOP_TARGETS = all clean comp install test uninstall update
 
 # specify SUBDIRS as an environment variable for partial work.
 # remember that order matters.
-SUBDIRS ?= pylib circuitpy_lib home-control tools-for-root services docker-infrastructure
+SUBDIRS ?= pylib circuitpy_lib tools-for-root services docker-infrastructure
 
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
@@ -31,6 +31,7 @@ $(SUBDIRS):
 
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
+	/usr/bin/rm -rf home-control/__pycache__
 
 # ---------- everything
 
