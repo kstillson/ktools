@@ -3,7 +3,22 @@
 
 PY_TARGETS := iptables_log_sum
 SH_TARGETS := q
+INSTALL_DIR := /root/bin
 include ../common/Makefile-unstaged
+
+# ---------- custom logic
+
+clean:
+	sudo $(MAKE) common_clean
+
+install:
+	sudo $(MAKE) common_install
+
+uninstall:
+	sudo $(MAKE) common_uninstall
+
+update:
+	sudo $(MAKE) common_update
 
 # ---------- testing
 
@@ -18,12 +33,5 @@ all: common_all
 
 comp: common_comp
 
-clean: common_clean
-
-install: common_install
-
 test: common_test
 
-uninstall: common_uninstall
-
-update: common_update

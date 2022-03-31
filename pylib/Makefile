@@ -7,9 +7,8 @@ LAST_WHEEL = $(shell ls -t1 dist/*.whl | tail -1)
 
 # ---------- standard targets
 
-## TEMP: disable wheel in favor of simple install.
-## all: dist/build-touch
-all:
+## all: all-via-wheel
+all:	all-simple
 
 clean:
 	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache dist *.egg-info
@@ -19,37 +18,45 @@ comp:
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in kcore/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in tools/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$${t/tools/ktools} | sed -e "/identical/s@.*@ok: $$t@"; done
 
-## TEMP: disable wheel in favor of simple install.
-## install: install_via_wheel
-install: install-simple
-
-install_via_wheel:
-	@if [[ -v VIRTUAL_ENV ]]; then echo "NOTICE- installing into virtual environtment ${VIRTUAL_ENV}.  If that's not what you want, type command 'deactivate' and run the install again."; fi
-	@if [[ "$UID" == "0" ]]; then echo "NOTICE- installing into root's .local directory.  Use target 'install-system' to install into /usr/local for all users."; fi
-	pip3 install -U --user $(LAST_WHEEL)
+## install: install-via-wheel
+install:
+	$(MAKE) install-simple
+	$(MAKE) link
+	sudo $(MAKE) install-simple
 
 test: $(TEST_LOG)
 
+#uninstall: uninstall-via-wheel
 uninstall:
-	@if [[ -v VIRTUAL_ENV ]]; then echo "uninstalling from virtual environtment ${VIRTUAL_ENV}."; fi
-	pip3 uninstall kcore_pylib
+	$(MAKE) unlink
+	$(MAKE) uninstall-simple
+	sudo $(MAKE) uninstall-simple
 
-update:  # TODO
+update:
+	$(MAKE) all
+	$(MAKE) test
+	$(MAKE) install
 
 
 # ---------- custom sub-rules for the standard targets
 
-# :all 
+# ----- :all
+
+all-simple:   # nothing to do.
+
+all-via-wheel: dist/build-touch
+
 dist/build-touch: $(wildcard */*.py) venv/bin/activate
 	source venv/bin/activate && python3 -m build
 	touch dist/build-touch
 
-# :test
-$(TEST_LOG): $(wildcard */*.py */*/*.py)
-	script -c "pytest-3 tests" $(TEST_LOG)
 
+# ----- :install
 
-# ---------- custom targets
+install-via-wheel:
+	@if [[ -v VIRTUAL_ENV ]]; then echo "NOTICE- installing into virtual environtment ${VIRTUAL_ENV}.  If that's not what you want, type command 'deactivate' and run the install again."; fi
+	@if [[ "$UID" == "0" ]]; then echo "NOTICE- installing into root's .local directory.  Use target 'install-system' to install into /usr/local for all users."; fi
+	pip3 install -U --user $(LAST_WHEEL)
 
 # Skip the whole packaging and wheel generation; just copy updated source files
 # directly info to ~/.local.  This has some hard-coded path assumptions, and
@@ -64,6 +71,23 @@ install-simple:
 	/usr/bin/mkdir -p ~/.local/lib/python3.8/site-packages/ktools
 	/usr/bin/cp -puv tools/* ~/.local/lib/python3.8/site-packages/ktools
 
+# ----- :test
+$(TEST_LOG): $(wildcard */*.py */*/*.py)
+	script -e -c "pytest-3 tests" $(TEST_LOG)
+
+# ----- :uninstall
+
+uninstall-via-wheel:
+	@if [[ -v VIRTUAL_ENV ]]; then echo "uninstalling from virtual environtment ${VIRTUAL_ENV}."; fi
+	pip3 uninstall kcore_pylib
+
+
+uninstall-simple:
+	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/kcore
+	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/ktools
+
+
+# ---------- custom targets
 
 install-system:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
@@ -73,10 +97,10 @@ install-system:
 
 # Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
 link:
-	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_SCRIPTS); do ln -s $$sdir/bin/$$x ~/bin/$$x; done
+	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_SCRIPTS); do ln -fs $$sdir/bin/$$x ~/bin/$$x; done
 
 unlink:
-	for x in $(INSTALLED_SCRIPTS); do rm ~/bin/$$x; done
+	for x in $(INSTALLED_SCRIPTS); do rm -f ~/bin/$$x; done
 
 
 # ---------- virtual environment support

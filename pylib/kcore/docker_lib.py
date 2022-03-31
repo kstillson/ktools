@@ -127,7 +127,7 @@ def stop_container_at_exit(args):
     cid = get_cid(args.real_name)
     if not cid: return False    # Already stopped
     try:
-        subprocess.check_call(['/usr/bin/docker', 'stop', args.real_name], stdout=None, stderr=None)
+        subprocess.check_call(['/usr/bin/docker', 'stop', '-t', '2', args.real_name], stdout=None, stderr=None)
         return True
     except Exception as e:
         return False

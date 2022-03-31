@@ -1,0 +1,37 @@
+
+# Note: several targets depend on docker-infrastructure being INSTALLED
+# before these targets can be BUILT.
+
+# Furthermore, docker containers other than kds-baseline depend on
+# kds-baseline being INSTALLED (i.e. marked live) before they can be BUILT.
+
+# ----------
+
+docker-all: build-stamp
+
+docker-clean:
+	rm -f build-stamp test-stamp install-stamp
+
+docker-install: install-stamp docker-all docker-test
+
+docker-test: docker-all test-stamp
+
+docker-uninstall:
+	@echo ":install target doesn't really make sense for docker containers."
+
+docker-update: docker-all docker-test docker-install
+
+# ----------
+
+build-stamp: $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+	sudo /root/bin/d-build
+	touch build-stamp
+
+install-stamp:
+	sudo /root/bin/d-build -s
+	touch install-stamp
+
+test-stamp: Test $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+	sudo ./Test -r
+	touch test-stamp
+

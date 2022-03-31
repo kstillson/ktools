@@ -15,7 +15,7 @@ include ../common/Makefile-unstaged
 # TODO: add some tests
 $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
 	touch $(TEST_LOG)
-	# script -c "pytest-3 test_*.py" $(TEST_LOG)
+	# script -e -c "pytest-3 test_*.py" $(TEST_LOG)
 
 # ---------- pass-throughs
 
@@ -25,10 +25,12 @@ comp: common_comp
 
 clean: common_clean
 
-install: common_install
+install:
+	sudo $(MAKE) common_install
 
 test: common_test
 
-uninstall: common_uninstall
+uninstall:
+	sudo $(MAKE) common_uninstall
 
 update: common_update

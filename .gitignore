@@ -11,6 +11,7 @@ __pypackages__/
 
 # local bin/ staging dir  (see common/Makefile-staged)
 staging/
+*-stamp
 
 # local secrets or other local specifics
 private.d/

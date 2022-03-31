@@ -44,6 +44,13 @@ TAG=${TAG:-latest}
 #
 export VER=${VER:-${REPO}:${TAG}}
 
+# ----------  --setlive mode
+# Alternate run mode setlive indicates we just tag #live to #latest and quit.
+if [[ "$1" == "--setlive" || "$1" == "-s" ]]; then
+    setlive ${REPO}
+    exit 0
+fi
+
 # What Docker network will we use for the build?  This is independent from the
 # network the container will run in.  Often containers run in highly constrained
 # environments (e.g. no or limited connectivity), but we need connectivity during
@@ -58,13 +65,6 @@ if [[ -r ./Build ]]; then
     status=$?
     if [[ "$CONTINUE" != "1" ]]; then exit $status; fi
     echo "continuing after ./Build"
-fi
-
-# ----------  --setlive mode
-# Alternate run mode setlive indicates we just tag #live to #latest and quit.
-if [[ "$1" == "--setlive" || "$1" == "-s" ]]; then
-    setlive ${REPO}
-    exit 0
 fi
 
 # ---------- do the build

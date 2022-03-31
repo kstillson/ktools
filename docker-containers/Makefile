@@ -1,16 +1,25 @@
+TOP_TARGETS = all clean comp install test uninstall update
 
-# TODO
+# WARNING- all docker containers except kds_baseline depend on kds_baseline
+# being built AND INSTALLED (i.e. marked :live) before the other containers
+# can be BUILT.
+#
+# For this reason, kds_baseline is EXCLUDED from the SUBDIRS variable below,
+# and must be built and installed BEFORE any other targets are built.
+#
+SUBDIRS ?= $(shell ls */Makefile | cut -d/ -f1 | fgrep -v kds-baseline)
 
-all: 
+$(TOP_TARGETS): $(SUBDIRS)
 
-comp: 
+$(SUBDIRS):
+	$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
 
-clean: 
+# Always run top-level rules, as subdirs might have their own phony targets.
+.PHONY: $(TOPTARGETS) $(SUBDIRS)
 
-install: 
+# ---------- special additions
 
-test: 
+clean:
+	$(MAKE) --no-print-directory -C kds-baseline clean
 
-uninstall: 
 
-update: 
