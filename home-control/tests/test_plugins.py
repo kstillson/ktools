@@ -1,10 +1,10 @@
 
-import itertools, pytest, sys
+import pytest, sys
 
-import context  # adds .. to the path
+import context_hc  # adds .. to the path
 import hc
 
-SETTINGS = {
+TEST_SETTINGS = {
     'data-dir': 'testdata',
     'debug': True,
     'plugins-dir': 'testdata',
@@ -12,11 +12,12 @@ SETTINGS = {
 
 @pytest.fixture(scope='session')
 def init():
-    # Register our SETTINGS dict with hc.  This has the side-effect of hc
+    # Register our TEST_SETTINGS dict with hc.  This has the side-effect of hc
     # using this dict for all subsequently set settings.  Once
     # plugin_test.init() is called, this will give us visibility into
-    # SETTINGS['TEST_VALS'],
-    hc.control('doesnt', 'matter', SETTINGS)
+    # TEST_SETTINGS['TEST_VALS'],
+    hc.reset()  # clear out any other test's initialization...
+    hc.control('doesnt', 'matter', TEST_SETTINGS)
 
     
 # ---------- general purpose helpers
@@ -31,7 +32,7 @@ def flatten(lol):   # lol = list of lists  ;-)
 # ---------- assertion check helpers
 
 def checkval(key, expected_value):
-    assert SETTINGS['TEST_VALS'][key] == expected_value
+    assert TEST_SETTINGS['TEST_VALS'][key] == expected_value
 
 
 def check(output, expect_in_output, key=None, expected_value=None):

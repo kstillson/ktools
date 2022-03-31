@@ -1,7 +1,7 @@
 
 import itertools, pytest, sys
 
-import context  # adds .. to the path
+import context_hc  # adds .. to the path
 import hc
 
 SETTINGS = {
@@ -16,6 +16,7 @@ def init():
     # using this dict for all subsequently set settings.  Once
     # plugin_test.init() is called, this will give us visibility into
     # SETTINGS['TEST_VALS'],
+    hc.reset()  # clear out any other test's initialization...
     hc.control('doesnt', 'matter', SETTINGS)
 
     

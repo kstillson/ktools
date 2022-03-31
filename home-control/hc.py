@@ -1,12 +1,5 @@
 #!/usr/bin/python3
 
-# TODO:
-# notes- known sources:
-#  h/control:ext
-#  h/inst
-#  keypads
-#  trellis
-
 '''home-control: smart device and scene controller
 
 ---------- usage
@@ -160,17 +153,26 @@ def init_settings(baseline_settings):
   SETTINGS['_threads'] = []
 
 
-# returns dict of plugin prefix strings to plugin module instances.
+def reset():
+  '''Clear out any previous loads.  Generally only needed for unit testing.'''
+  global DEVICES, PLUGINS, SCENES, SETTINGS
+  DEVICES = PLUGINS = SCENES =  SETTINGS = None
+
+  
 def load_plugins(settings):
+  '''returns dict of plugin prefix strings to plugin module instances.'''
   plugin_files = []
   for i in settings['plugins']:
     plugin_files.extend(glob.glob(os.path.join(settings['plugins-dir'], i)))
     plugin_files.extend(glob.glob(os.path.join(settings['plugins-dir'], settings['private-dir'], i)))
+  if SETTINGS['debug']: print(f'DEBUG: {plugin_files=}')
   plugins = {}
   for i in plugin_files:
     new_module = _load_file_as_module(i)
     pi_names = new_module.init(settings)
-    for i in pi_names: plugins[i] = new_module
+    for j in pi_names:
+      plugins[j] = new_module
+      if SETTINGS['debug']: print(f'DEBUG: plugin {j} -> {i}')
   if not plugins: print('WARNING- no plugins found.', file=sys.stderr)
   return plugins
 
@@ -227,15 +229,15 @@ def control(target, command='on', settings={}):
 
    # ----- initialize our global state, if needed.
   global DEVICES, PLUGINS, SCENES, SETTINGS
-  if not SETTINGS: init_settings(settings)
+  if not SETTINGS: init_settings(settings)   # popualtes global SETTINGS
   if not PLUGINS: PLUGINS = load_plugins(SETTINGS)
   if not DEVICES: DEVICES, SCENES = load_data(SETTINGS)
   if SETTINGS['debug']:
-    print(f'loaded {len(PLUGINS)} plugins, {len(DEVICES)} devices, and {len(SCENES)} scenes.')
-    print(f'settings: {SETTINGS}')
+    print(f'DEBUG: loaded {len(PLUGINS)} plugins, {len(DEVICES)} devices, and {len(SCENES)} scenes.')
+    print(f'DEBUG: {SETTINGS=}')
 
   # ----- control logic
-  if SETTINGS['debug']: print(f'control request {target} -> {command}')
+  if SETTINGS['debug']: print(f'DEBUG: control request {target} -> {command}')
 
   # Check if this is a simple device action, and take it if so.
   device_action = find_device_action(target, command)
@@ -260,15 +262,14 @@ def control(target, command='on', settings={}):
       target_i = i
       command_i = command
     answer = control(target_i, command_i)
-    if SETTINGS['debug']: print(f'{target} -> {command} returned {answer}')
+    if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned {answer}')
     outputs.append(answer)
   return outputs
 
 
 # ---------- command-line main
 
-def main():
-  # parse args
+def parse_args(argv):
   ap = argparse.ArgumentParser(description='home controller')
   for s in INITIAL_SETTINGS:
     args = [f'--{s.name}']
@@ -280,8 +281,12 @@ def main():
   # add fixed positional arguments.
   ap.add_argument('target', help='device or scene to command')
   ap.add_argument('command', nargs='?', default='on', help='command to send to target')
-  args = ap.parse_args()
+  return ap.parse_args()
+  
 
+def main(argv=[]):
+  args = parse_args(argv or sys.argv[1:])
+  
   # Translate args to settings
   settings = {}
   for key, value in vars(args).items(): settings[key] = value
@@ -292,7 +297,8 @@ def main():
   # if there are any lingering threads, finish them up before exiting.
   if SETTINGS['_threads']: print('waiting for pending threads to finish...')
   for i in SETTINGS['_threads']: i.join()
+  return 0
 
 
 if __name__ == '__main__':
-  main()
+  sys.exit(main())
