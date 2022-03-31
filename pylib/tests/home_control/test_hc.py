@@ -1,13 +1,13 @@
 
 import itertools, pytest, sys
 
-import context_hc  # adds .. to the path
+import context_hc  # fixes path
 import hc
 
 SETTINGS = {
-    'data-dir': 'testdata',
+    'data-dir': ['testdata/home_control'],
     'debug': True,
-    'plugins-dir': 'testdata',
+    'plugins-dir': ['testdata/home_control'],
 }
 
 @pytest.fixture(scope='session')
@@ -23,6 +23,7 @@ def init():
 # ---------- general purpose helpers
 
 def flatten(lol):   # lol = list of lists  ;-)
+    if isinstance(lol, str): return [lol]
     if len(lol) == 1:
         result = flatten(lol[0]) if type(lol[0]) == list else lol
     elif type(lol[0]) == list: result = flatten(lol[0]) + flatten(lol[1:])

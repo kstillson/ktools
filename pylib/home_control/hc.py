@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 '''home-control: smart device and scene controller
 
 ---------- usage
@@ -83,7 +82,7 @@ You would activate this via:  ./hc bedroom_for 120
 
 '''
 
-import argparse, fnmatch, glob, os, sys
+import argparse, fnmatch, glob, os, site, sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -112,11 +111,11 @@ class Setting:
   short_flag: str = None
 
 INITIAL_SETTINGS = [
-  Setting('data-dir',    '.',            'base directory in which to search for data files (see also private-dir)'),
-  Setting('datafiles',   ['data*.py'],   'glob-list of files (within data-dir) to load devices and scenes from', '-D'),
+  Setting('data-dir',    ['.'],          'base directories in which to search for data files (see also private-dir)'),
+  Setting('datafiles',   ['hcdata*.py'], 'glob-list of files (within data-dir) to load devices and scenes from', '-D'),
   Setting('debug',       False,          'print debugging info and use syncronous mode (no parallelism)', '-d'),
   Setting('plugin-args', [],             'plugin-specific settings in the form key=value', '-p'),
-  Setting('plugins-dir', '.',            'base directory in which to search for plugin files (see also private-dir)'),
+  Setting('plugins-dir', ['.'],          'base directories in which to search for plugin files (see also private-dir)'),
   Setting('plugins',     ['plugin_*.py'],'glob-list of files to load as plugins'),
   Setting('private-dir' ,'private.d',    'extra directory (relative to data-dir and plugins-dir) in which to search for files.  Note: if you change this, you might need to make corresponding changes to .gitignore to keep your files private.', '-P'),
   Setting('test',        False,          "Just show what would be done, don't do it.", '-T'),
@@ -140,7 +139,7 @@ def _load_file_as_module(filename, desired_module_name=None):
 def init_settings(baseline_settings):
   global SETTINGS
 
-  SETTINGS = baseline_settings  # use our caller's instance so they can see modifications made later.  e.g. this is used by test_hc to get SETTINGS['TEST_VALS'], which is added by plugin_test.init()
+  SETTINGS = baseline_settings or SETTINGS or {}  # use our caller's instance so they can see modifications made later.  e.g. this is used by test_hc to get SETTINGS['TEST_VALS'], which is added by plugin_test.init()
 
   # Copy over anything needed from default settings
   for s in INITIAL_SETTINGS:
@@ -149,22 +148,33 @@ def init_settings(baseline_settings):
   # In-case any plugins (e.g. plugin_delay) need to make recursive calls back into this module:
   SETTINGS['_control'] = control
 
-  # Shared list of threads, in-case we need to wait for them before exit.
+  # Shared list of threads, in-case we need to wait for them before CLI exit.
   SETTINGS['_threads'] = []
 
 
 def reset():
-  '''Clear out any previous loads.  Generally only needed for unit testing.'''
+  '''Clear out any previous data loads.  Generally only needed for unit testing.'''
   global DEVICES, PLUGINS, SCENES, SETTINGS
   DEVICES = PLUGINS = SCENES =  SETTINGS = None
 
-  
+
+def file_finder(list_of_base_dirs, privdir, list_of_globs):
+  found = []
+  for d0 in list_of_base_dirs:
+    if not d0: continue
+    for d in [d0, os.path.join(d0, privdir)]:
+      for g in list_of_globs:
+        f = glob.glob(os.path.join(d, g))
+        if SETTINGS['debug']: print(f'DEBUG: searching {d} for {g}, found: {f}')
+        found.extend(f)
+  return found
+
+
 def load_plugins(settings):
   '''returns dict of plugin prefix strings to plugin module instances.'''
-  plugin_files = []
-  for i in settings['plugins']:
-    plugin_files.extend(glob.glob(os.path.join(settings['plugins-dir'], i)))
-    plugin_files.extend(glob.glob(os.path.join(settings['plugins-dir'], settings['private-dir'], i)))
+  plugin_files = file_finder(
+    settings['plugins-dir'] + [os.path.dirname(__file__), os.path.join(site.getusersitepackages(), 'home_control')],
+    settings['private-dir'], settings['plugins'])
   if SETTINGS['debug']: print(f'DEBUG: {plugin_files=}')
   plugins = {}
   for i in plugin_files:
@@ -178,10 +188,8 @@ def load_plugins(settings):
 
 
 def load_data(settings):
-  datafiles = []
-  for i in settings['datafiles']:
-    datafiles.extend(glob.glob(os.path.join(settings['data-dir'], i)))
-    datafiles.extend(glob.glob(os.path.join(settings['data-dir'], settings['private-dir'], i)))
+  datafiles = file_finder(settings['data-dir'] + [os.environ.get('HC_DATA_DIR')],
+                          settings['private-dir'], settings['datafiles'])
   scenes = {}
   devices = {}
   for f in datafiles:
@@ -225,11 +233,11 @@ def find_device_action(target, command):
 
 # ---------- primary API entry
 
-def control(target, command='on', settings={}):
+def control(target, command='on', settings=None):
 
    # ----- initialize our global state, if needed.
   global DEVICES, PLUGINS, SCENES, SETTINGS
-  if not SETTINGS: init_settings(settings)   # popualtes global SETTINGS
+  init_settings(settings)   # popualtes global SETTINGS
   if not PLUGINS: PLUGINS = load_plugins(SETTINGS)
   if not DEVICES: DEVICES, SCENES = load_data(SETTINGS)
   if SETTINGS['debug']:
@@ -273,7 +281,7 @@ def parse_args(argv):
   ap = argparse.ArgumentParser(description='home controller')
   for s in INITIAL_SETTINGS:
     args = [f'--{s.name}']
-    if s.short_flag: args.append(f'{s.short_flag}') 
+    if s.short_flag: args.append(f'{s.short_flag}')
     kwargs = { 'default': s.default,  'help': s.help }
     if s.default is False: kwargs['action'] = 'store_true'
     if isinstance(s.default, list): kwargs['nargs'] = '*'
@@ -282,11 +290,11 @@ def parse_args(argv):
   ap.add_argument('target', help='device or scene to command')
   ap.add_argument('command', nargs='?', default='on', help='command to send to target')
   return ap.parse_args()
-  
+
 
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
-  
+
   # Translate args to settings
   settings = {}
   for key, value in vars(args).items(): settings[key] = value

@@ -1,5 +1,5 @@
 
-INSTALLED_SCRIPTS := k_auth kmc ratelimiter run_para
+INSTALLED_SCRIPTS := hc k_auth kmc ratelimiter run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
 
@@ -17,6 +17,7 @@ clean:
 comp:
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in kcore/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in tools/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$${t/tools/ktools} | sed -e "/identical/s@.*@ok: $$t@"; done
+	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in home_control/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
 
 ## install: install-via-wheel
 install:
@@ -64,12 +65,25 @@ install-via-wheel:
 # But when making lots of changes, this is quicker (when it works).
 install-simple:
 	/usr/bin/rm -rf */__pycache__ */.pytest_cache
+	# kcore
 	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/kcore
 	/usr/bin/mkdir -p ~/.local/lib/python3.8/site-packages/kcore
 	/usr/bin/cp -puv kcore/* ~/.local/lib/python3.8/site-packages/kcore
+	/usr/bin/cp -puv kcore/auth.py ~/.local/bin/k_auth
+	# ktools
 	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/ktools
 	/usr/bin/mkdir -p ~/.local/lib/python3.8/site-packages/ktools
 	/usr/bin/cp -puv tools/* ~/.local/lib/python3.8/site-packages/ktools
+	/usr/bin/cp -puv tools/kmc.py ~/.local/bin/kmc
+	/usr/bin/cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
+	/usr/bin/cp -puv tools/run_para.py ~/.local/bin/run_para
+	# home_control
+	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/home_control
+	/usr/bin/mkdir -p ~/.local/lib/python3.8/site-packages/home_control
+	/usr/bin/cp -puv home_control/* ~/.local/lib/python3.8/site-packages/home_control
+	/usr/bin/cp -puv home_control/hc.py ~/.local/bin/hc
+	$(MAKE) link
+
 
 # ----- :test
 $(TEST_LOG): $(wildcard */*.py */*/*.py)
@@ -85,6 +99,7 @@ uninstall-via-wheel:
 uninstall-simple:
 	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/kcore
 	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/ktools
+	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/home_control
 
 
 # ---------- custom targets

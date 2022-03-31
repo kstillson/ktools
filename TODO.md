@@ -1,17 +1,21 @@
 
-## ++ktools
+## ++ktools tech
    - Tplink: generalize & publish tplink.py and related tools (change to separate docker)
-   - TOC / general intro write-up
+     - client checks: h/control:ext, h/inst, keypads, trellis1
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
-   - general wisdom: lots of writing
    - monitoring: generalize & publish filewatchdock, nagdock, procmon
    - services: decide what to keep, generalize & publish, subst links
    - syslog: generalize & publish syslogdock
-   - tools-for-root: anything to prune from "q" ?
-   - tools-for-users: doc
-   - k_auth: tidy, doc, test, and add cmnd to hash
+   - tools-for-root: anything from "q" to move to private.d ?
    - make sure all python is using __doc__ friendly formatting
+   - review TODO's
+   - confirm pylib wheel-based install still works
+   
+## ++ktools prose
+   - TOC / general intro write-up
+   - general wisdom: lots of writing
+   - tools-for-users: doc
 
 ## General
    - new name for ktools ?  (Mauveine?  #8D029B)
