@@ -15,20 +15,6 @@ DEVICES = {
 # ---------- tplink individual device overrides and aliases
 
   'tp-office:dim'     : 'TPLINK:tp-office:dim:50',
-'''  
-  # red turned on for a few seconds when alarm triggered but not yet activated.
-  'red:on'      : [ 'accents:red' ],
-  'red:off'     : [ 'accents:bulb-off' ],
-  # blue turned on for a few seconds when transitioning to state arming-away
-  'blue:on'     : [ 'accents:blue' ],
-  'blue:off'    : [ 'accents:bulb-off' ],
-  # blue_special triggered on rcam1 motion when arm-home
-  'blue_special:on'  : [],
-  'blue_special:off' : [],
-  # pony triggered by outside trigger when arm-away
-  'pony:on'     : [ 'accents:orange' ],
-  'pony:off'    : [ 'accents:bulb-off' ],
-'''
     
 # ---------- delay trigger
 

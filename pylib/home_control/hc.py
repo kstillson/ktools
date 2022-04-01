@@ -234,8 +234,8 @@ def find_device_action(target, command):
 # ---------- primary API entry
 
 def control(target, command='on', settings=None, top_level_call=True):
-
-   # ----- initialize our global state, if needed.
+  ''' TODO '''
+  # ----- initialize our global state, if needed.
   if top_level_call:
     init_settings(settings)   # popualtes global SETTINGS
     global DEVICES, PLUGINS, SCENES, SETTINGS
