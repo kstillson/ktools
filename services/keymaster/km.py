@@ -294,7 +294,7 @@ def main(argv=[]):
       '/T': lambda r: str(vars(SECRETS)),
       '/': km_root_handler,
   }
-  ws = W.WebServer(handlers, wrap_handlers=False)  ##@@ temp
+  ws = W.WebServer(handlers)
 
   # Add default hander after constructor so it doesn't override default handlers.
   ws.add_handler('/.*', km_default_handler)
