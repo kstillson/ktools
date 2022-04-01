@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>home-control</title>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.25">
+    <style>
+      body { background-color: black; color: white; margin: 10; }
+      td { text-align: center; }
+      .l { text-align: left; font-weight: bold; color: orange; }
+      .bb { padding: 4px; width:80px; border-radius: 4px; }
+      .bb-sm { padding: 2px; width:25px; border-radius: 2px; }
+    </style>
+  </head>
+  <body>
+
+<script type="text/javascript">
+  
+  function setSlider(newVal) {
+      document.getElementById("slide").value = newVal;
+  }
+  
+  function send(target, override_cmd="") {
+      val = document.getElementById("slide").value;
+      setSlider((val == 0) ? 70 : 0);  // reverse slider for next input...
+      cmd = null;
+      if (override_cmd == "go") {
+          cmd = "off";
+      }
+      else if (override_cmd == "-") {
+          if (val > 0) { val = 100; }  // not dimmable, so set to extreme.
+      }
+      else if (override_cmd != "") {
+          cmd = override_cmd;
+      }
+      if (cmd === null) {
+          if (val == 0) { cmd = "off"; }
+          else if (val == 100) { cmd = "on"; }
+          else { cmd = "dim:" + val ; }
+      }
+      url = "/control/" + target + "/" + cmd;
+      console.log("sending: " + url);
+      document.getElementById('iframe1').setAttribute('src', url);
+  }
+
+// ----------
+
+</script>
+    <button class="bb-sm" style="color: green" onclick="setSlider(0)">0</button>
+    <input type="range" id="slide" min="0" max="100" value="70" step="10" />
+    <button class="bb-sm" style="color: red" onclick="setSlider(100)">1</button>
+
+    &nbsp;&nbsp;&nbsp;&nbsp;<iframe id="iframe1" src="" height=25 width=140 style="color: white; background-color: grey; vertical-align:bottom">...</iframe>
+
+    <p>
+    <table cellpadding=2>
+      <tr>
+	<td colspan='9' class="l">Global scenes</td></tr>
+	<td><button class="bb" onclick='send("all", "off")'>all off</button></td>
+	<td><button class="bb" onclick='send("outside", "off")'>out off</button></td>
+	<td><button class="bb" onclick='send("inside", "off")'>in off</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("all", "full")'>ALL ON</button></td>
+	<td><button class="bb" onclick='send("outside", "full")'>OUT ON</button></td>
+	<td><button class="bb" onclick='send("inside", "full")'>IN ON</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Activity scenes</td></tr>
+	<td><button class="bb" onclick='send("inside", "med")'>down med</button></td>
+	<td><button class="bb" onclick='send("bedtime", "go")'>bedtime</button></td>
+	<td><button class="bb" onclick='send("dining", "go")'>dining</button></td>
+	<td><button class="bb" style="background-color:red" onclick='send("panic", "go")'>PANIC</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("tv", "go")'>tv</button></td>
+	<td><button class="bb" onclick='send("down_dim", "go")'>down dim</button></td>
+	<td><button class="bb" onclick='send("away", "go")'>away</button></td>
+	<td><button class="bb" onclick='send("cooking", "go")'>cooking</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Areas</td></tr>
+	<td><button class="bb" onclick='send("bedrm")'>bedrm</button></td>
+	<td><button class="bb" onclick='send("fam")'>family</button></td>
+	<td><button class="bb" onclick='send("kit")'>kitchen</button></td>
+	<td><button class="bb" onclick='send("main")'>main</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Bedroom</td></tr>
+	<td><button class="bb" onclick='send("tp-bedroom-entrance")'>door</button></td>
+	<td><button class="bb" onclick='send("tp-bedroom-light")'>main</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Lounge</td></tr>
+	<td><button class="bb" onclick='send("tp-lounge")'>lounge</button></td>
+	<td><button class="bb" onclick='send("tp-window-lights")'>wind</button></td>
+	<td><button class="bb" onclick='send("PLUG-tp-bendy")'>bendy</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Office</td></tr>
+	<td><button class="bb" onclick='send("tp-office")'>chand</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Kitchen</td></tr>
+	<td><button class="bb" onclick='send("tp-kitchen")'>kitchen</button></td>
+	<td><button class="bb" onclick='send("tp-kitchen-pendants")'>pendants</button></td>
+	<td><button class="bb" onclick='send("tp-breakfast-nook")'>nook</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Family room</td></tr>
+	<td><button class="bb" onclick='send("tp-dining-chandelier")'>chand</button></td>
+	<td><button class="bb" onclick='send("tp-family-room-left")'>fam-L</button></td>
+	<td><button class="bb" onclick='send("tp-family-room-right")'>fam-R</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Outside</td></tr>
+	<td><button class="bb" onclick='send("tp-lantern", true)'>lantern</button></td>
+	<td><button class="bb" onclick='send("tp-door-entry", true)'>entry</button></td>
+	<td><button class="bb" onclick='send("tp-patio")'>patio</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("tp-rear-flood", "-")'>flood</button></td>
+	<td><button class="bb" onclick='send("BULB-tp-garage")'>garage</button></td>
+	<td><button class="bb" onclick='send("PLUG-tp-landscaping")'>landscaping</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Garage</td></tr>
+	<td><button class="bb" onclick='send("gh1", "on")'>gh1</button></td>
+	<td><button class="bb" onclick='send("gh0", "on")'>gh0</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("PLUG-garage-L")'>gd-L</button></td>
+	<td><button class="bb" onclick='send("PLUG-garage-R")'>gd-R</button></td>
+	<td><button class="bb" onclick='send("BULB-tp-mobile-bulb")'>mobile</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Special</td></tr>
+	<td><button class="bb" onclick='send("PLUG-tp-space-heater")'>heater</button></td>
+	<td><button class="bb" onclick='send("PLUG-tp-homesec1")'>homesec1</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("party", "go")'>PARTY</button></td>
+	<td><button class="bb" onclick='send("tree", "-")'>neotree</button></td>
+	<td><button class="bb" onclick='send("PLUG-tp-tree")'>tp-tree</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("PLUG-siren1")'>siren1</button></td>
+	<td><button class="bb" onclick='send("PLUG-siren2")'>siren2</button></td>
+	<td><button class="bb" onclick='send("PLUG-siren3")'>siren3</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Landscaping</td></tr>
+	<td><button class="bb" onclick='send("out-monument", "-")'>Monument</button></td>
+	<td><button class="bb" onclick='send("out-sconce", "-")'>Sconce</button></td>
+	<td><button class="bb" onclick='send("out-front-path", "-")'>F path</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("out-front-moon", "-")'>F moon</button></td>
+	<td><button class="bb" onclick='send("out-front-up", "-")'>F up</button></td>
+	<td><button class="bb" onclick='send("out-maple", "-")'>Maple</button></td>
+      </tr><tr>
+	<td><button class="bb" onclick='send("out-magnolia", "-")'>Magnolia</button></td>
+	<td><button class="bb" onclick='send("out-holly", "-")'>Holly</button></td>
+	<td><button class="bb" onclick='send("out-arch", "-")'>R arch</button></td>
+	<td><button class="bb" onclick='send("out-moon", "-")'>R moon</button></td>
+      </tr><tr>
+      </tr><tr>
+      </tr>
+    </table>
+  </body>
+</html>
