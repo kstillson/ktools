@@ -1,9 +1,8 @@
 
 import cgi, threading, ssl, sys
 
-import kcore.common as C           # for logging.
-import kcore.webserver_base as B
-# TODO: can we import webserver_base directly into our namespace, so clients don't need to separately import webserver_base to reference Request and Response..?
+import kcore.common as C             # for logging.
+from kcore.webserver_base import *   # you can use Request/Response without separately importing webserver_base.
 
 PY_VER = sys.version_info[0]
 if PY_VER == 2:
@@ -28,11 +27,11 @@ class Worker(BaseHTTPRequestHandler):
         return True
 
     def do_GET(self):
-        request = B.BaseHTTPRequestHandler_to_Request(self, 'GET')
+        request = BaseHTTPRequestHandler_to_Request(self, 'GET')
         return self.send(self.server._k_webserver.find_and_run_handler(request))
 
     def do_POST(self):
-        request = B.BaseHTTPRequestHandler_to_Request(self, 'POST', post_params=self.parse_post())
+        request = BaseHTTPRequestHandler_to_Request(self, 'POST', post_params=self.parse_post())
         return self.send(self.server._k_webserver.find_and_run_handler(request))
 
     def parse_post(self):
@@ -56,9 +55,9 @@ class Worker(BaseHTTPRequestHandler):
         return postvars
 
 
-class WebServer(B.WebServerBase):
+class WebServer(WebServerBase):
     def __init__(self, *args, **kwargs):
-        logging_adapter = B.LoggingAdapter(
+        logging_adapter = LoggingAdapter(
             log_request=C.log_info, log_404=C.log_info,
             log_general=C.log_info, log_exceptions=C.log_error,
             get_logz_html=C.last_logs_html)
