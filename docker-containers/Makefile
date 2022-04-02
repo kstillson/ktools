@@ -1,13 +1,13 @@
 TOP_TARGETS = all clean comp install test uninstall update
 
-# WARNING- all docker containers except kcore_baseline depend on kcore_baseline
-# being built AND INSTALLED (i.e. marked :live) before the other containers
-# can be BUILT.
+# WARNING- all docker containers (except kcore-baseline) depend on
+# kcore-baseline being built AND INSTALLED (i.e. marked :live) before the
+# other containers can be BUILT.
 #
-# For this reason, kcore_baseline is EXCLUDED from the SUBDIRS variable below,
-# and must be built and installed BEFORE any other targets are built.
+# For this reason, kcore-baseline is listed first here, and the :all target
+# for kcore-baseline will BUILD, test AND INSTALL.
 #
-SUBDIRS ?= $(shell ls */Makefile | cut -d/ -f1 | fgrep -v kcore-baseline)
+SUBDIRS ?= kcore-baseline $(shell ls */Makefile | cut -d/ -f1 | fgrep -v kcore-baseline)
 
 $(TOP_TARGETS): $(SUBDIRS)
 

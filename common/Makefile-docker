@@ -23,11 +23,11 @@ docker-update: docker-all docker-test docker-install
 
 # ----------
 
-build-stamp: $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+build-stamp: ../kcore-baseline/install-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
 	sudo /root/bin/d-build
 	touch build-stamp
 
-install-stamp:
+install-stamp: build-stamp
 	sudo /root/bin/d-build -s
 	touch install-stamp
 

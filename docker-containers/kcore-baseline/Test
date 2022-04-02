@@ -5,7 +5,7 @@ import kcore.docker_lib as d_lib
 
 
 def main():
-    ap = argparse.ArgumentParser(description='kds-baseline test')
+    ap = argparse.ArgumentParser(description='kcore-baseline test')
     d_lib.add_testing_args(ap)
     args = ap.parse_args()
     name, ip, cow, dv = d_lib.launch_or_find_container(

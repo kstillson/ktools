@@ -5,11 +5,11 @@ CONTINUE=1
 
 # ---------- extern deps ----------
 
-SRC_CERT="../kds-baseline/private.d/km.crt"
-SRC_KEY="../kds-baseline/private.d/km.key"
+SRC_CERT="../kcore-baseline/private.d/km.crt"
+SRC_KEY="../kcore-baseline/private.d/km.key"
 
 if [[ ! -r $SRC_CERT || ! -r $SRC_KEY ]]; then
-  echo "cannot read $SRC_CERT and/or ${SRC_KEY}.  Please build ../kds-baseline first to make sure these files exist before building this container."
+  echo "cannot read $SRC_CERT and/or ${SRC_KEY}.  Please build ../kcore-baseline first to make sure these files exist before building this container."
   exit 2
 fi
 

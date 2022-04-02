@@ -1,13 +1,15 @@
 
+## integrate ktools docker containers with existing ones on jack
+   - hs client checks: h/control:ext, h/inst, keypads, trellis1
+
 ## ++ktools tech
-   - hs: separate docker wrapper
-     - client checks: h/control:ext, h/inst, keypads, trellis1
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - monitoring: generalize & publish filewatchdock, nagdock, procmon
    - services: decide what to keep, generalize & publish, subst links
    - syslog: generalize & publish syslogdock
    - tools-for-root: anything from "q" to move to private.d ?
+   - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
    - make sure all python is using __doc__ friendly formatting
    - review TODO's
    - confirm pylib wheel-based install still works

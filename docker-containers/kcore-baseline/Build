@@ -35,7 +35,7 @@ copy_and_check ../../pylib/kcore files/usr/lib/python3.9/site-packages ugo+rX
 #
 # TODO: consider encrypting the TLS key with a $PUID style secret.  This would
 # complicate the build process, because the machine where container
-# kds-baseline is built might differ from the one where container keymaster is
+# kcore-baseline is built might differ from the one where container keymaster is
 # run, and the container for keymaster has probably not even been constructed
 # yet, and if we need to do something like pre-generate that container's
 # $PUID, then saving it for transfer to the keymaster container build
