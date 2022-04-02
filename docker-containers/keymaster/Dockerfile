@@ -1,4 +1,4 @@
-FROM kstillson/kds-baseline:live
+FROM kstillson/kcore-baseline:live
 
 RUN apk upgrade -U && \
     apk add --no-cache gnupg && \
