@@ -27,10 +27,11 @@ def hs_control_handler(request):
 def hs_c_handler(request):
     target = request.get_params.get('target')
     if not target: target = request.get_params.get('t')
+    if not target: target = request.get_params.get('d')
     if not target: return W.Response('must pass "target" or "t" as get param.', 400)
     command = request.get_params.get('command')
-    if not command: target = request.get_params.get('c')
-    if not command: target = request.get_params.get('v')
+    if not command: command = request.get_params.get('c')
+    if not command: command = request.get_params.get('v')
     if not command: command = 'on'
 
     ok, rslt = HC.control(target, command)
