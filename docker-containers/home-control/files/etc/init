@@ -1,0 +1,13 @@
+#!/bin/bash
+
+CMD="/home/hc/home_control_service.py"
+
+if [[ -v TEST ]]; then
+    echo "!! TEST MODE !!  (log to stderr and no syslg)"
+    CMD="$CMD --logfile -"
+else
+    CMD="$CMD --logfile /var/log/hc/hc.log --syslog"
+fi
+
+echo "init transferring to: $CMD"
+exec $CMD

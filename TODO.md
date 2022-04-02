@@ -1,7 +1,6 @@
 
 ## ++ktools tech
-   - Tplink: generalize & publish tplink.py and related tools (change to separate docker)
-     - hc api- easy way to determine success/fail.  hs: give that result
+   - hs: separate docker wrapper
      - client checks: h/control:ext, h/inst, keypads, trellis1
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock

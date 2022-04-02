@@ -1,0 +1,24 @@
+#!/usr/bin/python3
+
+import argparse, sys, time
+import kcore.docker_lib as d_lib
+
+def main():
+    ap = argparse.ArgumentParser(description='home-control test')
+    d_lib.add_testing_args(ap)
+    args = ap.parse_args()
+    name, ip, cow, dv = d_lib.launch_or_find_container(args, ['--extra-docker', '--env TEST=1'])
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+
+    # Give the server a moment to start up.
+    time.sleep(0.8)
+    
+    d_lib.web_expect('ok', ip, '/control/test-device/test-command', port=8080)
+    d_lib.web_expect('test-command', ip, '/varz?TEST-test-device', port=8080)
+
+    print('pass')
+    
+
+if __name__ == "__main__":
+  main()
+

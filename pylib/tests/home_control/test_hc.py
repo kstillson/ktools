@@ -1,5 +1,6 @@
 
 import itertools, pytest, sys
+import kcore.varz as V   # this is where the test plugin stores it stuff.
 
 import context_hc  # fixes path
 import hc
@@ -7,15 +8,12 @@ import hc
 SETTINGS = {
     'data-dir': ['testdata/home_control'],
     'debug': True,
-    'plugins-dir': ['testdata/home_control'],
+    'plugins': ['plugin_test.py'],  # skip the other plugins...
 }
 
 @pytest.fixture(scope='session')
 def init():
-    # Register our SETTINGS dict with hc.  This has the side-effect of hc
-    # using this dict for all subsequently set settings.  Once
-    # plugin_test.init() is called, this will give us visibility into
-    # SETTINGS['TEST_VALS'],
+    # Register our SETTINGS
     hc.reset()  # clear out any other test's initialization...
     hc.control('doesnt', 'matter', SETTINGS)
 
@@ -33,7 +31,7 @@ def flatten(lol):   # lol = list of lists  ;-)
 # ---------- assertion check helpers
 
 def checkval(key, expected_value):
-    assert SETTINGS['TEST_VALS'][key] == expected_value
+    assert V.get('TEST-' + key) == expected_value
 
 
 def check(control_output, expect_in_output, key=None, expected_value=None):
@@ -108,7 +106,7 @@ def test_scenes(init):
     # check partially successful scene
     ok, outputs = hc.control('scene3', 'cmd4')
     assert not ok
-    assert 'device1: ok' == outputs[0]
+    assert 'ok' in outputs[0]
     assert 'Dont know what to do with target deviceZ' == outputs[1]
     checkval('host1', 'cmd4')
 

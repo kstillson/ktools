@@ -1,0 +1,4 @@
+
+mount_logs:
+  - var_log_hc: /var/log/hc
+

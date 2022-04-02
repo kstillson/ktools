@@ -1,5 +1,6 @@
 
 import pytest, sys
+import kcore.varz as V   # this is where the test plugin stores it stuff.
 
 import context_hc  # fixes path
 import hc
@@ -7,15 +8,12 @@ import hc
 TEST_SETTINGS = {
     'data-dir': ['testdata/home_control'],
     'debug': True,
-    'plugins-dir': ['testdata/home_control'],
+    'plugins': ['plugin_test.py'],  # skip the other plugins...
 }
 
 @pytest.fixture(scope='session')
 def init():
-    # Register our TEST_SETTINGS dict with hc.  This has the side-effect of hc
-    # using this dict for all subsequently set settings.  Once
-    # plugin_test.init() is called, this will give us visibility into
-    # TEST_SETTINGS['TEST_VALS'],
+    # Register our TEST_SETTINGS
     hc.reset()  # clear out any other test's initialization...
     hc.control('doesnt', 'matter', TEST_SETTINGS)
 
@@ -33,7 +31,7 @@ def flatten(lol):   # lol = list of lists  ;-)
 # ---------- assertion check helpers
 
 def checkval(key, expected_value):
-    assert TEST_SETTINGS['TEST_VALS'][key] == expected_value
+    assert V.get('TEST-' + key) == expected_value
 
 
 def check(control_output, expect_in_output, key=None, expected_value=None):
