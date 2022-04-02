@@ -1,25 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>home-control</title>
-    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.25">
-    <style>
-      body { background-color: black; color: white; margin: 10; }
-      td { text-align: center; }
-      .l { text-align: left; font-weight: bold; color: orange; }
-      .bb { padding: 4px; width:80px; border-radius: 4px; }
-      .bb-sm { padding: 2px; width:25px; border-radius: 2px; }
-    </style>
-  </head>
-  <body>
+<head>
+  <meta charset="utf-8">
+  <title>home-control</title>
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.25">
 
+<!-- --------------------------------------STYLE HEADERS -->
+<style>
+  body { background-color: black; color: white; margin: 10; }
+
+  /* button matrix styles */
+  td { text-align: center; }
+  .l { text-align: left; font-weight: bold; color: orange; }
+  .bb { padding: 4px; width:80px; border-radius: 4px; }
+  .bb-sm { padding: 2px; width:25px; border-radius: 2px; }
+
+  /* glowing buttons */
+  @keyframes glowing {
+      0% { background-color: #c03030; box-shadow: 0 0 5px #444444; }
+      50% { background-color: #803030; box-shadow: 0 0 20px #333333; }
+      100% { background-color: #c03030; box-shadow: 0 0 5px #000000; } }
+  .glowing-bg { animation: glowing 800ms infinite; }
+
+  /* section toggles */
+  .inactive { display: none; }
+  .toggle { background-color: blue; }
+  
+</style>
+</head>
+
+<!-- ------------------------------------------SCRIPTS BODY -->
+
+<body onload="startup()">
 <script type="text/javascript">
+
+  // ---------- general purpose
+  
+  function ebi(id) { return document.getElementById(id); }  // ebi = element by id
+
+  function iframe_reset() { iframe_text("."); set_bg("status1", "gray"); }
+  function iframe_text(html, id="iframe1") { iframe_url("data:text/html;charset=utf-8," + escape(html), id); }
+  function iframe_url(url, id="iframe1") {
+      ebi(id).src = url;
+  }
+  
+  // ---------- specific to this page
+
+  function startup() {
+      toggle_init();
+  }
   
   function setSlider(newVal) {
       document.getElementById("slide").value = newVal;
   }
-  
+
   function send(target, override_cmd="") {
       val = document.getElementById("slide").value;
       setSlider((val == 0) ? 70 : 0);  // reverse slider for next input...
@@ -40,17 +74,71 @@
       }
       url = "/control/" + target + "/" + cmd;
       console.log("sending: " + url);
-      document.getElementById('iframe1').setAttribute('src', url);
+      iframe_url(url);
   }
 
-// ----------
+  // ----- section toggles
 
+  // For any toggles with class "init-off", press their button to collapse
+  // them.  (We can't call toggle_class_by_name directly because we don't
+  // know the name of the class the button controls..  But it does...)
+  function toggle_init() {
+      var elements = document.getElementsByClassName('init-off');
+      for (var i=0; i<elements.length; i++) {
+          if (elements[i].onclick) {
+              elements[i].onclick();
+              toggle_button(elements[i]);
+          }
+      }
+  }
+
+  function toggle(class_name) {
+      toggle_class_by_name(class_name);
+      // When called by toggle_init(), there won't be a source element, so
+      // "document" is the default.  Just skip the call to toggle the button,
+      // and toggle_init() will call toggle_bullon separately.
+      if (event.srcElement != document) {
+          toggle_button(event.srcElement);
+      }
+  }
+
+  function toggle_class_by_name(class_name) {
+      var elements = document.getElementsByClassName(class_name);
+      for (var i=0; i<elements.length; i++) {
+          elements[i].classList.toggle("inactive");
+      }
+  }
+
+  function toggle_button(button) {
+      var col = (button.style.backgroundColor == "cyan") ? "blue" : "cyan";
+      button.style.backgroundColor = col;
+  }
+  
+  // ----- 2 stage button
+  // 1st press starts the button glowing.  2nd calls the trigger.
+  // Trigger enable (& glowing) resets after 4 seconds.
+  function two_step_button(id, target_name) {
+      var element = ebi(id);
+      // If called without trigger name (usually by timer), just disable.
+      if (target_name == "") { element.classList.remove('glowing-bg'); return; }
+      // Toggle the class.  If it was already there, trigger. Else set timer to disable.
+      if (!element.classList.toggle('glowing-bg')) {
+          if (target_name != "") {
+              send(target_name, "on");
+          }
+      } else {
+          setTimeout(two_step_button, 4000, id, "");
+      }
+  }
 </script>
+
+<!-- ----------------------------------------------HTML BODY -->
+
     <button class="bb-sm" style="color: green" onclick="setSlider(0)">0</button>
     <input type="range" id="slide" min="0" max="100" value="70" step="10" />
     <button class="bb-sm" style="color: red" onclick="setSlider(100)">1</button>
 
-    &nbsp;&nbsp;&nbsp;&nbsp;<iframe id="iframe1" src="" height=25 width=140 style="color: white; background-color: grey; vertical-align:bottom">...</iframe>
+    &nbsp;&nbsp;&nbsp;&nbsp;<iframe id="iframe1" src="" height=30 width=350 style="color: white; background-color: grey; vertical-align:bottom; resize: both;">...</iframe>
 
     <p>
     <table cellpadding=2>
@@ -68,10 +156,10 @@
 	<td><button class="bb" onclick='send("inside", "med")'>down med</button></td>
 	<td><button class="bb" onclick='send("bedtime", "go")'>bedtime</button></td>
 	<td><button class="bb" onclick='send("dining", "go")'>dining</button></td>
-	<td><button class="bb" style="background-color:red" onclick='send("panic", "go")'>PANIC</button></td>
+	<td><button class="bb" id="panic" style="background-color:red" onclick='two_step_button("panic", "web/panic")'>PANIC</button></td>
       </tr><tr>
 	<td><button class="bb" onclick='send("tv", "go")'>tv</button></td>
-	<td><button class="bb" onclick='send("down_dim", "go")'>down dim</button></td>
+	<td><button class="bb" onclick='send("down-dim", "go")'>down dim</button></td>
 	<td><button class="bb" onclick='send("away", "go")'>away</button></td>
 	<td><button class="bb" onclick='send("cooking", "go")'>cooking</button></td>
       </tr><tr>
@@ -81,70 +169,79 @@
 	<td><button class="bb" onclick='send("kit")'>kitchen</button></td>
 	<td><button class="bb" onclick='send("main")'>main</button></td>
       </tr><tr>
-        <td colspan='9' class="l">Bedroom</td></tr>
+        <td colspan='9' class="l">Rooms &nbsp; <button class="bb-sm toggle init-off" onclick='toggle("col-rooms")'>-</button> </td></tr>
+      </tr><tr class="col-rooms">
 	<td><button class="bb" onclick='send("tp-bedroom-entrance")'>door</button></td>
 	<td><button class="bb" onclick='send("tp-bedroom-light")'>main</button></td>
-      </tr><tr>
+      </tr><tr class="col-rooms">
         <td colspan='9' class="l">Lounge</td></tr>
-	<td><button class="bb" onclick='send("tp-lounge")'>lounge</button></td>
+      <tr class="col-rooms">
+        <td><button class="bb" onclick='send("tp-lounge")'>lounge</button></td>
 	<td><button class="bb" onclick='send("tp-window-lights")'>wind</button></td>
 	<td><button class="bb" onclick='send("PLUG-tp-bendy")'>bendy</button></td>
-      </tr><tr>
-        <td colspan='9' class="l">Office</td></tr>
+      </tr><tr class="col-rooms">
+        <td colspan='9' class="l">Office</td>
+      </tr><tr class="col-rooms">
 	<td><button class="bb" onclick='send("tp-office")'>chand</button></td>
-      </tr><tr>
-        <td colspan='9' class="l">Kitchen</td></tr>
+      </tr><tr class="col-rooms">
+        <td colspan='9' class="l">Kitchen</td>
+      </tr><tr class="col-rooms">
 	<td><button class="bb" onclick='send("tp-kitchen")'>kitchen</button></td>
 	<td><button class="bb" onclick='send("tp-kitchen-pendants")'>pendants</button></td>
 	<td><button class="bb" onclick='send("tp-breakfast-nook")'>nook</button></td>
-      </tr><tr>
-        <td colspan='9' class="l">Family room</td></tr>
+      </tr><tr class="col-rooms">
+        <td colspan='9' class="l">Family room</td>
+      </tr><tr class="col-rooms">
 	<td><button class="bb" onclick='send("tp-dining-chandelier")'>chand</button></td>
 	<td><button class="bb" onclick='send("tp-family-room-left")'>fam-L</button></td>
 	<td><button class="bb" onclick='send("tp-family-room-right")'>fam-R</button></td>
+      </tr><tr class="col-rooms">
+        <td colspan='9' class="l">Garage</td>
       </tr><tr>
-        <td colspan='9' class="l">Outside</td></tr>
+        <td colspan='9' class="l">Outside &nbsp; <button class="bb-sm toggle init-off" onclick='toggle("col-out")'>-</button> </td></tr>
+      </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("tp-lantern", true)'>lantern</button></td>
 	<td><button class="bb" onclick='send("tp-door-entry", true)'>entry</button></td>
 	<td><button class="bb" onclick='send("tp-patio")'>patio</button></td>
-      </tr><tr>
+      </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("tp-rear-flood", "-")'>flood</button></td>
 	<td><button class="bb" onclick='send("BULB-tp-garage")'>garage</button></td>
 	<td><button class="bb" onclick='send("PLUG-tp-landscaping")'>landscaping</button></td>
-      </tr><tr>
-        <td colspan='9' class="l">Garage</td></tr>
-	<td><button class="bb" onclick='send("gh1", "on")'>gh1</button></td>
-	<td><button class="bb" onclick='send("gh0", "on")'>gh0</button></td>
-      </tr><tr>
+      </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("PLUG-garage-L")'>gd-L</button></td>
 	<td><button class="bb" onclick='send("PLUG-garage-R")'>gd-R</button></td>
 	<td><button class="bb" onclick='send("BULB-tp-mobile-bulb")'>mobile</button></td>
-      </tr><tr>
-        <td colspan='9' class="l">Special</td></tr>
-	<td><button class="bb" onclick='send("PLUG-tp-space-heater")'>heater</button></td>
-	<td><button class="bb" onclick='send("PLUG-tp-homesec1")'>homesec1</button></td>
-      </tr><tr>
-	<td><button class="bb" onclick='send("party", "go")'>PARTY</button></td>
-	<td><button class="bb" onclick='send("tree", "-")'>neotree</button></td>
-	<td><button class="bb" onclick='send("PLUG-tp-tree")'>tp-tree</button></td>
-      </tr><tr>
-	<td><button class="bb" onclick='send("PLUG-siren1")'>siren1</button></td>
-	<td><button class="bb" onclick='send("PLUG-siren2")'>siren2</button></td>
-	<td><button class="bb" onclick='send("PLUG-siren3")'>siren3</button></td>
-      </tr><tr>
-        <td colspan='9' class="l">Landscaping</td></tr>
+      </tr><tr class="col-out">
+        <td colspan='9' class="l">Landscaping</td>
+      </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("out-monument", "-")'>Monument</button></td>
 	<td><button class="bb" onclick='send("out-sconce", "-")'>Sconce</button></td>
 	<td><button class="bb" onclick='send("out-front-path", "-")'>F path</button></td>
-      </tr><tr>
+      </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("out-front-moon", "-")'>F moon</button></td>
 	<td><button class="bb" onclick='send("out-front-up", "-")'>F up</button></td>
 	<td><button class="bb" onclick='send("out-maple", "-")'>Maple</button></td>
-      </tr><tr>
+      </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("out-magnolia", "-")'>Magnolia</button></td>
 	<td><button class="bb" onclick='send("out-holly", "-")'>Holly</button></td>
 	<td><button class="bb" onclick='send("out-arch", "-")'>R arch</button></td>
 	<td><button class="bb" onclick='send("out-moon", "-")'>R moon</button></td>
+      </tr><tr>
+        <td colspan='9' class="l">Special &nbsp; <button class="bb-sm toggle init-off" onclick='toggle("col-spcl")'>-</button> </td></tr>
+      </tr><tr class="col-spcl">
+	<td><button class="bb" onclick='send("PLUG-tp-space-heater")'>heater</button></td>
+	<td><button class="bb" onclick='send("PLUG-tp-homesec1")'>homesec1</button></td>
+      </tr><tr class="col-spcl">
+	<td><button class="bb" onclick='send("party", "go")'>PARTY</button></td>
+	<td><button class="bb" onclick='send("tree", "-")'>neotree</button></td>
+	<td><button class="bb" onclick='send("PLUG-tp-tree")'>tp-tree</button></td>
+      </tr><tr class="col-spcl">
+	<td><button class="bb" onclick='send("PLUG-siren1")'>siren1</button></td>
+	<td><button class="bb" onclick='send("PLUG-siren2")'>siren2</button></td>
+	<td><button class="bb" onclick='send("PLUG-siren3")'>siren3</button></td>
+      </tr><tr class="col-spcl">
+	<td><button class="bb" onclick='send("gh1", "on")'>gh1</button></td>
+	<td><button class="bb" onclick='send("gh0", "on")'>gh0</button></td>
       </tr><tr>
       </tr><tr>
       </tr>

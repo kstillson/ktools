@@ -3,6 +3,9 @@
 
 non-security
 
+  - automatic and automated tests that all roll up to monitoring
+  - automated tests for manual processes
+  
   - server layering and purposes: docker, disposable host containers, etc.
 
   - everything is a web server

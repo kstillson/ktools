@@ -36,14 +36,18 @@ def checkval(key, expected_value):
     assert SETTINGS['TEST_VALS'][key] == expected_value
 
 
-def check(output, expect_in_output, key=None, expected_value=None):
+def check(control_output, expect_in_output, key=None, expected_value=None):
+    ok, output = control_output
+    assert ok == ('ok' in expect_in_output)
     assert expect_in_output in output
     if key: checkval(key, expected_value)
 
     
-def check_each(outputs, expect_in_outputs, key=None, expected_value=None):
+def check_each(control_output, expect_in_each_output, key=None, expected_value=None):
+    overall_ok, outputs = control_output
     flattened_outputs = flatten(outputs)
-    for out in flattened_outputs: assert expect_in_outputs in out
+    if expect_in_each_output:
+        for out in flattened_outputs: assert expect_in_each_output in out
     if key: checkval(key, expected_value)
 
     
@@ -79,7 +83,7 @@ def test_direct_device_control(init):
 
 def test_scenes(init):
     # trivial scene that just relays a command to device1.
-    check_each(hc.control('trivial1', 'cmd1'),  'ok', 'host1', 'cmd1')
+    check_each(hc.control('trivial1', 'cmd1'),     'ok', 'host1', 'cmd1')
 
     # trivial scene that always turns device1 off.
     check_each(hc.control('trivial2'),             'ok', 'host1', 'off')
@@ -102,7 +106,8 @@ def test_scenes(init):
     checkval('wild1-2', 'x')
         
     # check partially successful scene
-    outputs = hc.control('scene3', 'cmd4')
+    ok, outputs = hc.control('scene3', 'cmd4')
+    assert not ok
     assert 'device1: ok' == outputs[0]
     assert 'Dont know what to do with target deviceZ' == outputs[1]
     checkval('host1', 'cmd4')

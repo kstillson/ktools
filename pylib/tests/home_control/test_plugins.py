@@ -36,7 +36,9 @@ def checkval(key, expected_value):
     assert TEST_SETTINGS['TEST_VALS'][key] == expected_value
 
 
-def check(output, expect_in_output, key=None, expected_value=None):
+def check(control_output, expect_in_output, key=None, expected_value=None):
+    ok, output = control_output
+    assert ok == ('ok' in  expect_in_output)
     assert expect_in_output in output
     if key: checkval(key, expected_value)
 

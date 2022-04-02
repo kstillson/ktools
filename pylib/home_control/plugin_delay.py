@@ -15,7 +15,7 @@ def control(plugin_name, plugin_params, device_name, command):
       delay_time_str, delayed_target, delayed_command = plugin_params.split(':', 2)
       delay_time = int(delay_time_str)
   except Exception:
-      return f'DELAY device config error: params should be delay_time:delayed_target:delayed_command, but saw "{plugin_params}"'
+      return False, f'DELAY device config error: params should be delay_time:delayed_target:delayed_command, but saw "{plugin_params}"'
 
   global SETTINGS
   if SETTINGS['debug']:
@@ -28,4 +28,4 @@ def control(plugin_name, plugin_params, device_name, command):
       t = threading.Timer(delay_time, SETTINGS['_control'], [delayed_target, delayed_command])
       t.start()
       SETTINGS['_threads'].append(t)
-      return f'{device_name}: ok (queued {delay_time} for {delayed_target} -> {delayed_command})'
+      return True, f'{device_name}: ok (queued {delay_time} for {delayed_target} -> {delayed_command})'

@@ -13,14 +13,29 @@ import kcore.webserver as W
 # ---------- handlers
 
 def hs_control_handler(request):
-    items = request.path.split('/')[1:]
-    if not items[0].startswith('c') or len(items) < 2: return W.Response('bad control request', 400)
-    target = items[1]
-    command = items[2] if len(items) > 1 else 'on'
-    C.log(f'{target} -> {command}')
-    rslt = HC.control(target, command)
-    # TODO: need a way to easily determine success/fail and give correct rslt.
-    return 'ok: %s' % rslt
+    try:
+        items = request.path.split('/')[2:]   # [0] is "", i.e. lhs of leading '/'.  [1] is "control"
+        target = items[0]
+        command = items[1] if len(items) > 1 else 'on'
+    except:
+        return W.Response('correct path looks like /control/target[/command].', 400)
+    ok, rslt = HC.control(target, command)
+    C.log(f'({target},{command}) -> {ok=}: {rslt}')
+    return f'{"ok" if ok else "ERROR"}: {rslt}'
+
+
+def hs_c_handler(request):
+    target = request.get_params.get('target')
+    if not target: target = request.get_params.get('t')
+    if not target: return W.Response('must pass "target" or "t" as get param.', 400)
+    command = request.get_params.get('command')
+    if not command: target = request.get_params.get('c')
+    if not command: target = request.get_params.get('v')
+    if not command: command = 'on'
+
+    ok, rslt = HC.control(target, command)
+    C.log(f'({target},{command}) -> {ok=}: {rslt}')
+    return f'{"ok" if ok else "ERROR"}: {rslt}'
 
 
 def hs_root_handler(request):
@@ -52,7 +67,8 @@ def main(argv=[]):
   
   handlers = {
       '/': hs_root_handler,
-      '/c.*': hs_control_handler,
+      '/control/.*': hs_control_handler,
+      '/c.*': hs_c_handler,
   }
   ws = W.WebServer(handlers, wrap_handlers=False)  ##@@ temp
   ws.start(port=args.port, background=False)

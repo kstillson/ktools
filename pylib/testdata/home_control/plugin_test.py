@@ -15,6 +15,6 @@ def control(plugin_name, plugin_params, device_name, command):
     key = key.replace('%d', device_name)
     value = value.replace('%c', command)
     print(f'TEST PLUGIN [params:{plugin_params}] : {key} -> {value}', file=sys.stderr)
-    if value == 'BAD': return f'{device_name}: bad value'
+    if value == 'BAD': return False, f'{device_name}: bad value'
     VALUES[key] = value
-    return f'{device_name}: ok'
+    return True, f'{device_name}: ok'

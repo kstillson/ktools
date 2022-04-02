@@ -194,21 +194,24 @@ def tplink_send(hostname, command):
     cmd_param = None
 
   raw_cmds = CMD_LOOKUP.get(command)
-  if not raw_cmds: return f'{hostname}: unknown tplink command: {command}'
+  if not raw_cmds: return False, f'{hostname}: unknown tplink command: {command}'
 
   if not isinstance(raw_cmds, list):
     return tplink_send_raw(hostname, raw_cmds, cmd_param)
 
-  resp = []
+  all_ok = True
+  answers = []
   for i in raw_cmds:
-    resp.append(tplink_send_raw(hostname, i, cmd_param))
-  return resp
+    ok, resp = tplink_send_raw(hostname, i, cmd_param)
+    if not ok: all_ok = False
+    answers.append(resp)
+  return all_ok, ','.join(answers)  # device level commands are supposed to return strings, not lists, so much the answers together.
 
 
 def tplink_send_raw(hostname, raw_cmd, cmd_param):
   if cmd_param: raw_cmd = raw_cmd.replace('@@', cmd_param)
 
-  if SETTINGS['test']: return f'would send {hostname} : {raw_cmd}'
+  if SETTINGS['test']: return True, f'would send {hostname} : {raw_cmd}'
   if SETTINGS['debug']: print(f'sending {hostname} : {raw_cmd}')
 
   sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -217,15 +220,16 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param):
     sock_tcp.connect((hostname, 9999))
     sock_tcp.send(encrypt(raw_cmd))
   except Exception as e:
-    return f'{hostname}: error: {str(e)}'
+    return False, f'{hostname}: error: {str(e)}'
   if not SETTINGS['debug']:   # async mode; send and forget
     sock_tcp.close()
-    return f'{hostname}: sent'
+    return True, f'{hostname}: sent'
   resp = sock_tcp.recv(2048)
   sock_tcp.close()
   out = decrypt(resp[4:])
-  if SETTINGS.get('raw', False) is False and '{"err_code":0}' in out: out = 'ok'
-  return f'{hostname}: {out}'
+  ok = '{"err_code":0}' in out
+  if SETTINGS.get('raw', False) is False and ok: out = 'ok'
+  return ok, f'{hostname}: {out}'
 
 
 # ---------- command line main

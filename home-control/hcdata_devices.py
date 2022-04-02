@@ -14,7 +14,7 @@ DEVICES = {
 
 # ---------- tplink individual device overrides and aliases
 
-  'tp-office:dim'     : 'TPLINK:tp-office:dim:50',
+  'tp-office:dim'     : 'TPLINK:tp-office:dim:40',
     
 # ---------- delay trigger
 
