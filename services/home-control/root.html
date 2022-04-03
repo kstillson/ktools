@@ -18,17 +18,17 @@
   /* section toggles */
   .inactive { display: none; }
   .toggle { background-color: blue; }
-  
+
 </style>
 </head>
 
 <!-- ------------------------------------------SCRIPTS BODY -->
 
-<body onload="startup()">
+<body onload="startup()" onkeypress="keyhandler(event)">
 <script type="text/javascript">
 
   // ---------- general purpose
-  
+
   function ebi(id) { return document.getElementById(id); }  // ebi = element by id
 
   function iframe_reset() { iframe_text("."); set_bg("status1", "gray"); }
@@ -36,13 +36,45 @@
   function iframe_url(url, id="iframe1") {
       ebi(id).src = url;
   }
-  
+
   // ---------- specific to this page
 
+    function keyhandler(event) {
+        if (event.target != document.body) { return; }
+        key = String.fromCharCode(event.keyCode);
+        switch (key) {
+            // section toggles
+        case "o": toggle("col-out"); break;
+        case "r": toggle("col-rooms"); break;
+        case "s": toggle("col-spcl"); break;
+
+            // direct HC commands
+        case "!": send("sirens"); break;
+        case "0": send("all", "off"); break;
+        case "1": send("down-dim", "go"); break;
+        case "2": send("main", "med"); break;
+        case "9": send("all", "full"); break;
+        case "a": send("away", "go"); break;
+        case "B": send("PLUG-tp-bendy"); break;
+        case "b": send("bedtime", "go"); break;
+        case "C": send("cooking", "go"); break;
+        case "c": send("comp", "go"); break;
+        case "d": send("dining", "go"); break;
+        case "k": send("kit"); break;
+        case "m": send("main"); break;
+        case "O": send("outside"); break;
+        case "p": send("party"); break;
+        case "l": send("PLUG-tp-landscaping"); break;
+        case "t": send("tv", "go"); break;
+
+            // other
+        case "?": alert("out/rooms/spcl, !sirens, 0129, away, Bendy, bedtime, Cooking, comp, dining, kit, main, Outside, party, landscaping, tv"); break;
+        }
+    }
   function startup() {
       toggle_init();
   }
-  
+
   function setSlider(newVal) {
       document.getElementById("slide").value = newVal;
   }
@@ -80,19 +112,14 @@
       for (var i=0; i<elements.length; i++) {
           if (elements[i].onclick) {
               elements[i].onclick();
-              toggle_button(elements[i]);
           }
       }
   }
 
   function toggle(class_name) {
       toggle_class_by_name(class_name);
-      // When called by toggle_init(), there won't be a source element, so
-      // "document" is the default.  Just skip the call to toggle the button,
-      // and toggle_init() will call toggle_bullon separately.
-      if (event.srcElement != document) {
-          toggle_button(event.srcElement);
-      }
+      btn = ebi(class_name + "-button");
+      if (btn) { toggle_button(btn); }
   }
 
   function toggle_class_by_name(class_name) {
@@ -106,7 +133,7 @@
       var col = (button.style.backgroundColor == "cyan") ? "blue" : "cyan";
       button.style.backgroundColor = col;
   }
-  
+
 </script>
 
 <!-- ----------------------------------------------HTML BODY -->
@@ -145,7 +172,7 @@
 	<td><button class="bb" onclick='send("kit")'>kitchen</button></td>
 	<td><button class="bb" onclick='send("main")'>main</button></td>
       </tr><tr>
-        <td colspan='9' class="l">Rooms &nbsp; <button class="bb-sm toggle init-off" onclick='toggle("col-rooms")'>-</button> </td></tr>
+        <td colspan='9' class="l">Rooms &nbsp; <button id="col-rooms-button" class="bb-sm toggle init-off" onclick='toggle("col-rooms")'>-</button> </td></tr>
       </tr><tr class="col-rooms">
 	<td><button class="bb" onclick='send("tp-bedroom-entrance")'>door</button></td>
 	<td><button class="bb" onclick='send("tp-bedroom-light")'>main</button></td>
@@ -174,7 +201,7 @@
       </tr><tr class="col-rooms">
         <td colspan='9' class="l">Garage</td>
       </tr><tr>
-        <td colspan='9' class="l">Outside &nbsp; <button class="bb-sm toggle init-off" onclick='toggle("col-out")'>-</button> </td></tr>
+        <td colspan='9' class="l">Outside &nbsp; <button id="col-out-button" class="bb-sm toggle init-off" onclick='toggle("col-out")'>-</button> </td></tr>
       </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("tp-lantern", true)'>lantern</button></td>
 	<td><button class="bb" onclick='send("tp-door-entry", true)'>entry</button></td>
@@ -203,7 +230,7 @@
 	<td><button class="bb" onclick='send("out-arch", "-")'>R arch</button></td>
 	<td><button class="bb" onclick='send("out-moon", "-")'>R moon</button></td>
       </tr><tr>
-        <td colspan='9' class="l">Special &nbsp; <button class="bb-sm toggle init-off" onclick='toggle("col-spcl")'>-</button> </td></tr>
+        <td colspan='9' class="l">Special &nbsp; <button id="col-spcl-button" class="bb-sm toggle init-off" onclick='toggle("col-spcl")'>-</button> </td></tr>
       </tr><tr class="col-spcl">
 	<td><button class="bb" onclick='send("PLUG-tp-space-heater")'>heater</button></td>
 	<td><button class="bb" onclick='send("PLUG-tp-homesec1")'>homesec1</button></td>
