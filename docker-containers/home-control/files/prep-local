@@ -4,3 +4,6 @@ GROUP_DONT_DELETE_REGEX="^(root|hc)"
 
 # Fix ownersip.
 chgrp -R hc /home/hc
+
+# fix perms
+chmod go+rX /etc/passwd /etc/group /etc/init

@@ -20,10 +20,15 @@
    - tools-for-users: doc
 
 ## ktools virgin build process
-   - file needed before basic "build all" will work:
+   - file needed before basic "make all" will work:
      - need docker-containers/kcore-baseline/private.d/cert-settings
      - need services/keymaster/private.d/km.data.gpg
-
+   - dirs needed for "make install" to work for docker containers:
+     - /rw/dv/TMP                      (droot not root...)
+     - /rw/dv/home-control/var_log_hc  (droot not root...)
+     - /rw/dv/keymaster/var_log_km     (droot not root...)
+   - docket network setup
+   
 ## General
    - new name for ktools ?  (Mauveine?  #8D029B)
 

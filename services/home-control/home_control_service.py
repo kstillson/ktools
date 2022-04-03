@@ -47,6 +47,7 @@ def hs_root_handler(request):
 
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='home automation web server')
+  ap.add_argument('--debug', '-d', action='store_true', help='put home_control into debug mode')
   ap.add_argument('--logfile', '-l', default='hs.log', help='filename for operations log.  "-" for stderr, blank to disable log file')
   ap.add_argument('--port', '-p', type=int, default=8080, help='port to listen on')
   ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
@@ -65,6 +66,8 @@ def main(argv=[]):
   C.init_log('hs server', args.logfile,
              filter_level_logfile=C.logging.INFO, filter_level_stderr=stderr_level,
              filter_level_syslog=C.logging.CRIT if args.syslog else C.logging.NEVER)
+
+  if args.debug: HC.control('doesnt', 'matter', {'debug': True})
   
   handlers = {
       '/': hs_root_handler,
