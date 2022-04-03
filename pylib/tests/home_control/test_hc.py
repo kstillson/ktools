@@ -1,8 +1,8 @@
 
-import itertools, pytest, sys
-import kcore.varz as V   # this is where the test plugin stores it stuff.
+import itertools, pytest, os, shutil, sys
 
 import context_hc  # fixes path
+import kcore.varz as V   # this is where the test plugin stores it stuff.
 import hc
 
 SETTINGS = {
@@ -13,10 +13,28 @@ SETTINGS = {
 
 @pytest.fixture(scope='session')
 def init():
-    # Register our SETTINGS
+    # ----- setup
+
+    # -- establish private.d contents
+    priv_dir = 'testdata/home_control/private.d'
+    priv_data = '%s/hcdata_private.py' % priv_dir
+    os.mkdir(priv_dir)
+    with open(priv_data, 'w') as f:
+        f.write('''
+PRIV_DEV = { 'priv-dev' : 'TEST:%d:%c' }
+PRIV_SCENE = { 'priv-scene' : [ 'priv-dev' ] }
+def init(devices, scenes): devices.update(PRIV_DEV); scenes.update(PRIV_SCENE); return devices, scenes
+''')
+
+    # -- Register our SETTINGS
     hc.reset()  # clear out any other test's initialization...
     hc.control('doesnt', 'matter', SETTINGS)
 
+    yield  # ----- setup // teardown
+    
+    # -- clean-up private.d dir
+    shutil.rmtree(priv_dir)
+    
     
 # ---------- general purpose helpers
 
@@ -111,5 +129,5 @@ def test_scenes(init):
     checkval('host1', 'cmd4')
 
 
-def test_private_dir():
+def test_private_dir(init):
     check_each(hc.control('priv-scene', 'cmd5'),    'ok', 'priv-dev', 'cmd5')
