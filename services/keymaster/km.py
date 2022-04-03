@@ -282,7 +282,7 @@ def main(argv=[]):
       
   C.init_log('km server', args.logfile,
              filter_level_logfile=C.logging.INFO, filter_level_stderr=stderr_level,
-             filter_level_syslog=C.logging.CRIT if args.syslog else C.logging.NEVER)
+             filter_level_syslog=C.logging.CRITICAL if args.syslog else C.logging.NEVER)
   
   if args.register: return register_new_key(args)
 
