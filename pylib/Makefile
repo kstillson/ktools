@@ -64,24 +64,25 @@ install-via-wheel:
 # won't automatically pick up new subdirs, so it might not work at all for you.
 # But when making lots of changes, this is quicker (when it works).
 install-simple:
-	/usr/bin/rm -rf */__pycache__ */.pytest_cache
+	rm -rf */__pycache__ */.pytest_cache
+	mkdir -p ~/.local/lib/python3.8/site-packages ~/.local/bin
 	# kcore
-	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/kcore
-	/usr/bin/mkdir -p ~/.local/lib/python3.8/site-packages/kcore
-	/usr/bin/cp -puv kcore/* ~/.local/lib/python3.8/site-packages/kcore
-	/usr/bin/cp -puv kcore/auth.py ~/.local/bin/k_auth
+	rm -rf ~/.local/lib/python3.8/site-packages/kcore
+	mkdir -p ~/.local/lib/python3.8/site-packages/kcore
+	cp -puv kcore/* ~/.local/lib/python3.8/site-packages/kcore
+	cp -puv kcore/auth.py ~/.local/bin/k_auth
 	# ktools
-	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/ktools
-	/usr/bin/mkdir -p ~/.local/lib/python3.8/site-packages/ktools
-	/usr/bin/cp -puv tools/* ~/.local/lib/python3.8/site-packages/ktools
-	/usr/bin/cp -puv tools/kmc.py ~/.local/bin/kmc
-	/usr/bin/cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
-	/usr/bin/cp -puv tools/run_para.py ~/.local/bin/run_para
+	rm -rf ~/.local/lib/python3.8/site-packages/ktools
+	mkdir -p ~/.local/lib/python3.8/site-packages/ktools
+	cp -puv tools/* ~/.local/lib/python3.8/site-packages/ktools
+	cp -puv tools/kmc.py ~/.local/bin/kmc
+	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
+	cp -puv tools/run_para.py ~/.local/bin/run_para
 	# home_control
-	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/home_control
-	/usr/bin/mkdir -p ~/.local/lib/python3.8/site-packages/home_control
-	/usr/bin/cp -puv home_control/* ~/.local/lib/python3.8/site-packages/home_control
-	/usr/bin/cp -puv home_control/hc.py ~/.local/bin/hc
+	rm -rf ~/.local/lib/python3.8/site-packages/home_control
+	mkdir -p ~/.local/lib/python3.8/site-packages/home_control
+	cp -puv home_control/* ~/.local/lib/python3.8/site-packages/home_control
+	cp -puv home_control/hc.py ~/.local/bin/hc
 	$(MAKE) link
 
 
@@ -97,9 +98,9 @@ uninstall-via-wheel:
 
 
 uninstall-simple:
-	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/kcore
-	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/ktools
-	/usr/bin/rm -rf ~/.local/lib/python3.8/site-packages/home_control
+	rm -rf ~/.local/lib/python3.8/site-packages/kcore
+	rm -rf ~/.local/lib/python3.8/site-packages/ktools
+	rm -rf ~/.local/lib/python3.8/site-packages/home_control
 
 
 # ---------- custom targets

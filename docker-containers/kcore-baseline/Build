@@ -8,6 +8,7 @@ CONTINUE=1
 # Update deps from outside this directory branch.
 source ../build-helper.sh
 copy_and_check ../../pylib/tools/kmc.py files/usr/local/bin/kmc ugo+rx
+rm -rf files/usr/lib/python3.9/site-packages
 copy_and_check ../../pylib/kcore files/usr/lib/python3.9/site-packages ugo+rX 
 
 # ---------- keymaster self-signed key/certificate pair ----------
@@ -54,7 +55,7 @@ function generate_self_signed_cert() {
   if [[ ! -f $CERT_SETTINGS ]]; then
     cat << EOF
 ERROR- you need a $CERT_SETTINGS file specific to your local details.
-Please create $CERT_SETTINGS with something like this:
+Please create kcore-baseline/$CERT_SETTINGS with something like this:
 
 KM_HOSTNAME="keymaster"
 SUBJECT="/C=US/ST=your-state/L=your-town/O=your-org-name"

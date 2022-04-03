@@ -19,6 +19,11 @@
    - general wisdom: lots of writing
    - tools-for-users: doc
 
+## ktools virgin build process
+   - file needed before basic "build all" will work:
+     - need docker-containers/kcore-baseline/private.d/cert-settings
+     - need services/keymaster/private.d/km.data.gpg
+
 ## General
    - new name for ktools ?  (Mauveine?  #8D029B)
 

@@ -6,6 +6,13 @@ function copy_and_check() {
   dest="$2"
   perms="$3"
   if [[ ! -r "$src" ]]; then echo "copy_and_check source not found: $src"; exit 8; fi
+  if [[ -d "$src" ]]; then
+      if [[ ! -d "$dest" ]]; then mkdir -p $dest; fi
+  else
+      destdir=$(dirname $dest)
+      if [[ ! -d "$destdir" ]]; then mkdir -p $destdir; fi
+  fi
+  
   /bin/cp -Lpruv $src $dest
   if [[ -d "$src" ]]; then dest="$dest/$(basename $src)"; fi
   /usr/bin/diff -qr $src $dest || { echo "FAILED:  $src -> $dest; aborting."; exit 9; }

@@ -31,7 +31,7 @@ $(SUBDIRS):
 
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
-	/usr/bin/rm -rf home-control/__pycache__
+	rm -rf home-control/__pycache__
 
 # ---------- everything
 
