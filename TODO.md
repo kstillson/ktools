@@ -1,8 +1,17 @@
 
-## integrate ktools docker containers with existing ones on jack
-   - hs client checks: h/control:ext, h/inst, keypads, trellis1
+## integration phase
+   - keymaster: key population, testing
+   - pylib to official pip repo, test install on home-control devices
+   - rebind home-control to kcore
+     - auth
+     - home-control (<- homesec)
+   - other home-control client transitions
+     - from above: keypads, trellis1
+     - h/control:ext
+     - done: h/inst
 
 ## ++ktools tech
+   - confirm pylib wheel-based install still works
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - monitoring: generalize & publish filewatchdock, nagdock, procmon
@@ -12,8 +21,8 @@
    - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
    - make sure all python is using __doc__ friendly formatting
    - review TODO's
-   - confirm pylib wheel-based install still works
-   
+   - should :clean remove copied files for docker-containers ?
+
 ## ++ktools prose
    - TOC / general intro write-up
    - general wisdom: lots of writing
@@ -28,7 +37,7 @@
      - /rw/dv/home-control/var_log_hc  (droot not root...)
      - /rw/dv/keymaster/var_log_km     (droot not root...)
    - docket network setup
-   
+
 ## General
    - new name for ktools ?  (Mauveine?  #8D029B)
 

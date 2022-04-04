@@ -138,7 +138,8 @@ class WebServerBase(object):
         if (self.logger
             and self.logger.log_request
             and not str_in_substring_list(request.full_path, self.logging_filters)):
-            self.logger.log_request('%s: %s' % (request.method, request.full_path))
+            # Get params can be sensitive, so log path rather than full_path.
+            self.logger.log_request('%s: %s' % (request.method, request.path))
 
         # varz
         if self.varz:

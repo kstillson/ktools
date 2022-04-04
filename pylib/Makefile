@@ -7,7 +7,7 @@ LAST_WHEEL = $(shell ls -t1 dist/*.whl | tail -1)
 
 # ---------- standard targets
 
-## all: all-via-wheel
+## all: all-wheel
 all:	all-simple
 
 clean:
@@ -19,7 +19,7 @@ comp:
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in tools/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$${t/tools/ktools} | sed -e "/identical/s@.*@ok: $$t@"; done
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in home_control/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
 
-## install: install-via-wheel
+## install: install-wheel
 install:
 	$(MAKE) install-simple
 	$(MAKE) link
@@ -27,7 +27,7 @@ install:
 
 test: $(TEST_LOG)
 
-#uninstall: uninstall-via-wheel
+#uninstall: uninstall-wheel
 uninstall:
 	$(MAKE) unlink
 	$(MAKE) uninstall-simple
@@ -45,7 +45,7 @@ update:
 
 all-simple:   # nothing to do.
 
-all-via-wheel: dist/build-touch
+all-wheel: dist/build-touch
 
 dist/build-touch: $(wildcard */*.py) venv/bin/activate
 	source venv/bin/activate && python3 -m build
@@ -54,7 +54,7 @@ dist/build-touch: $(wildcard */*.py) venv/bin/activate
 
 # ----- :install
 
-install-via-wheel:
+install-wheel:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "NOTICE- installing into virtual environtment ${VIRTUAL_ENV}.  If that's not what you want, type command 'deactivate' and run the install again."; fi
 	@if [[ "$UID" == "0" ]]; then echo "NOTICE- installing into root's .local directory.  Use target 'install-system' to install into /usr/local for all users."; fi
 	pip3 install -U --user $(LAST_WHEEL)
@@ -92,7 +92,7 @@ $(TEST_LOG): $(wildcard */*.py */*/*.py)
 
 # ----- :uninstall
 
-uninstall-via-wheel:
+uninstall-wheel:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "uninstalling from virtual environtment ${VIRTUAL_ENV}."; fi
 	pip3 uninstall kcore_pylib
 

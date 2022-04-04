@@ -57,7 +57,7 @@ class Worker(BaseHTTPRequestHandler):
 
 class WebServer(WebServerBase):
     def __init__(self, *args, **kwargs):
-        logging_adapter = LoggingAdapter(
+        logging_adapter = kwargs.get('logging_adapter') or LoggingAdapter(
             log_request=C.log_info, log_404=C.log_info,
             log_general=C.log_info, log_exceptions=C.log_error,
             get_logz_html=C.last_logs_html)

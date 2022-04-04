@@ -245,7 +245,7 @@ def register_new_key(args):
         return 1
 
     msg = f'server reloaded  [{resp.status_code}] : {resp.text}'
-    c_log(msg)
+    C.log(msg)
     print(msg)
     return 0
     
