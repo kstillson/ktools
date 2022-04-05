@@ -144,14 +144,14 @@ def get_machine_private_data():
 
   # This works well on general Linux, but usually requires being root.
   puid = safe_read('/sys/class/dmi/id/product_uuid')
-  if puid: return puid
+  if puid: return 'v2p:dpu:' + puid
 
   # This generally works well on Raspberry PI's.
   cpuinfo = safe_read('/proc/cpuinfo')
   for line in cpuinfo.split('\n'):
     if 'Serial' in line:
       _, puid = line.split(': ', 1)
-      return puid
+      return 'v2p:csn:' + puid
 
   # And finally fall back on the uuid of the root risk (this isn't ideal
   # because it's not guaranteed to be unique against major upgrade changes
@@ -161,7 +161,7 @@ def get_machine_private_data():
   for line in blk_ids.split('\n'):
     if line.endswith(' /'):
       puid, _ = line.split(' ', 1)
-      return puid
+      return 'v2p:rbi:' + puid
 
   raise AuthNError('unable to find suitable machine private data. consider setting $PUID.')
 
