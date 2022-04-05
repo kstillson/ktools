@@ -33,7 +33,16 @@ if [[ ! -f Dockerfile ]]; then
     exit -1
 fi
 
-# Any of the following variables can be overridden from the calling environment.
+# Any of the following variables can be overridden from the calling environment,
+# or from the file private.d/build-env.
+#
+# As an example, if you put tight outbound restrictions on the default docker
+# network, but containers need to be about to reach out during construction to
+# install or update packages, you probably want to create a private.d/build-env
+# with something like:   NETWORK="--network docker2"
+
+if [[ -r "private.d/build-env" ]]; then source private.d/build-env; fi
+
 
 # Determine the version name of the image we are to build.
 # By default, in a directory named "x", this will be "kstillson/x:latest".
@@ -55,7 +64,7 @@ fi
 # network the container will run in.  Often containers run in highly constrained
 # environments (e.g. no or limited connectivity), but we need connectivity during
 # the build to pull image contents.
-export NETWORK=${NETWORK:-docker2}
+export NETWORK=""
 
 # Defer to directory local logic, if provided.
 if [[ -r ./Build ]]; then
@@ -69,7 +78,7 @@ fi
 
 # ---------- do the build
 
-docker build --network $NETWORK -t ${VER} .
+docker build $NETWORK -t ${VER} .
 status=$?
 if [[ "$status" != "0" ]]; then exit $status; fi
 

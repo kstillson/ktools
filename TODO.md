@@ -23,7 +23,7 @@ copy_and_check source not found: ../../services/keymaster/private.d/km.data.gpg
 
 modified:   docker-containers/keymaster/files/home/km/km.data.gpg
 
-
+   - explain suids
    - confirm pylib wheel-based install still works
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock

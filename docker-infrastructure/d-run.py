@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse, os, shutil, socket, subprocess, sys, yaml
+from pathlib import Path
 
 # Supported features in the settings file:
 #
@@ -73,11 +74,12 @@ def add_mounts(cmnd, mapper, readonly, name, mount_list):
         for k, v in i.items():
             if '/' not in k:
                 k = os.path.join('/rw/dv/%s' % name, k)
-            cmnd.extend(['--mount',
-                         'type=bind,source=%s,destination=%s%s' % (
-                           k if not mapper else mapper(k, name),
-                           v,
-                           ',readonly' if readonly else '')])
+            if mapper: k = mapper(k, name)
+            ro = ',readonly' if readonly else ''
+            if not os.path.isdir(k):
+                err('Creating non-existent mountpoint source: {k}')
+                Path(k).mkdir(parents=True, exist_ok=True)
+            cmnd.extend(['--mount', f'type=bind,source={k},destination={v}{ro}'])
     return cmnd
 
 

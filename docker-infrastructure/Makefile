@@ -26,11 +26,13 @@ comp: common_comp
 clean: common_clean
 
 install:
+	@echo "about to sudo for docker-infrastructure:install -- these tools can only be used by root, so it is assumed you want to install them where root can use them."
 	sudo $(MAKE) common_install
 
 test: common_test
 
 uninstall:
+	@echo "about to sudo for docker-infrastructure:install -- these were installed for root by sudo, and so must be uninstalled that way."
 	sudo $(MAKE) common_uninstall
 
 update: common_update
