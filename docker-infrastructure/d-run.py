@@ -166,7 +166,7 @@ def get_puid(name):
     env_puid = os.environ.get('PUID')
     if env_puid: return env_puid
     with open('/sys/class/dmi/id/product_uuid') as f: system_puid=f.read().strip()
-    return '%s:%s' % (system_puid, name)
+    return 'v2p:dpu:%s:%s' % (system_puid, name)
 
 
 # Try to find the location of the specified docker container dir.
