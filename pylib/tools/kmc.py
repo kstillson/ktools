@@ -122,6 +122,9 @@ def generate_key_registration(
   
   hostname = override_hostname or socket.gethostname()
 
+  if hostname == '*' and os.environ('PUID') is None:
+    print('WARNING- hostname set to "*" but $PUID not set. The generated registration will contain machine-specific data, and queries for this key will not actually work from other machines.  You probably want to override $PUID with a value shared between the machines that will query this key.  Continuing anyway...', file=sys.stderr)
+  
   if keyname_prefix is None: keyname_prefix = ''
   full_keyname = keyname_prefix.replace('%h', hostname) + keyname
 

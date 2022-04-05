@@ -1,9 +1,5 @@
 
-# ----------------------------------------
-# HTML generators
-
-# A few helper functions that take in strings and output HTML.
-
+'''HTML generators: A few functions that take in strings and output HTML.'''
 
 # in: html body as string.  out: same, wrapped in html and body headers.
 def html_page_wrap(body_contents, title=''):

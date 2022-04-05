@@ -1,7 +1,7 @@
 
 ## integration phase
-   - keymaster: key population, testing
    - pylib to official pip repo, test install on home-control devices
+   - keymaster: key population, testing
    - rebind home-control to kcore
      - auth
      - home-control (<- homesec)
@@ -22,6 +22,8 @@
    - make sure all python is using __doc__ friendly formatting
    - review TODO's
    - should :clean remove copied files for docker-containers ?
+   - manual setup-prep phase- automate
+     - include auth's chmod 444 /sys/class/dmi/id/product_uuid 
 
 ## ++ktools prose
    - TOC / general intro write-up

@@ -142,9 +142,21 @@ def get_machine_private_data():
   puid = os.environ.get('PUID')
   if puid: return puid
 
-  # This works well on general Linux, but usually requires being root.
-  puid = safe_read('/sys/class/dmi/id/product_uuid')
-  if puid: return 'v2p:dpu:' + puid
+  # This works well on general Linux, but by default requires root.  We don't
+  # want to just attempt to read it and use it if it works, because then we
+  # get different PUID values when root and non-root ask, and sometimes both
+  # root and non-root users will want to generate tokens from the same
+  # machine.  So...  It turns out root can grant read permissions to this file
+  # to others, but it's non-persistent (i.e. reset upon reboot).  So we'll
+  # check that the file perms allow "other+read", and only use this file if
+  # so.  Therefore, to enable this (preferred) method, the sysadmin should add
+  # this command to the system start-up process:
+  #        chmod 444 /sys/class/dmi/id/product_uuid
+  #
+  fil = '/sys/class/dmi/id/product_uuid'
+  if os.stat(fil).st_mode & 0o4 > 0:
+    puid = safe_read(fil)
+    if puid: return 'v2p:dpu:' + puid
 
   # This generally works well on Raspberry PI's.
   cpuinfo = safe_read('/proc/cpuinfo')

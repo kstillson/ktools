@@ -1,6 +1,29 @@
 #!/usr/bin/python3
 '''Home Service (hs) - web-service for hc (home control) automation system.
 
+TODO: more doc
+
+TODO: add robots.txt (perhaps default handler...?)
+
+SECURITY NOTE: As currently written, this web-server has no authentication
+mechanism.  The thought is that when running on a local network, an attacker
+could just send commands directly to smart-home units (as they usually also
+don't have authN), so adding a authN layer here isn't valuable.  HOWEVER, if
+you expose this server beyond your local network, you're giving folks outside
+your network the ability to control your stuff.  Make sure to add appropriate
+authN in any proxy arrangement you establish that makes this web-server
+visible outside a secure local network.
+
+SECURITY NOTE: This web-server uses simplistic and easy-to-guess http GET
+params, which makes it vulnerable to cross-site request forgery (CSRF).
+Adding local authN wouldn't help.  Adding CSRF tokens would, but this would
+significantly complicate the web API for non-human clients -- i.e. the simple
+GET-based approach is a valuable feature when the clients are other
+reasonably-simple automated systems.  Keep this in mind if you expose this
+server outside a trusted local network, even if you've added AuthN in a proxy.
+A lot more attention needs to be paid to security before this server should be
+allowed to control things more important that a few lights here and there.
+
 '''
 
 import argparse, os, sys
