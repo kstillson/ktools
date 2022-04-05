@@ -39,7 +39,7 @@ e:	everything
 
 everything:
 	$(MAKE) update   # all -> test -> install
-	$(MAKE) --no-print-directory -C docker-containers/kds-baseline update
+	$(MAKE) --no-print-directory -C docker-containers/kcore-baseline update
 	$(MAKE) --no-print-directory -C docker-containers update
 
 
