@@ -67,7 +67,7 @@ this file's current contents, so you might break them if you change it.  Your
 real secrets database goes in private.d/km.data.gpg.
 '''
 
-import argparse, getpass, os, subprocess, sys, tempfile
+import argparse, getpass, os, sys
 from dataclasses import dataclass
 
 import kcore.auth as A
@@ -75,7 +75,6 @@ import kcore.common as C
 import kcore.uncommon as UC
 import kcore.varz as V
 import kcore.webserver as W
-import kcore.webserver_base as WB
 
 
 # ---------- the secrets database
@@ -85,32 +84,24 @@ class Secret:
     keyname: str
     secret: str
     kauth_secret: str
+    comment: str = None
 
 
-class Secrets:
-    def __init__(self): self.reset()
-    def get(self, keyname): return self._db.get(keyname)
-    def ready(self): return len(self._db) > 0
+class Secrets(UC.DictOfDataclasses):
+    def ready(self): return len(self) > 0
 
     def reset(self):
-        self._db = {}
+        self.clear
         V.bump('resets')
         V.set('loaded-keys', 0)
 
-    def to_string(self): return '\n'.join(str(i) for i in self._db.values())
-    
-    def load_from_string(self, s):
-        for line in s.split('\n'):
-            if not line or line.startswith('#'): continue
-            i = eval(line)
-            self._db[i.keyname] = i
-        V.set('loaded-keys', len(self._db))
-
     def load_from_gpg_file(self, filename, password):
         with open(filename) as f: crypted = f.read()
-        return self.load_from_string(UC.gpg_symmetric(crypted, password))
+        resp = self.from_string(UC.gpg_symmetric(crypted, password), Secret)
+        V.set('loaded-keys', len(self))
+        return resp
 
-
+            
 # ---------- global state
 
 ARGS = {}
@@ -127,7 +118,7 @@ def ouch(user_msg, log_msg, varz_name):
         V.bump('panic')
         SECRETS.reset()
         C.log_alert(log_msg)
-    return WB.Response(user_msg, 403)
+    return W.Response(user_msg, 403)
 
 
 # ---------- handlers
@@ -164,7 +155,7 @@ def km_root_handler(request):
 def km_default_handler(request):
     if not SECRETS.ready():
         V.bump('keyfail-notready')
-        return WB.Response('not ready', 503)
+        return W.Response('not ready', 503)
     full_keyname = request.path[1:]  # trim leading /
     token = request.get_params.get('a')
 
@@ -191,69 +182,10 @@ def km_default_handler(request):
     return secret.secret
 
             
-# ---------- add new key
-
-def register_new_key(args):
-    # get database decryption password
-    if args.register == '-':
-        password = getpass.getpass('GPG decryption password: ')
-    elif args.register.startswith('$'):
-        varname = args.register[1:]
-        password = os.environ.get(varname)
-    else:
-        password = args.register
-    if not password: sys.exit('need to provide GPG password.')
-
-    # load in existing secrets data
-    if os.path.isfile(args.datafile):
-        SECRETS.load_from_gpg_file(args.datafile, password)
-        if not SECRETS.ready(): sys.exit('unable to load existing data')
-    else:
-        print(f'WARNING- {args.datafile} does not exist; creating a new one.')
-
-    # get new blob to add
-    print('Enter new key registration blob.  Blank line or EOF to end.')
-    blob = ''
-    for line in sys.stdin:
-        if not line: break
-        blob += line
-
-    plaintext += f'\n{blob}\n'
-
-    # re-encrypt the new data
-    encrypted = UC.gpg_symmetric(plaintext, password, decrypt=False)
-    if not 'PGP MESSAGE' in encrypted: sys.exit('encryption failed: ' + encrypted)
-
-    # put the new encrypted data in place
-    backup_filename = f'{args.datafile}.prev'
-    if os.path.isfile(backup_filename): os.unlink(backup_filename)
-    os.rename(args.datafile, backup_filename)
-    with open(args.datafile, 'w') as f: f.write(encrypted)
-
-    C.log('added config blob')
-    print('\nadded new secret\n')
-    if not args.port: return 0
-    
-    # ask any active server to reload with the new data
-    resp = C.web_get('https://localhost:%d/load' % arc.port,
-                     post_dict={'password': password},
-                     verify_ssl=False)
-    if not resp.ok:
-        msg = f'error asking server to reload: [{resp.status_code}] {resp.exception} : {resp.text}'
-        C.log_error(msg)
-        print(msg)
-        return 1
-
-    msg = f'server reloaded  [{resp.status_code}] : {resp.text}'
-    C.log(msg)
-    print(msg)
-    return 0
-    
-
 # ---------- main
 
 def parse_args(argv):
-  ap = argparse.ArgumentParser(description='key manager  server')
+  ap = argparse.ArgumentParser(description='key manager server')
   ap.add_argument('--certkeyfile', '-k', default='server.pem', help='name of file with both server TLS key and matching certificate.  set to blank to serve http rather than https (NOT RECOMMENDED!)')
   ap.add_argument('--datafile', '-d', default='km.data.gpg', help='name of encrypted file with secrets database')
   ap.add_argument('--dont-panic', action='store_true', help='By default the server will panic (i.e. clear its decrypted secrets database) if just about anything unexpected happens, including any denied request for a key.  This flag disables that, favoring stability over pananoia.')
@@ -262,9 +194,6 @@ def parse_args(argv):
   ap.add_argument('--noratchet', '-R', action='store_true', help='By default each request for a key must come after the last successful request for that key; this prevents request replay attacks.  It also limits key retrievals to one-per-second (for each key).  This disables that limit, and relies just on --window to prevent replay attacks.')
   ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
   ap.add_argument('--window', '-w', type=int, default=30, help='max seconds time difference between client key request and server receipt (i.e. max clock skew between clients and servers).  Set to 0 for "unlimited".')
-
-  group1 = ap.add_argument_group('special', 'alternate modes')
-  group1.add_argument('--register', '-r', default=None, help='Add a new key registration blob (generated by "kmc -g") to the database (new key blob read from stdin).  If a --port is provided, ask running km to reload new data.  Pass the database decryption key as the argument, or specify "-" to read the key from stdin, or "$varname" to read it from an environment variable.')
   return ap.parse_args(argv)
 
 
@@ -284,8 +213,6 @@ def main(argv=[]):
              filter_level_logfile=C.logging.INFO, filter_level_stderr=stderr_level,
              filter_level_syslog=C.logging.CRITICAL if args.syslog else C.logging.NEVER)
   
-  if args.register: return register_new_key(args)
-
   handlers = {
       '/healthz': km_healthz_handler,
       '/load': km_load_handler,

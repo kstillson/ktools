@@ -1,5 +1,7 @@
 
 ## integration phase
+   - km db helper
+   - add decorators to puid (id version & which method used)
    - keymaster: key population, testing
    - pylib to official pip repo, test install on home-control devices
    - rebind home-control to kcore

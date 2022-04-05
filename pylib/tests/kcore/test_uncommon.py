@@ -1,9 +1,9 @@
 
-import context_kcore     # fix path to includes work as expected in tests
-
 import io, os, sys
-import kcore.varz
+from dataclasses import dataclass
 
+import context_kcore     # fix path to includes work as expected in tests
+import kcore.varz
 import kcore.uncommon as UC
 
 def test_capture():
@@ -22,6 +22,20 @@ def test_capture():
         assert cap.out == ''
         assert cap.err == ''
 
+@dataclass
+class T1:
+    a: str
+    b: int
+        
+def test_dict_of_dataclasses():
+    d = UC.DictOfDataclasses({'k1': T1('a1', 1), 'k2': T1('b2', 2)})
+    s = d.to_string()
+    d2 = UC.DictOfDataclasses()
+    assert d2.from_string(s, T1) == 2
+    assert d2['k1'].a == 'a1'
+    assert d2['k2'].b == 2    
+
+        
 def test_exec_wrapper():
     assert UC.exec_wrapper('print(1+2)').out == '3'
     # Try passing in a local variable.

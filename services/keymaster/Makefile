@@ -1,5 +1,7 @@
 
-# TODO
+TEST_LOG ?= test.log
+
+# ----------
 
 all: 
 
@@ -10,8 +12,14 @@ clean:
 
 install: 
 
-test: 
+test: $(TEST_LOG)
 
 uninstall: 
 
-update: 
+update: all test install
+
+# ----- :test
+
+$(TEST_LOG): $(wildcard */*.py */*/*.py)
+	script -e -c "pytest-3 tests" $(TEST_LOG)
+

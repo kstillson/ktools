@@ -1,3 +1,11 @@
+'''Collection of less-common core routines.
+
+There are excluded from common.py either because they're slightly obscure, and
+we'd like to keep common.py reasonably compact, OR because the logic here
+won't work under Circuit Python, and we'd like to keep common.py fully working
+for Circuit Python.
+
+'''
 
 import grp, os, pwd, subprocess, sys
 
@@ -7,18 +15,41 @@ else: import io
 
 
 # ----------------------------------------
+# Dict of dataclasses
+
+
+class DictOfDataclasses(dict):
+    '''Intended for use when dict values are dataclass instances.
+       Adds methods to support serialization and deserialzation.
+    '''
+    def to_string(self):
+        dict2 = {k: str(v) for k, v in self.items()}
+        return '\n'.join([f'{k} = {v}' for k, v in dict2.items()])
+    
+    def from_string(self, s, dataclass_type):
+        locals = { dataclass_type.__name__: dataclass_type }
+        count = 0
+        for line in s.split('\n'):
+            if not line or line.startswith('#'): continue
+            k, v_str = line.split(' = ', 1)
+            self[k] = eval(v_str, {}, locals)
+            count += 1
+        return count
+
+
+# ----------------------------------------
 # I/O
 
-'''Temporarily captures stdout and stderr and makes them available.
-Outputs an instance with .out .err.  Conversion to string gives .out
-Example usage:
-  with kcore.uncommon.Capture() as cap:
-    # (write stuff to stdout and/or stderr...)
-    caught_stdout = cap.out
-    caught_stderr = cap.err
-  # (do stuff with caught_stdout, caught_stderr...)
-'''
 class Capture():
+    '''Temporarily captures stdout and stderr and makes them available.
+    Outputs an instance with .out .err.  Conversion to string gives .out
+    Example usage:
+      with kcore.uncommon.Capture() as cap:
+      # (write stuff to stdout and/or stderr...)
+      caught_stdout = cap.out
+      caught_stderr = cap.err
+      # (do stuff with caught_stdout, caught_stderr...)
+    '''
     def __init__(self, strip=True):
         self._strip = strip
     def __enter__(self):
@@ -41,9 +72,9 @@ class Capture():
         return e.strip() if self._strip else e
 
 
-# Run a string as Python code and capture any output.
-# Returns a Capture object, with added .exception field.
 def exec_wrapper(cmd, locals=globals(), strip=True):
+    '''Run a string as Python code and capture any output.
+       Returns a Capture object, with added .exception field.'''
     with Capture(strip) as cap:
         try:
             exec(cmd, globals(), locals)

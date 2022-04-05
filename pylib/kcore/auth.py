@@ -4,18 +4,18 @@
 An example session using the command-line interface:
 
 >> [1 time] On the client machine, we generate a shared secret:
-client$ k_auth -g -u user1 -p pass1
+CLIENT$ k_auth -g -u user1 -p pass1
 v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
 
 >> [1 time] On the server, we register that secret:
-server$ k_auth -r v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
+SERVER$ k_auth -r v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
 
 >> On the client, we generate a token to authenticate a command:
-client$ k_auth -c 'command1' -u user1 -p pass1
+CLIENT$ k_auth -c 'command1' -u user1 -p pass1
 v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7
 
 >> On the server, we validate the token for that command:
-server$ k_auth -v v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7 -c 'command1'
+SERVER$ k_auth -v v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7 -c 'command1'
 validated? True
 
 This successful validation demonstrates that:
@@ -72,6 +72,10 @@ Notes:
   server's current time.  This prevents replay attacks only after the window
   has expired, so pick your acceptance window-size accordingly (along with how
   closely you can keep your client and server clocks in sync).
+
+- If you want to register all your secrets on the server-side, rather than 
+  switching back and forth between client and server (as outlined above), see
+  services/keymaster/km-helper.py.
 '''
 
 import argparse, hashlib, json, os, socket, subprocess, sys, time

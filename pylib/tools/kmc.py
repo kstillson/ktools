@@ -3,12 +3,11 @@
 
 See services/keymaster/km.py for details on the service we talk to.
 
-This module uses pylib/k_auth.py for authentication.  As such, usernames and
+This module uses kcore/auth.py for authentication.  As such, usernames and
 passwords are not required in cases where the client is a single-tenant
 machine, but keep in mind the client registration must be done on the same
 machine as where the key requests will be generated, as machine-specific
 details are encoded into the registration.
-
 '''
 
 import argparse, os, random, requests, socket, sys, time
@@ -32,34 +31,33 @@ def find_cert(filename):
 
 # ---------- key request API (run on the km client)
 
-'''query the keymaster for a key
-
-Traditionally keymaster uses full keynames prefixed by the hostname of the
-client that owns/retrieves the key, followed by a dash, i.e. [hostname-keyname]
-Change keyname_prefix if you don't want this.
-
-Set km_cert to None to disable TLS (i.e. use http). Not recommended for
-transferring secrets!!  Set km_cert to '' to use TLS but not validate the
-server side certificate.  This opens you up to man-in-the-middle attacks, but
-might be ok on trusted networks.
-
-retry_limit=None will retry forever.  Set to 0 to disables retries.  Remember
-that the keymaster needs to be manually initialized before it can serve keys,
-so retrying for a long time is a good idea.
-
-If a key was registered with override_hostname='*', you must also provide that
-parameter here.  This special value has the side-effect of disabling
-server-side source-IP checking.
-
-Returns the retrieved secret/key (as a string), or None upon failure.
-'''
 
 def query_km(keyname,
              keyname_prefix='%h-',
              override_hostname=None, username='', password='',
              km_host_port='km:4443', km_cert='km.crt',
              timeout=5, retry_limit=None, retry_delay=5, errors_to=sys.stderr):
+  '''query the keymaster for a key
 
+  Traditionally keymaster uses full keynames prefixed by the hostname of the
+  client that owns/retrieves the key, followed by a dash, i.e. [hostname-keyname]
+  Change keyname_prefix if you don't want this.
+  
+  Set km_cert to None to disable TLS (i.e. use http). Not recommended for
+  transferring secrets!!  Set km_cert to '' to use TLS but not validate the
+  server side certificate.  This opens you up to man-in-the-middle attacks, but
+  might be ok on trusted networks.
+
+  retry_limit=None will retry forever.  Set to 0 to disables retries.  Remember
+  that the keymaster needs to be manually initialized before it can serve keys,
+  so retrying for a long time is a good idea.
+
+  If a key was registered with override_hostname='*', you must also provide that
+  parameter here.  This special value has the side-effect of disabling
+  server-side source-IP checking.
+
+  Returns the retrieved secret/key (as a string), or None upon failure.
+  '''
   hostname = override_hostname or socket.gethostname()
 
   if keyname_prefix is None: keyname_prefix = ''
@@ -96,29 +94,32 @@ def query_km(keyname,
 
 # ---------- key registration API
 
-# This uses kcore.auth to generate a shared secret used in key retrieval.  That
-# shared secret includes private data from the host on which it is run, so you
-# must run this command on the host that will eventually request the key,
-# of arrange for $PUID to be set (see kcore.auth.py for details)
-
-# I f you set override_hostname to '*', it disables source-IP checking on the
-# keymaster server.  However, it doesn't actually allow the key to be
-# requested from any host, because of the machine-specific-data encoded into
-# the shared secret.  If you really want a key to be retrievable from multiple
-# hosts, you'll need to arrange for $PUID to be the same on all clients.
-
-# Note that if you don't use passwords and you override $PUID, then your key
-# is only as protected as your overriden $PUID is kept secret.  Be aware that
-# if you hard-code your special $PUID value into the clients' code, you're
-# undermining the purpose of kcore.auth.
-
-# If you leave key=None, a random 20 digit secret is generated for you.
 
 def generate_key_registration(
     keyname, key=None,
     keyname_prefix='%h-',
-    override_hostname=None, username='', password=''):
+    override_hostname=None, username='', password='', comment=''):
+  '''Generate a key registration blob, suitable for use with a KM server.
 
+  This uses kcore.auth to generate a shared secret used in key retrieval.
+  That shared secret includes private data from the host on which it is run,
+  so you must run this command on the host that will eventually request the
+  key, of arrange for $PUID to be set (see kcore.auth.py for details)
+
+  If you set override_hostname to '*', it disables source-IP checking on the
+  keymaster server.  However, it doesn't actually allow the key to be
+  requested from any host, because of the machine-specific-data encoded into
+  the shared secret.  If you really want a key to be retrievable from multiple
+  hosts, you'll need to arrange for $PUID to be the same on all clients.
+
+  Note that if you don't use passwords and you override $PUID, then your key
+  is only as protected as your overriden $PUID is kept secret.  Be aware that
+  if you hard-code your special $PUID value into the clients' code, you're
+  undermining the purpose of kcore.auth.
+
+  If you leave key=None, a random 20 digit secret is generated for you.
+  '''
+  
   hostname = override_hostname or socket.gethostname()
 
   if keyname_prefix is None: keyname_prefix = ''
@@ -131,7 +132,7 @@ def generate_key_registration(
 
   # Note: this format is a manual recreation of the @dataclass string export
   # format for services/keymaster/km.py:Secret.  It needs to be kept in-sync.
-  return f"Secret(keyname='{full_keyname}', secret='{key}', kauth_secret='{authn_secret}')"
+  return f"{full_keyname} = Secret(keyname='{full_keyname}', secret='{key}', kauth_secret='{authn_secret}', comment='{comment}')\n"
 
 
 # ---------- main for CLI
@@ -154,6 +155,7 @@ def parse_args(argv):
 
   group2 = ap.add_argument_group('special', 'alternate modes associated with key/secret registration, rather than retrieval')
   group2.add_argument('--generate-key-registration', '-g', metavar='SECRET', default=None, help='generate and output a keymaster registration for the specified secret.  You will need to copy this over to the km server and add it to the encrypted database file.')
+  group2.add_argument('--comment', '-c', default=None, help='optional comment to go along with --generate-key-registration')
   group2.add_argument('--extract-machine-secret', '-E', action='store_true', help='output the machine-unique-private data and stop.  Allows you to run key registations on the km server by transporting this value to the server (rather than a fully-formed key registration from "-g").')
 
   return ap.parse_args(argv)
@@ -163,7 +165,7 @@ def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
   
   if args.extract_machine_secret:
-    print(k_auth.get_machine_private_data())
+    print(kcore.auth.get_machine_private_data())
     return 0
 
   if not args.keyname: sys.exit('need to provide a keyname to operate on')
@@ -173,7 +175,7 @@ def main(argv=[]):
       if not args.password: sys.exit('--password-env flag used, but $%s is not set.' % args.password_env)
 
   if args.generate_key_registration:
-    print(generate_key_registration(keyname=args.keyname, key=args.generate_key_registration, keyname_prefix=args.prefix, override_hostname=args.hostname, username=args.username, password=args.password))
+    print(generate_key_registration(keyname=args.keyname, key=args.generate_key_registration, keyname_prefix=args.prefix, override_hostname=args.hostname, username=args.username, password=args.password, comment=args.comment))
     return 0
 
   # Looks like we're doing a key retrieval.
