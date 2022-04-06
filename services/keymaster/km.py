@@ -91,7 +91,7 @@ class Secrets(UC.DictOfDataclasses):
     def ready(self): return len(self) > 0
 
     def reset(self):
-        self.clear
+        self.clear()
         V.bump('resets')
         V.set('loaded-keys', 0)
 

@@ -31,7 +31,14 @@ $(SUBDIRS):
 
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
-	rm -rf home-control/__pycache__
+	rm -rf home-control/__pycache__ common/prep-stamp
+
+prep:	common/prep-stamp
+
+common/prep-stamp:	docker-containers/kcore-baseline/private.d/cert-settings
+	mkdir -p /services/keymaster/private.d docker-containers/kcore-baseline/private.d
+	echo TODO: create and edit cert-settings
+	touch common/prep-stamp
 
 # ---------- everything
 
@@ -39,7 +46,7 @@ e:	everything
 
 everything:
 	$(MAKE) update   # all -> test -> install
-	$(MAKE) --no-print-directory -C docker-containers/kds-baseline update
+	$(MAKE) --no-print-directory -C docker-containers/kcore-baseline update
 	$(MAKE) --no-print-directory -C docker-containers update
 
 

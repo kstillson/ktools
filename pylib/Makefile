@@ -23,7 +23,6 @@ comp:
 install:
 	$(MAKE) install-simple
 	$(MAKE) link
-	sudo $(MAKE) install-simple
 
 test: $(TEST_LOG)
 
@@ -31,7 +30,6 @@ test: $(TEST_LOG)
 uninstall:
 	$(MAKE) unlink
 	$(MAKE) uninstall-simple
-	sudo $(MAKE) uninstall-simple
 
 update:
 	$(MAKE) all

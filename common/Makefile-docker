@@ -24,14 +24,17 @@ docker-update: docker-all docker-test docker-install
 # ----------
 
 build-stamp: ../kcore-baseline/install-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
 	sudo /root/bin/d-build
 	touch build-stamp
 
 install-stamp: build-stamp
+	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
 	sudo /root/bin/d-build -s
 	touch install-stamp
 
 test-stamp: Test $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+	@echo "about to sudo for docker container Test command.  Testing involves starting up a container, which only root can do."
 	sudo ./Test -r
 	touch test-stamp
 

@@ -8,16 +8,16 @@ include ../common/Makefile-unstaged
 
 # ---------- custom logic
 
-clean:
-	sudo $(MAKE) common_clean
-
 install:
+	@echo "about to sudo for tools-for-root:install -- these tools can only be used by root, so it is assumed you want to install them where root can use them."
 	sudo $(MAKE) common_install
 
 uninstall:
+	@echo "about to sudo for docker-infrastructure:uninstall -- these were installed for root by sudo, and so must be uninstalled that way."
 	sudo $(MAKE) common_uninstall
 
 update:
+	@echo "about to sudo for tools-for-root:update -- these tools can only be used by root, so it is assumed you want to install them where root can use them."
 	sudo $(MAKE) common_update
 
 # ---------- testing
@@ -30,6 +30,8 @@ $(TEST_LOG): $(wildcard *.py) $(wildcard *.sh) $(STAGING_DIR)
 # ---------- pass-throughs
 
 all: common_all
+
+clean: common_clean
 
 comp: common_comp
 

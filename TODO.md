@@ -11,6 +11,19 @@
      - done: h/inst
 
 ## ++ktools tech
+   - prep:  private.d's, cert-settings, docker networks
+
+docker network create -d bridge --gateway 192.168.2.1 --subnet 192.168.2.0/24 --opt com.docker.network.bridge.name=docker1 docker1
+docker network create -d bridge --gateway 192.168.3.1 --subnet 192.168.3.0/24 --opt com.docker.network.bridge.name=docker2 docker2
+iptables -t nat -A POSTROUTING -s 192.168.2.0/24 ! -d 192.168.2.0/24 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 192.168.3.0/24 ! -d 192.168.3.0/24 -j MASQUERADE
+mkdir /rw/dv/TMP, /rw/dv/*, /rw/dv/home-control/var_log_hc
+copy_and_check source not found: ../../services/keymaster/private.d/km.data.gpg
+/rw/dv/keymaster/var_log_km
+
+modified:   docker-containers/keymaster/files/home/km/km.data.gpg
+
+   - explain suids
    - confirm pylib wheel-based install still works
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
