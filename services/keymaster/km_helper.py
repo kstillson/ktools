@@ -203,7 +203,7 @@ def main(argv=[]):
       new_plaintext = remove_keyname_from_plaintext(plaintext, keyname)
       new_count = new_plaintext.count('Secret(')
       if new_count != old_count - 1:
-          sys.exit(f'something went wrong removing {keyname}; db unchanged.  {old_count=} {new_count=}')
+          sys.exit(f'something went wrong removing {keyname}; db unchanged.  old_count={old_count} new_count={new_count}')
       save_db_from_plaintext(new_plaintext, password, db_filename)
       print(f'ok: {db_filename} now has {new_count} entries.')
       return 0

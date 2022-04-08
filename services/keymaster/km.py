@@ -174,10 +174,10 @@ def km_default_handler(request):
         max_time_delta=ARGS.window)
     if not okay:
         return ouch('no such key or validation error',
-                    f'unsuccessful key retrieval attempt {full_keyname=} {hostname=} {username=} {status=}',
+                    f'unsuccessful key retrieval attempt full_keyname={full_keyname} hostname={hostname} username={username} status={status}',
                     'keyfail-hostname' if 'hostname' in status else 'keyfail-kauth')
     
-    C.log(f'successful key retrieval: {full_keyname=} {username=}')
+    C.log(f'successful key retrieval: full_keyname={full_keyname} username={username}')
     V.bump('key-success')
     return secret.secret
 

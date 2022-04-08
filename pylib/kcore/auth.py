@@ -315,7 +315,7 @@ def validate_token_given_shared_secret(
 
      Returns: okay?(bool), status(text), registered_hostname, username, sent_time'''
 
-  if DEBUG: print(f'DEBUG: starting validation {token=} {command=} {shared_secret=} {client_addr=}', file=sys.stderr)
+  if DEBUG: print(f'DEBUG: starting validation token={token} command={command} shared_secret={shared_secret} client_addr={client_addr}', file=sys.stderr)
   try:
     token_version, expected_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
     sent_time = int(sent_time_str)
@@ -342,7 +342,7 @@ def validate_token_given_shared_secret(
         return False, 'Received token is not later than a previous token: %d < %d' % (sent_time, LAST_RECEIVED_TIMES[keyname]), expected_hostname, username, sent_time
 
   expect_token = generate_token_given_shared_secret(command, shared_secret, expected_hostname, username, sent_time)
-  if DEBUG: print(f'DEBUG: {expect_token=} {expected_hostname=}', file=sys.stderr)
+  if DEBUG: print(f'DEBUG: expect_token={expect_token} expected_hostname={expected_hostname}', file=sys.stderr)
   if token != expect_token: return False, 'Token fails to validate  Saw "%s", expected "%s".' % (token, expect_token), expected_hostname, username, sent_time
 
   return True, 'ok', expected_hostname, username, sent_time

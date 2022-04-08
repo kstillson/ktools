@@ -199,7 +199,7 @@ def load_plugins(settings):
   plugin_files = file_finder(
     settings['plugins-dir'] + [os.path.dirname(__file__), os.path.join(site.getusersitepackages(), 'home_control')],
     settings['private-dir'], settings['plugins'])
-  if SETTINGS['debug']: print(f'DEBUG: {plugin_files=}')
+  if SETTINGS['debug']: print(f'DEBUG: plugin_files={plugin_files}')
   plugins = {}
   for i in plugin_files:
     new_module = _load_file_as_module(i)
@@ -294,7 +294,7 @@ def control(target, command='on', settings=None, top_level_call=True):
     if not DEVICES: DEVICES, SCENES = load_data(SETTINGS)
     if SETTINGS['debug']:
       print(f'DEBUG: loaded {len(PLUGINS)} plugins, {len(DEVICES)} devices, and {len(SCENES)} scenes.')
-      print(f'DEBUG: {SETTINGS=}')
+      print(f'DEBUG: SETTINGS={SETTINGS}')
     V.bump('cmd-count-%s' % command)
 
   # ----- Check if this is a scene, and if so run its expansion.
@@ -312,7 +312,7 @@ def control(target, command='on', settings=None, top_level_call=True):
         target_i = i
         command_i = command
       ok, answer = control(target_i, command_i, settings, False)
-      if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned {ok=}, {answer=}')
+      if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned ok={ok}, answer={answer}')
       if not ok: overall_okay = False
       outputs.append(answer)
       
@@ -327,7 +327,7 @@ def control(target, command='on', settings=None, top_level_call=True):
     plugin_module = PLUGINS.get(plugin_name)
     if not plugin_module: return False, f'plugin {plugin_name} not found'
     if SETTINGS['test']:
-      return True, f'TEST mode: would send {target}->{command} to plugin {plugin_name}({plugin_params=})'
+      return True, f'TEST mode: would send {target}->{command} to plugin {plugin_name}(plugin_params={plugin_params})'
     ok, answer = plugin_module.control(plugin_name, plugin_params, target, command)
     V.bump('device-success' if ok else 'device-fail')
     return ok, answer

@@ -43,7 +43,7 @@ def hs_control_handler(request):
     except:
         return W.Response('correct path looks like /control/target[/command].', 400)
     ok, rslt = HC.control(target, command)
-    C.log(f'({target},{command}) -> {ok=}: {rslt}')
+    C.log(f'({target},{command}) -> ok={ok}: {rslt}')
     return f'{"ok" if ok else "ERROR"}: {rslt}'
 
 
@@ -58,7 +58,7 @@ def hs_c_handler(request):
     if not command: command = 'on'
 
     ok, rslt = HC.control(target, command)
-    C.log(f'({target},{command}) -> {ok=}: {rslt}')
+    C.log(f'({target},{command}) -> ok={ok}: {rslt}')
     return f'{"ok" if ok else "ERROR"}: {rslt}'
 
 
