@@ -16,6 +16,11 @@ all: docker-update
 ../kcore-baseline/install-stamp:
 
 
+# ---------- local additions (remove files copied over by ./Build)
+
+clean:
+	rm -rf files/usr/local/bin/kmc files/usr/lib/python3.9/site-packages files/usr/local/bin/km.crt
+
 # ---------- pass-throughs
 
 include ../../common/Makefile-docker

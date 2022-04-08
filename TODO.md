@@ -21,7 +21,6 @@
    - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
    - make sure all python is using __doc__ friendly formatting
    - review TODO's
-   - should :clean remove copied files for docker-containers ?
    - re-confirm virgin build process
      - ? chmod 444 /sys/class/dmi/id/product_uuid 
    
