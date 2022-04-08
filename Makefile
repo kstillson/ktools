@@ -18,7 +18,7 @@ TOP_TARGETS = all clean comp install test uninstall update
 
 # specify SUBDIRS as an environment variable for partial work.
 # remember that order matters.
-SUBDIRS ?= pylib circuitpy_lib tools-for-root services docker-infrastructure
+SUBDIRS ?= pylib circuitpy_lib tools-for-root services docker-infrastructure 
 
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
@@ -36,15 +36,16 @@ clean:
 prep:	common/prep-stamp
 
 common/prep-stamp:	docker-containers/kcore-baseline/private.d/cert-settings
-	mkdir -p /services/keymaster/private.d docker-containers/kcore-baseline/private.d
-	echo TODO: create and edit cert-settings
+	mkdir -p services/keymaster/private.d docker-containers/kcore-baseline/private.d
+	if [[ ! -f docker-containers/kcore-baseline/private.d/cert-settings ]]; then cp docker-containers/kcore-baseline/cert-settings.template docker-containers/kcore-baseline/private.d/cert-settings; editor docker-containers/kcore-baseline/private.d/cert-settings; fi
+	pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
 	touch common/prep-stamp
 
 # ---------- everything
 
 e:	everything
 
-everything:
+everything: prep
 	$(MAKE) update   # all -> test -> install
 	$(MAKE) --no-print-directory -C docker-containers/kcore-baseline update
 	$(MAKE) --no-print-directory -C docker-containers update

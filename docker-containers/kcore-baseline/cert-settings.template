@@ -1,0 +1,36 @@
+
+# One of the services we're going to build is a server called "keymaster".  It
+# shares secrets with other services, and secure communications with keymaster
+# is critial.  To enable that, we're going to create a public/private key pair
+# and a "self-signed" certificate.
+
+# For this to work, the certificate must be coded with the DNS name of the
+# keymaster service.  The field KM_HOSTNAME, below, sets that.  Hopefully
+# you'll eventually be running your own DNS service and can make this anything
+# you want.  The default below, "keymaster", is a relative name, i.e. it's not
+# followed with .something.com.  That's fine for a local network.
+
+# The following fields, SUBJECT and EMAIL, basically identify you (the
+# keymaster administrator) by your location and email.  These aren't
+# particuarlly important for self-signed certificates, but feel free to set
+# the data accurately if you've no reason not to.  There's nothing in the
+# system that will share this data beyond the constilation of services we're
+# currently setting up.
+
+# The final field, DAYS, gives the number of days, from today, that the
+# certificate will be valid.  Once the certificate expires, you'll need to
+# generate a new one and rebuild various docker containers.
+
+# If you're not ready to make these kinds of decisions at the moment, feel
+# free to just leave the defaults as they are (i.e. just exit the editor to
+# continue the build process).  If you want to change these settings later,
+# edit this file (docker-containers/kcore-baseline/private.d/cert-settings),
+# delete km.crt and km.key from that directory, and rebuild all the docker
+# containers (switch to the "docker-containers" directory and "make update")
+
+KM_HOSTNAME="keymaster"
+
+SUBJECT="/C=US/ST=your-state/L=your-town/O=your-org-name"
+EMAIL="admin-email-address@whatever.com"
+
+DAYS="365"
