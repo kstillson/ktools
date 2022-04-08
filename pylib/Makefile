@@ -30,11 +30,13 @@ test: $(TEST_LOG)
 uninstall:
 	$(MAKE) unlink
 	$(MAKE) uninstall-simple
+	if [[ "$$UID" != "0" ]]; then read -p "uninstall from /root/.local/...? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) uninstall-simple; fi; fi
 
 update:
 	$(MAKE) all
 	$(MAKE) test
 	$(MAKE) install
+	if [[ "$$UID" != "0" ]]; then read -p "working on pylib installation. root is going to need these tools to build and test docker images.  Install pylib into /root/.local/...? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) install; fi; fi
 
 
 # ---------- custom sub-rules for the standard targets
