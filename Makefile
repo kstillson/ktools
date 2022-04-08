@@ -27,19 +27,11 @@ $(SUBDIRS):
 # Always run top-level rules, as subdirs might have their own phony targets.
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
-# ---------- special additions
+# ---------- special additions to common targets
 
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
 	rm -rf home-control/__pycache__ common/prep-stamp
-
-prep:	common/prep-stamp
-
-common/prep-stamp:	docker-containers/kcore-baseline/private.d/cert-settings
-	mkdir -p services/keymaster/private.d docker-containers/kcore-baseline/private.d
-	if [[ ! -f docker-containers/kcore-baseline/private.d/cert-settings ]]; then cp docker-containers/kcore-baseline/cert-settings.template docker-containers/kcore-baseline/private.d/cert-settings; editor docker-containers/kcore-baseline/private.d/cert-settings; fi
-	pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
-	touch common/prep-stamp
 
 # ---------- everything
 
@@ -49,6 +41,20 @@ everything: prep
 	$(MAKE) update   # all -> test -> install
 	$(MAKE) --no-print-directory -C docker-containers/kcore-baseline update
 	$(MAKE) --no-print-directory -C docker-containers update
+
+
+# ---------- prep
+
+prep:	common/prep-stamp
+
+common/prep-stamp:	docker-containers/kcore-baseline/private.d/cert-settings
+	pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
+	touch common/prep-stamp
+
+docker-containers/kcore-baseline/private.d/cert-settings:
+	mkdir -p services/keymaster/private.d docker-containers/kcore-baseline/private.d
+	cp -n docker-containers/kcore-baseline/cert-settings.template docker-containers/kcore-baseline/private.d/cert-settings
+	editor docker-containers/kcore-baseline/private.d/cert-settings
 
 
 # ---------- push
