@@ -49,7 +49,7 @@ prep:	common/prep-stamp
 
 common/prep-stamp:	docker-containers/kcore-baseline/private.d/cert-settings
 	mkdir -p services/keymaster/private.d
-	cp -n services/keymaster/tests/km-test.data.gpg services/keymaster/private.d
+	cp -n services/keymaster/tests/km-test.data.gpg services/keymaster/private.d/km.data.gpg
 	pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
 	touch common/prep-stamp
 
