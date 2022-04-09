@@ -25,6 +25,7 @@
      - ? chmod 444 /sys/class/dmi/id/product_uuid 
    
 ## ++ktools prose
+   - makefiles- lots of explanations and intros
    - TOC / general intro write-up
    - general wisdom: lots of writing
    - tools-for-users: doc

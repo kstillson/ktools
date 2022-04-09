@@ -4,11 +4,12 @@ SHELL := /bin/bash
 TEST_LOG ?= test.log
 
 LAST_WHEEL = $(shell ls -t1 dist/*.whl | tail -1)
+LOCAL_SITE_DIR ?= $(shell python3 -m site --user-site)
 
 # ---------- standard targets
 
-## all: all-wheel
-all:	all-simple
+all:
+	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
 
 clean:
 	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache dist *.egg-info
@@ -19,24 +20,20 @@ comp:
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in tools/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$${t/tools/ktools} | sed -e "/identical/s@.*@ok: $$t@"; done
 	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in home_control/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
 
-## install: install-wheel
 install:
-	$(MAKE) install-simple
-	$(MAKE) link
+	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
+	if [[ "$$UID" != "0" ]]; then read -p "working on pylib installation. root is going to need these tools to build and test docker images.  Install pylib for root? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) install; fi; fi
 
 test: $(TEST_LOG)
 
-#uninstall: uninstall-wheel
 uninstall:
-	$(MAKE) unlink
-	$(MAKE) uninstall-simple
-	if [[ "$$UID" != "0" ]]; then read -p "uninstall from /root/.local/...? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) uninstall-simple; fi; fi
+	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) uninstall-simple; else $(MAKE) uninstall-wheel; fi
+	if [[ "$$UID" != "0" ]]; then read -p "uninstall from root? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) uninstall-simple; fi; fi
 
 update:
 	$(MAKE) all
 	$(MAKE) test
 	$(MAKE) install
-	if [[ "$$UID" != "0" ]]; then read -p "working on pylib installation. root is going to need these tools to build and test docker images.  Install pylib into /root/.local/...? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) install; fi; fi
 
 
 # ---------- custom sub-rules for the standard targets
@@ -65,23 +62,23 @@ install-wheel:
 # But when making lots of changes, this is quicker (when it works).
 install-simple:
 	rm -rf */__pycache__ */.pytest_cache
-	mkdir -p ~/.local/lib/python3.8/site-packages ~/.local/bin
+	mkdir -p $(LOCAL_SITE_DIR) ~/.local/bin
 	# kcore
-	rm -rf ~/.local/lib/python3.8/site-packages/kcore
-	mkdir -p ~/.local/lib/python3.8/site-packages/kcore
-	cp -puv kcore/* ~/.local/lib/python3.8/site-packages/kcore
+	rm -rf $(LOCAL_SITE_DIR)/kcore
+	mkdir -p $(LOCAL_SITE_DIR)/kcore
+	cp -puv kcore/* $(LOCAL_SITE_DIR)/kcore
 	cp -puv kcore/auth.py ~/.local/bin/k_auth
 	# ktools
-	rm -rf ~/.local/lib/python3.8/site-packages/ktools
-	mkdir -p ~/.local/lib/python3.8/site-packages/ktools
-	cp -puv tools/* ~/.local/lib/python3.8/site-packages/ktools
+	rm -rf $(LOCAL_SITE_DIR)/ktools
+	mkdir -p $(LOCAL_SITE_DIR)/ktools
+	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/kmc.py ~/.local/bin/kmc
 	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
 	cp -puv tools/run_para.py ~/.local/bin/run_para
 	# home_control
-	rm -rf ~/.local/lib/python3.8/site-packages/home_control
-	mkdir -p ~/.local/lib/python3.8/site-packages/home_control
-	cp -puv home_control/* ~/.local/lib/python3.8/site-packages/home_control
+	rm -rf $(LOCAL_SITE_DIR)/home_control
+	mkdir -p $(LOCAL_SITE_DIR)/home_control
+	cp -puv home_control/* $(LOCAL_SITE_DIR)/home_control
 	cp -puv home_control/hc.py ~/.local/bin/hc
 	$(MAKE) link
 
@@ -98,17 +95,18 @@ uninstall-wheel:
 
 
 uninstall-simple:
-	rm -rf ~/.local/lib/python3.8/site-packages/kcore
-	rm -rf ~/.local/lib/python3.8/site-packages/ktools
-	rm -rf ~/.local/lib/python3.8/site-packages/home_control
+	$(MAKE) unlink
+	rm -rf $(LOCAL_SITE_DIR)/kcore
+	rm -rf $(LOCAL_SITE_DIR)/ktools
+	rm -rf $(LOCAL_SITE_DIR)/home_control
 
 
 # ---------- custom targets
 
 install-system:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
-	@if [[ "$UID" != "0"_ENV ]]; then echo "ERROR- gotta be root for this.  Use regular 'install' target for individual user installs."; exit 1; fi
-	pip3 install -U $(LAST_WHEEL)
+	@if [[ "$UID" != "0" ]]; then echo "ERROR- gotta be root for this.  Use regular 'install' target for individual user installs."; exit 1; fi
+	pip3 install --system --upgrade $(LAST_WHEEL)
 
 
 # Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
