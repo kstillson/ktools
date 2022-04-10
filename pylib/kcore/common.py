@@ -129,6 +129,14 @@ def clear_log():
 
 # ---------- So callers don't need to import logging...
 
+NEVER = logging.NEVER  # added above
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+ERROR = logging.ERROR
+WARNING = logging.WARNING
+CRITICAL = logging.CRITICAL
+ALERT = logging.CRITICAL
+
 def log_crit(msg): log(msg, level=logging.CRITICAL)
 def log_alert(msg): log(msg, level=logging.CRITICAL)
 
@@ -223,7 +231,7 @@ def read_web_noverify(url, timeout=10, get_dict=None, post_dict=None, wrap_excep
 
 def quote_plus(url):
     if PY_VER == 2: return urllib.quote_plus(url)
-    else: urllib.parse.quote_plus(url)
+    else: return urllib.parse.quote_plus(url)
 
 
 # ---------- internals

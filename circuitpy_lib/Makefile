@@ -34,5 +34,4 @@ install-hw:
 	  mkdir -p $$D/circuitpy_lib ; \
 	  install $(PYTHON_TARGETS) $$D/circuitpy_lib ; \
 	  install ../pylib/kcore/*.py $$D ; \
-	  rm $$D/webserver.py
-
+	  rm $$D/common.py $$D/webserver.py
