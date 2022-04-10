@@ -54,7 +54,7 @@ def get_special_arg(args, argname, required=True):
         varname = arg_val[1:]
         value = os.environ.get(varname)
         if not value: sys.exit(f'{argname} indicated to use environment variable {arg_val}, but variable is not set.')
-        args[argname] = value
+        args.argname = value
     else: value = arg_val
 
     if required and not value: sys.exit(f'Unable to get required value for {argname}.')
@@ -146,6 +146,7 @@ def restart_server(hostport, password):
 
 def parse_args(argv):
   ap = argparse.ArgumentParser(description=__doc__)
+  ap.add_argument('--comment', '-c', default=None, help='comment to associate with key being added (this gets encrypted)')
   ap.add_argument('--datafile', '-d', default='private.d/km.data.gpg', help='name of encrypted secrets file we are going to modify')
   ap.add_argument('--force', '-f', action='store_true', help='overwrite an existing secret with the new value')
   ap.add_argument('--password', '-p', default="-", help='password to decrypt both --datafile and --puid-db.  Default ("-") to query from stdin.  Use "$X" to read password from environment variable X, use !Y to query key-manager key Y to use as password (kinda meta, huh?)')
@@ -214,7 +215,7 @@ def main(argv=[]):
   
   if args.testkey:
       os.environ['PUID'] = 'test'
-      plaintext = KMC.generate_key_registration(keyname='testkey', key='mysecret', override_hostname='*') + '\n'
+      plaintext = KMC.generate_key_registration(keyname='testkey', key='mysecret', override_hostname='*', comment='zero value test key') + '\n'
       crypted = UC.gpg_symmetric(plaintext, password='test123', decrypt=False)
       print(crypted)
       return 0            
@@ -235,7 +236,7 @@ def main(argv=[]):
   os.environ['PUID'] = puid
   blob = KMC.generate_key_registration(
       keyname=keyname, key=secret, override_hostname=hostname,
-      username=args.username, password=args.user_password)
+      username=args.username, password=args.user_password, comment=args.comment)
 
   new_cnt = add_key_from_blob(blob, passwd, require(args, 'datafile'), args.force)
   print(f'ok: {args.datafile} now has {new_cnt} entries.')

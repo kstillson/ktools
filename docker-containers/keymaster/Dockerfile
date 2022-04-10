@@ -4,7 +4,7 @@ RUN apk upgrade -U && \
     apk add --no-cache gnupg && \
     rm -rf /var/cache/apk/*
 
-EXPOSE 4443
+EXPOSE 4444
 
 COPY files /
 

@@ -3,6 +3,10 @@
 
 TODO: more doc
 
+GUI (root.html): /
+send on-demand control:   /control/{target}[/{command}]
+
+
 TODO: add robots.txt (perhaps default handler...?)
 
 SECURITY NOTE: As currently written, this web-server has no authentication

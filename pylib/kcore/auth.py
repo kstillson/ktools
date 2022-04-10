@@ -154,7 +154,7 @@ def get_machine_private_data():
   #        chmod 444 /sys/class/dmi/id/product_uuid
   #
   fil = '/sys/class/dmi/id/product_uuid'
-  if os.stat(fil).st_mode & 0o4 > 0:
+  if os.path.isfile(fil) and os.stat(fil).st_mode & 0o4 > 0:
     puid = safe_read(fil)
     if puid: return 'v2p:dpu:' + puid
 
