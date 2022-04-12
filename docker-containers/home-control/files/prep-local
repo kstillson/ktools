@@ -6,4 +6,4 @@ GROUP_DONT_DELETE_REGEX="^(root|hc)"
 chgrp -R hc /home/hc
 
 # fix perms
-chmod go+rX /etc/passwd /etc/group /etc/init
+chmod -R go+rX /etc/passwd /etc/group /etc/init /usr/lib/python3.9/site-packages

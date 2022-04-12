@@ -35,7 +35,7 @@ def find_cert(filename):
 def query_km(keyname,
              keyname_prefix='%h-',
              override_hostname=None, username='', password='',
-             km_host_port='km:4443', km_cert='km.crt',
+             km_host_port='keys:4444', km_cert='keymaster.crt',
              timeout=5, retry_limit=None, retry_delay=5, errors_to=sys.stderr):
   '''query the keymaster for a key
 
@@ -150,8 +150,8 @@ def parse_args(argv):
   ap.add_argument('keyname', default=None, help='name of the key to retrieve/create')
 
   group1 = ap.add_argument_group('advanced', 'advanced settings for key retrival')
-  group1.add_argument('--km-host-port', default='km:4443', help='hostname:port for keymaster to contact')
-  group1.add_argument('--km_cert', default='km.crt', help='filename of cert to use for km server TLS checks, or "" to use unvalidated TLS, or "-" to use HTTP without TLS.')
+  group1.add_argument('--km-host-port', default='keys:4444', help='hostname:port for keymaster to contact')
+  group1.add_argument('--km_cert', default='keymaster.crt', help='filename of cert to use for km server TLS checks, or "" to use unvalidated TLS, or "-" to use HTTP without TLS.')
   group1.add_argument('--timeout', default=5, type=int, help='seconds for external connect timeouts')
   group1.add_argument('--retry-limit', default=None, type=int, help='how many times to retry.  Leave unset for "infinite"')
   group1.add_argument('--retry-delay', default=5, type=int, help='seconds to wait between retries')

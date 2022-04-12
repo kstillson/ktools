@@ -186,7 +186,7 @@ def km_default_handler(request):
 
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='key manager server')
-  ap.add_argument('--certkeyfile', '-k', default='server.pem', help='name of file with both server TLS key and matching certificate.  set to blank to serve http rather than https (NOT RECOMMENDED!)')
+  ap.add_argument('--certkeyfile', '-k', default='keymaster.pem', help='name of file with both server TLS key and matching certificate.  set to blank to serve http rather than https (NOT RECOMMENDED!)')
   ap.add_argument('--datafile', '-d', default='km.data.gpg', help='name of encrypted file with secrets database')
   ap.add_argument('--dont-panic', action='store_true', help='By default the server will panic (i.e. clear its decrypted secrets database) if just about anything unexpected happens, including any denied request for a key.  This flag disables that, favoring stability over pananoia.')
   ap.add_argument('--logfile', '-l', default='km.log', help='filename for operations log.  "-" for stderr, blank to disable log file')

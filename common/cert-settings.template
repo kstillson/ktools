@@ -7,7 +7,7 @@
 # For this to work, the certificate must be coded with the DNS name of the
 # keymaster service.  The field KM_HOSTNAME, below, sets that.  Hopefully
 # you'll eventually be running your own DNS service and can make this anything
-# you want.  The default below, "keymaster", is a relative name, i.e. it's not
+# you want.  The default below, "keys", is a relative name, i.e. it's not
 # followed with .something.com.  That's fine for a local network.
 
 # The following fields, SUBJECT and EMAIL, basically identify you (the
@@ -24,11 +24,10 @@
 # If you're not ready to make these kinds of decisions at the moment, feel
 # free to just leave the defaults as they are (i.e. just exit the editor to
 # continue the build process).  If you want to change these settings later,
-# edit this file (docker-containers/kcore-baseline/private.d/cert-settings),
-# delete km.crt and km.key from that directory, and rebuild all the docker
-# containers (switch to the "docker-containers" directory and "make update")
+# edit this file (private.d.d/cert-settings), delete private.d/keymaster.*,
+# and rebuild "make prep"
 
-KM_HOSTNAME="keymaster"
+KM_HOSTNAME="keys"
 
 SUBJECT="/C=US/ST=your-state/L=your-town/O=your-org-name"
 EMAIL="admin-email-address@whatever.com"

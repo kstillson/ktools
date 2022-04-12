@@ -1,8 +1,10 @@
 
 # Ignore files that are pulled in or built by manual ./Build rules.
 # The canonical copies of these are elsewhere in the git or are local secrets.
+kcore-baseline/files/usr/**
 **/files/home/hc/*
 **/files/home/km/*.gpg
+**/files/home/km/*.pem
 **/files/home/km/*.py
 **/files/home/km/server.pem
 **/files/usr/lib/python**

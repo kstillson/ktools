@@ -31,7 +31,8 @@ def main():
     ## d_lib.file_expect(cookie, cow + '/root/.bash_history')
 
     print('pass')
-    
+
+    # TODO: launch a local server and test kmc against it.
 
 if __name__ == "__main__":
   main()

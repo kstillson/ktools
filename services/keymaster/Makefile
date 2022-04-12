@@ -3,7 +3,12 @@ TEST_LOG ?= test.log
 
 # ----------
 
-all: 
+# TODO: not obvious what a good install target dir would be.
+# /usr/local/keymaster..?  probably should revisit this rather than silently
+# doing nothing...
+
+
+all:
 
 comp: 
 

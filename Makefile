@@ -1,5 +1,4 @@
 
-
 # Handy Makefile reference: https://makefiletutorial.com/
 
 TOP_TARGETS = all clean comp install test uninstall update
@@ -8,6 +7,7 @@ TOP_TARGETS = all clean comp install test uninstall update
 # remember that order matters.
 SUBDIRS ?= pylib circuitpy_lib tools-for-root services docker-infrastructure 
 
+SHELL := /bin/bash
 
 # Note: docker-containers is excluded from the list of subdirs because
 # (a) building docker images requires root privs, and folks would rightly be
@@ -22,7 +22,6 @@ SUBDIRS ?= pylib circuitpy_lib tools-for-root services docker-infrastructure
 # it will build, test, and install everything, all in the right order.
 
 
-
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
@@ -32,34 +31,51 @@ $(SUBDIRS):
 
 # ---------- special additions to common targets
 
+all:	prep
+
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
 	rm -rf home-control/__pycache__ common/prep-stamp
+	@echo "not cleaning private.d/ as can contain valuable data modified outside of make.  remove manually if you're sure."
+
 
 # ---------- everything
 
-e:	everything
+# Need to build and install pylib first, as it's used in Docker container
+# build and testing.  Then need to build and "install" (i.e. mark "live")
+# kcore-baseline before other containers, as they're build on-top of the
+# "live" kcore image.
 
-everything: prep
+everything:
 	$(MAKE) update   # all -> test -> install
 	$(MAKE) --no-print-directory -C docker-containers/kcore-baseline update
 	$(MAKE) --no-print-directory -C docker-containers update
 
+e:	everything   # simple alias for "everything"
 
-# ---------- 1-time preparation steps
+
+# ---------- 1-time preparation sequence
 
 prep:	common/prep-stamp
 
-common/prep-stamp:	docker-containers/kcore-baseline/private.d/cert-settings
-	mkdir -p services/keymaster/private.d
-	cp -n services/keymaster/tests/km-test.data.gpg services/keymaster/private.d/km.data.gpg
-	pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
+common/prep-stamp:	private.d/keymaster.pem
+	@pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
 	touch common/prep-stamp
 
-docker-containers/kcore-baseline/private.d/cert-settings:
-	mkdir -p docker-containers/kcore-baseline/private.d
-	cp -n docker-containers/kcore-baseline/cert-settings.template docker-containers/kcore-baseline/private.d/cert-settings
-	editor docker-containers/kcore-baseline/private.d/cert-settings
+private.d/keymaster.pem:   private.d/cert-settings
+	source private.d/cert-settings && \
+	  openssl req -x509 -newkey rsa:4096 -days $$DAYS \
+	    -keyout private.d/keymaster.key -out private.d/keymaster.crt -nodes \
+	    -subj "$${SUBJECT}/CN=$${KM_HOSTNAME}/emailAddress=$${EMAIL}" \
+	    -addext "subjectAltName = DNS:$${KM_HOSTNAME}"
+	cat private.d/keymaster.crt private.d/keymaster.key > private.d/keymaster.pem
+	chmod go+r private.d/keymaster.crt
+	chmod go-r private.d/keymaster.key private.d/keymaster.pem
+
+private.d/cert-settings:
+	mkdir -p private.d
+	cp -n common/cert-settings.template private.d/cert-settings
+	editor private.d/cert-settings
 
 
 # ------------------------------------------------------------
