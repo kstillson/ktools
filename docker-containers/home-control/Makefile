@@ -9,8 +9,9 @@ COPIED_FILES := $(HCH)/home_control_service.py $(HCH)/root.html \
 
 # ---------- local additions (remove files copied over by ./Build)
 
-all:	$(COPIED_FILES)
-	$(MAKE) docker-all
+all: docker-all
+
+docker-all: $(COPIED_FILES) 
 
 clean:
 	rm -rf $(COPIED_FILES)

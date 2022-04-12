@@ -12,8 +12,7 @@ COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymanager.crt \
 # For this reason, kcore-baseline ":all" runs docker-update, which will BUILD,
 # test *AND INSTALL* the baseline image.
 
-all: $(COPIED_FILES)
-	$(MAKE) docker-update
+all: $(COPIED_FILES) docker-update
 
 
 # the generic docker-build has a dep on the kcore install-stamp, but obviously
