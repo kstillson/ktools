@@ -31,6 +31,7 @@ class DictOfDataclasses(dict):
         count = 0
         for line in s.split('\n'):
             if not line or line.startswith('#'): continue
+            if not ' = ' in line: continue
             k, v_str = line.split(' = ', 1)
             self[k] = eval(v_str, {}, locals)
             count += 1
