@@ -8,9 +8,15 @@ import atexit, signal, sys, threading, time
 import kcore.varz as V
 
 
-# ---------- global stats
-
 SIMULATION = False
+try:
+    import RPi.GPIO as GPIO
+except ModuleNotFoundError:
+    simout('Unable to import RPi.GPIO; entering simulation mode.')
+    SIMULATION = True
+
+
+# ---------- global stats
 
 SIM_BUTTONS = {}  # pin -> Bool
 SIM_LEDS = {}     # pin -> Bool
@@ -23,12 +29,11 @@ def init(simulation=False):
         global SIMULATION
         SIMULATION = True
         return simout('gpio initialized in simulation mode')
-    import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BOARD)
     signal.signal(signal.SIGTERM, my_atexit)
     atexit.register(my_atexit)
 
-    
+
 def my_atexit(signum=None, frame=None):
     if not SIMULATION: GPIO.cleanup()
     sys.exit()
@@ -73,7 +78,7 @@ class KButton(object):
             callback=self._pressed, bouncetime=bounce)
 
     def __del__(self): self.disable()
-    
+
     def disable(self):
         if not SIMULATION: GPIO.remove_event_detect(self._pin)
 
@@ -89,13 +94,13 @@ class KButton(object):
     def simulate_unpress(self):
         SIM_BUTTONS[self._pin] = self._float_value
         return simout('button on pin %s unpressed (back to %s)' % (self._pin, self._float_value))
-        
+
     def value(self):
         if SIMULATION: return SIM_BUTTONS.get(self._pin, True)
         return GPIO.input(self._pin)
-    
+
     def _internal(pin): print('Button pressed: %s' % pin)
-    
+
     def _pressed(self, pin):
         if self._require_pressed:
             start_val = self.value()
