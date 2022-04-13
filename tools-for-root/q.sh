@@ -532,9 +532,10 @@ function procmon_update() {
 
 # push an update of the tools_pylib wheel distribute to select RPI's
 function push_wheel() {
+    DESTS="$@"
+    if [[ "$DESTS" == "" ]]; then DESTS="homectrl homesec1 homesec2 pi1 pibr trellis1"; fi
     SRC="/root/dev/ktools/pylib/dist/kcore_pylib-*-py3-none-any.whl"
     SRC_BASE=$(basename "$SRC")
-    DESTS="homectrl homesec1 homesec2 pi1 pibr trellis1"
     echoc cyan "copy phase"
     RUN_PARA LOCAL "$DESTS" "scp $SRC @:/tmp"
     echoc cyan "install phase"
@@ -904,7 +905,7 @@ function main() {
         procmon-rescan | pr) curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;      ## procmon re-scan and show status
         procmon-zap | homesec-reset | hr | pz) runner :>$PROCQ; echo 'procmon queue cleared.' ;;              ## clear procmon queue
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
-	push-wheel) push_wheel ;;                                         ## push update of kcore_pylib to select rpi's
+	push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
         syslog-queue-archive | queue-archive | sqa | qa) zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;  ## show full queue history
         syslog-queue-filter-ssh | queue-filter | sqf | qf) runner sed -i -e "/session opened/d" /rw/log/queue ;;  ## remove sshs from log queue
         syslog-queue-zap | queue-zap | qz) runner bash -c ":>/rw/log/queue" ;;             ## wipe the current log queue
