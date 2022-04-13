@@ -7,14 +7,14 @@ COPIED_FILES := $(HCH)/home_control_service.py $(HCH)/root.html \
    $(PLIB)/kcore/varz.py
 
 
-# ---------- local additions (remove files copied over by ./Build)
+# ---------- local custom logic
 
-all: docker-all
-
-docker-all: $(COPIED_FILES) 
+all: copy docker-all
 
 clean:
 	rm -rf $(COPIED_FILES)
+
+copy: $(COPIED_FILES) 
 
 $(HCH)/home_control_service.py: ../../services/home-control/home_control_service.py
 	cp $^ $@

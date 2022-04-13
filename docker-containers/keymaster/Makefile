@@ -6,14 +6,14 @@ COPIED_FILES := $(KMH)/km.py $(KMH)/keymaster.pem $(KMH)/km.data.gpg $(KMH)/km-t
     $(PLIB)/kcore/log_queue.py $(PLIB)/kcore/uncommon.py $(PLIB)/kcore/varz.py \
     $(PLIB)/kcore/webserver.py $(PLIB)/kcore/webserver_base.py 
 
-# ---------- local additions (remove files copied over by ./Build)
+# ---------- local custom logic
 
-all: docker-all
-
-docker-all: $(COPIED_FILES)
+all: copy docker-all
 
 clean:
 	rm -f $(COPIED_FILES)
+
+copy: $(COPIED_FILES)
 
 $(KMH)/km.py: ../../services/keymaster/km.py
 	mkdir -p $(KMH)
