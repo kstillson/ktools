@@ -106,7 +106,7 @@ uninstall-simple:
 # TODO: fix umask if necessary
 install-system:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
-	@if [[ "$UID" != "0" ]]; then echo "ERROR- gotta be root for this.  Use regular 'install' target for individual user installs."; exit 1; fi
+	@if [[ "$$UID" != "0" ]]; then echo "ERROR- gotta be root for this (uid=$$UID).  Use regular 'install' target for individual user installs."; exit 1; fi
 	pip3 install --system --upgrade $(LAST_WHEEL)
 
 
