@@ -19,6 +19,9 @@
    - tools-for-root: anything from "q" to move to private.d ?
    - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
    - make sure all python is using __doc__ friendly formatting
+   - noted bugs
+     - (pi2) :everything didn't run :prep
+     - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
    - review TODO's
    - re-confirm virgin build process
      - ? chmod 444 /sys/class/dmi/id/product_uuid 
