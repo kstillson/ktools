@@ -69,7 +69,7 @@ $(INSTALL_PLAIN_TARGETS): $(INSTALL_DIR)/%: %
 # standard targets
 
 common_clean:
-	rm -rf $(TEST_LOG) __pycache__ .pytest_cache *.pyc tests/__pycache__ tests/*.pyc
+	rm -rf $(TEST_LOG) __pycache__ .pytest_cache *.pyc tests/__pycache__ tests/*.pyc || { if [[ "$$UID" != "0" ]]; then echo "some cleaning failed; files probably created by root during sudo of previous make.  retrying clean with sudo."; sudo $(MAKE) common_clean; fi; }
 
 common_install: $(INSTALL_TARGETS)
 
