@@ -157,7 +157,7 @@ def test_varz():
     assert v['web-handler-exception'] == 1
 
 def test_context():
-    wsb = B.WebServerBase([('/', context_handler)], context={'a': 'b'}, logging_adapter=None)
+    wsb = B.WebServerBase([('/', context_handler)], context={'a': 'b'}, logging_adapter=None, wrap_handlers=False)
     assert wsb.test_handler('/').body == 'b'
 
 def test_default_handlers():

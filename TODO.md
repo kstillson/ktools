@@ -11,7 +11,6 @@
      - done: h/inst
 
 ## ++ktools tech
-   - confirm pylib wheel-based install still works
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - monitoring: generalize & publish filewatchdock, nagdock, procmon

@@ -22,7 +22,7 @@ comp:
 
 install:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
-	if [[ "$$UID" != "0" ]]; then read -p "working on pylib installation. root is going to need these tools to build and test docker images.  Install pylib for root? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) install; fi; fi
+	if [[ "$$UID" != "0" ]]; then read -p "working on pylib installation. root is going to need these tools to build and test docker images.  Install pylib for root? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo --preserve-env=BUILD_SIMPLE $(MAKE) install; fi; fi
 
 test: $(TEST_LOG)
 

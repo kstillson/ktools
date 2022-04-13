@@ -191,7 +191,7 @@ class WebServerBase(object):
             ('/flagz',        self._flagz_handler),
             ('/healthz',      lambda _: 'ok'),
             ('/logz',         lambda _: self.logger.get_logz_html()),
-            ('/varz',         self._varz_handler),
+            ('/varz',         varz_handler),
         ])
         
     def _flagz_handler(self, request):
@@ -200,12 +200,6 @@ class WebServerBase(object):
         else: return Response('no flagz data available', 503)  # 503 => "service unavailable"
         return kcore.html.dict_to_page(d, 'flagz')
 
-    def _varz_handler(self, request):
-        if '?' in request.full_path:
-            _, var = request.full_path.split('?')
-            return str(kcore.varz.get(var))
-        return kcore.html.dict_to_page(kcore.varz.VARZ, 'varz')
-        
     # returns _HandlerData or None
     def _find_handler(self, path):
         for r in self.routes:
@@ -219,6 +213,18 @@ class WebServerBase(object):
 
 
 # ---------- Other helper functions
+
+def varz_handler(request, extra_dict=None):
+    if extra_dict:
+        varz = dict(kcore.varz.VARZ)
+        varz.update(extra_dict)
+    else:
+        varz = kcore.varz.VARZ
+    if '?' in request.full_path:
+        _, var = request.full_path.split('?')
+        return str(varz.get(var))
+    return kcore.html.dict_to_page(varz, 'varz')
+
 
 REPLACEMENTS = {
     '%20': ' ',    '%22': '"',    '%28': '(',    '%29': ')',
