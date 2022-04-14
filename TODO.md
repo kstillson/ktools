@@ -1,14 +1,11 @@
 
 ## integration phase
-   - pylib to official pip repo, test install on home-control devices
-   - keymaster: key population, testing
    - rebind home-control to kcore
+     - common: rm python provided logging module; doesn't work (well) on rpi.
      - auth
-     - home-control (<- homesec)
    - other home-control client transitions
      - from above: keypads, trellis1
      - h/control:ext
-     - done: h/inst
 
 ## ++ktools tech
    - backups: generalize & publish rclonedock and rsnapshot configs
