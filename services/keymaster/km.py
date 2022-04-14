@@ -174,7 +174,7 @@ def km_default_handler(request):
         max_time_delta=ARGS.window)
     if not okay:
         return ouch('no such key or validation error',
-                    f'unsuccessful key retrieval attempt full_keyname={full_keyname} hostname={hostname} username={username} status={status}',
+                    f'unsuccessful key retrieval attempt full_keyname={full_keyname}, req_hostname={hostname}, client_addr={client_addr}, username={username}, status={status}',
                     'keyfail-hostname' if 'hostname' in status else 'keyfail-kauth')
     
     C.log(f'successful key retrieval: full_keyname={full_keyname} username={username}')

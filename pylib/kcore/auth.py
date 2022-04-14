@@ -101,8 +101,8 @@ def compare_hostnames(host1, host2):
 
   # Translate hostnmes to IP addresses and then compare those.
   try:
-    if not isdigit[host1[0]]: host1 = socket.gethostbyname(host1)
-    if not isdigit[host2[0]]: host2 = socket.gethostbyname(host2)
+    if not host1[0].isdigit(): host1 = socket.gethostbyname(host1)
+    if not host2[0].isdigit(): host2 = socket.gethostbyname(host2)
   except Exception: return False
   return host1 == host2
 
@@ -323,15 +323,15 @@ def validate_token_given_shared_secret(
     return False, 'token fails to parse', None, None, None
 
   if token_version != TOKEN_VERSION:
-    return False, 'Wrong token/protocol version.   Saw "%s", expected "%s".' % (token_version, TOKEN_VERSION), expected_hostname, username, sent_time
+    return False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', expected_hostname, username, sent_time
 
   if client_addr and expected_hostname != '*' and not compare_hostnames(expected_hostname, client_addr):
-    return False, 'Wrong hostname.  Saw "%s", expected "%s".' % (client_addr, expected_hostname), expected_hostname, username, sent_time
+    return False, f'Wrong hostname.  Saw "{client_addr}", expected "{expected_hostname}".', expected_hostname, username, sent_time
 
   if max_time_delta:
     time_delta = abs(now() - sent_time)
     if time_delta > max_time_delta:
-      return False, 'Time difference too high.  %d > %d.' % (time_delta, max_time_delta), expected_hostname, username, sent_time
+      return False, f'Time difference too high.  {time_delta} > %{max_time_delta}', expected_hostname, username, sent_time
 
   if must_be_later_than_last_check:
     keyname = key_name(expected_hostname, username)
@@ -339,11 +339,11 @@ def validate_token_given_shared_secret(
       LAST_RECEIVED_TIMES[keyname] = sent_time
     else:
       if sent_time <= LAST_RECEIVED_TIMES[keyname]:
-        return False, 'Received token is not later than a previous token: %d < %d' % (sent_time, LAST_RECEIVED_TIMES[keyname]), expected_hostname, username, sent_time
+        return False, f'Received token is not later than a previous token: {sent_time} < {LAST_RECEIVED_TIMES[keyname]}', expected_hostname, username, sent_time
 
   expect_token = generate_token_given_shared_secret(command, shared_secret, expected_hostname, username, sent_time)
   if DEBUG: print(f'DEBUG: expect_token={expect_token} expected_hostname={expected_hostname}', file=sys.stderr)
-  if token != expect_token: return False, 'Token fails to validate  Saw "%s", expected "%s".' % (token, expect_token), expected_hostname, username, sent_time
+  if token != expect_token: return False, f'Token fails to validate  Saw "{token}", expected "{expect_token}".', expected_hostname, username, sent_time
 
   return True, 'ok', expected_hostname, username, sent_time
 

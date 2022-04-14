@@ -272,5 +272,5 @@ def str_in_substring_list(haystack, list_of_needles):
 # so we're going to rely on the caller to provide parsed post params.
 def BaseHTTPRequestHandler_to_Request(b, method, post_params={}):
     return Request(method, b.path, headers=b.headers,
-                   remote_address=b.headers.get('Host'),
+                   remote_address=b.client_address[0],
                    post_params=post_params)
