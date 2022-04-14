@@ -1,5 +1,5 @@
 
-INSTALLED_SCRIPTS := hc k_auth kmc ratelimiter run_para
+INSTALLED_SCRIPTS := gpg_s hc k_auth kmc ratelimiter run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
 

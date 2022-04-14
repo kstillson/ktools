@@ -43,6 +43,8 @@ PUIDS = Puids()
 
 # ---------- helpers
 
+# TODO: impl ! prefix
+
 def get_special_arg(args, argname, required=True):
     '''Resolve - and $ special arg values. Also write resolved value back so we dont have to do it again.'''
     arg_val = getattr(args, argname)

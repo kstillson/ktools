@@ -6,12 +6,20 @@ COPIED_FILES := $(KMH)/km.py $(KMH)/keymaster.pem $(KMH)/km.data.gpg $(KMH)/km-t
     $(PLIB)/kcore/log_queue.py $(PLIB)/kcore/uncommon.py $(PLIB)/kcore/varz.py \
     $(PLIB)/kcore/webserver.py $(PLIB)/kcore/webserver_base.py 
 
+SHELL :=/bin/bash
+
 # ---------- local custom logic
 
 all: copy docker-all
 
 clean:
 	rm -f $(COPIED_FILES)
+
+update2: update         # TODO: better name...?
+	d 01 keymaster
+	read -s -p "km password for startup: " p && curl --cacert files/home/km/keymaster.pem -d "password=$p" https://keys:4444/load
+
+# ----- file copies
 
 copy: $(COPIED_FILES)
 
