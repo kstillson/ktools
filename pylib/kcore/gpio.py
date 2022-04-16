@@ -12,7 +12,7 @@ SIMULATION = False
 try:
     import RPi.GPIO as GPIO
 except ModuleNotFoundError:
-    simout('Unable to import RPi.GPIO; entering simulation mode.')
+    sys.stderr.write('Unable to import RPi.GPIO; entering simulation mode.\n')
     SIMULATION = True
 
 
@@ -44,7 +44,7 @@ def my_atexit(signum=None, frame=None):
 
 def millis(): return int(1000 * time.time())
 
-def simout(msg): print(msg, file=sys.stderr)
+def simout(msg): sys.stderr.write(msg + '\n')
 
 
 # --------------------
@@ -59,23 +59,22 @@ def input(pin):
 # Python GPIO abstraction
 
 class KButton(object):
-    def __init__(self, pin, func=None, background=False,
-                 float_high=True, detect_fall=True,
-                 bounce=1000, require_pressed=40):
+    def __init__(self, pin, func=None, background=False, normally_high=True,
+                 debounce_ms=1000, require_pressed_ms=100):
         '''Button abstraction.'''
         self._background = background
-        self._float_value = float_high
+        self._normally_high = normally_high
         self._pin = pin
         self._func = func or self._internal
-        self._require_pressed = require_pressed
+        self._require_pressed_ms = require_pressed_ms
         if SIMULATION:
-            SIM_BUTTONS[pin] = self._float_value
+            SIM_BUTTONS[pin] = self._normally_high
             return
         GPIO.setup(pin, GPIO.IN,
-            pull_up_down=GPIO.PUD_UP if self._float_value else GPIO.PUD_DOWN)
+            pull_up_down=GPIO.PUD_UP if self._normally_high else GPIO.PUD_DOWN)
         GPIO.add_event_detect(pin,
-            GPIO.FALLING if detect_fall else GPIO.RISING,
-            callback=self._pressed, bouncetime=bounce)
+            GPIO.FALLING if normally_high else GPIO.RISING,
+            callback=self._pressed, bouncetime=debounce_ms)
 
     def __del__(self): self.disable()
 
@@ -84,16 +83,16 @@ class KButton(object):
 
     def simulate_press(self, new_state=False, duration=200):
         if not SIMULATION: raise RuntimeException('cannot simulate button press when not in simulation mode.')
-        if self._float_value and new_state: return simout('button on pin %d: press high and float high => no-op' % self._pin)
-        if not self._float_value and not new_state: return simout('button on pin %d: press low and float low => no-op' % self._pin)
+        if self._normally_high and new_state: return simout('button on pin %d: press high and float high => no-op' % self._pin)
+        if not self._normally_high and not new_state: return simout('button on pin %d: press low and float low => no-op' % self._pin)
         SIM_BUTTONS[self._pin] = new_state
         threading.Timer(duration / 1000.0, self.simulate_unpress).start()
         simout('button on pin %d set %s for %d ms.' % (self._pin, new_state, duration))
         return self._pressed(self._pin)
 
     def simulate_unpress(self):
-        SIM_BUTTONS[self._pin] = self._float_value
-        return simout('button on pin %s unpressed (back to %s)' % (self._pin, self._float_value))
+        SIM_BUTTONS[self._pin] = self._normally_high
+        return simout('button on pin %s unpressed (back to %s)' % (self._pin, self._normally_high))
 
     def value(self):
         if SIMULATION: return SIM_BUTTONS.get(self._pin, True)
@@ -102,9 +101,18 @@ class KButton(object):
     def _internal(pin): print('Button pressed: %s' % pin)
 
     def _pressed(self, pin):
-        if self._require_pressed:
+        if self._background:
+            t = threading.Thread(target=self._pressed2, args=(pin,))
+            t.daemon = True
+            t.start()
+            return True
+        else:
+            return self._func(pin)
+
+    def _pressed2(self, pin):
+        if self._require_pressed_ms:
             start_val = self.value()
-            sample_time = (self._require_pressed / 1000.0) / 4.0
+            sample_time = (self._require_pressed_ms / 1000.0) / 4.0
             for sample in range(4):
                 time.sleep(sample_time)
                 if self.value() != start_val:
@@ -112,13 +120,7 @@ class KButton(object):
                     return False
         V.bump('sensor-pin-%d' % pin)
         V.stamp('sensor-pin-%d-stamp' % pin)
-        if self._background:
-            t = threading.Thread(target=self._func, args=(pin,))
-            t.daemon = True
-            t.start()
-            return True
-        else:
-            return self._func(pin)
+        return self._func(pin)
 
 
 class KLed(object):
