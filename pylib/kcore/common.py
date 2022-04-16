@@ -1,9 +1,7 @@
 '''Common Python helpers: mostly logging and a web fetcher.
 
 TODO: doc
-
 '''
-
 
 from kcore.common_base import *
 
@@ -44,7 +42,6 @@ FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_S
 
 # ---------- Internal state
 
-LOGFILE = None       # file handle
 LOG_FILENAME = None
 LOG_TITLE = ''
 LOG_INIT_DONE = False
@@ -68,7 +65,7 @@ def init_log(log_title='log', logfile='logfile',
              force_time=None):   ## force_time is for testing only.
     if clear: clear_log()
 
-    global LOGFILE, LOG_FILENAME, LOG_INIT_DONE, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
+    global LOG_FILENAME, LOG_INIT_DONE, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
     LOG_INIT_DONE = True  # Start with this so any other threads yield to this one.
     if log_title: LOG_TITLE = log_title
     if log_queue_len: Q.set_queue_len(log_queue_len)
@@ -83,13 +80,14 @@ def init_log(log_title='log', logfile='logfile',
 
     if logfile:
         try:
-            LOGFILE = open(logfile, 'a')
+            with open(logfile, 'a') as test: pass
             LOG_FILENAME = logfile
         except Exception as e:
             stderr('Error opening primary logfile %s: %s' % (logfile, e))
             try:
-                LOG_FILENAME = os.path.basename(logfile)
-                LOGFILE = open(LOG_FILENAME, 'a')
+                logfile = os.path.basename(logfile)
+                with open(logfile, 'a') as test: pass
+                LOG_FILENAME = logfile
                 stderr('successfully opened fallback local logfile: %s' % LOG_FILENAME)
             except Exception as e:
                 LOG_FILENAME = None
@@ -110,10 +108,10 @@ def log(msg, level=INFO):
     time = FORCE_TIME or datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     msg1 = '%s: %s' % (time, msg)
     msg2 = '%s: %s' % (level_name, msg1)
-    # Add to internal queue.
-    Q.log(msg, level)
     # Send to various destinations.
-    if level >= FILTER_LEVEL_LOGFILE and LOGFILE: LOGFILE.write(msg2 + '\n')
+    Q.log(msg, level)     # Add to internal queue.
+    if level >= FILTER_LEVEL_LOGFILE:
+        with open(LOG_FILENAME, 'a') as f: f.write(msg2 + '\n')
     if level >= FILTER_LEVEL_STDOUT: print(title + msg2)
     if level >= FILTER_LEVEL_STDERR: stderr(title + msg2)
     if level >= FILTER_LEVEL_SYSLOG:
