@@ -149,11 +149,11 @@ def restart_server(hostport, password):
 def parse_args(argv):
   ap = argparse.ArgumentParser(description=__doc__)
   ap.add_argument('--comment', '-c', default=None, help='comment to associate with key being added (this gets encrypted)')
-  ap.add_argument('--datafile', '-d', default='private.d/km.data.gpg', help='name of encrypted secrets file we are going to modify')
+  ap.add_argument('--datafile', '-d', default='km.data.gpg', help='name of encrypted secrets file we are going to modify')
   ap.add_argument('--force', '-f', action='store_true', help='overwrite an existing secret with the new value')
   ap.add_argument('--password', '-p', default="-", help='password to decrypt both --datafile and --puid-db.  Default ("-") to query from stdin.  Use "$X" to read password from environment variable X, use !Y to query key-manager key Y to use as password (kinda meta, huh?)')
   ap.add_argument('--puid', default='', help='skip use of --puid-pdb and just use given string as the PUID')
-  ap.add_argument('--puid-db', default='private.d/puid.data.gpg', help='name of encrypted database of machine secrets')
+  ap.add_argument('--puid-db', default='puid.data.gpg', help='name of encrypted database of machine secrets')
   ap.add_argument('--user_password', '-P', default='', help='optional password that client must present to obtain keys')
   ap.add_argument('--username', '-u', default='', help='optional username that client must present to obtain keys')
 

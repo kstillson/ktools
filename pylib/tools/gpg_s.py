@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 '''simple wrapper around gpg symmetric encrpytion'''
 
-import argparse, getpass, sys
+import argparse, getpass, os, sys
 
 import kcore.uncommon as UC
 

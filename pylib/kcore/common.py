@@ -2,15 +2,12 @@
 
 TODO: doc
 
-TODO: is the standard Python logging module buying us much?  Would removing it
-simpliy things and/or allow merging with the circuitpy_lib version..?
-
 '''
 
 
 from kcore.common_base import *
 
-import datetime, logging, os, syslog, urllib, ssl, sys
+import datetime, os, syslog, urllib, ssl, sys
 import kcore.log_queue as Q
 import kcore.varz as varz
 
@@ -22,27 +19,46 @@ else: import urllib.parse, requests
 # ----------------------------------------
 # logging abstraction
 
-logging.NEVER = 99
 
-# Internal state, and defaults if not overriden by calling init_log().
-FILTER_LEVEL_LOGFILE = logging.INFO
-FILTER_LEVEL_STDOUT = logging.NEVER
-FILTER_LEVEL_STDERR = logging.ERROR
-FILTER_LEVEL_SYSLOG = logging.CRITICAL
+# ---------- log level constants
+
+DEBUG = 10
+INFO = 20
+WARNING = 30
+ERROR = 40
+CRITICAL = 50
+ALERT = 50        # custom alias for this system
+NEVER = 99        # custom to this system
+
+LEVEL_TO_NAME = {
+    10: 'DEBUG',  20: 'INFO',  30: 'WARNING',  40: 'ERROR',  50: 'CRITICAL',  99: 'NEVER' }
+
+
+# ---------- Internal state, and defaults if not overriden by calling init_log().
+
+FILTER_LEVEL_LOGFILE = INFO
+FILTER_LEVEL_STDOUT = NEVER
+FILTER_LEVEL_STDERR = ERROR
+FILTER_LEVEL_SYSLOG = CRITICAL
 FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG)
 
-# Internal state
-LOGGER = None
+# ---------- Internal state
+
+LOGFILE = None       # file handle
 LOG_FILENAME = None
 LOG_TITLE = ''
 LOG_INIT_DONE = False
 FORCE_TIME = None
 
-SYSLOG_LEVEL_MAP = { logging.DEBUG: syslog.LOG_DEBUG, logging.INFO: syslog.LOG_INFO,
-                     logging.WARNING: syslog.LOG_WARNING, logging.ERROR: syslog.LOG_ERR,
-                     logging.CRITICAL: syslog.LOG_CRIT }
+SYSLOG_LEVEL_MAP = { DEBUG: syslog.LOG_DEBUG, INFO: syslog.LOG_INFO,
+                     WARNING: syslog.LOG_WARNING, ERROR: syslog.LOG_ERR,
+                     CRITICAL: syslog.LOG_CRIT }
 
-# ----------
+
+# ---------- business logic
+
+def getLevelName(level): return LEVEL_TO_NAME.get(level)
+
 
 def init_log(log_title='log', logfile='logfile',
              # The following use the defaults above if no param is provided.
@@ -52,7 +68,7 @@ def init_log(log_title='log', logfile='logfile',
              force_time=None):   ## force_time is for testing only.
     if clear: clear_log()
 
-    global LOGGER, LOG_INIT_DONE, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
+    global LOGFILE, LOG_FILENAME, LOG_INIT_DONE, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
     LOG_INIT_DONE = True  # Start with this so any other threads yield to this one.
     if log_title: LOG_TITLE = log_title
     if log_queue_len: Q.set_queue_len(log_queue_len)
@@ -65,36 +81,31 @@ def init_log(log_title='log', logfile='logfile',
     if filter_level_syslog: FILTER_LEVEL_SYSLOG = filter_level_syslog
     FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG)
 
-    if not logfile:
-        LOGGER = None
-        return True
-    global LOG_FILENAME
-    try:
-        LOG_FILENAME = logfile
-        logging.basicConfig(filename=LOG_FILENAME, level=filter_level_logfile, filemode='a', force=True)
-    except Exception as e:
-        stderr('Error opening primary logfile %s: %s' % (logfile, e))
+    if logfile:
         try:
-            LOG_FILENAME = os.path.basename(logfile)
-            logging.basicConfig(filename=LOG_FILENAME, level=filter_level_logfile, filemode='a', force=True)
-            stderr('successfully opened fallback local logfile: %s' % LOG_FILENAME)
+            LOGFILE = open(logfile, 'a')
+            LOG_FILENAME = logfile
         except Exception as e:
-            LOG_FILENAME = None
-            print('Also failed to open fallback logfile %s: %s.  Disabling logfile.' % (LOG_FILENAME, e))
-            return False
-    LOGGER = logging.getLogger(log_title or 'log')
-    LOGGER.setLevel(FILTER_LEVEL_LOGFILE)
+            stderr('Error opening primary logfile %s: %s' % (logfile, e))
+            try:
+                LOG_FILENAME = os.path.basename(logfile)
+                LOGFILE = open(LOG_FILENAME, 'a')
+                stderr('successfully opened fallback local logfile: %s' % LOG_FILENAME)
+            except Exception as e:
+                LOG_FILENAME = None
+                FILTER_LEVEL_STDERR = min(FILTER_LEVEL_STDERR, FILTER_LEVEL_LOGFILE)
+                stderr('Also failed to open fallback logfile %s: %s.  Disabling logfile and setting stderr level from standard log level' % (LOG_FILENAME, e))
     varz.set('log-filter-levels', 'file:%s, stdout: %s, stderr: %s, syslog%s' % (
-        logging.getLevelName(FILTER_LEVEL_LOGFILE), logging.getLevelName(FILTER_LEVEL_STDOUT),
-        logging.getLevelName(FILTER_LEVEL_STDERR), logging.getLevelName(FILTER_LEVEL_SYSLOG)))
+        getLevelName(FILTER_LEVEL_LOGFILE), getLevelName(FILTER_LEVEL_STDOUT),
+        getLevelName(FILTER_LEVEL_STDERR), getLevelName(FILTER_LEVEL_SYSLOG)))
     return True
 
 
-def log(msg, level=logging.INFO):
+def log(msg, level=INFO):
     if not LOG_INIT_DONE: init_log()
     if level < FILTER_LEVEL_MIN: return varz.bump('log-absorbed')
-    if level >= logging.ERROR: varz.bump('log-error-or-higher')
-    level_name = logging.getLevelName(level)
+    if level >= ERROR: varz.bump('log-error-or-higher')
+    level_name = getLevelName(level)
     title = '%s: ' % LOG_TITLE if LOG_TITLE else ''
     time = FORCE_TIME or datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     msg1 = '%s: %s' % (time, msg)
@@ -102,7 +113,7 @@ def log(msg, level=logging.INFO):
     # Add to internal queue.
     Q.log(msg, level)
     # Send to various destinations.
-    if level >= FILTER_LEVEL_LOGFILE and LOGGER: LOGGER.log(level, msg1)
+    if level >= FILTER_LEVEL_LOGFILE and LOGFILE: LOGFILE.write(msg2 + '\n')
     if level >= FILTER_LEVEL_STDOUT: print(title + msg2)
     if level >= FILTER_LEVEL_STDERR: stderr(title + msg2)
     if level >= FILTER_LEVEL_SYSLOG:
@@ -121,32 +132,17 @@ def clear_log():
     for key in varz.VARZ:
         if key.startswith('log-'): rm.append(key)
     for key in rm: varz.VARZ.pop(key)
-    # Remove all handlers associated with the root logger object.
-    # (needed for python2 to recover from calling basicConfig multiple times.)
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
 
 
 # ---------- So callers don't need to import logging...
 
-NEVER = logging.NEVER  # added above
-DEBUG = logging.DEBUG
-INFO = logging.INFO
-ERROR = logging.ERROR
-WARNING = logging.WARNING
-CRITICAL = logging.CRITICAL
-ALERT = logging.CRITICAL
 
-def log_crit(msg): log(msg, level=logging.CRITICAL)
-def log_alert(msg): log(msg, level=logging.CRITICAL)
-
-def log_error(msg): log(msg, level=logging.ERROR)
-
-def log_warning(msg): log(msg, level=logging.WARNING)
-
-def log_info(msg): log(msg, level=logging.INFO)
-
-def log_debug(msg): log(msg, level=logging.DEBUG)
+def log_crit(msg):    log(msg, level=CRITICAL)
+def log_alert(msg):   log(msg, level=CRITICAL)
+def log_error(msg):   log(msg, level=ERROR)
+def log_warning(msg): log(msg, level=WARNING)
+def log_info(msg):    log(msg, level=INFO)
+def log_debug(msg):   log(msg, level=DEBUG)
 
 
 # ----------
@@ -210,14 +206,14 @@ def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wra
                       timeout=timeout, verify_ssl=verify_ssl,
                       cafile=cafile, proxy_host=proxy_host)
 
-    
+
 def web_get_e(url, *args, **kwargs):
     '''Same as web_get, except will print any exceptions to stderr.'''
     resp = web_get(url, *args, **kwargs)
     if resp.exception: stderr('web_get exception: %s: %s' % (url, resp.exception))
     return resp
-    
-    
+
+
 # For a really simple interface: returns a string or None upon error.
 def read_web(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, extra_headers={}):
     return web_get(url, timeout, get_dict, post_dict, verify_ssl, wrap_exceptions).text
