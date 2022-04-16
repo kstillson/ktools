@@ -37,15 +37,16 @@ class Worker(BaseHTTPRequestHandler):
     def parse_post(self):
         if PY_VER == 2: ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
         else: ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
+        if PY_VER == 2:
+            length = int(self.headers.getheader('content-length'))
+        else:
+            length = int(self.headers.get('content-length'))
         if ctype == 'multipart/form-data':
             if PY_VER == 3:
                 pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
+                pdict['CONTENT-LENGTH'] = length   # https://bugs.python.org/issue34226 (needed for Py 3.6 on RPi)
             postvars = cgi.parse_multipart(self.rfile, pdict)
         elif ctype == 'application/x-www-form-urlencoded':
-            if PY_VER == 2:
-                length = int(self.headers.getheader('content-length'))
-            else:
-                length = int(self.headers.get('content-length'))
             postvars = parse_qs(self.rfile.read(length), keep_blank_values=1)
             if PY_VER == 2:
                 postvars = {k: v[0] for k, v in postvars.items()}
