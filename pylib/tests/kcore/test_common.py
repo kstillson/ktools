@@ -41,7 +41,7 @@ def test_logging(tmp_path):
     check_logging(lambda: C.log_error('test2'), 1, tempname,
                   expect_logfile='INFO:log:TIME: test1\nERROR:log:TIME: test2\n',
                   expect_stdout='',
-                  expect_stderr='log: ERROR: TIME: test2\n')
+                  expect_stderr='log: TIME: ERROR: test2\n')
     assert C.last_logs() == 'ERROR: TIME: test2\nINFO: TIME: test1'
 
     # Test falling to basename if can't create log in bad subdir.
@@ -61,7 +61,7 @@ def test_logging(tmp_path):
     ok = C.init_log(logfile=None, force_time='TIME', clear=True)
     assert ok
     check_logging(lambda: C.log_error('test4'), 1, None, '', expect_stdout='',
-                  expect_stderr='log: ERROR: TIME: test4\n')
+                  expect_stderr='log: TIME: ERROR: test4\n')
     assert C.last_logs() == 'ERROR: TIME: test4'
 
 

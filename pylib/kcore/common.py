@@ -104,16 +104,15 @@ def log(msg, level=INFO):
     if level < FILTER_LEVEL_MIN: return varz.bump('log-absorbed')
     if level >= ERROR: varz.bump('log-error-or-higher')
     level_name = getLevelName(level)
-    title = '%s: ' % LOG_TITLE if LOG_TITLE else ''
     time = FORCE_TIME or datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    msg1 = '%s: %s' % (time, msg)
-    msg2 = '%s: %s' % (level_name, msg1)
+    msg2 = '%s: %s: %s' % (time, level_name, msg)
+    msg3 = '%s: %s' % (LOG_TITLE, msg2)
     # Send to various destinations.
     Q.log(msg, level)     # Add to internal queue.
     if level >= FILTER_LEVEL_LOGFILE:
-        with open(LOG_FILENAME, 'a') as f: f.write(msg2 + '\n')
-    if level >= FILTER_LEVEL_STDOUT: print(title + msg2)
-    if level >= FILTER_LEVEL_STDERR: stderr(title + msg2)
+        with open(LOG_FILENAME, 'a') as f: f.write('%s:%s:%s: %s\n' % (level_name, LOG_TITLE, time, msg))
+    if level >= FILTER_LEVEL_STDOUT: print(msg3)
+    if level >= FILTER_LEVEL_STDERR: stderr(msg3)
     if level >= FILTER_LEVEL_SYSLOG:
         syslog.syslog(SYSLOG_LEVEL_MAP.get(level, syslog.LOG_INFO), msg2)
         varz.bump('log-sent-syslog')

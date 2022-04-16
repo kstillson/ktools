@@ -61,7 +61,7 @@ def input(pin):
 class KButton(object):
     def __init__(self, pin, func=None, background=False,
                  float_high=True, detect_fall=True,
-                 bounce=1000, require_pressed=50):
+                 bounce=1000, require_pressed=40):
         '''Button abstraction.'''
         self._background = background
         self._float_value = float_high
@@ -104,8 +104,8 @@ class KButton(object):
     def _pressed(self, pin):
         if self._require_pressed:
             start_val = self.value()
-            sample_time = (self._require_pressed / 1000.0) / 5.0
-            for sample in range(5):
+            sample_time = (self._require_pressed / 1000.0) / 4.0
+            for sample in range(4):
                 time.sleep(sample_time)
                 if self.value() != start_val:
                     V.bump('dropped-unsustained-pin-%s' % pin)
