@@ -533,7 +533,7 @@ function procmon_update() {
 # push an update of the tools_pylib wheel distribute to select RPI's
 function push_wheel() {
     DESTS="$@"
-    if [[ "$DESTS" == "" ]]; then DESTS="homectrl homesec1 homesec2 pi1 pibr trellis1"; fi
+    if [[ "$DESTS" == "" ]]; then DESTS="hs-mud hs-family hs-lounge pi1 pibr trellis1"; fi
     SRC="/root/dev/ktools/pylib/dist/kcore_pylib-*-py3-none-any.whl"
     SRC_BASE=$(basename "$SRC")
     echoc cyan "copy phase"
@@ -707,7 +707,7 @@ function list_linux() {
 }
 
 function list_pis() {
-    echo "homectrl homesec1 homesec2 hs-front lightning pi1 pibr pout trellis1 twinkle"
+    echo "hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"
 }
 
 function list_rsnap_hosts() {
