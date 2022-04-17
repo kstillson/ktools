@@ -86,13 +86,13 @@ def main(argv=[]):
   
   if args.logfile == '-':
     args.logfile = None
-    stderr_level = C.logging.INFO
+    stderr_level = C.INFO
   else:
-    stderr_level = C.logging.NEVER
+    stderr_level = C.NEVER
       
   C.init_log('hs server', args.logfile,
-             filter_level_logfile=C.logging.INFO, filter_level_stderr=stderr_level,
-             filter_level_syslog=C.logging.CRITICAL if args.syslog else C.logging.NEVER)
+             filter_level_logfile=C.INFO, filter_level_stderr=stderr_level,
+             filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
 
   if args.debug: HC.control('doesnt', 'matter', {'debug': True})
   

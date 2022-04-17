@@ -68,20 +68,22 @@ def query_km(keyname,
     if not verify and errors_to: print('unable to find certificate %s' % km_cert, file=errors_to)
   else: # km_cert is either '' (tls but don't verify) or None (no tls).
     verify = False
-  
-  authn_token = kcore.auth.generate_token(full_keyname, hostname, username, password)
-  if DEBUG: print(f'DEBUG: query_km token regeneration: full_keyname={full_keyname} hostname={hostname} username={username} password={password} PUID={os.environ.get("PUID")} authn_token={authn_token}', file=sys.stderr)
-  
-  protocol = 'http' if km_cert is None else 'https'
-  url = '%s://%s/%s?a=%s' % (protocol, km_host_port, full_keyname, authn_token)
-  if not verify: requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
   retry = 0
   while retry_limit is None or retry <= retry_limit:
     if retry > 0: time.sleep(retry_delay)
+
+    # token generation must occur within retry loop, as it's time dependent.    
+    authn_token = kcore.auth.generate_token(full_keyname, hostname, username, password)
+    if DEBUG: print(f'DEBUG: query_km token regeneration: full_keyname={full_keyname} hostname={hostname} username={username} password={password} PUID={os.environ.get("PUID")} authn_token={authn_token}', file=sys.stderr)
+  
+    protocol = 'http' if km_cert is None else 'https'
+    url = '%s://%s/%s?a=%s' % (protocol, km_host_port, full_keyname, authn_token)
+    if not verify: requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
     try:
       resp = requests.get(url, timeout=timeout, verify=verify)
-      if resp.status_code == 200: return resp.text
+      if resp.status_code == 200 and not resp.text.startswith('ERROR'): return resp.text
       err = 'ERROR: status %d (%s)' % (resp.status_code, resp.text)
     except Exception as e:
         err = 'ERROR: %s' % e
