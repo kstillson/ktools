@@ -84,7 +84,7 @@ PY_VER = sys.version_info[0]
 # ---------- global constants and types
 
 DEBUG = False   # WARNING- outputs lots of secrets!
-DEFAULT_MAX_TIME_DELTA = 30
+DEFAULT_MAX_TIME_DELTA = 90
 DEFAULT_DB_FILENAME = 'k_auth_db.json'
 TOKEN_VERSION = 'v2'
 
