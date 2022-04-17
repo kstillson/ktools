@@ -40,6 +40,7 @@ function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@";
 function pick_container_from_up() {
   srch=$1
   sel=$(list-up | /bin/egrep "^${srch}")
+  if [[ "$sel" == "" ]]; then echo "ERROR"; echo "no up container matching $srch" >&2; exit -1; fi
   head=$(echo "$sel" | head -1)
   if [[ "$sel" != "$head" ]]; then
     echo "selected { $sel } -> $head" | tr "\n" " " 1>&2

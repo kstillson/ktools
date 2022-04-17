@@ -537,7 +537,7 @@ function push_wheel() {
     SRC="/root/dev/ktools/pylib/dist/kcore_pylib-*-py3-none-any.whl"
     SRC_BASE=$(basename "$SRC")
     echoc cyan "copy phase"
-    RUN_PARA LOCAL "$DESTS" "scp $SRC @:/tmp"
+    RUN_PARA LOCAL "$DESTS" "scp $SRC @:/tmp" || true
     echoc cyan "install phase"
     RUN_PARA "$DESTS" "umask 022; pip3 install --system --upgrade /tmp/$SRC_BASE; rm /tmp/$SRC_BASE"
 }
