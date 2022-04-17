@@ -92,6 +92,7 @@ class Secrets(UC.DictOfDataclasses):
 
     def reset(self):
         self.clear()
+        C.log('RESET: keys cleared')
         V.bump('resets')
         V.set('loaded-keys', 0)
 
@@ -118,7 +119,7 @@ def ouch(user_msg, log_msg, varz_name):
         V.bump('panic')
         SECRETS.reset()
         C.log_alert(log_msg)
-    return W.Response(user_msg, 403)
+    return W.Response(f'ERROR: {user_msg}', 403)
 
 
 # ---------- handlers
@@ -135,6 +136,7 @@ def km_load_handler(request):
         V.bump('reloads-fails')
         return 'error'
     V.bump('reloads-ok')
+    C.log('LOADED KEYS OK- READY')
     return 'ok'
 
 
@@ -154,6 +156,7 @@ def km_root_handler(request):
 
 def km_default_handler(request):
     if not SECRETS.ready():
+        C.log('keyfail-notready')
         V.bump('keyfail-notready')
         return W.Response('not ready', 503)
     full_keyname = request.path[1:]  # trim leading /
@@ -205,13 +208,13 @@ def main(argv=[]):
 
   if args.logfile == '-':
     args.logfile = None
-    stderr_level = C.logging.INFO
+    stderr_level = C.INFO
   else:
-    stderr_level = C.logging.NEVER
+    stderr_level = C.NEVER
       
   C.init_log('km server', args.logfile,
-             filter_level_logfile=C.logging.INFO, filter_level_stderr=stderr_level,
-             filter_level_syslog=C.logging.CRITICAL if args.syslog else C.logging.NEVER)
+             filter_level_logfile=C.INFO, filter_level_stderr=stderr_level,
+             filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
   
   handlers = {
       '/healthz': km_healthz_handler,

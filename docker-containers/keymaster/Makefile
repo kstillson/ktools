@@ -15,7 +15,7 @@ all: copy docker-all
 clean:
 	rm -f $(COPIED_FILES)
 
-update2: update         # TODO: better name...?
+update2: all update         # TODO: better name...?
 	d 01 keymaster
 	read -s -p "km password for startup: " p && curl --cacert files/home/km/keymaster.pem -d "password=$p" https://keys:4444/load
 

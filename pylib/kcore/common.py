@@ -92,6 +92,7 @@ def init_log(log_title='log', logfile='logfile',
             except Exception as e:
                 LOG_FILENAME = None
                 FILTER_LEVEL_STDERR = min(FILTER_LEVEL_STDERR, FILTER_LEVEL_LOGFILE)
+                FILTER_LEVEL_LOGFILE = NEVER
                 stderr('Also failed to open fallback logfile %s: %s.  Disabling logfile and setting stderr level from standard log level' % (LOG_FILENAME, e))
     varz.set('log-filter-levels', 'file:%s, stdout: %s, stderr: %s, syslog%s' % (
         getLevelName(FILTER_LEVEL_LOGFILE), getLevelName(FILTER_LEVEL_STDOUT),
@@ -109,7 +110,7 @@ def log(msg, level=INFO):
     msg3 = '%s: %s' % (LOG_TITLE, msg2)
     # Send to various destinations.
     Q.log(msg, level)     # Add to internal queue.
-    if level >= FILTER_LEVEL_LOGFILE:
+    if level >= FILTER_LEVEL_LOGFILE and LOG_FILENAME:
         with open(LOG_FILENAME, 'a') as f: f.write('%s:%s:%s: %s\n' % (level_name, LOG_TITLE, time, msg))
     if level >= FILTER_LEVEL_STDOUT: print(msg3)
     if level >= FILTER_LEVEL_STDERR: stderr(msg3)

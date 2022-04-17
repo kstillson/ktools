@@ -329,9 +329,10 @@ def validate_token_given_shared_secret(
     return False, f'Wrong hostname.  Saw "{client_addr}", expected "{expected_hostname}".', expected_hostname, username, sent_time
 
   if max_time_delta:
-    time_delta = abs(now() - sent_time)
+    time_now = now()
+    time_delta = abs(time_now - sent_time)
     if time_delta > max_time_delta:
-      return False, f'Time difference too high.  {time_delta} > %{max_time_delta}', expected_hostname, username, sent_time
+      return False, f'Time difference too high.  sent:{sent_time} now:{time_now},  delta {time_delta} > {max_time_delta}', expected_hostname, username, sent_time
 
   if must_be_later_than_last_check:
     keyname = key_name(expected_hostname, username)
