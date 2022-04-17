@@ -5,6 +5,7 @@ simulation mode.
 '''
 
 import atexit, signal, sys, threading, time
+import kcore.common as C
 import kcore.varz as V
 
 
@@ -59,13 +60,15 @@ def input(pin):
 # Python GPIO abstraction
 
 class KButton(object):
-    def __init__(self, pin, func=None, name='?', background=False, normally_high=True,
+    def __init__(self, pin, func=None, name='?', log=False,
+                 background=False, normally_high=True,
                  debounce_ms=1000, require_pressed_ms=100):
         '''Button abstraction.'''
         self._background = background
         self._normally_high = normally_high
         self._pin = pin
         self._name = '%d(%s)' % (pin, name)
+        self._log = log
         self._func = func or self._internal
         self._require_pressed_ms = require_pressed_ms
         if SIMULATION:
@@ -76,14 +79,18 @@ class KButton(object):
         GPIO.add_event_detect(pin,
             GPIO.FALLING if normally_high else GPIO.RISING,
             callback=self._pressed, bouncetime=debounce_ms)
+        if log: C.log('set up pin %s for normally %s' % (self._name, normally_high))
 
     def __del__(self): self.disable()
 
     def disable(self):
-        if not SIMULATION: GPIO.remove_event_detect(self._pin)
+        if SIMULATION: return
+        if self._log: C.log('disabling events for pin ' + self._name)
+        GPIO.remove_event_detect(self._pin)
 
     def simulate_press(self, new_state=False, duration=200):
         if not SIMULATION: raise RuntimeException('cannot simulate button press when not in simulation mode.')
+        if self._log: C.log('simulated push on %s to state %s for %s' % (self._name, new_state, duration))
         if self._normally_high and new_state: return simout('button on pin %d: press high and float high => no-op' % self._pin)
         if not self._normally_high and not new_state: return simout('button on pin %d: press low and float low => no-op' % self._pin)
         SIM_BUTTONS[self._pin] = new_state
@@ -102,6 +109,7 @@ class KButton(object):
     def _internal(pin): print('Button pressed: %s' % pin)
 
     def _pressed(self, pin):
+        if self._log: C.log('KButton event triggered for: ' + self._name)
         if self._background:
             t = threading.Thread(target=self._pressed2, args=(pin,))
             t.daemon = True
