@@ -112,7 +112,11 @@ SECRETS = Secrets()
 
 def ouch(user_msg, log_msg, varz_name):
     if varz_name: V.bump(varz_name)
-    if ARGS.dont_panic:
+    # Time delta errors seem common; not sure why. Make them non-panic'ing for now.
+    if 'Time difference' in log_msg:
+        V.bump('keyfail-timedelta')
+        C.log_error(log_msg)
+    elif ARGS.dont_panic:
         V.bump('dont-panic')
         C.log_error(log_msg)
     else:
@@ -196,7 +200,7 @@ def parse_args(argv):
   ap.add_argument('--port', '-p', type=int, default=4444, help='port to listen on')
   ap.add_argument('--noratchet', '-R', action='store_true', help='By default each request for a key must come after the last successful request for that key; this prevents request replay attacks.  It also limits key retrievals to one-per-second (for each key).  This disables that limit, and relies just on --window to prevent replay attacks.')
   ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
-  ap.add_argument('--window', '-w', type=int, default=30, help='max seconds time difference between client key request and server receipt (i.e. max clock skew between clients and servers).  Set to 0 for "unlimited".')
+  ap.add_argument('--window', '-w', type=int, default=90, help='max seconds time difference between client key request and server receipt (i.e. max clock skew between clients and servers).  Set to 0 for "unlimited".')
   return ap.parse_args(argv)
 
 
