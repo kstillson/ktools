@@ -1,10 +1,6 @@
 
 ## integration phase
-   - rebind home-control to kcore
-     - common: rm python provided logging module; doesn't work (well) on rpi.
-     - auth
    - other home-control client transitions
-     - from above: keypads, trellis1
      - h/control:ext
 
 ## ++ktools tech
