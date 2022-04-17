@@ -81,8 +81,6 @@ class KButton(object):
             callback=self._pressed, bouncetime=debounce_ms)
         if log: C.log('set up pin %s for normally %s' % (self._name, normally_high))
 
-    def __del__(self): self.disable()
-
     def disable(self):
         if SIMULATION: return
         if self._log: C.log('disabling events for pin ' + self._name)
