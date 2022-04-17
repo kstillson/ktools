@@ -125,7 +125,7 @@ class KButton(object):
                 if self.value() != start_val:
                     V.bump('dropped-unsustained-pin-%s' % self._name)
                     return False
-        V.bump('sensor-pin-%s' % self._name)
+        V.bump('count-sensor-pin-%s' % self._name)
         V.stamp('sensor-pin-%s-stamp' % self._name)
         return self._func(pin)
 
