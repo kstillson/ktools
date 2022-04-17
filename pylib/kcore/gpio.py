@@ -61,7 +61,7 @@ def input(pin):
 
 class KButton(object):
     def __init__(self, pin, func=None, name='?', log=False,
-                 background=False, normally_high=True,
+                 background=False, normally_high=True, pull_float_high=True,
                  debounce_ms=1000, require_pressed_ms=100):
         '''Button abstraction.'''
         self._background = background
@@ -75,7 +75,7 @@ class KButton(object):
             SIM_BUTTONS[pin] = self._normally_high
             return
         GPIO.setup(pin, GPIO.IN,
-            pull_up_down=GPIO.PUD_UP if self._normally_high else GPIO.PUD_DOWN)
+            pull_up_down=GPIO.PUD_UP if pull_float_high else GPIO.PUD_DOWN)
         GPIO.add_event_detect(pin,
             GPIO.FALLING if normally_high else GPIO.RISING,
             callback=self._pressed, bouncetime=debounce_ms)
