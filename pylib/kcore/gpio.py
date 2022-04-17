@@ -59,12 +59,13 @@ def input(pin):
 # Python GPIO abstraction
 
 class KButton(object):
-    def __init__(self, pin, func=None, background=False, normally_high=True,
+    def __init__(self, pin, func=None, name='?', background=False, normally_high=True,
                  debounce_ms=1000, require_pressed_ms=100):
         '''Button abstraction.'''
         self._background = background
         self._normally_high = normally_high
         self._pin = pin
+        self._name = '%d(%s)' % (pin, name)
         self._func = func or self._internal
         self._require_pressed_ms = require_pressed_ms
         if SIMULATION:
@@ -116,10 +117,10 @@ class KButton(object):
             for sample in range(4):
                 time.sleep(sample_time)
                 if self.value() != start_val:
-                    V.bump('dropped-unsustained-pin-%s' % pin)
+                    V.bump('dropped-unsustained-pin-%s' % self._name)
                     return False
-        V.bump('sensor-pin-%d' % pin)
-        V.stamp('sensor-pin-%d-stamp' % pin)
+        V.bump('sensor-pin-%s' % self._name)
+        V.stamp('sensor-pin-%s-stamp' % self._name)
         return self._func(pin)
 
 
