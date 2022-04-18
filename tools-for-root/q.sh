@@ -533,7 +533,7 @@ function procmon_update() {
 # push an update of the tools_pylib wheel distribute to select RPI's
 function push_wheel() {
     DESTS="$@"
-    if [[ "$DESTS" == "" ]]; then DESTS="hs-mud hs-family hs-lounge pi1 pibr trellis1"; fi
+    if [[ "$DESTS" == "" ]]; then DESTS="ap2 hs-mud hs-family hs-lounge pi1 pibr trellis1"; fi
     SRC="/root/dev/ktools/pylib/dist/kcore_pylib-*-py3-none-any.whl"
     SRC_BASE=$(basename "$SRC")
     echoc cyan "copy phase"
