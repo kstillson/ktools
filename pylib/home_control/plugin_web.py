@@ -22,7 +22,7 @@ def init(settings):
 def control(plugin_name, plugin_params, device_name, command):
   if plugin_name in ['HTTP', 'WEB']: prefix = 'http://'
   elif plugin_name in ['HTTPS, WEBS']: prefix = 'https://'
-  else: return f'error: unknown plugin {plugin_name}'
+  else: return False, f'error: unknown plugin {plugin_name}'
 
   url = prefix + plugin_params
   url.replace('%d', device_name)
@@ -33,8 +33,8 @@ def control(plugin_name, plugin_params, device_name, command):
   try:
     r = requests.get(url, allow_redirects=True, timeout=SETTINGS['timeout'])
   except Exception as e:
-    return f'{plugin_name} error: {str(e)} for {url}'
+    return False, f'{plugin_name} error: {str(e)} for {url}'
   if SETTINGS['debug']: print('web request [%s] -> (%d): %s' % (url, r.status_code, r.text))
   status = 'ok' if r.status_code == 200 else 'error'
-  return f'{device_name}: {status} [{r.status_code}]: {r.text}'
+  return (status == 'ok'), f'{device_name}: {status} [{r.status_code}]: {r.text}'
   
