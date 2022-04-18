@@ -118,12 +118,11 @@ class KButton(object):
 
     def _pressed2(self, pin):
         if self._require_pressed_ms:
-            samples = 8
-            start_val = self.value()
+            samples = 5
             sample_time = (self._require_pressed_ms / 1000.0) / samples
             for sample in range(samples):
                 time.sleep(sample_time)
-                if self.value() != start_val:
+                if self.value() == self._normally_high:
                     if self._log: C.log('dropped unsustained pin %s on sample %d' % (self._name, sample))
                     V.bump('dropped-unsustained-pin-%s' % self._name)
                     return False
