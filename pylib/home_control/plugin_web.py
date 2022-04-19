@@ -36,5 +36,5 @@ def control(plugin_name, plugin_params, device_name, command):
     return False, f'{plugin_name} error: {str(e)} for {url}'
   if SETTINGS['debug']: print('web request [%s] -> (%d): %s' % (url, r.status_code, r.text))
   status = 'ok' if r.status_code == 200 else 'error'
-  return (status == 'ok'), f'{device_name}: {status} [{r.status_code}]: {r.text}'
+  return True, f'{device_name}: {status} [{r.status_code}]: {r.text}'
   
