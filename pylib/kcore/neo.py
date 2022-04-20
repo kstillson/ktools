@@ -107,13 +107,13 @@ class Neo(object):
        
         import neopixel
         if include_w:
-            order = neopixel.RGBW if reverse_led_order else neopixel.GRBW
+            order = neopixel.RGBW if reverse_rg else neopixel.GRBW
         else:
-            order = neopixel.RGB if reverse_led_order else neopixel.GRB
+            order = neopixel.RGB if reverse_rg else neopixel.GRB
         if not pin:
             import board
             pin = board.D18
-        self._strip = neopixel.NeoPixel(pin, n=n, brightness=brightness_hw, auto_write=auto_write, pixel_order=order)
+        self._strip = neopixel.NeoPixel(pin, n, brightness=brightness_hw, auto_write=auto_write, pixel_order=order)
 
         
     def get(self, index):
@@ -139,7 +139,7 @@ class Neo(object):
     @brightness.setter
     def brightness_hw(self, brightness):
         self._brightness_hw = min(max(brightness, 0.0), 1.0)
-        self.redraw()
+        if self._strip: self._strip.brightness = self._brightness_hw
 
     @brightness.setter
     def brightness_sw(self, brightness):
@@ -164,10 +164,9 @@ class Neo(object):
         for i in range(self._n): self.set(i, color)
         if not self._auto_write: self.show()
 
-    def fill_rainbow(self):
+    def fill_wheel(self):
         for i in range(self._n):
             wheel_pos = int(255.0 * i / self._n)
-            print(f'@@ {i} := {wheel(wheel_pos)}')
             self.set(i, wheel(wheel_pos))
         if not self._auto_write: self.show()
         
@@ -178,7 +177,7 @@ class Neo(object):
     # ---------- internals
     
     def _apply_brightness(self, value):
-        rgb = color_to_rgb(value)
+        rgb = value if isinstance(value, tuple) else color_to_rgb(value)
         mod = [int(element * self._brightness_sw) for element in rgb]
         return rgb_to_color(mod)
 

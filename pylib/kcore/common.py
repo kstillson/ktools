@@ -1,6 +1,10 @@
 '''Common Python helpers: mostly logging and a web fetcher.
 
 TODO: doc
+
+TODO: merge common_base and ../../circuitpy_lib/common_circpy.py so there's
+one nice central library which supports all platforms.
+
 '''
 
 from kcore.common_base import *

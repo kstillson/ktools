@@ -2,7 +2,8 @@
 import tkinter, threading, time, sys
 import circpysim_logging as L
 
-# Global controls
+# ---------- global controls
+
 LOG_LEVEL_SETUP = L.INFO
 LOG_LEVEL_SET_PIXEL = L.DEBUG
 GRAPHICS = True
@@ -10,8 +11,20 @@ GRAPHICS = True
 PIXEL_X = 15
 PIXEL_Y = 15
 
-# Global state
+# ---------- global state
+
 ROOT = None
+
+
+# ---------- constants used by callers
+
+RGB = 0
+GRB = 0
+RGBW = 0
+GRBW = 0
+
+
+# ---------- tkinter based Neopixel simulator
 
 class NeoPixel:
     def __init__(self, pin, num_pixels, **kwargs):
