@@ -1,7 +1,14 @@
 
 ## integration phase
+   - finish homectrl integrations
    - other home-control client transitions
      - h/control:ext
+   
+## circuit py evolution
+   - merge webserver, webserver_base, webserver_circpy
+   - merge common, common_base
+   - merge the rest of circuitpy_lib into pylib
+   - review kcore for incomp w/ circpy and fix or document
 
 ## ++ktools tech
    - backups: generalize & publish rclonedock and rsnapshot configs
@@ -19,31 +26,29 @@
    - re-confirm virgin build process
      - ? chmod 444 /sys/class/dmi/id/product_uuid 
    
+## General
+   - new name for ktools ?  (kcore?  Mauveine?  #8D029B)
+
 ## ++ktools prose
    - makefiles- lots of explanations and intros
    - TOC / general intro write-up
    - general wisdom: lots of writing
    - tools-for-users: doc
 
-## General
-   - new name for ktools ?  (kcore?  Mauveine?  #8D029B)
-
 ## ---------- MILESTONE: ready for peer review ...?
 
-## Prep for homectrl
+## deferred homectrl related
+   - kcore/gpio: make compat with circpy
    - tidy up pylib/k_gpio
      - https://learn.adafruit.com/cooperative-multitasking-in-circuitpython-with-asyncio?view=all
      - https://circuitpython.readthedocs.io/en/latest/shared-bindings/keypad/index.html
-   - add RPi.GPIO (i.e. buttons) to circuitpy_sim and k_gpio
+   - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio
       - graphical interface for inputs and outputs
+   - homectrl remote installation
 
-## Homectrl -> ktools
-   - move homectrl to ktools and rebind to pylib
-      - add tests based on circuitpy_sim
-   - change to Makefile based, add remote installation
+## homesec
+   - rebind to ktools
 
 ## Other
    - search for things that need to be rebound / updated to new ktools interfaces (e.g. art-projects)
 
-## homesec
-   - rebind away from django  (flask?  all the way down to ktools?)

@@ -1,5 +1,7 @@
 '''GPIO abstraction for Raspberry PI's (not Circuit Python)
 
+TODO: generalize so works in all the same modes as neo.py
+
 Requires the package "python3-rpi.gpio" to be installed, at least when not in
 simulation mode.
 '''
