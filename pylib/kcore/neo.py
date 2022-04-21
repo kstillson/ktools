@@ -1,4 +1,4 @@
-'''Neopixel wrapper that supports simulation and software brightness.
+'''Neopixel wrapper that supports simulation.
 
 This module supports 4 modes of operation:
  - Running on a Raspberry PI via the Adafruit blinka library.
@@ -31,6 +31,7 @@ GOLD = (255, 222, 30)
 GREEN = (0, 255, 0)
 JADE = (0, 255, 40)
 MAGENTA = (255, 0, 20)
+OFF = (0, 0, 0)
 ORANGE = (255, 40, 0)
 PINK = (242, 90, 255)
 PURPLE = (180, 0, 255)
@@ -93,12 +94,11 @@ class Neo(object):
 
     # ---------- general API
     
-    def __init__(self, n=1, pin=None, brightness_hw=1.0, brightness_sw=1.0,
+    def __init__(self, n=1, pin=None, brightness=1.0,
                  auto_write=True, simulation=False,
                  reverse_rg=False, include_w=False):
         self._auto_write = auto_write
-        self._brightness_hw = brightness_hw
-        self._brightness_sw = brightness_sw
+        self._brightness = brightness
         self._n = n
         self._vals = [0] * n
         if simulation:
@@ -113,7 +113,7 @@ class Neo(object):
         if not pin:
             import board
             pin = board.D18
-        self._strip = neopixel.NeoPixel(pin, n, brightness=brightness_hw, auto_write=auto_write, pixel_order=order)
+        self._strip = neopixel.NeoPixel(pin, n, brightness=brightness, auto_write=auto_write, pixel_order=order)
 
         
     def get(self, index):
@@ -124,27 +124,15 @@ class Neo(object):
         if index < 0: index += len(self)
         if index >= self._n or index < 0: raise IndexError
         self._vals[index] = value  # Raw value, without brightness applied.
-        if self._brightness_sw < 1.0: value = self._apply_brightness(value)
         if self._strip: self._strip[index] = value
 
     @property
-    def brightness(self): return self._brightness_hw * self._brightness_sw
-
-    @property
-    def brightness_hw(self): return self._brightness_hw
-
-    @property
-    def brightness_sw(self): return self._brightness_sw
+    def brightness(self): return self._brightness
 
     @brightness.setter
-    def brightness_hw(self, brightness):
-        self._brightness_hw = min(max(brightness, 0.0), 1.0)
-        if self._strip: self._strip.brightness = self._brightness_hw
-
-    @brightness.setter
-    def brightness_sw(self, brightness):
-        self._brightness_sw = min(max(brightness, 0.0), 1.0)
-        self.redraw()
+    def brightness(self, brightness):
+        self._brightness = min(max(brightness, 0.0), 1.0)
+        if self._strip: self._strip.brightness = self._brightness
 
     def redraw(self):
         for i in range(self._n): self.set(i, self._vals[i])
@@ -176,11 +164,6 @@ class Neo(object):
     
     # ---------- internals
     
-    def _apply_brightness(self, value):
-        rgb = value if isinstance(value, tuple) else color_to_rgb(value)
-        mod = [int(element * self._brightness_sw) for element in rgb]
-        return rgb_to_color(mod)
-
     def __getitem__(self, index): return self._vals[index]
 
     # basically just a wrapper around set() that supports slices.
