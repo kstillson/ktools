@@ -47,7 +47,7 @@ PIN_MAPPINGS = {
         PinMap('TXD',   14,    8),
         PinMap('gnd#2', None,  9),
         PinMap('D15',   15,    10),
-        PinMap('RX',    15     10),
+        PinMap('RX',    15,    10),
         PinMap('RXD',   15,    10),
         PinMap('D17',   17,    11),
         PinMap('D18',   18,    12),
@@ -86,7 +86,7 @@ PIN_MAPPINGS = {
         PinMap('D20',   20,    38),
         PinMap('MOSI_1',20,    38),
         PinMap('gnd#7', None,  39),
-        PinMap('D21'    21,    40),
+        PinMap('D21',   21,    40),
         PinMap('SCK_1', 21,    40),
         PinMap('SCLK_1',21,    40) ],
     }

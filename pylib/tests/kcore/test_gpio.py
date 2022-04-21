@@ -14,16 +14,16 @@ def init():
 
 PRESS_TRACKING = None
 
-def press_callback(pin):
+def press_callback(bcm_pin):
     global PRESS_TRACKING
-    PRESS_TRACKING = pin
+    PRESS_TRACKING = bcm_pin
 
 
 # ---------- tests
 
 def test_KButton(init):
     # (no point testing debounce_ms, that's done in RPi.GPIO, i.e. outside simuluation)
-    kb1 = G.KButton(pin=1, func=press_callback, background=True, debounce_ms=0, require_pressed_ms=100)
+    kb1 = G.KButton(bcm_pin=1, func=press_callback, background=True, debounce_ms=0, require_pressed_ms=100)
     assert kb1.value()   # should be floating high.
     assert G.input(1)
 
@@ -49,7 +49,7 @@ def test_KButton(init):
 
     # ----- Try a normally-low button, make sure logic reversal works.
     PRESS_TRACKING = -3
-    kb2 = G.KButton(pin=2, func=press_callback, normally_high=False, background=False, debounce_ms=0, require_pressed_ms=0)
+    kb2 = G.KButton(bcm_pin=2, func=press_callback, normally_high=False, background=False, debounce_ms=0, require_pressed_ms=0)
     assert not kb2.value()
 
     # "Press" to low; should have no effect.
