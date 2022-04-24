@@ -1,6 +1,5 @@
 
 ## integration phase
-   - finish homectrl integrations
    - other home-control client transitions
      - h/control:ext
    
