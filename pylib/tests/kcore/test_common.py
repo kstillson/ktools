@@ -29,6 +29,12 @@ def test_logging(tmp_path):
     tempname = str(tmp_path / "test.log")
     assert not os.path.isfile(tempname)
 
+    # Check log messages go to stderr if init_log() not yet called.
+    C.FORCE_TIME = 'TIME0'
+    check_logging(lambda: C.log('test0'), expect_error_count=0,
+                  logfile_name=None, expect_logfile=None,
+                  expect_stdout='', expect_stderr=': TIME0: INFO: test0\n')
+    
     # Override log queues time generation function.
     Q.get_time = lambda: 'TIME'
     
