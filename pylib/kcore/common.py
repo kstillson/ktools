@@ -97,7 +97,7 @@ def init_log(log_title='log', logfile='logfile',
                 FILTER_LEVEL_STDERR = min(FILTER_LEVEL_STDERR, FILTER_LEVEL_LOGFILE)
                 FILTER_LEVEL_LOGFILE = NEVER
                 stderr('Also failed to open fallback logfile %s: %s.  Disabling logfile and setting stderr level from standard log level' % (LOG_FILENAME, e))
-    varz.set('log-filter-levels', 'file:%s, stdout: %s, stderr: %s, syslog%s' % (
+    varz.set('log-filter-levels', 'file:%s, stdout: %s, stderr: %s, syslog: %s' % (
         getLevelName(FILTER_LEVEL_LOGFILE), getLevelName(FILTER_LEVEL_STDOUT),
         getLevelName(FILTER_LEVEL_STDERR), getLevelName(FILTER_LEVEL_SYSLOG)))
     return True
