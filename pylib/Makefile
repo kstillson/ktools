@@ -104,12 +104,12 @@ uninstall-simple:
 
 # ---------- custom targets
 
-# TODO: fix umask if necessary
 install-system:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
 	@if [[ "$$UID" != "0" ]]; then echo "ERROR- gotta be root for this (uid=$$UID).  Use regular 'install' target for individual user installs."; exit 1; fi
-	pip3 install --system --upgrade $(LAST_WHEEL)
-
+	mkdir -m 755 -p /usr/local/home_control; install home_control/* /usr/local/home_control
+	ln -s /usr/local/home_control/hc.py /usr/local/bin/hc
+	umask 022; pip3 install --system --upgrade $(LAST_WHEEL)
 
 # Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
 link:

@@ -1,13 +1,10 @@
 
-## integration phase
-   - other home-control client transitions
-     - h/control:ext
-   
 ## circuit py evolution
    - merge webserver, webserver_base, webserver_circpy
    - merge common, common_base
    - merge the rest of circuitpy_lib into pylib
    - review kcore for incomp w/ circpy and fix or document
+     - kcore/gpio: make compat with circpy
 
 ## ++ktools tech
    - backups: generalize & publish rclonedock and rsnapshot configs
@@ -18,15 +15,14 @@
    - tools-for-root: anything from "q" to move to private.d ?
    - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
    - make sure all python is using __doc__ friendly formatting
-   - noted bugs
-     - (pi2) :everything didn't run :prep
-     - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
    - review TODO's
    - re-confirm virgin build process
+     - (pi2) :everything didn't run :prep
+     - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
      - ? chmod 444 /sys/class/dmi/id/product_uuid 
    
 ## General
-   - new name for ktools ?  (kcore?  Mauveine?  #8D029B)
+   - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
 
 ## ++ktools prose
    - makefiles- lots of explanations and intros
@@ -37,7 +33,7 @@
 ## ---------- MILESTONE: ready for peer review ...?
 
 ## deferred homectrl related
-   - kcore/gpio: make compat with circpy
+     - h/control:ext -> hc.py (needs kcore in webdock, which probably means conversion to ktools-based build)
    - tidy up pylib/k_gpio
      - https://learn.adafruit.com/cooperative-multitasking-in-circuitpython-with-asyncio?view=all
      - https://circuitpython.readthedocs.io/en/latest/shared-bindings/keypad/index.html
