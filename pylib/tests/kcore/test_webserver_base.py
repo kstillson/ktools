@@ -18,7 +18,7 @@ path1_with_get = path1 + '?x1=y1&x2=y2'
 def context_handler(request):
     return request.context['a']
 
-def path1_handler(request):
+def special_path1_handler(request):
     assert request.full_path == path1_with_get
     assert request.method == 'test'
     assert len(request.get_params) == 2
@@ -60,7 +60,7 @@ def test_parse_get_params():
 
 def test_unquote_get_params():
     orig = B.CIRCUITPYTHON
-    
+
     B.CIRCUITPYTHON = False
     d = B.parse_get_params(path1 + '?x1=a%20b')
     assert len(d) == 1
@@ -72,14 +72,14 @@ def test_unquote_get_params():
     assert d['x1'] == 'a b c+d e'
 
     orig = B.CIRCUITPYTHON
-    
+
 def test_finding_handlers():
-    wsb = B.WebServerBase(paths, logging_adapter=None)
+    wsb = B.WebServerBase(paths, wrap_handlers=False, logging_adapter=None)
     assert wsb.test_handler(path1).body == '1'
     assert wsb.test_handler(path2).body == '2'
     assert wsb.test_handler(path3).body == '3'
     assert wsb.test_handler('/whatever').status_code == 404
-    
+
     resp = wsb.test_handler(path1_with_get)
     assert resp.body == '1'
     # These should have been set by default...
@@ -89,8 +89,8 @@ def test_finding_handlers():
     assert resp.exception is None
 
 def test_handler_list_changes():
-    wsb = B.WebServerBase(paths, logging_adapter=None)
-    
+    wsb = B.WebServerBase(paths, wrap_handlers=False, logging_adapter=None)
+
     # Try removing a handler.
     assert not wsb.del_handler('non-existent-route-regex')
     assert wsb.del_handler(path1)
@@ -99,20 +99,20 @@ def test_handler_list_changes():
 
     # Add a single new specific handler (that does extra checks).
     path1b = path1[1:]  # Trim leading "/" to make sure it still works.
-    wsb.add_handler(path1b, path1_handler)
+    wsb.add_handler(path1b, special_path1_handler)
     resp = wsb.test_handler(path1_with_get)
     assert str(resp) == '[200] new-handler'
 
     # Let's try adding a default handler.
     assert wsb.test_handler('/whatever').status_code == 404
-    wsb.add_handlers({'.*': lambda _: 'new-default-handler'})
+    wsb.add_handlers({None: lambda _: 'new-default-handler'})
     resp = wsb.test_handler('/whatever')
     assert resp.status_code == 200
     assert resp.body == 'new-default-handler'
 
 def test_multiple_hanlder_matches():
     # First one in the current list is supposed to take control.
-    wsb = B.WebServerBase([('/', lambda _: 'a'), ('/', lambda _: 'b')], logging_adapter=None)
+    wsb = B.WebServerBase([('/', lambda _: 'a'), ('/', lambda _: 'b')], wrap_handlers=False, logging_adapter=None)
     assert wsb.test_handler('/').body == 'a'
     assert wsb.del_handler('/')
     assert wsb.test_handler('/').body == 'b'
@@ -120,16 +120,16 @@ def test_multiple_hanlder_matches():
     assert wsb.test_handler('/').body == 'b'
     assert wsb.del_handler('/')
     assert wsb.test_handler('/').body == 'c'
-    
+
 def test_handler_wrapping():
-    wsb = B.WebServerBase([('/', unhelpful_handler)], logging_adapter=None)
+    wsb = B.WebServerBase([('/', unhelpful_handler)], wrap_handlers=True, logging_adapter=None)
     resp = wsb.test_handler('/')
     assert resp.status_code == -1
     assert str(resp.exception) == 'failed handler'
     assert resp.body == ''
 
 def test_no_handler_wrapping():
-    wsb = B.WebServerBase([('/', unhelpful_handler)], wrap_handlers=False, logging_adapter=None)
+    wsb = B.WebServerBase([('/', unhelpful_handler)], wrap_handlers=True, logging_adapter=None)
     try:
         resp = wsb.test_handler('/')
         assert 1 == 2  # That was supposed to fail.
@@ -138,7 +138,7 @@ def test_no_handler_wrapping():
 
 def test_varz():
     kcore.varz.reset()
-    wsb = B.WebServerBase(paths, varz_path_trim=4, logging_adapter=None)
+    wsb = B.WebServerBase(paths, varz_path_trim=4, wrap_handlers=True, logging_adapter=None)
     wsb.add_handler('/zap', unhelpful_handler)
     wsb.test_handler(path1_with_get)
     wsb.test_handler(path2)
@@ -160,14 +160,14 @@ def test_context():
     wsb = B.WebServerBase([('/', context_handler)], context={'a': 'b'}, logging_adapter=None, wrap_handlers=False)
     assert wsb.test_handler('/').body == 'b'
 
-def test_default_handlers():
+def test_standard_handlers():
     flags = {'flag1': 'val1', 'flag2': 'val2'}
     kcore.varz.reset()
-    wsb = B.WebServerBase([], flagz_args=flags, logging_adapter=None)
+    wsb = B.WebServerBase([], flagz_args=flags, wrap_handlers=False, logging_adapter=None)
     assert wsb.test_handler('/').status_code == 404
     assert wsb.test_handler('/favicon.ico').body == ''
     assert wsb.test_handler('/healthz').body == 'ok'
-    
+
     resp = wsb.test_handler('/flagz')
     assert resp.status_code == 200
     assert '<td>flag1</td><td>val1</td>' in resp.body
@@ -175,8 +175,17 @@ def test_default_handlers():
     assert '<td>web-path-healthz</td><td>1</td>' in wsb.test_handler('/varz').body
     assert wsb.test_handler('/varz?web-path-healthz').body == '1'
 
+def test_mixed_hanlder_types():
+    handlers = { None: lambda _: 'default' }
+    handlers.update(paths)
+    wsb = B.WebServerBase(handlers, wrap_handlers=False, logging_adapter=None)
+    assert wsb.test_handler(path1).body == '1'        # non-empty path
+    assert wsb.test_handler(path3).body == '3'        # root path
+    assert wsb.test_handler('/healthz').body == 'ok'  # standard handler
+    assert wsb.test_handler('/qq').body == 'default'  # default handler
+
 def test_match_groups():
     wsb = B.WebServerBase(
         {r'/(\w+)/(\w+)/x': lambda rqst: "%s::%s" % (rqst.route_match_groups[0], rqst.route_match_groups[1])},
-        logging_adapter=None)
+        wrap_handlers=False, logging_adapter=None)
     assert wsb.test_handler('/d1/d2/x').body == 'd1::d2'

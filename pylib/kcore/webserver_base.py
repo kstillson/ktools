@@ -76,26 +76,29 @@ class LoggingAdapter:
         self.log_general = log_general
         self.log_exceptions = log_exceptions
         self.get_logz_html = get_logz_html
-        
+
 
 class WebServerBase(object):
     # TODO: doc
-    
-    # Subtle API note: handlers added by the constructor are processed before
-    # the default handlers.  Handlers added by calls to the add_handler[s]
-    # methods are added after.  i.e., if you add a '.*' handler via the
-    # constructor, it will implicity cancel the default handlers, because your
-    # handler is always used.  conversely, if you add a '.*' handler via the
-    # methods, any paths handled by the default handlers will override yours.
-    
+
+    # TODO: allow passing port to constructor OR start method.
+
+    # Note: caller-provided handlers always take presidence over the built-in
+    # "standard" handlers, unless a handler with a route_regex of None is
+    # added, in which case it automatically becomes the "fallback" or "defaul"
+    # handler, which is always matched if nothing else matches.  If you want a
+    # default handler which overrides the standard handlers, either turn them
+    # off via use_standard_handlers=False in the constructor, or add a handler
+    # with the route ".*".
+
     def __init__(self, handlers={}, context={},
-                 wrap_handlers=True, add_default_handlers=True,
+                 wrap_handlers=True, use_standard_handlers=True,
                  varz=True, varz_path_trim=14,
                  logging_adapter=None, logging_filters=['favicon.ico'],
                  flagz_args=None):
         self.routes = []
+        self.default_handler = None
         self.add_handlers(handlers)
-        if add_default_handlers: self._add_default_handlers()
         self.context = context
         self.flagz_args = flagz_args
         self.logger = logging_adapter
@@ -104,8 +107,19 @@ class WebServerBase(object):
         self.varz_path_trim = varz_path_trim
         self.wrap_handlers = wrap_handlers
         if varz: kcore.varz.stamp('web-server-start')
+        if use_standard_handlers:
+            self.standard_handlers = {
+                '/favicon.ico':  lambda _: '',
+                '/flagz':        lambda request: self._flagz_handler(request),
+                '/healthz':      lambda _: 'ok',
+                '/logz':         lambda _: self.logger.get_logz_html(),
+                '/varz':         lambda request: varz_handler(request),
+            }
+        else: self.standard_handlers = {}
+
 
     def add_handlers(self, handlers):
+        if not handlers: return
         if isinstance(handlers, dict):
             for k, v in handlers.items(): self.add_handler(k, v)
         else:
@@ -113,15 +127,18 @@ class WebServerBase(object):
 
     @staticmethod
     def _finalize_regex(route_regex):
-        # If route doesn't matches entire path, then add that requirement.
+        # Make sure pattern matches entire path.
         if not route_regex.startswith('^'): route_regex = '^%s' % route_regex
         if not route_regex.endswith('$'): route_regex = '%s$' % route_regex
         # If route doesn't start with a leading /, add that.
-        if not route_regex.startswith('^/'): route_regex = '^/%s' % route_regex[1:]
+        if not route_regex.startswith('^/'): route_regex = '^/' + route_regex[1:]
         return route_regex
-            
+
     def add_handler(self, route_regex, func, fixup_regex=True):
-        if fixup_regex: route_regex = WebServerBase._finalize_regex(route_regex) 
+        if not route_regex:
+            self.default_handler = func
+            return
+        if fixup_regex: route_regex = WebServerBase._finalize_regex(route_regex)
         self.routes.append(_HandlerData(route_regex, func))
 
     def del_handler(self, route_regex):
@@ -130,7 +147,7 @@ class WebServerBase(object):
             if r.regex == fixed_regex:
                 self.routes.pop(i)
                 return True
-        return False                
+        return False
 
     # Takes a Request, returns a populated Response.
     def find_and_run_handler(self, request):
@@ -146,8 +163,8 @@ class WebServerBase(object):
             kcore.varz.bump('web-method-%s' % request.method)
             if self.varz_path_trim:
                 trimmed_path = request.full_path[1:(self.varz_path_trim + 1)]
-                kcore.varz.bump('web-path-%s' % trimmed_path)            
-        
+                kcore.varz.bump('web-path-%s' % trimmed_path)
+
         # Find a matching handler.
         handler_data = self._find_handler(request.path)
         if not handler_data:
@@ -171,7 +188,7 @@ class WebServerBase(object):
                 return Response(None, -1, exception=e)
         else:
             answer = handler_data.func(request)
-        
+
         if isinstance(answer, int):   answer = Response(str(answer))
         if isinstance(answer, float): answer = Response(str(answer))
         if isinstance(answer, str):   answer = Response(answer)
@@ -181,19 +198,10 @@ class WebServerBase(object):
     # Takes a path rather than a pre-built request.  Useful for testing.
     def test_handler(self, path, method='test'):
         return self.find_and_run_handler(Request(method, path))
-    
+
 
     # ---------- Internals
 
-    def _add_default_handlers(self):
-        self.add_handlers([
-            ('/favicon.ico',  lambda _: ''),
-            ('/flagz',        self._flagz_handler),
-            ('/healthz',      lambda _: 'ok'),
-            ('/logz',         lambda _: self.logger.get_logz_html()),
-            ('/varz',         varz_handler),
-        ])
-        
     def _flagz_handler(self, request):
         if isinstance(self.flagz_args, dict): d= self.flagz_args
         elif self.flagz_args: d= vars(self.flagz_args)
@@ -208,7 +216,13 @@ class WebServerBase(object):
                 sys.stderr.write('ROUTER DEBUG: path %s comp to %s => %s\n' % (path, r.compiled_regex, my_match))
             if my_match:
                 r.match_groups = my_match.groups()
-                return r            
+                return r
+        # Check for a standard handler match.
+        stnd = self.standard_handlers.get(path)
+        if stnd: return _HandlerData(path, stnd)
+        # Check for a default handler.
+        if self.default_handler: return _HandlerData(path, self.default_handler)
+        # No handler found.
         return None
 
 

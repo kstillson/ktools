@@ -221,17 +221,15 @@ def main(argv=[]):
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
   
   handlers = {
-      '/healthz': km_healthz_handler,
-      '/load': km_load_handler,
-      '/qqq': km_reset_handler,
+      '/healthz':      km_healthz_handler,
+      '/load':         km_load_handler,
+      '/qqq':          km_reset_handler,
       '/quitquitquit': km_reset_handler,
-      '/T': lambda r: str(vars(SECRETS)),
-      '/': km_root_handler,
+      '/T': lambda r:  str(vars(SECRETS)),
+      '/':             km_root_handler,
+      None:            km_default_handler,
   }
   ws = W.WebServer(handlers)
-
-  # Add default hander after constructor so it doesn't override default handlers.
-  ws.add_handler('/.*', km_default_handler)
   
   ws.start(port=args.port, background=False,
            tls_cert_file=args.certkeyfile, tls_key_file=args.certkeyfile)

@@ -24,31 +24,31 @@ else: import urllib.parse, requests
 
 # ---------- log level constants
 
-DEBUG = 10
-INFO = 20
-WARNING = 30
-ERROR = 40
-CRITICAL = 50
-ALERT = 50        # custom alias for this system
-NEVER = 99        # custom to this system
+NAME_TO_LEVEL = {
+    'ALL':   10,                                             'ALERT': 50,     # custom aliases
+    'DEBUG': 10,  'INFO': 20,  'WARNING': 30,  'ERROR': 40,  'CRITICAL': 50,  # standard levels
+    'NEVER': 99 }                                                             # custom level
 
-LEVEL_TO_NAME = {
-    10: 'DEBUG',  20: 'INFO',  30: 'WARNING',  40: 'ERROR',  50: 'CRITICAL',  99: 'NEVER' }
+LEVEL_TO_NAME = {v:k for k, v in NAME_TO_LEVEL.items()}        # standard overrides custom.
+
+# Import into module level constants, i.e.  common.INFO will now be available.
+for k, v in NAME_TO_LEVEL.items():
+    vars()[k] = v
 
 
-# ---------- Internal state, and defaults if not overriden by calling init_log().
+# ---------- Internal state
 
-FILTER_LEVEL_LOGFILE = INFO
-FILTER_LEVEL_STDOUT = NEVER
-FILTER_LEVEL_STDERR = ERROR
-FILTER_LEVEL_SYSLOG = CRITICAL
-FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG)
+# initial state set so that calls to log() will output to stderr BEFORE init_log() is called.
+FILTER_LEVEL_LOGFILE = NEVER   # default becomes INFO  once init_log() is called, if not otherwise set.
+FILTER_LEVEL_STDOUT = NEVER    # default stays   NEVER once init_log() is called, if not otherwise set.
+FILTER_LEVEL_STDERR = DEBUG    # default becomes ERROR once init_log() is called, if not otherwise set.
+FILTER_LEVEL_SYSLOG = NEVER    # default becomes CRITICAL once init_log() is called, if not otherwise set.
+FILTER_LEVEL_MIN = DEBUG
 
 # ---------- Internal state
 
 LOG_FILENAME = None
 LOG_TITLE = ''
-LOG_INIT_DONE = False
 FORCE_TIME = None
 
 SYSLOG_LEVEL_MAP = { DEBUG: syslog.LOG_DEBUG, INFO: syslog.LOG_INFO,
@@ -59,7 +59,7 @@ SYSLOG_LEVEL_MAP = { DEBUG: syslog.LOG_DEBUG, INFO: syslog.LOG_INFO,
 # ---------- business logic
 
 def getLevelName(level): return LEVEL_TO_NAME.get(level)
-
+def getLevelNumber(name): return NAME_TO_LEVEL.get(name)
 
 def init_log(log_title='log', logfile='logfile',
              # The following use the defaults above if no param is provided.
@@ -69,17 +69,16 @@ def init_log(log_title='log', logfile='logfile',
              force_time=None):   ## force_time is for testing only.
     if clear: clear_log()
 
-    global LOG_FILENAME, LOG_INIT_DONE, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
-    LOG_INIT_DONE = True  # Start with this so any other threads yield to this one.
+    global LOG_FILENAME, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
     if log_title: LOG_TITLE = log_title
     if log_queue_len: Q.set_queue_len(log_queue_len)
     if force_time: FORCE_TIME = force_time
 
     global FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG, FILTER_LEVEL_MIN
-    if filter_level_logfile: FILTER_LEVEL_LOGFILE = filter_level_logfile
-    if filter_level_stdout: FILTER_LEVEL_STDOUT = filter_level_stdout
-    if filter_level_stderr: FILTER_LEVEL_STDERR = filter_level_stderr
-    if filter_level_syslog: FILTER_LEVEL_SYSLOG = filter_level_syslog
+    FILTER_LEVEL_LOGFILE = filter_level_logfile or INFO
+    FILTER_LEVEL_STDOUT = filter_level_stdout or NEVER
+    FILTER_LEVEL_STDERR = filter_level_stderr or ERROR
+    FILTER_LEVEL_SYSLOG = filter_level_syslog or CRITICAL
     FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG)
 
     if logfile:
@@ -105,7 +104,6 @@ def init_log(log_title='log', logfile='logfile',
 
 
 def log(msg, level=INFO):
-    if not LOG_INIT_DONE: init_log()
     if level < FILTER_LEVEL_MIN: return varz.bump('log-absorbed')
     if level >= ERROR: varz.bump('log-error-or-higher')
     level_name = getLevelName(level)
@@ -126,9 +124,7 @@ def log(msg, level=INFO):
 
 def clear_log():
     if LOG_FILENAME and os.path.exists(LOG_FILENAME): os.unlink(LOG_FILENAME)
-    global LOG_INIT_DONE
     Q.clear()
-    LOG_INIT_DONE = False
     # Clean varz
     rm = []
     for key in varz.VARZ:

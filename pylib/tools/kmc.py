@@ -13,6 +13,7 @@ details are encoded into the registration.
 import argparse, os, random, requests, socket, sys, time
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import kcore.auth
+import kcore.common as C
 
 
 # ---------- global settings
@@ -36,7 +37,7 @@ def query_km(keyname,
              keyname_prefix='%h-',
              override_hostname=None, username='', password='',
              km_host_port='keys:4444', km_cert='keymaster.crt',
-             timeout=5, retry_limit=None, retry_delay=5, errors_to=sys.stderr):
+             timeout=5, retry_limit=None, retry_delay=5):
   '''query the keymaster for a key
 
   Traditionally keymaster uses full keynames prefixed by the hostname of the
@@ -65,7 +66,7 @@ def query_km(keyname,
 
   if km_cert:
     verify = find_cert(km_cert)
-    if not verify and errors_to: print('unable to find certificate %s' % km_cert, file=errors_to)
+    if not verify: C.log_error('unable to find certificate %s' % km_cert)
   else: # km_cert is either '' (tls but don't verify) or None (no tls).
     verify = False
 
@@ -87,10 +88,10 @@ def query_km(keyname,
       err = 'ERROR: status %d (%s)' % (resp.status_code, resp.text)
     except Exception as e:
         err = 'ERROR: %s' % e
-    if errors_to: print(err, file=errors_to)
+    C.log_error(err)
     retry += 1
 
-  if errors_to: print('out of retries; giving up.', file=errors_to)
+  C.log_error('out of retries; giving up.')
   return None
 
 
