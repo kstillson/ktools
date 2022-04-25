@@ -1,7 +1,7 @@
 
-import context_circuitpy_lib   # fixup Python include path
+import context_kcore   # fixup Python include path
 
-import time_queue as Q
+import kcore.time_queue as Q
 
 
 VALUE = -1

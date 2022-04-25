@@ -1,6 +1,6 @@
 '''Server for test_k_webserver
 
-By default, test_k_webserver_circpy uses webserver_circpy to launch the
+By default, test_webserver_circpy uses webserver_circpy to launch the
 webserver specified in this file, and then runs tests against that.
 
 If you want to test against a webserver running on real circuit-py
@@ -16,7 +16,7 @@ i.e. something like:
 '''
 
 import time
-import webserver_circpy as W
+import kcore.webserver_circpy as W
 
 ROUTES = {
     '/context':      lambda request: request.context.get('c'),
@@ -28,7 +28,7 @@ ROUTES = {
 
 def create_ws(port):
     ctx = {'c': 'hello'}
-    ws = W.WebServerCircPy(ROUTES, port=port, blocking=True, context=ctx)
+    ws = W.WebServer(ROUTES, port=port, blocking=True, context=ctx)
     return ws
 
 

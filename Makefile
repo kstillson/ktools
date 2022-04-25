@@ -5,7 +5,7 @@ TOP_TARGETS = all clean comp install test uninstall update
 
 # specify SUBDIRS as an environment variable for partial work.
 # remember that order matters.
-SUBDIRS ?= pylib circuitpy_lib tools-for-root services docker-infrastructure 
+SUBDIRS ?= pylib tools-for-root services docker-infrastructure 
 
 SHELL := /bin/bash
 

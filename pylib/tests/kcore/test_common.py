@@ -8,6 +8,44 @@ import kcore.uncommon as UC
 import kcore.varz as varz  ## to access varz counts in tests.
 
 
+# ---------- container helpers
+
+def test_dict_to_list_of_pairs():
+    assert C.dict_to_list_of_pairs({'b': 1, 'a': 2}) == [['a', 2], ['b', 1]]
+    assert C.dict_to_list_of_pairs({}) == []
+
+def test_list_to_csv():
+    assert C.list_to_csv([[3, 2], [2, 1, 0]]) == '3, 2\n2, 1, 0\n'
+    assert C.list_to_csv([[3, 2], [2, 1, 0]], field_sep=',') == '3,2\n2,1,0\n'
+    assert C.list_to_csv(C.dict_to_list_of_pairs({'b': 1, 'a': 2})) == 'a, 2\nb, 1\n'
+    assert C.list_to_csv([]) == ''
+
+def test_str_in_substring_list():
+    assert C.str_in_substring_list('abc123', ['b'])
+    assert C.str_in_substring_list('abc123', ['q', 'c', 'z'])
+    assert not C.str_in_substring_list('abc123', ['q', 'z'])
+    assert not C.str_in_substring_list('', ['q', 'z'])
+    assert not C.str_in_substring_list('abc123', [])
+
+# ---------- I/O
+
+def test_read_file():
+    f = 'testdata/file1'
+    assert C.read_file(f) == 'hello world \nline 2  \n   \n'
+    assert C.read_file(f, strip=True) == 'hello world \nline 2'
+    assert C.read_file(f, list_of_lines=True) == ['hello world ', 'line 2  ', '   ', '']
+    assert C.read_file(f, list_of_lines=True, strip=True) == ['hello world', 'line 2', '']
+    assert C.read_file('notfound') is None
+    try:
+        C.read_file('notfound', wrap_exceptions=False)
+        assert '' == 'exception expected!'
+    except IOError:  ## py2
+        pass
+    except FileNotFoundError:  ## py3
+        pass
+
+# ---------- logging
+
 # Helper function for test_logging..
 # NB: depends on kcore.uncommon.capture (tested separately).
 def check_logging(func_to_run, expect_error_count, logfile_name, expect_logfile,
@@ -71,12 +109,13 @@ def test_logging(tmp_path):
     assert C.last_logs() == 'ERROR: TIME: test4'
 
 
+# ---------- web get
+
 # NB: relies on the author's personal web-server.  TODO: find something better.
 def test_web_get():
     # Test standard response fields (check my wrapping didn't break anything).
     url = 'http://a1.point0.net/test.html'
     resp = C.web_get_e(url)
-    print('@@1: ' + C.dump_response(resp))
     assert resp.elapsed.microseconds > 0
     assert resp.ok
     assert 'date' in resp.headers
@@ -98,7 +137,7 @@ def test_web_get():
     assert "doesn't match" in str(resp.exception)
     assert not resp.ok
     assert not resp.status_code
-    assert str(resp) == ''
+    assert resp.text == ''
 
     # Test manually construct get params.
     assert '\na=b\n\nx=y\n\n' == C.web_get_e('https://a1.point0.net/cgi-bin/test-get?a=b&x=y').text

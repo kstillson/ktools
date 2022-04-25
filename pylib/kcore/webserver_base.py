@@ -4,7 +4,10 @@ TODO: add support for basic auth (with db file compatible with htpasswd...?)
 '''
 
 import re, os, sys
-import kcore.html, kcore.varz
+import kcore.common as C
+import kcore.html as H
+import kcore.varz as V
+
 
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
 PY_VER = sys.version_info[0]
@@ -106,7 +109,7 @@ class WebServerBase(object):
         self.varz = varz
         self.varz_path_trim = varz_path_trim
         self.wrap_handlers = wrap_handlers
-        if varz: kcore.varz.stamp('web-server-start')
+        if varz: V.stamp('web-server-start')
         if use_standard_handlers:
             self.standard_handlers = {
                 '/favicon.ico':  lambda _: '',
@@ -154,23 +157,23 @@ class WebServerBase(object):
         # Logging
         if (self.logger
             and self.logger.log_request
-            and not str_in_substring_list(request.full_path, self.logging_filters)):
+            and not C.str_in_substring_list(request.full_path, self.logging_filters)):
             # Get params can be sensitive, so log path rather than full_path.
             self.logger.log_request('%s: %s' % (request.method, request.path))
 
         # varz
         if self.varz:
-            kcore.varz.bump('web-method-%s' % request.method)
+            V.bump('web-method-%s' % request.method)
             if self.varz_path_trim:
                 trimmed_path = request.full_path[1:(self.varz_path_trim + 1)]
-                kcore.varz.bump('web-path-%s' % trimmed_path)
+                V.bump('web-path-%s' % trimmed_path)
 
         # Find a matching handler.
         handler_data = self._find_handler(request.path)
         if not handler_data:
             if self.logger and self.logger.log_404:
                 self.logger.log_404('No handler found for: %s' % request.path)
-            if self.varz: kcore.varz.bump('web-status-404')
+            if self.varz: V.bump('web-status-404')
             return Response('page not found', 404)
 
         # Finalize request instance contents.
@@ -184,7 +187,7 @@ class WebServerBase(object):
             except Exception as e:
                 if self.logger and self.logger.log_exceptions:
                     self.logger.log_exceptions('handler exception. path=%s, error=%s' % (request.path, e))
-                if self.varz: kcore.varz.bump('web-handler-exception')
+                if self.varz: V.bump('web-handler-exception')
                 return Response(None, -1, exception=e)
         else:
             answer = handler_data.func(request)
@@ -192,7 +195,7 @@ class WebServerBase(object):
         if isinstance(answer, int):   answer = Response(str(answer))
         if isinstance(answer, float): answer = Response(str(answer))
         if isinstance(answer, str):   answer = Response(answer)
-        if self.varz: kcore.varz.bump('web-status-%d' % answer.status_code)
+        if self.varz: V.bump('web-status-%d' % answer.status_code)
         return answer
 
     # Takes a path rather than a pre-built request.  Useful for testing.
@@ -206,7 +209,7 @@ class WebServerBase(object):
         if isinstance(self.flagz_args, dict): d= self.flagz_args
         elif self.flagz_args: d= vars(self.flagz_args)
         else: return Response('no flagz data available', 503)  # 503 => "service unavailable"
-        return kcore.html.dict_to_page(d, 'flagz')
+        return H.dict_to_page(d, 'flagz')
 
     # returns _HandlerData or None
     def _find_handler(self, path):
@@ -230,28 +233,16 @@ class WebServerBase(object):
 
 def varz_handler(request, extra_dict=None):
     if extra_dict:
-        varz = dict(kcore.varz.VARZ)
+        varz = dict(V.VARZ)
         varz.update(extra_dict)
     else:
-        varz = kcore.varz.VARZ
+        varz = V.VARZ
     if '?' in request.full_path:
         _, var = request.full_path.split('?')
         return str(varz.get(var))
-    return kcore.html.dict_to_page(varz, 'varz')
+    return H.dict_to_page(varz, 'varz')
 
 
-REPLACEMENTS = {
-    '%20': ' ',    '%22': '"',    '%28': '(',    '%29': ')',
-    '%2b': '+',    '%2c': ',',    '%2d': '-',    '%2e': '.',
-    '%2f': '/',    '%3a': ':',    '%3d': '=',
-    '%5b': '[',    '%5d': ']',    '%5f': '_',
-}
-def poor_mans_unquote(s):
-    s = s.replace('+', ' ')   # gotta go first...
-    for srch, repl in REPLACEMENTS.items():
-        s = s.replace(srch, repl)
-        s = s.replace(srch.upper(), repl)
-    return s
 
 
 # in: full url with get params, out: dict of get params.
@@ -263,24 +254,9 @@ def parse_get_params(full_path):
     for param in param_list:
         if '=' not in param: continue
         key, val = param.split('=')
-        if CIRCUITPYTHON:
-            # urllib not available; let's make a few basic fixes manually and hope for the best.
-            key = poor_mans_unquote(key)
-            val = poor_mans_unquote(val)
-        elif PY_VER == 2:
-            key = urllib.unquote(key)
-            val = urllib.unquote(val)
-        else:
-            key = urllib.parse.unquote(key)
-            val = urllib.parse.unquote(val)
-        params[key] = val
+        params[C.unquote_plus(key)] = C.unquote_plus(val)
     return params
 
-
-def str_in_substring_list(haystack, list_of_needles):
-    for i in list_of_needles:
-        if i in haystack: return True
-    return False
 
 # circuitpython doesn't have the cgi module, which is used to parse post params.
 # so we're going to rely on the caller to provide parsed post params.

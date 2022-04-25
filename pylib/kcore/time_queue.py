@@ -1,6 +1,4 @@
 
-import time
-
 '''Implement a queue of events to run at particular times daily.
 
 Designed to run on systems without threading or timer support.  Compatible
@@ -10,6 +8,9 @@ any events with times now in the past will fire.
 use_daymins param is mostly for testing, but can be used for any cases
 where you want to override real time.
 '''
+
+import time
+
 
 # ---------- daymins
 # "daymins" are the number of minutes into a day at which an event happens.

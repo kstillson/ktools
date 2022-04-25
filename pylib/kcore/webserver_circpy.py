@@ -9,14 +9,14 @@
    Example usage in non-blocking mode:
 
 import time
-import kcore.webserver as W
+import kcore.webserver_circpy as W
 
 def default_handler(request):
-    name = request.get_params['name'] if 'name' in request.get_params else 'world'
+    name = request.get_params['name'] or 'world'
     return f'Hello {name}!'
 
 W.connect_wifi('dhcp-hostname', 'ssid', 'wifi-password')
-svr = W.WebServer({'.*': default_handler}, 80)
+svr = W.WebServer({'.*': default_handler}, port=80)
 while True:
     status = svr.listen()
     # That was non-blocking, we can do something else between incoming requests...
@@ -26,7 +26,7 @@ while True:
 
 import io, os, re, sys
 import kcore.log_queue as Q
-import kcore.webserver_base as B
+from kcore.webserver_base import *
 
 PY_VER = sys.version_info[0]
 
@@ -35,7 +35,7 @@ PY_VER = sys.version_info[0]
 import os, sys
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
 if not CIRCUITPYTHON:
-    simpath = os.path.join(os.path.dirname(__file__), 'circuitpy_sim')
+    simpath = os.path.join(os.path.dirname(__file__), '..', 'circuitpy_sim')
     if not simpath in sys.path: sys.path.insert(0, simpath)
 # ----------
 
@@ -43,18 +43,18 @@ import socketpool, wifi
 
 MSG_DONTWAIT = 64   # from socket.MSG_DONTWAIT (so we don't have to import socket)
 
-class WebServerCircPy(B.WebServerBase):
+class WebServer(WebServerBase):
     def __init__(self, handlers={}, port=80,
                  listen_address='0.0.0.0', blocking=False, timeout=5, backlog_queue_size=3, socket=None,
                  *args, **kwargs):
 
         # Create a logging adapter that uses the low-dep system from kcore.log_queue.
-        logging_adapter = B.LoggingAdapter(
+        logging_adapter = LoggingAdapter(
             log_request=Q.log_info, log_404=Q.log_info,
             log_general=Q.log_info, log_exceptions=Q.log_error,
             get_logz_html=Q.last_logs_html)
 
-        super(WebServerCircPy, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
+        super(WebServer, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
 
         self.timeout = timeout
         if not socket:
@@ -133,7 +133,7 @@ class WebServerCircPy(B.WebServerBase):
 
         (method, full_path, version) = line.rstrip("\r\n").split(None, 2)
 
-        request = B.Request(method, full_path, remote_address=remote_address)
+        request = Request(method, full_path, remote_address=remote_address)
         request.headers = self._parse_headers(reader)
         request.body = self._parse_body(reader)
         return request

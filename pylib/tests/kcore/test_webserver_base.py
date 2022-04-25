@@ -43,13 +43,6 @@ def test_response_constructor():
     assert B.Response('<html>...').msg_type == 'text/html'
     assert B.Response('just text...').msg_type == 'text'
 
-def test_str_in_substring_list():
-    assert B.str_in_substring_list('abc123', ['b'])
-    assert B.str_in_substring_list('abc123', ['q', 'c', 'z'])
-    assert not B.str_in_substring_list('abc123', ['q', 'z'])
-    assert not B.str_in_substring_list('', ['q', 'z'])
-    assert not B.str_in_substring_list('abc123', [])
-
 def test_parse_get_params():
     d = B.parse_get_params(path1)
     assert len(d) == 0
