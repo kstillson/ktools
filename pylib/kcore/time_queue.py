@@ -12,72 +12,85 @@ where you want to override real time.
 import time
 
 
-# ---------- daymins
-# "daymins" are the number of minutes into a day at which an event happens.
-# mostly for internal use, unless you're overriding time for testing.
+# ---------- time conversions
 
-def daymins(h, m): return h * 60 + m
 
-def daymins_ts(ts): return ts.tm_hour * 60 + ts.tm_min   # Takes a struct_time
+# Theis are based on time.monotonic_ns(), which is valid for comparison to
+# itself, but does not represent absolute time (e.g. ms since the epoch).
+def now_in_ms(): return int(time.monotonic_ns() / 1000000)
 
-# ---------- TimedEvent
-# A TimedEvent instance represents an action (function and arguments) to be
-# run at a certain time each day.  Call fire() to test fire the event,
-# is_past says whether the time is past for today.
+# This is an offset of ms into a day; not absolute time.
+def hm_to_ms(h, m): return 1000 * 60 * (60 * h + m)
 
-class TimedEvent:
-    def __init__(self, time_hour, time_min, func, args=[], kwargs={}):
-        self.daymins = daymins(int(time_hour), int(time_min))
+ONE_DAY_IN_MS = hm_to_ms(24, 0)
+
+# ---------- Events
+
+# Event fires in a number of miliseconds relative to time of construcation.
+class Event:
+    def __init__(self, fire_in_ms, func, args=[], kwargs={}, repeat_after_ms=None):
+        self.fire_at_ms = now_in_ms() + fire_in_ms
         self.func = func
         self.args = args
         self.kwargs = kwargs
-
+        self.repeat_after_ms = repeat_after_ms
+        
     def fire(self): return self.func(*self.args, **self.kwargs)
 
-    # Note: returns true if event is in the past (or is right now) for today.
-    # use_daymins overrides current real time (mostly for testing).
-    def is_past(self, use_daymins=None):
-        now = use_daymins or daymins_ts(time.localtime())
-        return now >= self.daymins
+    def __str__(self):
+        return 'ms=%d, rep=%s, args=%s, kwargs=%s' % (
+            self.fire_at_ms, self.repeat_after_ms, self.args, self.kwargs)
+
+    
+# TimedEvent's fire at a given hour/min of the day, repeating daily.
+class TimedEvent(Event):
+    def __init__(self, time_hour, time_min, func, args=[], kwargs={}, force_now_ms=None):
+        # Compute hour/min offset into a day, in ms
+        wanted_ms = hm_to_ms(time_hour, time_min)
+        # And find the offset into today's current time, again in ms.
+        now_ts = time.localtime()
+        now_ms = force_now_ms or hm_to_ms(now_ts.tm_hour, now_ts.tm_min)
+        # If event time for today has already passed, bump it to tomorrow.
+        if now_ms > wanted_ms:
+            wanted_ms += ONE_DAY_IN_MS
+            print(f'@add day wrapped {wanted_ms=}')
+        #
+        self.fire_at_ms = wanted_ms
+        print(f'@add {time_hour=} {time_min=} {wanted_ms=} {now_ms=} so {self.fire_at_ms=}')
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.repeat_after_ms = ONE_DAY_IN_MS
 
 
 # ---------- TimeQueue
-# Pass a list of TimedEvents, and occasionally call check().
+
+# Pass a list of Events, and then occasionally call check().
 # This will fire any events whose time has passed since the last call, and
 # returns the number of events that ran.
-#
-# use_daymins overrides real time (mostly for testing).  The constructor
-# needs this so it can figure out which event is "next" (i.e. events whose
-# time that day has already passed at time of construction are skipped).
 
 class TimeQueue:
-    def __init__(self, list_of_timed_events, use_daymins=None):
-        self.queue = sorted(list_of_timed_events, key=lambda i: i.daymins)
-        now = use_daymins or daymins_ts(time.localtime())
-        self.last_check = now
-        self.next_event_index = len(self.queue)  # Default to 1 beyond valid index, in-case all events have passed.
-        for i, event in enumerate(self.queue):
-            if not self.queue[i].is_past(now):
-                self.next_event_index = i
-                break
+    def __init__(self, list_of_events):
+        self.queue = list_of_events
 
-    def check(self, use_daymins=None):
+    def add_event(self, event):
+        self.queue.append(event)
+        
+    def check(self, use_ms_time=None):
+        now_ms = use_ms_time or now_in_ms()
+        print(f'@@ now_ms: {now_ms}')
         fired = 0
-        now = use_daymins or daymins_ts(time.localtime())
-        if now < self.last_check:
-            # We've wrapped to the next day. Empty any left-over queue.
-            while self.next_event_index < len(self.queue):
-                self.queue[self.next_event_index].fire()
+        rm_events = []
+        for i, e in enumerate(self.queue):
+            if e.fire_at_ms <= now_ms:
+                print(f'@@ firing: {e}')
+                e.fire()
                 fired += 1
-                self.next_event_index += 1
-            self.next_event_index = 0
-        self.last_check = now
-        if self.next_event_index >= len(self.queue):
-            return fired                       # Nothing more until tomorrow.
-        while self.queue[self.next_event_index].is_past(now):
-            self.queue[self.next_event_index].fire()
-            fired += 1
-            self.next_event_index += 1
-            if self.next_event_index >= len(self.queue):
-                break
+                if e.repeat_after_ms:
+                    e.fire_at_ms += e.repeat_after_ms
+                else:
+                    rm_events.append(i)
+            else:
+                print(f'@@ not firing: {e}')
+        for i in reversed(rm_events): self.queue.pop(i)
         return fired
