@@ -31,7 +31,7 @@ def reset(reset_value_to=-1):
     ADD_DAYS = 0
     LAST_HOUR = None
     VALUE = reset_value_to
-    
+
 
 # ---------- tests
 
@@ -71,6 +71,12 @@ def test_TimedEvents_against_mocked_time():
         Q.TimedEvent(1, 0,   setter, [100], force_now_ms=start_ms),
         Q.TimedEvent(23, 59, setter, [2359], force_now_ms=start_ms)])
 
+    # Confirm sort order.
+    last = 0
+    for e in tq.queue:
+        assert e.fire_at_ms > last
+        last = e.fire_at_ms
+
     # Let's call before 02:00 and confirm nothing changes.
     # The 1:00 event should have wrapped until tomorrow.
     assert tq.check(hm_to_ms_wrap(1, 31)) == 0
@@ -103,7 +109,7 @@ def test_TimedEvents_against_mocked_time():
 
 def test_empty_queue():
     reset(-9)
-    tq = Q.TimeQueue([])
+    tq = Q.TimeQueue()
     assert tq.check(hm_to_ms_wrap(1, 31)) == 0
     assert tq.check(hm_to_ms_wrap(23, 59)) == 0
     assert tq.check(hm_to_ms_wrap(4, 0)) == 0
@@ -111,7 +117,7 @@ def test_empty_queue():
 def test_only_one_event_and_it_is_passed():
     reset(-2)
     start_ms = Q.hm_to_ms(2, 30)  # event [200] should push to tomorrow.
-    
+
     global VALUE
     tq = Q.TimeQueue([
         Q.TimedEvent(2, 0,   setter, [200], force_now_ms=start_ms)])

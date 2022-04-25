@@ -34,14 +34,14 @@ class Event:
         self.args = args
         self.kwargs = kwargs
         self.repeat_after_ms = repeat_after_ms
-        
+
     def fire(self): return self.func(*self.args, **self.kwargs)
 
     def __str__(self):
         return 'ms=%d, rep=%s, args=%s, kwargs=%s' % (
             self.fire_at_ms, self.repeat_after_ms, self.args, self.kwargs)
 
-    
+
 # TimedEvent's fire at a given hour/min of the day, repeating daily.
 class TimedEvent(Event):
     def __init__(self, time_hour, time_min, func, args=[], kwargs={}, force_now_ms=None):
@@ -53,10 +53,8 @@ class TimedEvent(Event):
         # If event time for today has already passed, bump it to tomorrow.
         if now_ms > wanted_ms:
             wanted_ms += ONE_DAY_IN_MS
-            print(f'@add day wrapped {wanted_ms=}')
         #
         self.fire_at_ms = wanted_ms
-        print(f'@add {time_hour=} {time_min=} {wanted_ms=} {now_ms=} so {self.fire_at_ms=}')
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -70,20 +68,21 @@ class TimedEvent(Event):
 # returns the number of events that ran.
 
 class TimeQueue:
-    def __init__(self, list_of_events):
-        self.queue = list_of_events
+    def __init__(self, list_of_events=[]):
+        self.queue = []
+        self.queue.extend(list_of_events)
+        self.queue.sort(key=lambda x: x.fire_at_ms)
 
     def add_event(self, event):
         self.queue.append(event)
-        
+        self.queue.sort(key=lambda x: x.fire_at_ms)
+
     def check(self, use_ms_time=None):
         now_ms = use_ms_time or now_in_ms()
-        print(f'@@ now_ms: {now_ms}')
         fired = 0
         rm_events = []
         for i, e in enumerate(self.queue):
             if e.fire_at_ms <= now_ms:
-                print(f'@@ firing: {e}')
                 e.fire()
                 fired += 1
                 if e.repeat_after_ms:
@@ -91,6 +90,7 @@ class TimeQueue:
                 else:
                     rm_events.append(i)
             else:
-                print(f'@@ not firing: {e}')
+                break  # sorted
         for i in reversed(rm_events): self.queue.pop(i)
+        self.queue.sort(key=lambda x: x.fire_at_ms)
         return fired
