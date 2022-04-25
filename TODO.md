@@ -1,8 +1,5 @@
 
 ## circuit py evolution
-   - merge webserver, webserver_base, webserver_circpy
-   - merge common, common_base
-   - merge the rest of circuitpy_lib into pylib
    - review kcore for incomp w/ circpy and fix or document
      - kcore/gpio: make compat with circpy
 
