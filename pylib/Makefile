@@ -6,13 +6,15 @@ TEST_LOG ?= test.log
 LAST_WHEEL = $(shell ls -t1 dist/*.whl | tail -1)
 LOCAL_SITE_DIR ?= $(shell python3 -m site --user-site)
 
+CIRCUITPY_DIR = /media/$$USER/CIRCUITPY
+
 # ---------- standard targets
 
 all:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
 
 clean:
-	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache dist *.egg-info
+	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info
 	@echo "note: not cleaning the venv directory.  use make target 'vclean' or remove manually if needed."
 
 comp:
@@ -117,6 +119,12 @@ link:
 
 unlink:
 	for x in $(INSTALLED_SCRIPTS); do rm -f ~/bin/$$x; done
+
+install-circuitpy:
+	@if [[ ! -d $(CIRCUITPY_DIR)/lib ]]; then echo "ERROR- cannot find $(CIRCUITPY_DIR)/lib"; exit 1; fi
+	mkdir -p $(CIRCUITPY_DIR)/lib/kcore
+	FILES="$(shell ls -1 kcore/*.py | egrep -v '__init__|docker_lib|uncommon|webserver\.py')" && install -b $$FILES $(CIRCUITPY_DIR)/lib/kcore
+	install -b tests/kcore/circuitpy-testsuite.py $(CIRCUITPY_DIR)
 
 
 # ---------- virtual environment support

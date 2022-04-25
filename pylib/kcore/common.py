@@ -4,7 +4,7 @@ TODO: doc
 
 '''
 
-import datetime, os, ssl, sys
+import os, ssl, sys, time
 import kcore.log_queue as Q
 import kcore.varz as varz
 
@@ -89,7 +89,7 @@ LEVEL_TO_NAME = {v:k for k, v in NAME_TO_LEVEL.items()}        # standard overri
 
 # Import into module level constants, i.e.  common.INFO will now be available.
 for k, v in NAME_TO_LEVEL.items():
-    vars()[k] = v
+    globals()[k] = v
 
 
 # ---------- Internal state
@@ -164,7 +164,7 @@ def log(msg, level=INFO):
     if level < FILTER_LEVEL_MIN: return varz.bump('log-absorbed')
     if level >= ERROR: varz.bump('log-error-or-higher')
     level_name = getLevelName(level)
-    time = FORCE_TIME or datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    time = FORCE_TIME or timestr()
     msg2 = '%s: %s: %s' % (time, level_name, msg)
     msg3 = '%s: %s' % (LOG_TITLE, msg2)
     # Send to various destinations.
@@ -189,6 +189,12 @@ def clear_log():
     for key in rm: varz.VARZ.pop(key)
 
 
+# Circuit Python doesn't have datetime, so here's our poor-man's-strftime
+def timestr():
+    now = time.localtime()
+    return '%d-%d-%d %d:%d:%d' % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
+    
+    
 # ---------- So callers don't need to import logging...
 
 
@@ -330,10 +336,10 @@ def _read_web2(url, get_dict=None, post_dict=None, timeout=5, verify_ssl=True, c
     req = urllib2.Request(url, urlencode(post_dict) if post_dict else None, headers=extra_headers)
     if proxy_host:
         req.set_proxy(proxy_host, 'https' if 'https' in url else 'http')
-    start_time = datetime.datetime.now()
+    start_time = time.time()
     res = urllib2.urlopen(req, timeout=timeout, context=ssl_ctx)
     resp = FakeResponse()
-    resp.elapsed = datetime.datetime.now() - start_time
+    resp.elapsed = time.time() - start_time
     resp.exception = None
     resp.ok = True
     resp.headers = res.headers.dict
