@@ -14,7 +14,7 @@ all:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
 
 clean:
-	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info
+	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
 	@echo "note: not cleaning the venv directory.  use make target 'vclean' or remove manually if needed."
 
 comp:
@@ -44,12 +44,14 @@ update:
 
 all-simple:   # nothing to do.
 
-all-wheel: dist/build-touch
+all-wheel: tools/keymaster.crt dist/build-touch
+
+tools/keymaster.crt: ../private.d/keymaster.crt
+	cp -bpuv $^ $@
 
 dist/build-touch: $(wildcard */*.py) venv/bin/activate
 	source venv/bin/activate && python3 -m build
 	touch dist/build-touch
-
 
 # ----- :install
 

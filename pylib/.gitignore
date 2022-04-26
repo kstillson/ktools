@@ -1,3 +1,4 @@
 dist/
 kcore_pylib.egg-info/
+tools/keymaster.crt
 venv/
