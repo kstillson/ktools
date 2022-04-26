@@ -67,6 +67,15 @@ install-wheel:
 install-simple:
 	rm -rf */__pycache__ */.pytest_cache
 	mkdir -p $(LOCAL_SITE_DIR) ~/.local/bin
+	# circuitpy_sim
+	rm -rf $(LOCAL_SITE_DIR)/circuitpy_sim
+	mkdir -p $(LOCAL_SITE_DIR)/circuitpy_sim
+	cp -r -puv circuitpy_sim/* $(LOCAL_SITE_DIR)/circuitpy_sim
+	# home_control
+	rm -rf $(LOCAL_SITE_DIR)/home_control
+	mkdir -p $(LOCAL_SITE_DIR)/home_control
+	cp -puv home_control/* $(LOCAL_SITE_DIR)/home_control
+	cp -puv home_control/hc.py ~/.local/bin/hc
 	# kcore
 	rm -rf $(LOCAL_SITE_DIR)/kcore
 	mkdir -p $(LOCAL_SITE_DIR)/kcore
@@ -80,11 +89,7 @@ install-simple:
 	cp -puv tools/kmc.py ~/.local/bin/kmc
 	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
 	cp -puv tools/run_para.py ~/.local/bin/run_para
-	# home_control
-	rm -rf $(LOCAL_SITE_DIR)/home_control
-	mkdir -p $(LOCAL_SITE_DIR)/home_control
-	cp -puv home_control/* $(LOCAL_SITE_DIR)/home_control
-	cp -puv home_control/hc.py ~/.local/bin/hc
+	#
 	$(MAKE) link
 
 

@@ -1,12 +1,19 @@
 
-import tkinter, threading, time, sys
+import threading, time, sys
 import circpysim_logging as L
+
+GRAPHICS = True
+try:
+    import tkinter
+except:
+    sys.stderr.write('Unable to import tkinter; disabling Neopixel graphical simulation')
+    GRAPHICS = False
+
 
 # ---------- global controls
 
 LOG_LEVEL_SETUP = L.INFO
 LOG_LEVEL_SET_PIXEL = L.DEBUG
-GRAPHICS = True
 
 PIXEL_X = 15
 PIXEL_Y = 15

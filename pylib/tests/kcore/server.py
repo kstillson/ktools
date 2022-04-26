@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 '''Server for test_k_webserver
 
 By default, test_webserver_circpy uses webserver_circpy to launch the
@@ -19,7 +20,7 @@ Python subset on a real circuit-python board.
 
 '''
 
-import time
+import os, sys, time
 import kcore.webserver_circpy as W
 
 import kcore.common as C
@@ -30,6 +31,9 @@ import kcore.varz as V
 
 # circuitpy_sim
 import board
+
+CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
+
 
 # ---------- handlers
 
@@ -73,7 +77,8 @@ def vset(request):
 # ---------- main
 
 def create_ws(port):
-    kb1 = G.KButton(board.D0, name='D0', background=False)
+    G.init()
+    kb1 = G.KButton(board.D0, name='D0', background=not CIRCUITPYTHON)
     neo = N.Neo(n=1, pin=board.NEOPIXEL)
     ctx = {'c': 'hello', 'kb1': kb1, 'neo': neo}
     ws = W.WebServer(WEB_HANDLERS, wrap_handlers=False, port=port, blocking=True, context=ctx)
@@ -83,11 +88,14 @@ def create_ws(port):
 # This part only runsif this file is main.py on real CircuitPy hardware.
 # (when running locally, the test calls create_ws() direclty.
 def main():
-    print(f'{time.time()}: connecting to wifi...')
-    import wifi_secrets as S
-    W.connect_wifi(S.DHCP_HOSTNAME, S.SSID, S.WIFI_PASSWORD)
+    try:
+        import wifi_secrets as S
+        print(f'{time.time()}: connecting to wifi...')
+        W.connect_wifi(S.DHCP_HOSTNAME, S.SSID, S.WIFI_PASSWORD)
+    except Exception as e:
+        print('Unable to connect to wifi; skipping: ' + str(e), file=sys.stderr)
     
-    ws = create_ws(80)
+    ws = create_ws(port=8080)
     print(f'{time.time()}: starting web server')
     while True:
         status = ws.listen()
