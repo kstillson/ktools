@@ -87,13 +87,13 @@ def simout(msg): C.stderr(msg)
 # passthru's
 
 
-def input(bcm_pin):
+def input(bcm_pin):  # Returns bool (even for RPi, which usually returns int 1 or 0)
     if SIMULATION: return SIM_BUTTONS.get(bcm_pin, True)
     elif CIRCUITPYTHON:
         dio = digitalio.DigitalInOut(bcm_pin)
         return dio.value
     else:
-        return GPIO.input(bcm_pin)
+        return GPIO.input(bcm_pin) == 1
 
 
 # --------------------
@@ -171,10 +171,10 @@ class KButton:
         SIM_BUTTONS[self._bcm_pin] = self._normally_high
         return simout('button on bcm_pin %s unpressed (back to %s)' % (self._bcm_pin, self._normally_high))
 
-    def value(self):
+    def value(self):   # Returns bool (even for RPi, which usually returns int 1 or 0)
         if SIMULATION: return SIM_BUTTONS.get(self._bcm_pin, True)
         elif CIRCUITPYTHON: return self._dio.value
-        else: return GPIO.input(self._bcm_pin)  # RPi
+        else: return GPIO.input(self._bcm_pin) == 1 # RPi
 
     # ----- internals
 

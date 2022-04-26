@@ -30,7 +30,7 @@ def start_server():
     # If $TESTHOST is defined, we're going to use that external server
     # (presumably running on real Circuit Python hardware) as our backend.
     if testhost:
-        base_url = f'http://{testhost}:80/'
+        base_url = f'http://{testhost}/'
         C.stderr(f'testing against external host: {base_url}')
         return base_url
 
