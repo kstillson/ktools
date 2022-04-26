@@ -78,7 +78,7 @@ private.d/cert-settings:
 	cp -n common/cert-settings.template private.d/cert-settings
 	editor private.d/cert-settings
 
-private.d/wifi_secrets.py
+private.d/wifi_secrets.py:
 	cp -n common/wifi_secrets.template private.d/wifi_secrets.py
 	editor private.d/wifi_secrets.py
 
