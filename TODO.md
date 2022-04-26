@@ -1,8 +1,4 @@
 
-## circuit py evolution
-   - review kcore for incomp w/ circpy and fix or document
-     - kcore/gpio: make compat with circpy
-
 ## ++ktools tech
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock

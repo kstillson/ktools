@@ -131,9 +131,9 @@ class KButton:
             SIM_BUTTONS[bcm_pin] = self._normally_high
 
         elif CIRCUITPYTHON:
-            self._dio = digitalio.DigitalInOut(
-                bcm_pin,
-                pull=digitalio.Pull.UP if pull_float_high else digitalio.Pull.Down)
+            self._dio = digitalio.DigitalInOut(bcm_pin)
+            self._dio.direction = digitalio.Direction.INPUT
+            self._dio.pull = digitalio.Pull.UP if pull_float_high else digitalio.Pull.Down
 
         else: # RPi
             GPIO.setup(bcm_pin, GPIO.IN,
@@ -173,7 +173,7 @@ class KButton:
 
     def value(self):
         if SIMULATION: return SIM_BUTTONS.get(self._bcm_pin, True)
-        elif CIRCUITPYTHON: return self.dio.value
+        elif CIRCUITPYTHON: return self._dio.value
         else: return GPIO.input(self._bcm_pin)  # RPi
 
     # ----- internals

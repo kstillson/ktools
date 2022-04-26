@@ -123,8 +123,11 @@ unlink:
 install-circuitpy:
 	@if [[ ! -d $(CIRCUITPY_DIR)/lib ]]; then echo "ERROR- cannot find $(CIRCUITPY_DIR)/lib"; exit 1; fi
 	mkdir -p $(CIRCUITPY_DIR)/lib/kcore
-	FILES="$(shell ls -1 kcore/*.py | egrep -v '__init__|docker_lib|uncommon|webserver\.py')" && install -b $$FILES $(CIRCUITPY_DIR)/lib/kcore
-	install -b tests/kcore/circuitpy-testsuite.py $(CIRCUITPY_DIR)
+	FILES="$(shell ls -1 kcore/*.py | egrep -v '__init__|docker_lib|uncommon|webserver\.py')" && cp -bpuv $$FILES $(CIRCUITPY_DIR)/lib/kcore
+	cp -bpuv ../private.d/wifi_secrets.py $(CIRCUITPY_DIR)
+	cp -bpuv tests/kcore/server.py $(CIRCUITPY_DIR)/code.py
+	@echo "you should now be ready to:"
+	@echo " TESTHOST=testcircpy pytest-3 tests/kcore/test_webserver_circpy.py "
 
 
 # ---------- virtual environment support

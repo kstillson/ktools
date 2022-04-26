@@ -59,7 +59,7 @@ e:	everything   # simple alias for "everything"
 
 prep:	common/prep-stamp
 
-common/prep-stamp:	private.d/keymaster.pem
+common/prep-stamp:	private.d/keymaster.pem private.d/wifi_secrets.py
 	@pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
 	touch common/prep-stamp
 
@@ -77,6 +77,10 @@ private.d/cert-settings:
 	mkdir -p private.d
 	cp -n common/cert-settings.template private.d/cert-settings
 	editor private.d/cert-settings
+
+private.d/wifi_secrets.py
+	cp -n common/wifi_secrets.template private.d/wifi_secrets.py
+	editor private.d/wifi_secrets.py
 
 
 # ------------------------------------------------------------

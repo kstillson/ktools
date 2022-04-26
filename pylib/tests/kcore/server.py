@@ -13,34 +13,86 @@ the IP number to the TESTHOST variable and run the test.
 i.e. something like:
    TESTHOST="192.168.9.99" pytest-3 tests/test_k_webserver_circpy.py
 
+The server deliberately pulls in most of kcore.*, so test_webserver_circpy.py
+can effectively test that kcore functionality works as expected in the limited
+Python subset on a real circuit-python board.
+
 '''
 
 import time
 import kcore.webserver_circpy as W
 
-ROUTES = {
+import kcore.common as C
+import kcore.html as H
+import kcore.gpio as G
+import kcore.neo as N
+import kcore.varz as V
+
+# circuitpy_sim
+import board
+
+# ---------- handlers
+
+WEB_HANDLERS = {
     '/context':      lambda request: request.context.get('c'),
     '/get':          lambda request: request.get_params.get('g'),
-    '/hi':           lambda _: 'hello world',
+    '/hi':           lambda request: 'hello world',
+    '/hi2':          lambda request: H.wrap('hello world', 'p'),
+    '/kb1':          lambda request: str(request.context.get('kb1').value()),
+    '/logfun':       lambda request: logfun(request),
     r'/match/(\w+)': lambda request: request.route_match_groups[0],
+    '/neoflash':     lambda request: neoflash(request),
     '/ra':           lambda request: str(request.remote_address),
+    '/vset':         lambda request: vset(request),    
 }
 
+
+def logfun(request):
+    C.clear_log()   # in-case it's gotten too long, and just to make sure it works.
+    C.log('logfun')
+    return 'ok'
+
+    
+def neoflash(request):
+    neo = request.context.get('neo')
+    neo[0] = N.RED
+    time.sleep(0.2)
+    neo[0] = N.GREEN
+    time.sleep(0.2)
+    neo[0] = N.PURPLE    
+    time.sleep(0.2)
+    neo[0] = N.OFF
+    return 'ok'
+    
+    
+def vset(request):
+    for k, v in request.get_params.items(): V.set(k, v)
+    return str(len(request.get_params))
+
+
+# ---------- main
+
 def create_ws(port):
-    ctx = {'c': 'hello'}
-    ws = W.WebServer(ROUTES, port=port, blocking=True, context=ctx)
+    kb1 = G.KButton(board.D0, name='D0', background=False)
+    neo = N.Neo(n=1, pin=board.NEOPIXEL)
+    ctx = {'c': 'hello', 'kb1': kb1, 'neo': neo}
+    ws = W.WebServer(WEB_HANDLERS, wrap_handlers=False, port=port, blocking=True, context=ctx)
     return ws
 
 
+# This part only runsif this file is main.py on real CircuitPy hardware.
+# (when running locally, the test calls create_ws() direclty.
 def main():
     print(f'{time.time()}: connecting to wifi...')
-    W.connect_wifi('dhcp_hostname', 'ssid', 'wifi_password')
+    import wifi_secrets as S
+    W.connect_wifi(S.DHCP_HOSTNAME, S.SSID, S.WIFI_PASSWORD)
+    
     ws = create_ws(80)
     print(f'{time.time()}: starting web server')
     while True:
         status = ws.listen()
         print(f'{time.time()}: main loop; status={status}')
-        time.sleep(0.5)  # Don't overwhelm serial monitor by looping too fast if we end up in non-blocking mode.
+        time.sleep(0.3)  # Don't loop too fast...
 
 
 if __name__ == '__main__':

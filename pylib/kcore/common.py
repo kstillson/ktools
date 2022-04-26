@@ -225,7 +225,12 @@ def last_logs_html(): return Q.last_logs_html()
 
 
 class FakeResponse:
-    '''This is a partial emulation of requests.models.Response'''
+    '''This is a partial emulation of requests.models.Response
+
+       not supported: connection, cookies, encoding, is_redirect,
+                      iter_content, iter_lines, json, links, next, history,
+                      raise_for_status, request, raw '''
+    
     def __init__(self):
         self.elapsed = None
         self.exception = None
@@ -234,10 +239,7 @@ class FakeResponse:
         self.status_code = None
         self.text = ''
         self.url = None
-    def __str__(self):  return 'ok:%s, code:%s, exception:%s, text:%s, headers:%s, url:%s, elapsed:%s' % (resp.ok, resp.status_code, resp.exception, resp.text, resp.headers, resp.url, resp.elapsed)
-        # not supported: connection, cookies, encoding, is_redirect,
-        #                iter_content, iter_lines, json, links, next, history,
-        #                raise_for_status, request, raw
+    def __str__(self):  return 'ok:%s, code:%s, exception:%s, text:%s, headers:%s, url:%s, elapsed:%s' % (self.ok, self.status_code, self.exception, self.text, self.headers, self.url, self.elapsed)
 
 
 def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, cafile=None, proxy_host=None):
