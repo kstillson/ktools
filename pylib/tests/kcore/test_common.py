@@ -1,11 +1,18 @@
 
 import context_kcore     # fix path to includes work as expected in tests
 
-import os
+import atexit, os
 import kcore.common as C
 import kcore.log_queue as Q
 import kcore.uncommon as UC
 import kcore.varz as varz  ## to access varz counts in tests.
+
+
+# ---------- support
+
+def cleanup(files):
+    for fname in files:
+        if os.path.isfile(fname): os.unlink(fname)
 
 
 # ---------- container helpers
@@ -90,6 +97,7 @@ def test_logging(tmp_path):
 
     # Test falling to basename if can't create log in bad subdir.
     expected_name = 'test123.log'
+    atexit.register(cleanup, [expected_name])
     if os.path.isfile(expected_name): os.unlink(expected_name)
     tempname2 = '/badpath/%s' % expected_name
     ok = C.init_log(logfile=tempname2, force_time='TIME', clear=True)
@@ -99,7 +107,6 @@ def test_logging(tmp_path):
                   expect_stdout='', expect_stderr='')
     assert not os.path.isfile(tempname2)
     assert os.path.isfile(expected_name)
-    os.unlink(expected_name)
 
     # Test disabled logfile still works for non-file destinations.
     ok = C.init_log(logfile=None, force_time='TIME', clear=True)
