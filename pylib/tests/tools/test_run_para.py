@@ -5,7 +5,6 @@ import os, tempfile
 import context_tools     # fix path to includes work as expected in tests
 import run_para
 
-
 # ---------- unit level tests ----------
 # (no real tasks launched, direct testing individual lower-level methods)
 

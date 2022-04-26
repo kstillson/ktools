@@ -1,9 +1,11 @@
+'''
+During testing, we need to manually add the parent of the tests directory
+so we can find the things we're testing.
 
-# During testing, we need to manually add the parent of the tests directory
-# so we can find the things we're testing.
+Note: each context file needs to be named differently, or it will interfere
+with loading other context scripts if tests are run in the same session.
 
-# Note: each context file needs to be named differently, or it will interfere
-# with loading other context scripts if tests are run in the same session.
+'''
 
 import sys
 import os

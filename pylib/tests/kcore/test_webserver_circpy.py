@@ -1,16 +1,17 @@
+'''
+NB: This launches a real web-server and talks to it via the network.
+Tests will fail if firewall rules don't allow that.
 
-# NB: This launches a real web-server and talks to it via the network.
-# Tests will fail if firewall rules don't allow that.
+By default, launches the webserver specified in server.py:create_ws()
+on a local random high port, and tests against that.  This is basically
+testing circuitpy_sim to see if it can start a CPython server that
+convinces this test.
 
-# By default, launches the webserver specified in server.py:create_ws()
-# on a local random high port, and tests against that.  This is basically
-# testing circuitpy_sim to see if it can start a CPython server that
-# convinces this test.
-
-# To run the same test against real hardware, copy the file server.py to
-# code.py on your device, and wait for the server to start up.  It should
-# print it's IP address.  Set that IP address in the environment variable
-# TESTHOST, and then run this test script under pytest-3.
+To run the same test against real hardware, copy the file server.py to
+code.py on your device, and wait for the server to start up.  It should
+print it's IP address.  Set that IP address in the environment variable
+TESTHOST, and then run this test script under pytest-3.
+'''
 
 import context_kcore   # fixup Python include path
 

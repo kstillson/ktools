@@ -1,8 +1,11 @@
-# Docker related support library
+'''
+Docker related support library
 
+TODO: doc
 
-# TODO(!): restore CLI based access- ../docker-infrastruction/d.sh uses this.
+TODO(!): restore CLI based access- ../docker-infrastruction/d.sh uses this.
 
+'''
 
 import atexit, glob, os, random, ssl, string, subprocess, sys
 import kcore.common as C

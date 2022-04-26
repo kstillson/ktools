@@ -1,3 +1,11 @@
+'''kds circuitpython trivial web server
+
+TODO: doc
+
+'''
+
+
+
 
 import cgi, threading, ssl, sys
 

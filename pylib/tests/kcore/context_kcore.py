@@ -1,10 +1,11 @@
+'''
+Once installed, scripts will be avilable in the default Python path.
+During testing, we need to manually add the parent of the tests directory
+so we can find the things we're testing.
 
-# Once installed, scripts will be avilable in the default Python path.
-# During testing, we need to manually add the parent of the tests directory
-# so we can find the things we're testing.
-
-# Note: each context file needs to be named differently, or it will interfere
-# with loading other context scripts if tests are run in the same session.
+Note: each context file needs to be named differently, or it will interfere
+with loading other context scripts if tests are run in the same session.
+'''
 
 import sys
 import os

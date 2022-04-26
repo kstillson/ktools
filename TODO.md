@@ -7,7 +7,6 @@
    - syslog: generalize & publish syslogdock
    - tools-for-root: anything from "q" to move to private.d ?
    - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
-   - make sure all python is using __doc__ friendly formatting
    - review TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
@@ -27,12 +26,9 @@
 
 ## deferred homectrl related
      - h/control:ext -> hc.py (needs kcore in webdock, which probably means conversion to ktools-based build)
-   - tidy up pylib/k_gpio
-     - https://learn.adafruit.com/cooperative-multitasking-in-circuitpython-with-asyncio?view=all
-     - https://circuitpython.readthedocs.io/en/latest/shared-bindings/keypad/index.html
    - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio
       - graphical interface for inputs and outputs
-   - homectrl remote installation
+   - homectrl remote update (?)
 
 ## homesec
    - rebind to ktools

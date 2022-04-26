@@ -1,24 +1,25 @@
-# This file adapted from:
-# https://circuitpython.readthedocs.io/projects/requests/en/latest/examples.html
-# by Ken Stillson
-#
-# Tweaked so as to work as a unittest under circuitpy-sim's adafruit_requests.
-#
-# (changes basically are adding the path injection to load circuitpy_sim,
-#  moving the whole thing into a test function, and changing so that rather
-#  than just dumping output to stdout, a series of assert statements check
-#  that the results are approximately right).
-#
-# What is this test doing?  circuitpy_sim emulates the circuit python API
-# by mapping it into standard CPython calls.  This test is a client of the
-# circuit python API, specifically "adafruit_requests".  It calls the
-# API to make real-live requests out to the Internet and checks the results.
-#
-# If this test passes, it indicates that the circuitpy_sim's mapping of
-# adafruit_requests API is sufficiently good as to fool this client program
-#
-# --------------------------------------------------
+'''
+This file adapted from:
+https://circuitpython.readthedocs.io/projects/requests/en/latest/examples.html
+by Ken Stillson
 
+Tweaked so as to work as a unittest under circuitpy-sim's adafruit_requests.
+
+(changes basically are adding the path injection to load circuitpy_sim,
+ moving the whole thing into a test function, and changing so that rather
+ than just dumping output to stdout, a series of assert statements check
+ that the results are approximately right).
+
+What is this test doing?  circuitpy_sim emulates the circuit python API
+by mapping it into standard CPython calls.  This test is a client of the
+circuit python API, specifically "adafruit_requests".  It calls the
+API to make real-live requests out to the Internet and checks the results.
+
+If this test passes, it indicates that the circuitpy_sim's mapping of
+adafruit_requests API is sufficiently good as to fool this client program
+
+--------------------------------------------------
+'''
 
 # SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT

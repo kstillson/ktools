@@ -1,7 +1,8 @@
-
-# NB: This launches a real web-server and talks to it via the local
-# network.  Tests will fail if firewall rules don't allow localhost high
-# port connections.
+'''
+NB: This launches a real web-server and talks to it via the local
+network.  Tests will fail if firewall rules don't allow localhost high
+port connections.
+'''
 
 import context_kcore     # fix path to includes work as expected in tests
 

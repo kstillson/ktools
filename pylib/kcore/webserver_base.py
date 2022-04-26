@@ -1,6 +1,8 @@
-'''TODO: doc
+'''
+TODO: doc
 
 TODO: add support for basic auth (with db file compatible with htpasswd...?)
+
 '''
 
 import re, os, sys

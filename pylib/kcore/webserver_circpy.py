@@ -1,12 +1,12 @@
-# kds circuitpython trivial web server
-# adapted from https://github.com/deckerego/ampule; thanks deckerego!
-# MIT license
+'''
+Trivial web-server for Circuit Python.
+adapted from https://github.com/deckerego/ampule; thanks deckerego!
+MIT license
 
-# TODO: add POST submission parsing.
 
+TODO: add POST submission parsing.
 
-'''Trivial web-server for Circuit Python.
-   Example usage in non-blocking mode:
+Example usage in non-blocking mode:
 
 import time
 import kcore.webserver_circpy as W

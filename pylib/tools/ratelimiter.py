@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
-'''
-Run, don't run, or pause a command so as to obey rate limits.
+'''Run, don't run, or pause a command so as to obey rate limits.
 
 First, decide on the desired limit and initialize the state file:
  ratelimiter -i 1,10 statefile.rl    # allow 1 invocations per 10 seconds.

@@ -1,12 +1,21 @@
+'''A queue of (possibly recurring) events to run after a delay.
 
-'''Implement a queue of events to run at particular times daily.
+This is designed as a replacement for Python threading.Timer on systems
+without threading (e.g. Circuit Python), and/or to provide a simplified
+interface for cooperative multitasking.  (Adafruit recommends asyncio for
+this, but I think this approach is more elegant;
+https://learn.adafruit.com/cooperative-multitasking-in-circuitpython-with-asyncio?view=all )
 
-Designed to run on systems without threading or timer support.  Compatible
-with non-blocking call style.  Just call TimeQueue.check() occasionally, and
-any events with times now in the past will fire.
+You add one or more Events or TimedEvents to the queue, and then occasionally
+call check().  Calling check() will execute any events whose time has come
+since the last time check() was called.  Call check() as frequently or
+infrequently as you like.
 
-use_daymins param is mostly for testing, but can be used for any cases
-where you want to override real time.
+Events run a callback function after a number of miliseconds delay from the
+time they are created, optionally repeating indefinately after a further delay.
+
+TimedEvents are used for callbacks to be fired daily at a specific hour+min.
+
 '''
 
 import time

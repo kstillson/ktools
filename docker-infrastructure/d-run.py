@@ -1,32 +1,37 @@
 #!/usr/bin/python3
 
+'''
+TODO: doc
+
+Supported features in the settings file:
+
+debug_alt_cmnd: string
+extra_init: string
+debug_extra_init: string
+extra_docker: string
+foreground: 1   (note: ignored when --vol-alt, which requires background launches)
+image: name of image to run
+ip: string{'-' to let docker assign|ip address|hostname}
+log: string{N|J|S|custom spec}
+network: string{NONE|name of network to use.}
+port: list of ports to forward: host:container
+
+mount option                       normal behavior                   -v behavior
+------------                       ---------------                   -----------
+mount_logs                         list of bind-mount maps s->d      create empty +w dir in alt location
+mount_persistent                   "                                 same as normal (caution: can affect real data)
+mount_persistent_test_copy         "                                 same as mount_logs, top level dir only
+mount_persistent_test_copy_tree    "                                 clone src dir struct in alt location; no files
+mount_persistent_test_copy_files   "                                 recursive copy src to alt location
+mount_persistent_test_ro           "                                 mount real location, but ro
+mount_ro                           list of ro bind-mount maps s->d   same as normal
+mount_test_only                    ignored                           list of bind-mount maps s->d
+   relative paths are relative to  /rw/dv/{name}/...                 /rw/dv/TMP/{name}/...
+'''
+
 import argparse, os, shutil, socket, subprocess, sys, yaml
 from pathlib import Path
 
-# Supported features in the settings file:
-#
-# debug_alt_cmnd: string
-# extra_init: string
-# debug_extra_init: string
-# extra_docker: string
-# foreground: 1   (note: ignored when --vol-alt, which requires background launches)
-# image: name of image to run
-# ip: string{'-' to let docker assign|ip address|hostname}
-# log: string{N|J|S|custom spec}
-# network: string{NONE|name of network to use.}
-# port: list of ports to forward: host:container
-#
-# mount option                       normal behavior                   -v behavior
-# ------------                       ---------------                   -----------
-# mount_logs                         list of bind-mount maps s->d      create empty +w dir in alt location
-# mount_persistent                   "                                 same as normal (caution: can affect real data)
-# mount_persistent_test_copy         "                                 same as mount_logs, top level dir only
-# mount_persistent_test_copy_tree    "                                 clone src dir struct in alt location; no files
-# mount_persistent_test_copy_files   "                                 recursive copy src to alt location
-# mount_persistent_test_ro           "                                 mount real location, but ro
-# mount_ro                           list of ro bind-mount maps s->d   same as normal
-# mount_test_only                    ignored                           list of bind-mount maps s->d
-#    relative paths are relative to  /rw/dv/{name}/...                 /rw/dv/TMP/{name}/...
 
 DEFAULT_TAG = 'live'
 FALLBACK_IP = '192.168.2.99'   # Try this is all other methods fail.

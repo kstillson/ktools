@@ -1,4 +1,7 @@
 #!/usr/bin/python
+'''
+TODO: doc
+'''
 
 import argparse, datetime, glob, os, socket, subprocess
 
@@ -43,9 +46,6 @@ IGNORE_LIST = [
     'webdock:/tmp/sess_',
     'webdock:/tmp/pb.rl',
 ]
-
-# ----------
-# docker general
 
 
 # ----------
