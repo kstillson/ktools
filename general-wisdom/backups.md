@@ -2,7 +2,7 @@
 
 ## Threat-based Backup Strategy
 
-Your backup plans must be organized around the set of threats you need to
+Your backup plans should be organized around the set of threats you need to
 defend from.  Here's the threats that drive my requirements:
 
   - Hardware failure: mass storage devices fail.  **always.** and often
@@ -11,14 +11,14 @@ defend from.  Here's the threats that drive my requirements:
     the random moment some critical storage fails.
 
   - Automation failure: automated systems stop working eventually.
-    **always.**  Underlying assumptions you didn't know you had change, and
-    the system stops working.  To defend from this, you need some sort of
-    test that will alert you when your automated system fails.
+    **always.** Underlying assumptions you didn't know you had change, and the
+    system stops working.  To defend from this, you need some sort of test
+    that will alert you when your automated backup system stops working.
 
-  - Corruption / Ransomware: Whether minor hardware issues, operator error,
-    or malware, files can get corrupted.  Without careful planning, an
-    automated backup system might overwrite your only remaining
-    non-corrupted copies with a corrupted ones!  Defenses:
+  - Corruption / Ransomware: Through minor hardware issues, operator error, or
+    malware, files can get corrupted.  Without careful planning, an automated
+    backup system might overwrite your only remaining non-corrupted copies
+    with a corrupted ones!  Defenses:
 
     + Versioned backups: Keep the last several versions of your files, so
       you can recover the most recent version before the corruption.
@@ -44,9 +44,9 @@ defend from.  Here's the threats that drive my requirements:
 
     + Keep your backup server(s) separated from primary servers; run on
       physically distinct hardware if possible.  Minimize the backup server
-      attack surface by running only the backup software there.  Do not
-      share credentials or allow connections from normal operation machines
-      without special security checks.  Even root on your most important
+      attack surface by running only the backup software there.  Do not share
+      credentials or allow connections from normal operation machines without
+      special security checks.  Even (especially) root on your most important
       primary server should not be able to access the backup machines!
     
     + When using a mechanism that pulls data from a central backup serer:
@@ -56,13 +56,12 @@ defend from.  Here's the threats that drive my requirements:
 
     + When using a mechnaism where each system pushes to a central serer:
     
-      + Push the data to a holding area.  The backup system can then
-        inspect the holding area submission and decide whether to accept it
-        and where to put it.  *Critically,* the system pushing its data
-        must not be able to disrurb versions of the backup other than "most
-        recent."  Failure to follow this rule allows a hacker on a system
-        to destroy the data and all its backup versions just by attacking
-        the main system.
+      + Push the data to a holding area.  The backup system can then inspect
+        the holding area submission and decide whether to accept it and where
+        to put it.  *Critically,* the system pushing its data must not be able
+        to disrurb versions of the backup other than "most recent."  Failure
+        to follow this rule allows a hacker on a primary system to destroy the
+        data and all its backup versions just by attacking the main system.
   
   - Advanced hackers: No matter how careful your electronic defenses, a
     sufficiently advanced hacker can find their way through.  Defense?  In
@@ -101,26 +100,26 @@ defend from.  Here's the threats that drive my requirements:
         process would represent a significant security risk in itself.
         You'll have to weight the pro's & con's of your situation.
 
-  - Cloud data: More and more data is being stored in the Cloud- don't
-    forget about it.  Reputable companies already sync multiple copies of
-    your data, so loss from hardware failure is unlikely, but you could
-    still lose your data if you lose access to your account, or if
-    cloud-aware malware corrupts it.  Personally, I worry about Google
+  - Cloud data: More and more data is being stored in the Cloud- don't forget
+    about it when doing backup planning.  Reputable companies already sync
+    multiple copies of your data, so loss from hardware failure is unlikely,
+    but you could still lose your data if you lose access to your account, or
+    if cloud-aware malware corrupts it.  Personally, I worry about Google
     Drive, Google Photos, and Gmail, but think through your own, and have a
-    plan for each!  Solution: When possible use an automated system to
-    create local copies of your cloud data.  Place it in your normal
-    primary storage so it benefits from the versioned & encrypted backups
-    above.  Remember that if you rely on at-rest encrpytion for your
-    primary data (rather than encrypting it at the time of backup), then
-    you'll need a separate solution for this cloud-based data-- ideally
-    pulling it into an encrypted-at-rest archive.
+    plan for each!  Solution: use an automated system to create local copies
+    of your cloud data.  Place it in your normal primary storage so it
+    benefits from the versioned & encrypted backups above.  Remember that if
+    you rely on at-rest encrpytion for your primary data (rather than
+    encrypting it at the time of backup), then you'll need a separate solution
+    for this cloud-based data-- ideally pulling it into an encrypted-at-rest
+    archive.
 
 
 ## My solution
 
 TODO
 
-### Cloud pull
+### step 1: Cloud pull
 
 I use "rclone" to pull my data from cloud storage and store it in my
 primary storage.  The rclone configuration is encrypted so it doesn't risk
