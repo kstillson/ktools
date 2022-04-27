@@ -194,7 +194,7 @@ case "$cmd" in
     ;;
   up | start | 1)             ## Launch container $1
     sel=$(pick_container_from_dev $spec)
-    if [[ "$sel" == "" ]; then
+    if [[ "$sel" == "" ]]; then
       echo "error- cannot find container to launch: $sel"
       exit 1
     fi
