@@ -1,7 +1,5 @@
 
 ## ++ktools tech
-   - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
-
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - monitoring: generalize & publish filewatchdock, nagdock, procmon

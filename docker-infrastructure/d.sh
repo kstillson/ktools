@@ -216,7 +216,7 @@ case "$cmd" in
     ## confident we don't need to revert to any of those...
     ##
     docker container prune -f --filter "label!=live"
-    docker image prune -f -a --filter "label!=live"
+    docker image prune -f --filter "label!=live"
     docker volume prune -f --filter "label!=live"
     docker builder prune -f
     ;;
