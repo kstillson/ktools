@@ -1,13 +1,13 @@
 
 ## ++ktools tech
+   - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
+
    - backups: generalize & publish rclonedock and rsnapshot configs
    - dns-and-dhcp: generalize & publish dnsdock
    - monitoring: generalize & publish filewatchdock, nagdock, procmon
    - services: decide what to keep, generalize & publish, subst links
    - syslog: generalize & publish syslogdock
-   - tools-for-root: anything from "q" to move to private.d ?
-   - "d clean" not respecting filter (clears :live, :latest, :prev, etc)
-   - review TODO's
+   - review non-doc TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
      - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
@@ -17,10 +17,10 @@
    - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
 
 ## ++ktools prose
+   - review all doc TODO's
    - makefiles- lots of explanations and intros
    - TOC / general intro write-up
    - general wisdom: lots of writing
-   - tools-for-users: doc
 
 ## ---------- MILESTONE: ready for peer review ...?
 

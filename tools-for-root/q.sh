@@ -18,41 +18,49 @@ set -e
 # as a repository of clever bash tricks.
 #
 # The built-in help system works by auto-generating its content from the
-# source.  To get a list of all commands, use "q help".  Adding a param
-# searches for commands with a keyword, e.g. "q h syslog" lists all
-# commands that have anything to do with syslog.
+# source code.  To get a list of all commands, use "q help".  Adding a param
+# searches for commands with a keyword, e.g. "q h syslog" lists all commands
+# that have anything to do with syslog.
 #
 # Many of the details in here are specific to my home configuration and
 # won't be directly useful.  But I'm releasing the script anyway, in hopes
 # that the bash-tricks collection and the overall structure/approach might
 # be of interest, and can be adapted to your own environment.
 
-# TODO(kstillson): The ECHO, TEST, and VERBOSE options are redundant,
-# confusing, and not uniformly implimented.
+# TODO(kstillson): The TEST, and VERBOSE options not uniformly implimented.
 
-# flag defaults
+# ---------- flag defaults
+
 DEBUG=0          # don't delete tempfiles
-ECHO=0           # print commands to stdout instead of executing them
 EXCLUDE="blue"   # csv list of hosts to exclude
 HOST_SUBST="@"   # replace this substring with hostnames in commands
 PARA=1           # run commands for multiple hosts in parallel
-TEST=0           # similar to ECHO but label as testing and send to stderr
+TEST=0           # for commands that would make changes, print them rather than running
 TIMEOUT=90       # ssh connect timeout
-VERBOSE=0        # similar to ECHO but also execute the commands
+VERBOSE=0        # print commands as they are run
+
+# ---------- control constants
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
-DD="/root/docker-dev/dnsdock/files/etc/dnsmasq"
-GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin /rw/dv/webdock/home/ken/homesec"
-if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="kmdock:4443"; else KMHOST="jack:4443"; fi
-KM="https://${KMHOST}"
-KMD="/root/docker/dev/kmdock"
-KMD_P="/root/docker-dev/kmdock/files/home/km/km.data.gpg"
-LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
-PROCQ="/var/procmon/queue"
 RP_FLAGS='--output - --plain --quiet '
 
-# ----------------------------------------
-# colorizers
+# ---------- hard-coded control constants
+# (almost certainly wrong for anyone else but the author...)
+
+if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="kmdock:4443"; else KMHOST="jack:4443"; fi
+KM="https://${KMHOST}"
+
+DD="/root/docker-dev/dnsdock/files/etc/dnsmasq"
+GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin /rw/dv/webdock/home/ken/homesec"
+KMD="/root/docker/dev/kmdock"
+KMD_P="/root/docker-dev/kmdock/files/home/km/km.data.gpg"
+LIST_LINUX="a1 blue jack mc2 "
+LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"
+LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
+PROCQ="/var/procmon/queue"
+RSNAP_CONF="/root/docker-dev/rsnapdock/files/etc/rsnapshot.conf"
+
+# ---------- colorizers
 
 BLUE='\x1b[01;34m'
 CYAN='\x1b[36m'
@@ -73,8 +81,9 @@ function emit() { echo ">> $@" >&2; }
 function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
 function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
 
-# ----------------------------------------
-# ssh agent
+# ---------- ssh agent
+
+# TODO: can this be simplified?  externalized?
 
 # return success (0) if agent is running and registered with this shell.
 function test_ssh_agent() {
@@ -114,10 +123,11 @@ alias AX='{ pkill -u $USER ssh-agent && echo "ssh-agent stopped"; }; rm -f ${SSH
 # (This is the method generally called from below; the stuff above is internals...)
 function need_ssh_agent() { A0>/dev/null || A; }
 
+
 # ----------------------------------------
 # general purpose
 
-# Return a tempfile name with $1 embedded (for easier debugging)
+# Return (i.e. output) a tempfile name with $1 embedded (for easier debugging)
 function gettemp() {
     name="${1:-temp}"
     mktemp /tmp/q-${name}-XXXX
@@ -129,7 +139,7 @@ function rmtemp() {
     rm $filename
 }
 
-# If stdin is empty, do nothing.  Otherwise, append title and contents to $out.
+# If stdin is empty, do nothing.  Otherwise, append title and stdin contents to $out.
 function append_if() {
     out="$1"
     title="$2"
@@ -172,13 +182,14 @@ function runner() {
         emit "running: $@"
     fi
     status="0"
-    "$@" || status=$?
+    bash -c "$@" || status=$?
     if [[ $status != "0" ]]; then emitC red "status $status from $@\n"
     else if [[ "$VERBOSE" == 1 ]]; then emitC green "done (ok): $@\n"; fi
     fi
 }
 
-# Wrapper around /usr/local/bin/run_para which assumes --ssh mode unless
+# Wrapper around /usr/local/bin/run_para which repects RP_FLAGS and TEST
+# (run_para is always VERBOSE).  This method assumes --ssh mode unless
 # $1 is "LOCAL", in which case it uses --cmd mode.  ssv hosts in $1,
 # command to run in $2+.
 function RUN_PARA() {
@@ -191,7 +202,12 @@ function RUN_PARA() {
     fi
     hosts="$1"
     shift
-    echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | /usr/local/bin/run_para $RP_FLAGS --subst "$HOST_SUBST" --timeout $TIMEOUT  "$type" "$@"
+    cmd="/usr/local/bin/run_para $RP_FLAGS --subst $HOST_SUBST --timeout $TIMEOUT  $type"
+    if [[ "$TEST" == 1 ]]; then
+	emit "TEST; would run: $cmd '$@'"
+	return
+    fi
+    echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | $cmd "$@"
     return $?
 }
 
@@ -203,6 +219,7 @@ function sort_skip_header() {
     rmtemp $t
 }
 
+
 # ----------------------------------------
 # general linux maintenance
 
@@ -211,11 +228,11 @@ function git_add_repo() {
     name="$1"
     if [[ ! "$name" == *.git ]]; then name="${name}.git"; fi
     dir="/rw/dv/gitdock/home/ken/git/$name"
-    mkdir $dir
-    cd $dir
-    git init --bare
-    chown -R dken.200802 $dir
-    chmod -R go+rx,g+w $dir
+    runner mkdir $dir
+    runner cd $dir
+    runner git init --bare
+    runner chown -R dken.200802 $dir
+    runner chmod -R go+rx,g+w $dir
     emitc green "ready: git:git/${name}"
 }
 
@@ -244,10 +261,10 @@ function git_sync() {
     if [[ "$git_status" == "" ]]; then
         emitc green "no local changes: $dir"
     else
-        git commit -v -a
+        runner git commit -v -a
     fi
-    git remote | xargs -L1 -I@ echo git pull @ master
-    git remote | xargs -L1 git push
+    runner "git remote | xargs -L1 -I@ echo git pull @ master"
+    runner "git remote | xargs -L1 git push"
     popd >& /dev/null
     echoc green "done: $dir"
 }
@@ -260,12 +277,25 @@ function git_sync_all() {
     emitc green "all done\n"
 }
 
+# copy root pubkey to root@ arg1's a_k via pi std login.
+function pi_root() {
+    host=${1:-rp}
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
+    need_ssh_agent
+    P=$(/usr/local/bin/kmc pi-login)
+    sshpass -p $P scp ~/.ssh/id_rsa.pub pi@${host}:/tmp
+    sshpass -p $P ssh pi@$host 'sudo bash -c "mkdir -p /root/.ssh
+    cat /tmp/id_rsa.pub >>/root/.ssh/authorized_keys
+    rm /tmp/id_rsa.pub" '
+    echo "done"
+}
+
 # Runs a pull in all known local git dirs.
 function git_pull_all() {
     need_ssh_agent
     for dir in $GIT_DIRS; do
         if [[ ! -d $dir ]]; then emit "missing dir: $dir"; continue; fi
-        cd $dir
+        runner cd $dir
         runner git pull
     done
     emitc green "all done\n"
@@ -336,8 +366,8 @@ function iptables_query() {
 # Save current iptables rules to disk for auto-restore upon boot.
 function iptables_save() {
     # TODO: move to standard location (with autodetect for ro root)
-    /bin/mv -f ~/iptables.rules ~/iptables.rules.mbk
-    /usr/sbin/iptables-save > ~/iptables.rules
+    runner /bin/mv -f ~/iptables.rules ~/iptables.rules.mbk
+    runner /usr/sbin/iptables-save > ~/iptables.rules
     emitc green "saved"
 }
 
@@ -345,13 +375,13 @@ function iptables_save() {
 function pinger() {
     set +e
     RP_FLAGS="$RP_FLAGS -q -m 99 "
-    problems=$(RUN_PARA LOCAL "$@" "set -o pipefail; ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
+    problems=$(RUN_PARA LOCAL "$@" "set -o pipefail; ping -c3 -W3 -i0.5 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emitc green "all ok\n"; return; fi
     for try in 1 2 3; do
         echo ""
         emit $(printf "problems: [ $(echo $problems | tr '\n' ' ') ]... ${RED} retry #${try}/3... ${RESET}")
         sleep 1
-        problems=$(RUN_PARA LOCAL "$problems" "ping -c3 -W3 -i0 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
+        problems=$(RUN_PARA LOCAL "$problems" "ping -c3 -W3 -i0.5 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emit "fixed; $(echoC green 'all ok\n')"; return; fi
     done
     emitc red ":-("
@@ -387,16 +417,16 @@ function updater() {
 
 
 # ----------------------------------------
-# jack / home network specific
+# jack / original author's network specific
 
 # My rsnapshot config relies on capabilities to provide unlimited read access to an otherwise
 # unprivlidged account.  Sometimes upgrades remove those capabilities, so this puts them back.
 # I keep the root dir read-only on my primary server, so need to temp-enable writes...
 function enable_rsnap() {
     RUN_PARA "$(list_rsnap_hosts | without jack)" "/sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
-    mount -o remount,rw /
-    /sbin/setcap cap_dac_read_search+ei /usr/bin/rsync
-    mount -o remount,ro /
+    runner mount -o remount,rw /
+    runner /sbin/setcap cap_dac_read_search+ei /usr/bin/rsync
+    runner mount -o remount,ro /
 }
 
 # Output the list of DHCP leases which are not known to the local dnsmasq server's DNS list.
@@ -461,6 +491,7 @@ function dns_missing() {
 #  Because security.)
 function dns_update() {
     s1=$(stat -t $DD/dnsmasq.macs)
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     emacs $DD/dnsmasq.macs $DD/dnsmasq.hosts $LEASES
     s2=$(stat -t $DD/dnsmasq.macs)
     if [[ "$s1" == "$s2" ]]; then emit "no change to macs; not updating dnsmasq"; return; fi
@@ -476,6 +507,7 @@ function dns_update() {
 # it can be useful to remove it from the DHCP assignments to clear the alarm.
 function dns_update_rmmac() {
     search="$1"
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     t=$(gettemp leases-search)
     fgrep "$search" $LEASES > $t || true
     lines=$(wc -l $t | cut -d' ' -f1)
@@ -507,7 +539,7 @@ function procmon_clear_cow() {
         echoc yellow "${docker}:${relfile}"
         base=$(d cow $docker)
         fn="${base}/${relfile}"
-        rm $fn
+        runner rm $fn
     done
     emitc green done
 }
@@ -515,6 +547,7 @@ function procmon_clear_cow() {
 # Update the whitelist of known-processes on the primary server.  Test the results
 # and if the test passes, restart the monitoring daemon with the new list.
 function procmon_update() {
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     t=$(gettemp procmon-queue-sorted)
     sort -u < $PROCQ > $t
     emacs /home/ken/bin/procmon_wl.csv $t
@@ -616,6 +649,7 @@ EOF
 
 # Enter the keymanager password to get the service ready.
 function keymanager_reload() {
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == "ok" ]]; then emitc blue "already ok"; return 0; fi
     read -s -p "km password: " passwd
@@ -627,6 +661,7 @@ function keymanager_reload() {
 
 # Decrypt, edit, and re-encrypt the KM database, then rebuild and restart KM.
 function keymanager_update() {
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     read -s -p "km password: " passwd
     tmp=$(gettemp km-temp)
     echo "$passwd" | gpg -d --batch --passphrase-fd 0 $KMD_P > $tmp
@@ -652,7 +687,7 @@ function keymanager_update() {
 function keymanager_zap() {
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc blue "already zapped"; return 0; fi
-    curl -ksS ${KM}/zap >/dev/null
+    runner curl -ksS ${KM}/zap >/dev/null
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc orange "zapped"; return 0; fi
     emitc red "zap failed: $stat"
@@ -660,7 +695,7 @@ function keymanager_zap() {
 
 # Run $1 as if it was typed into a keypad.
 function run_keypad_command {
-    curl -sS -d "cmd=$1" -X POST http://homectrl:1235/ | sed -e 's/<[^>]*>//g'
+    runner "curl -sS -d 'cmd=$1' -X POST http://hs-mud:1235/ | sed -e 's/<[^>]*>//g'"
     echo ""
 }
 
@@ -668,6 +703,7 @@ function run_keypad_command {
 function homesec_add_user {
     user="$1"
     passwd="$2"
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     if [[ "$user" == "" ]]; then emit "need to provide user"; return 1; fi
     if [[ "$passwd" == "" ]]; then emit "need to provide password"; return 1; fi
     docker exec -i -u 0 webdock bash <<EOF1
@@ -683,6 +719,7 @@ EOF1
 # Remove a user from the home security system's Django instance.
 function homesec_del_user {
     user="$1"
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     if [[ "$user" == "" ]]; then emit "need to provide user"; return 1; fi
     docker exec -i -u 0 webdock bash <<EOF1
 cd /home/ken/homesec/scripts/
@@ -702,16 +739,16 @@ function list_all() {
 }
 
 function list_linux() {
-    echo -n "a1 blue jack mc2 "
+    echo -n $LIST_LINUX
     list_pis
 }
 
 function list_pis() {
-    echo "hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"
+    echo $LIST_PIS
 }
 
 function list_rsnap_hosts() {
-    egrep '^backup' /root/docker-dev/rsnapdock/files/etc/rsnapshot.conf | cut -d@ -f2 | cut -d: -f1 | sort -u
+    egrep '^backup' $RSNAP_CONF | cut -d@ -f2 | cut -d: -f1 | sort -u
 }
 
 function list_tps() {
@@ -795,8 +832,8 @@ function myhelp() {
 }
 
 function main() {
-    # --------------------
-    # parse flags
+    
+    # ---------- parse flags
 
     POSITIONAL=()
     while [[ $# -gt 0 ]]; do
@@ -804,7 +841,6 @@ function main() {
         case "$flag" in
     # Note: flags mostly only affect multi-host commands...
             --debug | -d) DEBUG=1 ;;                      ## leave temp files in place
-            --echo | -e) ECHO=1 ;;                        ## print commands INSTEAD of executing them
             --exclude | -x) EXCLUDE=$2; shift ;;          ## csv list of substring match patterns
             --help    | -h) myhelp ;;
             --nopara  | -n | -1) PARA=0 ;;                ## run sequentually rather than in parallel
@@ -822,7 +858,7 @@ function main() {
     done
     set -- "${POSITIONAL[@]}" # restore positional parameters
 
-    # --------------------
+    # ---------- main switch
 
     cmd="$1"
     if [[ "$cmd" == "" ]]; then myhelp; exit 0; fi
@@ -840,17 +876,17 @@ function main() {
         iptables-save | ipts | is) iptables_save ;;          ## save current iptables
         journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
         git-check-all | gca | gc) git_check_all ;;           ## list any known git dirs with local changes
-        git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;             ## git sync a single directory (defaults to .)
+        git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;  ## git sync a single directory (defaults to .)
         git-sync-all | git-all | ga) git_sync_all ;;         ## check all git dirs for unsubmitted changes and submit them
-        pi-root | pir) host=${1:-rp}; need_ssh_agent; P=$(/usr/local/bin/kmc pi-login); sshpass -p $P scp ~/.ssh/id_rsa.pub pi@${host}:/tmp; sshpass -p $P ssh pi@$host 'sudo bash -c "mkdir -p /root/.ssh; cat /tmp/id_rsa.pub >>/root/.ssh/authorized_keys; rm /tmp/id_rsa.pub" '; echo "done" ;;  ## copy root pubkey to root@ arg1's a_k via pi std login.
+        pi-root | pir) pi_root ${1:-rp} ;;                   ## copy root pubkey to root@ arg1's a_k via pi std login.
         ps) ps_fixer ;;                                      ## colorized and improved ps output
         sort-skip-header | sort | snh) sort_skip_header ;;   ## sort stdin->stdout but skip 1 header row
-        systemd-daemon-reload | sdr | sR) systemctl daemon-reload && emit "reloaded";;   ## systemd daemon refresh
-        systemd-down | s0) systemctl stop ${1:-procmon} ;;            ## stop a specified service (procmon by default)
-        systemd-restart | sr) systemctl restart ${1:-procmon} ;;      ## restart a specified service (procmon by default)
-        systemd-status | ss | sq) systemctl status ${1:-procmon} ;;   ## check service status (procmon by default)
-        systemd-up | s1) systemctl start ${1:-procmon} ;;             ## start a specified service (procmon by default)
-        without | wo) cat | without "$@" ;;                           ## remove args (csv or regexp) from stdin (space, csv, or line separated)
+        systemd-daemon-reload | sdr | sR) runner "systemctl daemon-reload && emit 'reloaded'" ;;   ## systemd daemon refresh
+        systemd-down | s0) runner systemctl stop ${1:-procmon} ;;            ## stop a specified service (procmon by default)
+        systemd-restart | sr) runner systemctl restart ${1:-procmon} ;;      ## restart a specified service (procmon by default)
+        systemd-status | ss | sq) runner systemctl status ${1:-procmon} ;;   ## check service status (procmon by default)
+        systemd-up | s1) runner systemctl start ${1:-procmon} ;;             ## start a specified service (procmon by default)
+        without | wo) cat | without "$@" ;;                        ## remove args (csv or regexp) from stdin (space, csv, or line separated)
     # general linux maintenance routines - for multiple hosts
         disk-free-all | dfa | linux-free | lf) RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;   ## root disk free for all linux hosts
         ping-pis | p) pinger "$(list_pis)" ;;                    ## ping all pis
@@ -882,9 +918,9 @@ function main() {
         exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
         exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
         exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
-        exim-queue-zap | eqrm) d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm' ;;  ## clear the exim queue
-        exim-queue-zap-frozen | eqrmf) d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d" " | xargs exim -Mrm' ;;      ## clear frozen msgs from queue
-        exim-queue-run | eqr) d run eximdock exim -qff ;;                 ## unfreeze and retry the queue
+        exim-queue-zap | eqrm) runner "d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm'" ;;  ## clear the exim queue
+        exim-queue-zap-frozen | eqrmf) runner "d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d' ' | xargs exim -Mrm'" ;;      ## clear frozen msgs from queue
+        exim-queue-run | eqr) runner d run eximdock exim -qff ;;          ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo $1 to gitdock
         git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homesec
