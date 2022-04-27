@@ -81,8 +81,8 @@ def add_mounts(cmnd, mapper, readonly, name, mount_list):
                 k = os.path.join('/rw/dv/%s' % name, k)
             if mapper: k = mapper(k, name)
             ro = ',readonly' if readonly else ''
-            if not os.path.isdir(k):
-                err('Creating non-existent mountpoint source: {k}')
+            if not os.path.exists(k):
+                err(f'Creating non-existent mountpoint source: {k}')
                 Path(k).mkdir(parents=True, exist_ok=True)
             cmnd.extend(['--mount', f'type=bind,source={k},destination={v}{ro}'])
     return cmnd
@@ -360,7 +360,7 @@ def main():
     if args.cd:
         dir = search_for_dir(args.cd)
         if dir: os.chdir(dir)
-        else: err('dont know how to find directory: ' + dir)
+        else: err(f'dont know how to find directory: {dir}')
     settings = parse_settings(args)
     cmnd = gen_command(args, settings)
     if args.print_cmd or args.test:
