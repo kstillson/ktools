@@ -37,6 +37,13 @@ function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@";
 # select specific container to operate on.
 # $1 is a prefix substring search spec.  If search matches more than 1, then 1st alphabetical is picked.
 
+function is_up() {
+  srch=$1
+  sel=$(list-up | /bin/egrep "^${srch}") || true
+  if [[ "$sel" == "" ]]; then echo "n"; return; fi
+  echo "y"
+}
+
 function pick_container_from_up() {
   srch=$1
   sel=$(list-up | /bin/egrep "^${srch}")
@@ -187,8 +194,7 @@ case "$cmd" in
     ;;
   up | start | 1)             ## Launch container $1
     sel=$(pick_container_from_dev $spec)
-    up=$(pick_container_from_up $sel)
-    if [[ "$up" != "" ]]; then
+    if [[ "$(is_up $sel)" == "y" ]]; then
         echo "error- container already up: $sel"
         exit 1
     fi
@@ -268,6 +274,7 @@ case "$cmd" in
     $DLIB get_cow_dir "$name"
     ;;
   images | i) docker images ;;         ## List docker images
+  is-up | iu) is_up $spec ;;           ## Is container up (y/n)
   get-ip | getip | get_ip | ip)        ## Print the IP address for $1
     set -o pipefail
     name="$(pick_container_from_up $spec)"
