@@ -2,7 +2,7 @@
 KMH := files/home/km
 PLIB := files/usr/lib/python3.9/site-packages
 COPIED_FILES := $(KMH)/km.py $(KMH)/keymaster.pem $(KMH)/km.data.gpg $(KMH)/km-test.data.gpg \
-    $(PLIB)/kcore/auth.py $(PLIB)/kcore/common.py $(PLIB)/kcore/common_base.py $(PLIB)/kcore/html.py \
+    $(PLIB)/kcore/auth.py $(PLIB)/kcore/common.py $(PLIB)/kcore/html.py \
     $(PLIB)/kcore/log_queue.py $(PLIB)/kcore/uncommon.py $(PLIB)/kcore/varz.py \
     $(PLIB)/kcore/webserver.py $(PLIB)/kcore/webserver_base.py 
 
@@ -43,10 +43,6 @@ $(PLIB)/kcore/auth.py: ../../pylib/kcore/auth.py
 	chmod 644 $@
 
 $(PLIB)/kcore/common.py: ../../pylib/kcore/common.py
-	cp $^ $@
-	chmod 644 $@
-
-$(PLIB)/kcore/common_base.py: ../../pylib/kcore/common_base.py
 	cp $^ $@
 	chmod 644 $@
 

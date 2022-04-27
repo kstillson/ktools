@@ -215,9 +215,9 @@ case "$cmd" in
     ## WARNING: deletes all the "prev" images.  Only run this once
     ## confident we don't need to revert to any of those...
     ##
-    docker container prune -f --filter label!=live
-    docker image prune -f -a --filter label!=live
-    docker volume prune -f --filter label!=live
+    docker container prune -f --filter "label!=live"
+    docker image prune -f -a --filter "label!=live"
+    docker volume prune -f --filter "label!=live"
     docker builder prune -f
     ;;
   hup | H | HUP | reload | r)   ## Send sigHup to proc 1 in container $1

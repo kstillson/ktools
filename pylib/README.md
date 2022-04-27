@@ -30,13 +30,10 @@ feature is that tokens mix-in machine-specific details, so that tokens
 are hardware-locked to a specific machine.
 
 
-### common.py and common_base.py
+### common.py
 
-common (and it's Circuit Python-friendly companion common_base) provide some
-simple data manipulators, and abstractions that mostly try to hide python2
-vs. python3 differences.
-
-common_base has simple list maniulators, like reading a file and splitting into a list of lines, optionally stripping each line, and internally handling exceptions.
+common provides some simple data manipulators, and abstractions that mostly
+try to hide python2 vs. python3 differences.
 
 common really has two parts: a logging system and a web client.
 
@@ -73,9 +70,6 @@ and output HTML.
 Basically a Circuit Python friendly in-memory fixed-sized logging abstraction.
 This is basically an extraction of part of the logging functionailty from
 common.py
-
-TODO: can this be merged into common_base, or moved to circuitpy_lib.  It
-seems kinda redundant here as a top-level item.
 
 
 ### uncommon.py

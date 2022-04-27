@@ -5,7 +5,7 @@ COPIED_FILES := $(HCH)/home_control_service.py $(HCH)/root.html \
    $(HCH)/hcdata_devices.py $(HCH)/hcdata_scenes.py $(HCH)/hcdata_test_device.py  \
    $(PLIB)/home_control/hc.py $(PLIB)/home_control/plugin_delay.py $(PLIB)/home_control/plugin_test.py \
    $(PLIB)/home_control/plugin_tplink.py $(PLIB)/home_control/plugin_web.py \
-   $(PLIB)/kcore/common_base.py $(PLIB)/kcore/common.py $(PLIB)/kcore/html.py $(PLIB)/kcore/log_queue.py \
+   $(PLIB)/kcore/common.py $(PLIB)/kcore/html.py $(PLIB)/kcore/log_queue.py \
    $(PLIB)/kcore/webserver_base.py $(PLIB)/kcore/webserver.py $(PLIB)/kcore/varz.py 
 
 
@@ -49,11 +49,8 @@ $(PLIB)/home_control/plugin_tplink.py: ../../pylib/home_control/plugin_tplink.py
 $(PLIB)/home_control/plugin_web.py: ../../pylib/home_control/plugin_web.py
 	cp $^ $@
 
-$(PLIB)/kcore/common_base.py: ../../pylib/kcore/common_base.py
-	mkdir -p $(PLIB)/kcore
-	cp $^ $@
-
 $(PLIB)/kcore/common.py: ../../pylib/kcore/common.py
+	mkdir -p $(PLIB)/kcore
 	cp $^ $@
 
 $(PLIB)/kcore/html.py: ../../pylib/kcore/html.py
