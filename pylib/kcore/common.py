@@ -5,7 +5,6 @@ TODO: doc
 '''
 
 import os, ssl, sys, time
-import kcore.log_queue as Q
 import kcore.varz as varz
 
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
@@ -119,6 +118,10 @@ for k, v in NAME_TO_LEVEL.items():
 
 # ---------- Internal state
 
+# In-memory queue of most recent log messages.
+LOG_QUEUE = []
+LOG_QUEUE_LEN_MAX = 40
+
 # initial state set so that calls to log() will output to stderr BEFORE init_log() is called.
 FILTER_LEVEL_LOGFILE = NEVER   # default becomes INFO  once init_log() is called, if not otherwise set.
 FILTER_LEVEL_STDOUT = NEVER    # default stays   NEVER once init_log() is called, if not otherwise set.
@@ -153,7 +156,7 @@ def init_log(log_title='log', logfile='logfile',
 
     global LOG_FILENAME, LOG_QUEUE_LEN_MAX, LOG_TITLE, FORCE_TIME
     if log_title: LOG_TITLE = log_title
-    if log_queue_len: Q.set_queue_len(log_queue_len)
+    if log_queue_len: set_queue_len(log_queue_len)
     if force_time: FORCE_TIME = force_time
 
     global FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG, FILTER_LEVEL_MIN
@@ -190,14 +193,18 @@ def log(msg, level=INFO):
     if level >= ERROR: varz.bump('log-error-or-higher')
     level_name = getLevelName(level)
     time = FORCE_TIME or timestr()
-    msg2 = '%s: %s: %s' % (time, level_name, msg)
-    msg3 = '%s: %s' % (LOG_TITLE, msg2)
-    # Send to various destinations.
-    Q.log(msg, level)     # Add to internal queue.
+    msg2 = '%s: %s: %s: %s' % (LOG_TITLE, time, level_name, msg)
+    
+    # Add to internal in-memory queue
+    global LOG_QUEUE, LOG_QUEUE_LEN_MAX
+    if LOG_QUEUE_LEN_MAX and len(LOG_QUEUE) >= LOG_QUEUE_LEN_MAX: del LOG_QUEUE[LOG_QUEUE_LEN_MAX - 1]
+    LOG_QUEUE.insert(0, msg2)
+    
+    # Send to other destinations.
     if level >= FILTER_LEVEL_LOGFILE and LOG_FILENAME:
         with open(LOG_FILENAME, 'a') as f: f.write('%s:%s:%s: %s\n' % (level_name, LOG_TITLE, time, msg))
-    if level >= FILTER_LEVEL_STDOUT: print(msg3)
-    if level >= FILTER_LEVEL_STDERR: stderr(msg3)
+    if level >= FILTER_LEVEL_STDOUT: print(msg2)
+    if level >= FILTER_LEVEL_STDERR: stderr(msg2)
     if level >= FILTER_LEVEL_SYSLOG:
         syslog.syslog(SYSLOG_LEVEL_MAP.get(level, syslog.LOG_INFO), msg2)
         varz.bump('log-sent-syslog')
@@ -205,13 +212,20 @@ def log(msg, level=INFO):
 
 
 def clear_log():
+    global LOG_QUEUE
+    LOG_QUEUE = []
     if LOG_FILENAME and os.path.exists(LOG_FILENAME): os.unlink(LOG_FILENAME)
-    Q.clear()
     # Clean varz
     rm = []
     for key in varz.VARZ:
         if key.startswith('log-'): rm.append(key)
     for key in rm: varz.VARZ.pop(key)
+
+
+def set_queue_len(new_len):
+    global LOG_QUEUE, LOG_QUEUE_LEN_MAX
+    LOG_QUEUE_LEN_MAX = new_len
+    if len(LOG_QUEUE) > new_len: LOG_QUEUE = LOG_QUEUE[:new_len]
 
 
 # Circuit Python doesn't have datetime, so here's our poor-man's-strftime
@@ -234,8 +248,8 @@ def log_debug(msg):   log(msg, level=DEBUG)
 # ----------
 # Log queue access passthrough
 
-def last_logs(): return Q.last_logs()
-def last_logs_html(): return Q.last_logs_html()
+def last_logs(): return '\n'.join(LOG_QUEUE)
+def last_logs_html(): return '<p>' + '<br/>'.join(LOG_QUEUE)
 
 
 # ----------------------------------------

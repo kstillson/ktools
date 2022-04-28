@@ -25,7 +25,7 @@ while True:
 '''
 
 import io, os, re, sys
-import kcore.log_queue as Q
+import kcore.common as C
 from kcore.webserver_base import *
 
 PY_VER = sys.version_info[0]
@@ -50,9 +50,9 @@ class WebServer(WebServerBase):
 
         # Create a logging adapter that uses the low-dep system from kcore.log_queue.
         logging_adapter = LoggingAdapter(
-            log_request=Q.log_info, log_404=Q.log_info,
-            log_general=Q.log_info, log_exceptions=Q.log_error,
-            get_logz_html=Q.last_logs_html)
+            log_request=C.log_info, log_404=C.log_info,
+            log_general=C.log_info, log_exceptions=C.log_error,
+            get_logz_html=C.last_logs_html)
 
         super(WebServer, self).__init__(handlers=handlers, logging_adapter=logging_adapter, *args, **kwargs)
 

@@ -1,6 +1,6 @@
 
 import threading, time, sys
-import circpysim_logging as L
+import kcore.common as C
 
 GRAPHICS = True
 try:
@@ -12,8 +12,8 @@ except:
 
 # ---------- global controls
 
-LOG_LEVEL_SETUP = L.INFO
-LOG_LEVEL_SET_PIXEL = L.DEBUG
+LOG_LEVEL_SETUP = C.INFO
+LOG_LEVEL_SET_PIXEL = C.DEBUG
 
 PIXEL_X = 15
 PIXEL_Y = 15
@@ -35,7 +35,7 @@ GRBW = 0
 
 class NeoPixel:
     def __init__(self, pin, num_pixels, **kwargs):
-        if LOG_LEVEL_SETUP: L.log(f'NeoPixel: new array of {num_pixels} dots', LOG_LEVEL_SETUP)
+        if LOG_LEVEL_SETUP: C.log(f'NeoPixel: new array of {num_pixels} dots', LOG_LEVEL_SETUP)
         self.n = num_pixels
         self.kwargs = kwargs
         self.brightness = 1.0
@@ -78,7 +78,7 @@ class NeoPixel:
         if isinstance(val, int): val=(val, val, val)
         if self.brightness != 1.0:
             val = (int(val[0] * self.brightness), int(val[1] * self.brightness), int(val[2] * self.brightness))
-        if LOG_LEVEL_SET_PIXEL: L.log(f'NeoPixel: set {index} to {val}', LOG_LEVEL_SET_PIXEL)
+        if LOG_LEVEL_SET_PIXEL: C.log(f'NeoPixel: set {index} to {val}', LOG_LEVEL_SET_PIXEL)
         if not GRAPHICS: return
         col = (val[0] << 16) + (val[1] << 8) + val[2]
         hexcol = "#"+"{0:#0{1}x}".format(col, 8)[2:]

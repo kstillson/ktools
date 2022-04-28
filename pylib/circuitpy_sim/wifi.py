@@ -1,6 +1,6 @@
 
 import time, socket, sys, uuid
-import circpysim_logging as L
+import kcore.common as C
 
 PY_VER = sys.version_info[0]
 
@@ -15,7 +15,7 @@ class Radio:
 
     @staticmethod
     def connect(unused_ssid, unused_wifi_password):
-        L.log('wifi.connect called')
+        C.log('wifi.connect called')
         time.sleep(1)
 
 # Singleton class instance.

@@ -65,13 +65,6 @@ A very simple set of functions that take various forms of plain text and lists
 and output HTML.
 
 
-### log_queue.py
-
-Basically a Circuit Python friendly in-memory fixed-sized logging abstraction.
-This is basically an extraction of part of the logging functionailty from
-common.py
-
-
 ### uncommon.py
 
 More (Circuit Python unfriendly) library routines, but ones of a more esoteric

@@ -1,6 +1,6 @@
 
 import datetime
-import circpysim_logging as L
+import kcore.common as C
 
 class RTC:
     def __init__(self):
@@ -9,7 +9,7 @@ class RTC:
     def get_date(self): return datetime.datetime.now()
     
     def set_date(self, newdate):
-        L.log(f'set rtc time to: {newdate}')
+        C.log(f'set rtc time to: {newdate}')
 
     def del_date(self): pass
 

@@ -3,7 +3,6 @@ import context_kcore     # fix path to includes work as expected in tests
 
 import atexit, os
 import kcore.common as C
-import kcore.log_queue as Q
 import kcore.uncommon as UC
 import kcore.varz as varz  ## to access varz counts in tests.
 
@@ -80,9 +79,6 @@ def test_logging(tmp_path):
                   logfile_name=None, expect_logfile=None,
                   expect_stdout='', expect_stderr=': TIME0: INFO: test0\n')
     
-    # Override log queues time generation function.
-    Q.get_time = lambda: 'TIME'
-    
     # Basic test with all defaults except log filename.
     ok = C.init_log(logfile=tempname, force_time='TIME', clear=True)
     assert ok
@@ -93,7 +89,7 @@ def test_logging(tmp_path):
                   expect_logfile='INFO:log:TIME: test1\nERROR:log:TIME: test2\n',
                   expect_stdout='',
                   expect_stderr='log: TIME: ERROR: test2\n')
-    assert C.last_logs() == 'ERROR: TIME: test2\nINFO: TIME: test1'
+    assert C.last_logs() == 'log: TIME: ERROR: test2\nlog: TIME: INFO: test1'
 
     # Test falling to basename if can't create log in bad subdir.
     expected_name = 'test123.log'
@@ -113,9 +109,36 @@ def test_logging(tmp_path):
     assert ok
     check_logging(lambda: C.log_error('test4'), 1, None, '', expect_stdout='',
                   expect_stderr='log: TIME: ERROR: test4\n')
-    assert C.last_logs() == 'ERROR: TIME: test4'
+    assert C.last_logs() == 'log: TIME: ERROR: test4'
 
 
+def test_log_queue():
+    C.init_log('test', logfile=None, log_queue_len=3, clear=True, force_time='TIME')
+               
+    C.log_debug('msg1')
+    C.log('msg2', C.INFO)
+    C.log_warning('msg3')
+    C.log('msg4', C.CRITICAL)
+
+    assert C.LOG_QUEUE[0] == 'test: TIME: CRITICAL: msg4'
+    assert C.LOG_QUEUE[1] == 'test: TIME: WARNING: msg3'
+    assert C.LOG_QUEUE[2] == 'test: TIME: INFO: msg2'
+    assert len(C.LOG_QUEUE) == 3
+
+    C.set_queue_len(2)
+    assert C.LOG_QUEUE[0] == 'test: TIME: CRITICAL: msg4'
+    assert C.LOG_QUEUE[1] == 'test: TIME: WARNING: msg3'
+    assert len(C.LOG_QUEUE) == 2
+
+    C.log_alert('msg5')
+    assert C.LOG_QUEUE[0] == 'test: TIME: CRITICAL: msg5'
+    assert C.LOG_QUEUE[1] == 'test: TIME: CRITICAL: msg4'
+    assert len(C.LOG_QUEUE) == 2
+
+    assert C.last_logs() == 'test: TIME: CRITICAL: msg5\ntest: TIME: CRITICAL: msg4'
+    assert C.last_logs_html() == '<p>test: TIME: CRITICAL: msg5<br/>test: TIME: CRITICAL: msg4'
+
+    
 # ---------- web get
 
 # NB: relies on the author's personal web-server.  TODO: find something better.
