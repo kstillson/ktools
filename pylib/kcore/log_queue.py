@@ -1,5 +1,6 @@
 '''
-TODO: doc
+TODO: this module can be eliminated (i.e. folded into common),
+      now that common.py is circuit-python friendly.
 
 '''
 

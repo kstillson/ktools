@@ -18,6 +18,31 @@ if not CIRCUITPYTHON:
 
 
 # ----------------------------------------
+# colorizers
+
+
+# CCC = Console Color Codes  :-)
+CCC = {
+    'black' :   '\033[30m',
+    'blue' :    '\033[34m',
+    'cyan' :    '\033[36m',
+    'green' :   '\033[32m',
+    'magenta' : '\033[35m',
+    'red' :     '\033[31m',
+    'yellow' :  '\033[33m',
+    'white' :   '\033[37m',
+    'reset' :   '\033[0;0m',
+}
+
+def c(msg, color, bold=False):
+    '''eg:  print(f"hello {C.c('there', 'green')} world.")'''
+    if not sys.stdin.isatty(): return msg
+    code = CCC.get(color.lower(), '')
+    if bold: code.replace('[', '[1;')
+    return code + msg + CCC['reset']
+
+
+# ----------------------------------------
 # Container helpers
 
 def dict_to_list_of_pairs(d):
