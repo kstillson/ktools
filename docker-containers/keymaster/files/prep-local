@@ -6,4 +6,4 @@ GROUP_DONT_DELETE_REGEX="^(root|km)"
 chown km /home/km/.gnupg
 chgrp -R km /home/km
 
-chmod go+rX /home /etc/passwd /etc/group /etc/init
+chmod -R go+rX /home /etc/passwd /etc/group /etc/init /usr/lib/python3.9/site-packages

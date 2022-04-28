@@ -27,7 +27,7 @@ set -e
 # that the bash-tricks collection and the overall structure/approach might
 # be of interest, and can be adapted to your own environment.
 
-# TODO(kstillson): The TEST, and VERBOSE options not uniformly implimented.
+# TODO: The TEST, and VERBOSE options not uniformly implimented.
 
 # ---------- flag defaults
 

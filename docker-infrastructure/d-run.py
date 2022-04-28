@@ -198,7 +198,7 @@ def parse_args():
     ap.add_argument('--cd', default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
     ap.add_argument('--image', '-i', default=None, help='Name of image to use; default of None will use container name.')
     ap.add_argument('--latest', '-l', action='store_true', help='Shorthand for --tag=latest')
-    ap.add_argument('--repo', default='kstillson/', help='repo prefix for image name.')
+    ap.add_argument('--repo', default='ktools/', help='repo prefix for image name.')
     ap.add_argument('--tag', '-T', default=DEFAULT_TAG, help='tag or hash of image version to use.  set to "" to use "latest"')
 
     # Flags that provide context about the mode we're launching the container in.

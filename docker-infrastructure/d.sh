@@ -250,7 +250,7 @@ case "$cmd" in
     echo "back from container."
     ;;
   run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;  ## Run command $2+ as root in $1
-  shell) docker run -ti --user root --entrypoint /bin/bash kstillson/$(pick_container_from_dev $spec):latest ;;  ## Start container $1 but shell overriding entrypoint.
+  shell) docker run -ti --user root --entrypoint /bin/bash ktools/$(pick_container_from_dev $spec):latest ;;  ## Start container $1 but shell overriding entrypoint.
 
 # Multiple container management done in parallel
   build-all | ba)                    list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;  ## Build all buildable containers.

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Better doc
+#
+# What Docker network will we use for the build?  This is independent from the
+# network the container will run in.  Often containers run in highly constrained
+# environments (e.g. no or limited connectivity), but we need connectivity during
+# the build to pull image contents.
+#export NETWORK=""
+
+
 # ---------- helper functions
 
 function setlive() {
@@ -45,9 +54,9 @@ if [[ -r "private.d/build-env" ]]; then source private.d/build-env; fi
 
 
 # Determine the version name of the image we are to build.
-# By default, in a directory named "x", this will be "kstillson/x:latest".
+# By default, in a directory named "x", this will be "ktools/x:latest".
 NAME=${NAME:-$(basename $(pwd))}
-REPO_BASE=${REPO_BASE:-kstillson}
+REPO_BASE=${REPO_BASE:-ktools}
 REPO=${REPO:-${REPO_BASE}/${NAME}}
 TAG=${TAG:-latest}
 #
@@ -59,12 +68,6 @@ if [[ "$1" == "--setlive" || "$1" == "-s" ]]; then
     setlive ${REPO}
     exit 0
 fi
-
-# What Docker network will we use for the build?  This is independent from the
-# network the container will run in.  Often containers run in highly constrained
-# environments (e.g. no or limited connectivity), but we need connectivity during
-# the build to pull image contents.
-export NETWORK=""
 
 # Defer to directory local logic, if provided.
 if [[ -r ./Build ]]; then

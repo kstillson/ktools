@@ -1,4 +1,4 @@
-FROM kstillson/kcore-baseline:live
+FROM ktools/kcore-baseline:live
 
 EXPOSE 8080
 

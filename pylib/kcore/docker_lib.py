@@ -34,7 +34,7 @@ def latest_equals_live(container_name):
     try:
         ids = subprocess.check_output(
             ['/usr/bin/docker', 'images',
-             '--filter=reference=kstillson/%s' % container_name,
+             '--filter=reference=ktools/%s' % container_name,
              '--format="{{.Tag}} {{.ID}}"']).decode("utf-8").strip()
         id_map = {}
         for lines in ids.split('\n'):
