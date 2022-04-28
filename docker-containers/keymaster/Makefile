@@ -1,10 +1,19 @@
 
-KMH := files/home/km
-PLIB := files/usr/lib/python3.9/site-packages
-COPIED_FILES := $(KMH)/km.py $(KMH)/keymaster.pem $(KMH)/km.data.gpg $(KMH)/km-test.data.gpg \
-    $(PLIB)/kcore/auth.py $(PLIB)/kcore/common.py $(PLIB)/kcore/html.py \
-    $(PLIB)/kcore/uncommon.py $(PLIB)/kcore/varz.py \
-    $(PLIB)/kcore/webserver.py $(PLIB)/kcore/webserver_base.py 
+KMH_DIR := files/home/km
+KMH_FILES := km.py
+KMH_TARGETS := $(addprefix $(KMH_DIR)/, $(KMH_FILES))
+
+KMH_TEST_FILES := km-test.data.gpg 
+KMH_TEST_TARGETS := $(addprefix $(KMH_DIR)/, $(KMH_TEST_FILES))
+
+PRIV_FILES := keymaster.pem km.data.gpg
+PRIV_TARGETS := $(addprefix $(KMH_DIR)/, $(PRIV_FILES))
+
+KCORE_DIR := files/usr/lib/python3.9/site-packages/kcore
+KCORE_FILES := auth.py common.py html.py uncommon.py varz.py webserver.py webserver_base.py 
+KCORE_TARGETS := $(addprefix $(KCORE_DIR)/, $(KCORE_FILES))
+
+DIRS := $(KMH_DIR) $(KMH_DIR)/.gnupg $(KCORE_DIR) 
 
 SHELL :=/bin/bash
 
@@ -13,7 +22,7 @@ SHELL :=/bin/bash
 all: copy docker-all
 
 clean:
-	rm -f $(COPIED_FILES)
+	rm -rf $(KMH_DIR) $(KCORE_DIR)
 
 update2: all update         # TODO: better name...?
 	d 01 keymaster
@@ -21,56 +30,28 @@ update2: all update         # TODO: better name...?
 
 # ----- file copies
 
-copy: $(COPIED_FILES)
+copy: $(DIRS) $(KMH_DIR) $(KMH_TARGETS) $(KMH_TEST_TARGETS) $(PRIV_TARGETS) $(KCORE_DIR) $(KCORE_TARGETS)
 
-$(KMH)/km.py: ../../services/keymaster/km.py
-	mkdir -p $(KMH)
-	cp $^ $@
+$(DIRS):
+	mkdir -p $@
 
-$(KMH)/keymaster.pem: ../../private.d/keymaster.pem
-	cp $^ $@
-	chmod 640 $@
+$(KMH_TARGETS): $(KMH_DIR)/% : ../../services/keymaster/%
+	cp -p $^ $@
 
-$(KMH)/km.data.gpg: ../../private.d/km.data.gpg
-	cp $^ $@
+$(KMH_TEST_TARGETS): $(KMH_DIR)/% : ../../services/keymaster/tests/%
+	cp -p $^ $@
 
-$(KMH)/km-test.data.gpg: ../../services/keymaster/tests/km-test.data.gpg
-	cp $^ $@
+$(PRIV_TARGETS): $(KMH_DIR)/% : ../../private.d/%
+	cp -p $^ $@
 
-$(PLIB)/kcore/auth.py: ../../pylib/kcore/auth.py
-	mkdir -p $(PLIB)/kcore
-	cp $^ $@
-	chmod 644 $@
-
-$(PLIB)/kcore/common.py: ../../pylib/kcore/common.py
-	cp $^ $@
-	chmod 644 $@
-
-$(PLIB)/kcore/html.py: ../../pylib/kcore/html.py
-	cp $^ $@
-	chmod 644 $@
-
-$(PLIB)/kcore/uncommon.py: ../../pylib/kcore/uncommon.py
-	cp $^ $@
-	chmod 644 $@
-
-$(PLIB)/kcore/varz.py: ../../pylib/kcore/varz.py
-	cp $^ $@
-	chmod 644 $@
-
-$(PLIB)/kcore/webserver.py: ../../pylib/kcore/webserver.py
-	cp $^ $@
-	chmod 644 $@
-
-$(PLIB)/kcore/webserver_base.py: ../../pylib/kcore/webserver_base.py
-	cp $^ $@
-	chmod 644 $@
+$(KCORE_TARGETS): $(KCORE_DIR)/% : ../../pylib/kcore/%
+	cp -p $^ $@
 
 # -----
 
 ../../private.d/km.data.gpg: ../../services/keymaster/tests/km-test.data.gpg
 	@echo "COULD NOT FIND $@, SO USING $^ AS A STARTING POINT"
-	cp $^ $@
+	cp -p $^ $@
 
 
 # ---------- pass-throughs

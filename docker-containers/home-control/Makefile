@@ -1,68 +1,37 @@
 
-HCH := files/home/hc
-PLIB := files/usr/lib/python3.9/site-packages
-COPIED_FILES := $(HCH)/home_control_service.py $(HCH)/root.html \
-   $(HCH)/hcdata_devices.py $(HCH)/hcdata_scenes.py $(HCH)/hcdata_test_device.py  \
-   $(PLIB)/home_control/hc.py $(PLIB)/home_control/plugin_delay.py $(PLIB)/home_control/plugin_test.py \
-   $(PLIB)/home_control/plugin_tplink.py $(PLIB)/home_control/plugin_web.py \
-   $(PLIB)/kcore/common.py $(PLIB)/kcore/html.py \
-   $(PLIB)/kcore/webserver_base.py $(PLIB)/kcore/webserver.py $(PLIB)/kcore/varz.py 
+HCH_DIR := files/home/hc
+HCH_FILES := home_control_service.py root.html hcdata_devices.py hcdata_scenes.py hcdata_test_device.py
+HCH_TARGETS := $(addprefix $(HCH_DIR)/, $(HCH_FILES))
 
+PLIB_DIR := files/usr/lib/python3.9/site-packages/home_control
+PLIB_FILES := hc.py plugin_delay.py plugin_test.py plugin_tplink.py plugin_web.py 
+PLIB_TARGETS := $(addprefix $(PLIB_DIR)/, $(PLIB_FILES))
+
+KCORE_DIR := files/usr/lib/python3.9/site-packages/kcore
+KCORE_FILES := common.py html.py webserver_base.py webserver.py varz.py 
+KCORE_TARGETS := $(addprefix $(KCORE_DIR)/, $(KCORE_FILES))
+
+DIRS := $(HCH_DIR) $(PLIB_DIR) $(KCORE_DIR)
 
 # ---------- local custom logic
 
 all: copy docker-all
 
 clean:
-	rm -rf $(COPIED_FILES)
+	rm -rf $(HCH_DIR) $(PLIB_DIR) $(KCORE_DIR)
 
-copy: $(COPIED_FILES) 
+copy: $(DIRS) $(HCH_DIR) $(HCH_TARGETS) $(PLIB_DIR) $(PLIB_TARGETS) $(KCORE_DIR) $(KCORE_TARGETS)
 
-$(HCH)/home_control_service.py: ../../services/home-control/home_control_service.py
+$(DIRS):
+	mkdir -p $@
+
+$(HCH_TARGETS): $(HCH_DIR)/% : ../../services/home-control/%
 	cp $^ $@
 
-$(HCH)/root.html: ../../services/home-control/root.html
+$(PLIB_TARGETS): $(PLIB_DIR)/% : ../../pylib/home_control/%
 	cp $^ $@
 
-$(HCH)/hcdata_devices.py: ../../home-control/hcdata_devices.py
-	cp $^ $@
-
-$(HCH)/hcdata_scenes.py: ../../home-control/hcdata_scenes.py
-	cp $^ $@
-
-$(HCH)/hcdata_test_device.py: ../../home-control/hcdata_test_device.py
-	cp $^ $@
-
-$(PLIB)/home_control/hc.py: ../../pylib/home_control/hc.py
-	mkdir -p $(PLIB)/home_control
-	cp $^ $@
-
-$(PLIB)/home_control/plugin_delay.py: ../../pylib/home_control/plugin_delay.py
-	cp $^ $@
-
-$(PLIB)/home_control/plugin_test.py: ../../pylib/home_control/plugin_test.py
-	cp $^ $@
-
-$(PLIB)/home_control/plugin_tplink.py: ../../pylib/home_control/plugin_tplink.py
-	cp $^ $@
-
-$(PLIB)/home_control/plugin_web.py: ../../pylib/home_control/plugin_web.py
-	cp $^ $@
-
-$(PLIB)/kcore/common.py: ../../pylib/kcore/common.py
-	mkdir -p $(PLIB)/kcore
-	cp $^ $@
-
-$(PLIB)/kcore/html.py: ../../pylib/kcore/html.py
-	cp $^ $@
-
-$(PLIB)/kcore/webserver_base.py: ../../pylib/kcore/webserver_base.py
-	cp $^ $@
-
-$(PLIB)/kcore/webserver.py: ../../pylib/kcore/webserver.py
-	cp $^ $@
-
-$(PLIB)/kcore/varz.py: ../../pylib/kcore/varz.py
+$(KCORE_TARGETS): $(KCORE_DIR)/% : ../../pylib/kcore/%
 	cp $^ $@
 
 
