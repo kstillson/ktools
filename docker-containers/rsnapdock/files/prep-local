@@ -1,0 +1,12 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(root)"
+GROUP_DONT_DELETE_REGEX="^(root)"
+KMC_RM=0
+ROOT_RM_HOMEDIR=0
+
+# Need chown for uid remap in /etc/init...
+SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|ln|od|strings|su)$"
+
+# Some files stored in private.d subdirs to keep them out of git;
+# move them into their real positions.
+mv /root/.ssh/private.d/* /root/.ssh || true
