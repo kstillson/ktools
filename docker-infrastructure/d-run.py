@@ -104,6 +104,11 @@ def clone_dir(src, dest):
     return True
 
 
+def does_image_exist(repo_name, image_name, tag_name):
+    out = subprocess.check_output(['/usr/bin/docker', 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
+    return out != b''
+
+
 def map_dir(destdir, name, include_tree=False, include_files=False):
     if '/' in destdir:
         mapped = '/rw/dv/TMP/%s/%s' % (name, destdir.replace('/', '_'))
@@ -198,7 +203,8 @@ def parse_args():
     ap.add_argument('--cd', default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
     ap.add_argument('--image', '-i', default=None, help='Name of image to use; default of None will use container name.')
     ap.add_argument('--latest', '-l', action='store_true', help='Shorthand for --tag=latest')
-    ap.add_argument('--repo', default='ktools/', help='repo prefix for image name.')
+    ap.add_argument('--repo', default='ktools', help='repo prefix for image name.')
+    ap.add_argument('--repo2', default='kstillson', help='backup repo prefix to try if image:tag does not exist in --repo.')
     ap.add_argument('--tag', '-T', default=DEFAULT_TAG, help='tag or hash of image version to use.  set to "" to use "latest"')
 
     # Flags that provide context about the mode we're launching the container in.
@@ -332,7 +338,14 @@ def gen_command(args, settings):
     if 'image' in settings:
         image = settings.get('image')
     else:
-        image = args.repo + (args.image or basename) + ':' + (args.tag or 'latest')
+        repo_name = args.repo
+        image_name = args.image or basename
+        tag_name = args.tag or 'latest'
+        if not does_image_exist(repo_name, image_name, tag_name):
+            repo_name = args.repo2
+            if not does_image_exist(repo_name, image_name, tag_name):
+                err(f'This probably wont work; {image_name}:{tag_name} does not exist in either {args.repo} or {args.repo2}')
+        image = f'{repo_name}/{image_name}:{tag_name}'
     cmnd.append(image)
     if args.cmd: cmnd.extend(args.cmd.split(' '))
 
