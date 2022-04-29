@@ -44,7 +44,7 @@ function run_tests() {
 
 function setlive() {
     fullname="$1"
-    docker tag ${fullname}:live ${fullname}:prev     # backup old live tag
+    docker tag ${fullname}:live ${fullname}:prev  >&/dev/null   # backup old live tag
     docker tag ${fullname}:latest ${fullname}:live
     echo "${fullname} :latest promoted to :live"
 }
@@ -73,7 +73,7 @@ function main() {
 
     auto_mode=0
     just_live=0
-    just_tests=0
+    run_tests=0
 
     build_params="$DBUILD_PARAMS"
     cd="."
@@ -86,9 +86,9 @@ function main() {
     while [[ $# -gt 0 ]]; do
         flag="$1"
         case "$flag" in
-            --auto | -a) auto_mode=1 ;;                   ## run mode: build, test, promote to live (if pass) and restart (if autostart)
+            --auto | -a) auto_mode=1; run_tests=1 ;;      ## run mode: build, test, promote to live (if pass) and restart (if autostart)
             --setlive | -s) just_live=1 ;;                ## run mode: just tag :latest to :live and exit
-            --test | -t) just_tests=1 ;;                  ## run mode: just run tests and exit
+            --test | -t) run_tests=1 ;;                   ## run mode: build and run tests, then exit
 
             --build_params | -b) build_params="$1" ;;     ## params for "docker build" (defaults to $DBUILD_PARAMS)
             --cd) cd="$1"; shift ;;                       ## location of Dockerfile to build (can be relative to $DOCKER_BASE_DIR)
@@ -110,9 +110,13 @@ function main() {
     target="${fullname}:${tag}"
 
     if [[ $just_live == 1 ]]; then setlive $fullname ; exit $?; fi
-    if [[ $just_tests == 1 ]]; then run_tests; exit $?; fi
 
-    run_build "$target" "$build_params"
+    run_build "$target" "$build_params" || exit $?
+
+    if [[ $run_tests == 1 ]]; then
+	run_tests || exit $?
+	echo "TESTS PASS"
+    fi
 
     # If not in auto mode, we're done.
     if [[ $auto_mode == 0 ]]; then
@@ -121,8 +125,6 @@ function main() {
     fi
 
     # ----- auto mode
-
-    run_tests || exit $?
 
     setlive $fullname
 
