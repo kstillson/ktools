@@ -1,0 +1,25 @@
+
+# WARNING: The below extra_docker flags disables the normal userns mapping.  This is needed
+# because the rsnapshot files (and their mountpoints) used real-uids, and we can't even
+# start the container with these bind-mounts if we can't access the underlying dirs.
+#
+# This means ownership uids will be correct for rsnapshot files, but WILL BE WRONG
+# for all the other targets, which used mapped uids.  BE VERY CAREFUL.
+#
+# We also need fuse for encfs.
+extra_docker: "-ti --userns=host --cap-add=SYS_PTRACE --device /dev/fuse --cap-add=SYS_ADMIN --security-opt apparmor:unconfined"
+
+extra_init: "interactive"
+foreground: 1
+
+mount_logs:
+  - var_log: /var/log
+
+mount_persistent:
+  - /home/ken/share/encfs/default: /root/gdrive
+  - /rw/mnt/data1/photos-backup: /root/photos-backup
+  - /rw/mnt/rsnap/echo-back: /root/echo-back
+
+mount_ro:
+  - /rw/mnt/rsnap/daily.0: /root/src
+

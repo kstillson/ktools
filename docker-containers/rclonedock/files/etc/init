@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# $1 is primary mode:
+#   gdrive: syncs google-drive contents to /root/gdrive-efs (mounted via efs)
+#   interactive: interactive shell ready for "rclone mount" commands
+#   photos: syncs google-photos to /root/photos-backup
+#   test: copies a single file back and forth from wasabi.
+#   wasabi: syncs /root/src to wasabi
+
+BASENAME=rclonedock
+LOG=/var/log/${BASENAME}.log
+
+# ----------
+# Parse flags
+
+LOG_RUNNING=0
+VERBOSE=0
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    flag="$1"
+    case "$flag" in
+        --logged) LOG_RUNNING=1 ;;
+	--verbose | -v) VERBOSE=1 ;;
+        *) POSITIONAL+=("$1") ;;
+    esac
+    shift
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+MODE="$1"
+
+# ----------
+# Basic flag processing
+
+# Re-exec with logging/transcript if needed.
+if [[ "$LOG_RUNNING" == "0" && "$MODE" != "interactive" ]]; then
+    if [[ "$VERBOSE" == "1" ]]; then
+	/usr/bin/script --append --flush --return --command "$0 --logged -v $MODE" $LOG
+	STATUS=$?
+    else
+	"$0" --logged "$MODE" |& fgrep -v "non file" &>> $LOG
+	STATUS=${PIPESTATUS[0]}
+    fi
+    if [[ "$STATUS" != "0" ]]; then
+	echo "rclone mode $MODE failed:" >&2
+	tail -5 $LOG 1>&2
+	exit $STATUS
+    fi
+    exit 0
+fi
+
+# Verbose mode.
+if [[ "$VERBOSE" == "1" ]]; then
+    echo "verbose mode on (echo progress in real time)"
+    STATS='-v --stats 1m'
+else
+    STATS='--stats 10m --stats-log-level NOTICE --stats-one-line-date'
+fi
+
+# ----------
+# Retrieve rclone config decryption password.
+. /etc/auth
+if [[ -z "$RCLONE_CONFIG_PASS" ]]; then
+  echo 'fatal: unable to retieve backend credentials.'
+  exit 1
+fi
+
+# ----------
+# efs helper
+
+function mount_efs() {
+    TEST="/root/gdrive-efs/gdrive/active"
+    while [ ! -d ${TEST} ]; do
+	/usr/bin/encfs --extpass "/usr/local/bin/kmc default" /root/gdrive /root/gdrive-efs
+	if [ ! -d ${TEST} ]; then echo "encfs fail; retrying after delay."; sleep 20; fi
+    done
+    echo "encfs mount ok."
+}
+
+
+# ----------
+# Mode specific operations
+
+echo "$(date): starting rclone $MODE run"
+case $MODE in
+    gdrive)
+	mount_efs
+	rclone sync ${STATS} --modify-window 10s gdrive-ro:/ /root/gdrive-efs/gdrive
+	STATUS=$?
+	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
+
+	# Sanity check: check financial worksheet edited within last 30 days
+	# (TODO: surely there's a better test than this...)
+	DEST="/root/gdrive-efs/gdrive/active/Fin/Money planning.xlsx"
+	if test $(find "$DEST" -mtime +30); then echo "Echo-back gdrive test file is too old ($DEST)"; exit -4; fi
+	;;
+
+    interactive)
+	mount_efs
+	echo "ready for 'rclone mount ...' (or whatever)"
+	/bin/bash -il
+	;;
+
+    photos)
+	year=$(date +%Y)
+	echo "$(date): starting Google photos sync for $year"
+	rclone copy ${STATS} google-photos:/media/by-month/$year /root/photos-backup/media/by-month/$year
+	STATUS=$?
+	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
+
+	# Sanity check: count number of files modified in the last 30 days
+	count=$(find /root/photos-backup -type f -mtime -30 | wc -l)
+	if [[ "$count" == "0" ]]; then
+	    echo "$(date): ERROR- no Google photos updated in last 30 days"
+	    exit -4
+	else
+	    echo "$(date): saw $count photos modified in the last 30 days."
+	fi
+        ;;
+
+    full-photos)
+	echo "$(date): starting full Google photos archive sync"
+	rclone copy --exclude "**all/**" --exclude "**by-day/**" --exclude "**by-year/**" ${STATS} google-photos:/ /root/photos-archive
+	STATUS=$?
+	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
+        ;;
+    
+    test)
+	# Docker "Test" script will have already created unique content for the test-out file.
+	SRC="/root/echo-back/test-out"
+	DEST="/root/echo-back/test-in"
+	echo "copying cookie out"
+	rclone -v copy ${SRC} wasabi-s3:kstillson-s3
+	STATUS=$?
+	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
+	echo "copying cookie back"
+	rm -rf /root/echo-back/test-in
+	rclone -v copy wasabi-s3:kstillson-s3/test-out ${DEST}
+	/usr/bin/diff -q ${SRC} ${DEST} || { echo "ERROR- test cookie copy-back doesnt match."; exit -1; }
+	echo "pass"
+	;;
+
+    wasabi)
+	# check that source is mounted ok (dont want to zap dest because of a src mounting error).
+	if [[ ! -d /root/src/rw ]]; then echo "rclone $MODE cannot find source canary file; aborting."; exit -2; fi
+	# copy rsnap daily.0 to remote archive
+	rclone sync ${STATS} --links --one-file-system --modify-window 10s --exclude '**/bp/**' --exclude '**/mov/**' /root/src wasabi-s3:kstillson-s3
+	STATUS=$?
+	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
+
+	# Sanity check: copy jack's cron log back into a holding area.  filewatchdock also monitors the age of this file.
+	DEST="/root/echo-back/cron-jack"
+	echo "$(date): starting echo back to ${DEST}"
+	rm -rf ${DEST}
+	rclone copy wasabi-s3:kstillson-s3/rw/rw/log/cron-jack.log ${DEST}
+	/usr/bin/diff -q /root/src/rw/rw/log/cron-jack.log $DEST || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
+        ;;
+
+    *)
+	echo "ERROR- must specify mode as first param"
+	exit -1
+	;;
+esac
+
+# If we get to here, no error detected, so exit all-clear.
+echo "$(date): completed rclone $MODE run"
+exit 0

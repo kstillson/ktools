@@ -1,0 +1,9 @@
+
+extra_init: "photos"
+
+mount_logs:
+  - var_log: /var/log
+
+mount_persistent:
+  - /home/photos/backup: /root/photos-backup
+

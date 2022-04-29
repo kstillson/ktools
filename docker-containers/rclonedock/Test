@@ -1,0 +1,42 @@
+#!/usr/bin/python
+
+import argparse, os, subprocess, sys, time
+
+sys.path.append('/root/bin')
+import d_lib
+
+TEST_FILE_OUT = '/rw/mnt/rsnap/echo-back/test-out'
+TEST_FILE_IN = '/rw/mnt/rsnap/echo-back/test-in/test-out'
+
+def comp_file(filename, expected_contents):
+    if not os.path.isfile(filename): return False
+    with open(filename) as f: contents = f.read()
+    return expected_contents == contents
+
+
+def main():
+    ap = argparse.ArgumentParser(description='rclonedock test')
+    d_lib.add_testing_args(ap)
+    args = ap.parse_args()
+    
+    cookie = d_lib.gen_random_cookie()
+    with open(TEST_FILE_OUT, 'w') as f: f.write(cookie)
+    os.chmod(TEST_FILE_OUT, 0644)
+    os.chown(TEST_FILE_OUT, 200000, 200000)
+
+    name, ip, cow, dv = d_lib.launch_or_find_container(args, ['--settings', 'settings-test.yaml'])
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+
+    d_lib.emit('starting wait for %s to match %s' % (TEST_FILE_IN, cookie))
+    for i in range(10):
+        if comp_file(TEST_FILE_IN, cookie):
+            print('pass')
+            sys.exit(0)
+        sys.stderr.write('.')
+        time.sleep(2)
+
+    sys.exit('unable to find matching contents :-(')
+
+if __name__ == "__main__":
+  main()
+
