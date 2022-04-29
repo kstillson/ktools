@@ -1,115 +1,135 @@
 #!/bin/bash
 
-# Better doc
-#
-# What Docker network will we use for the build?  This is independent from the
-# network the container will run in.  Often containers run in highly constrained
-# environments (e.g. no or limited connectivity), but we need connectivity during
-# the build to pull image contents.
-#export NETWORK=""
+# TODO: doc
 
 
-# ---------- helper functions
+# ---------- control constants
+# can be overriden from calling environment or flags.
 
-function setlive() {
-    REPO="$1"
-    docker tag ${REPO}:live ${REPO}:prev     # backup old live tag
-    docker tag ${REPO}:latest ${REPO}:live
-    echo "${REPO} :latest set to :live"
+DBUILD_PARAMS="${DBUILD_PARAMS:-}"
+DBUILD_REPO="${DBUILD_REPO:-ktools}"
+DOCKER_BASE_DIR=${DOCKER_BASE_DIR:-~/docker-dev}
+
+
+# ---------- business logic
+
+function run_build() {
+    target="$1"
+    params="$2"
+
+    # ----- defer to local ./Build file, if provided
+
+    if [[ -r ./Build ]]; then
+        export CONTINUE="0"  # set to "1" to continue with default logic after returning, if desired.
+        echo "Deferring to ./Build."
+        . ./Build
+        status=$?
+        if [[ "$CONTINUE" != "1" ]]; then return $status; fi
+        echo "continuing after ./Build"
+    fi
+
+    # ----- standard docker build
+    docker build $params -t $target .
+    return $?
 }
 
-function runtests() {
+function run_tests() {
     if [[ ! -x ./Test ]]; then
-	echo "WARNING- no tests provided.  Assuming pass."
-	return 0
+        echo "WARNING- no tests provided.  Assuming pass."
+        return 0
     fi
     ./Test -r
     return $?
 }
 
+function setlive() {
+    fullname="$1"
+    docker tag ${fullname}:live ${fullname}:prev     # backup old live tag
+    docker tag ${fullname}:latest ${fullname}:live
+    echo "${fullname} :latest promoted to :live"
+}
+
+function try_dir() {
+    dir="$1"
+    if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
+    dir="$DOCKER_BASE_DIR/$dir"
+    if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
+    echo "unable to find $1/Dockerfile.  Run from directory with Dockerfile or use --cd flag."
+    exit -2
+}
+
+# ---------- dynamic help
+
+function myhelp() {
+    grep "##" "$0" | sed -e 's/\t/        /' | egrep '(^ *#)|(^ *--)|(^        [a-z])' | sed -e '/case /d' -e '/esac/d' -e 's/^    //' -e 's/##/~/' -e 's/).*;;//' | column -t -s~
+}
+
+
 # ---------- main
 
-if [[ "$1" == "--cd" ]]; then
-    shift
-    newdir="$1"
-    shift
-    cd /root/docker-dev/$newdir || exit -2
-fi
+function main() {
 
+    # ---------- default values
 
-if [[ ! -f Dockerfile ]]; then
-    echo "Please run from the directory containing the Dockerfile to build."
-    exit -1
-fi
+    auto_mode=0
+    just_live=0
+    just_tests=0
 
-# Any of the following variables can be overridden from the calling environment,
-# or from the file private.d/build-env.
-#
-# As an example, if you put tight outbound restrictions on the default docker
-# network, but containers need to be about to reach out during construction to
-# install or update packages, you probably want to create a private.d/build-env
-# with something like:   NETWORK="--network docker2"
+    build_params="$DBUILD_PARAMS"
+    cd="."
+    name=""
+    repo="$DBUILD_REPO"
+    tag="latest"
 
-if [[ -r "private.d/build-env" ]]; then source private.d/build-env; fi
+    # ---------- parse flags
 
+    while [[ $# -gt 0 ]]; do
+        flag="$1"
+        case "$flag" in
+            --auto | -a) auto_mode=1 ;;                   ## run mode: build, test, promote to live (if pass) and restart (if autostart)
+            --setlive | -s) just_live=1 ;;                ## run mode: just tag :latest to :live and exit
+            --test | -t) just_tests=1 ;;                  ## run mode: just run tests and exit
 
-# Determine the version name of the image we are to build.
-# By default, in a directory named "x", this will be "ktools/x:latest".
-NAME=${NAME:-$(basename $(pwd))}
-REPO_BASE=${REPO_BASE:-ktools}
-REPO=${REPO:-${REPO_BASE}/${NAME}}
-TAG=${TAG:-latest}
-#
-export VER=${VER:-${REPO}:${TAG}}
+            --build_params | -b) build_params="$1" ;;     ## params for "docker build" (defaults to $DBUILD_PARAMS)
+            --cd) cd="$1"; shift ;;                       ## location of Dockerfile to build (can be relative to $DOCKER_BASE_DIR)
+            --name) name="$1"; shift ;;                   ## output image name; defaults to basename of directory
+            --repo) repo="$1"; shift ;;                   ## repo to build image into; defaults to $DBUILD_REPO
+            --tag) tag="$1"; shift ;;                     ## tag to set after build.  defaults to ":latest"
 
-# ----------  --setlive mode
-# Alternate run mode setlive indicates we just tag #live to #latest and quit.
-if [[ "$1" == "--setlive" || "$1" == "-s" ]]; then
-    setlive ${REPO}
+            --help | -h) myhelp; exit 0 ;;
+            *) echo "unknown flag: $flag (try --help)"; exit -1 ;;
+        esac
+        shift
+    done
+
+    try_dir $cd   # Make sure there's a Dockerfile in our working dir.
+
+    if [[ "$name" == "" ]]; then name=$(basename $(pwd)); fi
+
+    fullname="${repo}/${name}"
+    target="${fullname}:${tag}"
+
+    if [[ $just_live == 1 ]]; then setlive $fullname ; exit $?; fi
+    if [[ $just_tests == 1 ]]; then run_tests; exit $?; fi
+
+    run_build "$target" "$build_params"
+
+    # If not in auto mode, we're done.
+    if [[ $auto_mode == 0 ]]; then
+        echo "successfully built $target"
+        exit 0
+    fi
+
+    # ----- auto mode
+
+    run_tests || exit $?
+
+    setlive $fullname
+
+    if [[ -f autostart ]]; then
+        /root/bin/d 01 $name || exit $?
+    fi
     exit 0
-fi
+}
 
-# Defer to directory local logic, if provided.
-if [[ -r ./Build ]]; then
-    export CONTINUE="0"  # set to "1" to continue with default logic after returning, if desired.
-    echo "Deferring to ./Build."
-    . ./Build
-    status=$?
-    if [[ "$CONTINUE" != "1" ]]; then exit $status; fi
-    echo "continuing after ./Build"
-fi
-
-# ---------- do the build
-
-docker build $NETWORK -t ${VER} .
-status=$?
-if [[ "$status" != "0" ]]; then exit $status; fi
-
-# ---------- next steps
-
-# If we're in --test mode, run the tests and then exit.
-if [[ "$1" == "--test" || "$1" == "-t" ]]; then
-    runtests
-    exit $?
-fi
-
-# If we're NOT in --auto mode, then we're done.
-if [[ "$1" != "--auto" && "$1" != "-a" ]]; then exit 0; fi
-
-# ---------- auto mode.  after build, test, and relabel if ok.
-
-runtests
-status=$?
-if [[ "$status" != "0" ]]; then exit $status; fi
-
-setlive ${REPO}
-
-if [[ ! -f autostart ]]; then
-    echo "successfully built and labeled $NAME"
-    exit 0
-fi
-
-echo "successfully built and labeled ${NAME}; restarting"
-/root/bin/d 01 $NAME
-exit $?
-
+main "$@"
