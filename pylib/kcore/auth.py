@@ -357,7 +357,7 @@ def validate_token_given_shared_secret(
       if sent_time <= LAST_RECEIVED_TIMES[keyname]:
         return False, f'Received token is not later than a previous token: {sent_time} < {LAST_RECEIVED_TIMES[keyname]}', expected_hostname, username, sent_time
 
-  expect_token = generate_token_given_shared_secret(command, shared_secret, expected_hostname, username, sent_time)
+  expect_token = generate_token_given_shared_secret(command, shared_secret, shared_secret_expected_hostname, username, sent_time)
   if DEBUG: print(f'DEBUG: expect_token={expect_token} expected_hostname={expected_hostname}', file=sys.stderr)
   if token != expect_token: return False, f'Token fails to validate  Saw "{token}", expected "{expect_token}".', expected_hostname, username, sent_time
 

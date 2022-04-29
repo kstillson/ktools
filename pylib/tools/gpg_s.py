@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 '''simple wrapper around gpg symmetric encrpytion'''
 
-import argparse, getpass, os, sys
+import argparse, getpass, os, signal, subprocess, sys
 
 import kcore.uncommon as UC
 
@@ -25,6 +25,12 @@ def get_special_arg(args, argname, required=True):
     return value
 
 
+def pgrep(srch='gpg-agent'):
+    p = subprocess.Popen(['pgrep', srch], stdout=subprocess.PIPE)
+    out, _ = p.communicate()
+    return out.decode().strip()
+
+
 # ---------- main
 
 def parse_args(argv):
@@ -37,6 +43,8 @@ def parse_args(argv):
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
 
+  gpg_pid_initial = pgrep()
+
   pswd = get_special_arg(args, 'password')
   with open(args.filename) as f: blob = f.read()
   decrypt = '.gpg' in args.filename
@@ -45,6 +53,10 @@ def main(argv=[]):
 
   outname = args.filename.replace('.gpg', '') if decrypt else args.filename + '.gpg'
   with open(outname, 'w') as f: f.write(blob2)
+
+  gpg_pid_final = pgrep()
+  if gpg_pid_final and not gpg_pid_initial: os.kill(int(gpg_pid_final), signal.SIGTERM)
+
   return 0
 
 

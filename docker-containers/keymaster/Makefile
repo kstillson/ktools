@@ -26,7 +26,7 @@ clean:
 
 update2: all update         # TODO: better name...?
 	d 01 keymaster
-	read -s -p "km password for startup: " p && echo "" && curl --cacert files/home/km/keymaster.pem -d "password=$$p" https://keys:4444/load
+	if [[ "$$p" == "" ]]; then read -s -p "km password for startup: " p; else sleep 1; fi && echo "" && curl --cacert files/home/km/keymaster.pem -d "password=$$p" https://keys:4444/load
 
 # ----- file copies
 
