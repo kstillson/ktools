@@ -113,7 +113,8 @@ def test_logging(tmp_path):
 
 
 def test_log_queue():
-    C.init_log('test', logfile=None, log_queue_len=3, clear=True, force_time='TIME')
+    C.init_log('test', logfile=None, log_queue_len=3, clear=True,
+               filter_level_syslog=C.NEVER, force_time='TIME')
                
     C.log_debug('msg1')
     C.log('msg2', C.INFO)

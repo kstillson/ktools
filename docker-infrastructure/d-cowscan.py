@@ -25,6 +25,7 @@ IGNORE_LIST = [
     'insyncdock:/tmp/insync0.sock',
     'insyncdock:/tmp/tmp',
     'insyncdock:/var/spool/cron/cron',
+    'keymaster:/home/km/.gnupg/pubring.kbx',
     'kmdock:/home/km/.gnupg/pubring.kbx',
     'mysqldock:/run/mysqld/mysqld.sock',
     'mysql-a:/run/mysqld/mysqld.sock',
