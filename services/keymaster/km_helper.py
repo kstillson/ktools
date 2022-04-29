@@ -152,6 +152,7 @@ def parse_args(argv):
   ap.add_argument('--datafile', '-d', default='km.data.gpg', help='name of encrypted secrets file we are going to modify')
   ap.add_argument('--force', '-f', action='store_true', help='overwrite an existing secret with the new value')
   ap.add_argument('--password', '-p', default="-", help='password to decrypt both --datafile and --puid-db.  Default ("-") to query from stdin.  Use "$X" to read password from environment variable X, use !Y to query key-manager key Y to use as password (kinda meta, huh?)')
+  ap.add_argument('--overried-host', '-o', default=None, help='save a tag that tells the server to expect this hostname/address, rather than the one from the client (i.e. --hostname).  Used to resolve DNS/NAT problems where the server sees a different address than the one the client knows.')
   ap.add_argument('--puid', default='', help='skip use of --puid-pdb and just use given string as the PUID')
   ap.add_argument('--puid-db', default='puid.data.gpg', help='name of encrypted database of machine secrets')
   ap.add_argument('--user_password', '-P', default='', help='optional password that client must present to obtain keys')

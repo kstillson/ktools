@@ -85,6 +85,7 @@ class Secret:
     secret: str
     kauth_secret: str
     comment: str = None
+    override_expected_client_addr: str = None
 
 
 class Secrets(UC.DictOfDataclasses):
@@ -177,6 +178,7 @@ def km_default_handler(request):
     okay, status, hostname, username, sent_time = A.validate_token_given_shared_secret(
         token=token, command=full_keyname, shared_secret=secret.kauth_secret,
         client_addr=client_addr,
+        override_expected_client_addr=secret.override_expected_client_addr,
         must_be_later_than_last_check=not ARGS.noratchet,
         max_time_delta=ARGS.window)
     if not okay:

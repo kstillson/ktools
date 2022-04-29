@@ -302,8 +302,9 @@ def validate_token(token, command, client_addr,
 
 
 def validate_token_given_shared_secret(
-      token, command, shared_secret, client_addr,
-      must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA):
+    token, command, shared_secret,
+    client_addr, override_expect_client_addr=None,
+    must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA):
   '''Validate "token" for "command", using a provided shared secret.
 
      Normally you validate tokens using validate_token().  However, if you're
@@ -311,25 +312,34 @@ def validate_token_given_shared_secret(
      persist registration shared-secrets, you can perform token validation
      using this method.
 
-     The expected hostname will be pulled out of the provided shared secret.
-     An expected hostname other than "*" will require a match between
-     "client_addr" and the expected hostname (although that match can work by
-     either hostname or IP address).  If you pass None as client_addr, it will
-     bypass this check, but that undermines an important aspect of this
-     module's security model.
+     By default, the expected hostname will be pulled out of the provided
+     shared secret, which was generally created on the client.  However, the
+     hostname/address by which the client knows itself differs from the one
+     the server will see (due to DNS or NAT issues), you can override the
+     "expected_client_addr" to tell the server what address it should expect
+     to match "client_addr" (which is generally provided by the web server).
 
-     Returns: okay?(bool), status(text), registered_hostname, username, sent_time'''
+     The expected hostname check can be bypassed if the expected client addr
+     (from either the param or extracted from the shared secret) is "*", or if
+     the caller provides None as the actual client_addr.  Bypassing the client
+     identity check undermines an important aspect of this module's security
+     model.
+
+     Returns: okay?(bool), status(text), registered_hostname, username, sent_time
+
+  '''
 
   if DEBUG: print(f'DEBUG: starting validation token={token} command={command} shared_secret={shared_secret} client_addr={client_addr}', file=sys.stderr)
   try:
-    token_version, expected_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
+    token_version, shared_secret_expected_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
     sent_time = int(sent_time_str)
   except Exception:
     return False, 'token fails to parse', None, None, None
 
   if token_version != TOKEN_VERSION:
-    return False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', expected_hostname, username, sent_time
+    return False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', shared_secret_expected_hostname, username, sent_time
 
+  expected_hostname = override_expect_client_addr or shared_secret_expected_hostname
   if client_addr and expected_hostname != '*' and not compare_hostnames(expected_hostname, client_addr):
     return False, f'Wrong hostname.  Saw "{client_addr}", expected "{expected_hostname}".', expected_hostname, username, sent_time
 
