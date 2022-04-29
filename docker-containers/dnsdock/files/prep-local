@@ -1,0 +1,17 @@
+
+# Local hardening settings.
+ACCOUNTS_DONT_DELETE_REGEX="^(.*)"
+GROUP_DONT_DELETE_REGEX="^(.*)"
+ROOT_RM_HOMEDIR=0
+SBIN_DONT_DELETE_REGEX="dnsmasq|nologin"
+#SHELL_DISABLE_LOGIN=0
+
+# --------------------
+
+# Some files stored in private.d subdirs to keep them out of git;
+# move them into their real positions.
+mv -f /etc/dnsmasq/private.d/* /etc/dnsmasq || true
+
+# fix ownership
+chgrp dnsmasq -R /etc/dnsmasq
+chmod -R g+rX /etc/dnsmasq
