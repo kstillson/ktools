@@ -1,6 +1,6 @@
 
 PLIB := files/usr/lib/python3.9/site-packages
-COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymanager.crt \
+COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymaster.crt \
     $(PLIB)/kcore/auth.py
 
 # ---------- local custom logic
@@ -32,7 +32,7 @@ files/usr/local/bin/kmc: ../../pylib/tools/kmc.py
 	mkdir -p files/usr/local/bin
 	cp $^ $@
 
-files/usr/local/bin/keymanager.crt: ../../private.d/keymaster.crt
+files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
 	mkdir -p files/usr/local/bin
 	cp $^ $@
 
