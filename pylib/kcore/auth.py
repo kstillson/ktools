@@ -303,7 +303,7 @@ def validate_token(token, command, client_addr,
 
 def validate_token_given_shared_secret(
     token, command, shared_secret,
-    client_addr, override_expect_client_addr=None,
+    client_addr, override_expected_client_addr=None,
     must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA):
   '''Validate "token" for "command", using a provided shared secret.
 
@@ -339,7 +339,7 @@ def validate_token_given_shared_secret(
   if token_version != TOKEN_VERSION:
     return False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', shared_secret_expected_hostname, username, sent_time
 
-  expected_hostname = override_expect_client_addr or shared_secret_expected_hostname
+  expected_hostname = override_expected_client_addr or shared_secret_expected_hostname
   if client_addr and expected_hostname != '*' and not compare_hostnames(expected_hostname, client_addr):
     return False, f'Wrong hostname.  Saw "{client_addr}", expected "{expected_hostname}".', expected_hostname, username, sent_time
 

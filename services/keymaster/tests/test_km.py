@@ -1,7 +1,7 @@
 
-import context_km_svc     # fix path to includes work as expected in tests
-
 import os, random, sys, threading, time
+
+import context_km_svc     # fix path to includes work as expected in tests
 
 import kcore.common as C
 import ktools.kmc as kmc
@@ -34,6 +34,7 @@ def test_basic_opration():
     os.environ['PUID'] = 'test'
     secret = kmc.query_km('testkey', override_hostname='*',
                           km_host_port=f'localhost:{random_high_port}',
-                          km_cert='tests/server-cn=localhost.pem')
+                          km_cert='tests/server-cn=localhost.pem',
+                          retry_limit=1, retry_delay=0)
     assert secret == 'mysecret'
 
