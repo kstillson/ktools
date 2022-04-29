@@ -539,7 +539,7 @@ function procmon_clear_cow() {
         echoc yellow "${docker}:${relfile}"
         base=$(d cow $docker)
         fn="${base}/${relfile}"
-        runner rm $fn
+        runner "/bin/rm $fn"
     done
     emitc green done
 }
