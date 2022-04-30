@@ -9,14 +9,12 @@ spec="$1"
 shift || true
 extra_flags="$@"
 
-DLIB_DEFAULT="$(realpath $(dirname $0)/d_lib.py)"
-
 # Overridable from the environment
 D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
-DLIB=${DLIB:-$DLIB_DEFAULT}
 TIMEOUT=${TIMEOUT:-60}
 
 # ----------------------------------------
+# colorizer
 
 BLUE='\x1b[01;34m'
 CYAN='\x1b[36m'
@@ -32,6 +30,16 @@ function emit() { echo ">> $@" >&2; }
 function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
 # stderr $2+ in color named by $1, but only if stdin is an interactive terminal.
 function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
+
+# ----------------------------------------
+# run function from dlib
+
+function dlib_run() {
+    func="$1"
+    param="$2"
+    python3 -c "import kcore.docker_lib as D; print(D.${func}('${param}'))"
+}
+
 
 # ----------------------------------------
 # select specific container to operate on.
@@ -138,7 +146,7 @@ function upgrade() {
   emitc blue "<> Building container ${name}"
   cd ${D_SRC_DIR}/${name}
   ./Build
-  if [[ "$($DLIB latest_equals_live $name)" == "true" ]]; then
+  if [[ "$(dlib_run latest_equals_live $name)" == "true" ]]; then
       emitc yellow "#latest == #live, so nothing more to do."
       return
   fi
@@ -275,7 +283,7 @@ case "$cmd" in
       ;;
   cow-dir | cow)                       ## Print the copy-on-write layer dir location for $1
     name=$(pick_container_from_up $spec)
-    $DLIB get_cow_dir "$name"
+    dlib_run get_cow_dir "$name"
     ;;
   images | i) docker images ;;         ## List docker images
   is-up | iu) is_up $spec ;;           ## Is container up (y/n)

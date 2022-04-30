@@ -3,12 +3,12 @@ Docker related support library
 
 TODO: doc
 
-TODO(!): restore CLI based access- ../docker-infrastruction/d.sh uses this.
-
 '''
 
 import atexit, glob, os, random, ssl, string, subprocess, sys
 import kcore.common as C
+
+PY_VER = sys.version_info[0]
 
 DLIB=os.environ.get('DLIB', None)
 if not DLIB:
@@ -140,13 +140,22 @@ def stop_container_at_exit(args):
         return False
 
 # filename is in the regular (jack host) filesystem.
-def file_expect(expect, filename):
-    try:
-        subprocess.check_call(['/bin/fgrep', '-q', expect, filename])
-        emit('success; saw "%s" in %s' % (expect, filename))
-        return 0
-    except:
-        abort('Unable to find "%s" in: %s' % (expect, filename))
+def file_expect(expect, filename, invert=False, missing_ok=False):
+    ok = os.path.isfile(filename)
+    if not ok:
+        if missing_ok: return emit('success; file %s missing, and thats ok.' % filename)
+        else: abort('file %s not found' % filename)
+
+    with open(filename) as f: contents = f.read()
+    if expect is None:
+        if not contents: return emit('file %s empty, as expected' % filename)
+        else: abort('file %s not empty, but was expected to be.' % filename)
+    if invert:
+        if not expect in contents: return emit('success; "%s" NOT in %s, as expected' % (expect, filename))
+        else: abort('found "%s" in %s when not expected' % (expect, filename))
+    if expect in contents: return emit('success; "%s" in %s, as expected' % (expect, filename))
+    else: abort('Unable to find "%s" in: %s' % (expect, filename))
+
 
 # filename is inside the conainter.
 def container_file_expect(expect, container_name, filename):
@@ -205,10 +214,12 @@ def socket_exchange(sock, send_list, add_eol=False, emit_transcript=False):
     for i in send_list:
         if emit_transcript: emit('sending: %s' % i)
         if add_eol: i += '\n'
+        if PY_VER == 3: i = i.encode('utf-8')
         sock.sendall(i)
-        resp = sock.recv(1024).strip()
+        resp = sock.recv(1024)
+        if PY_VER == 3: resp = resp.decode('utf-8')
+        resp = resp.strip()
         if emit_transcript: emit('received: %s' % resp)
         resp_list.append(resp)
     return resp_list
-
 
