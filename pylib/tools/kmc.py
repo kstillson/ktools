@@ -27,6 +27,8 @@ def find_cert(filename):
   if os.path.exists(filename): return filename
   candidate = os.path.join(os.path.dirname(__file__), filename)
   if os.path.exists(candidate): return candidate
+  candidate = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
+  if os.path.exists(candidate): return candidate
   return None  
   
 
