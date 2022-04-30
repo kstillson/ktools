@@ -1,4 +1,4 @@
-TOP_TARGETS = all clean comp install test uninstall update
+TOP_TARGETS = all clean install test update
 
 # WARNING- all docker containers (except kcore-baseline) depend on
 # kcore-baseline being built AND INSTALLED (i.e. marked :live) before the

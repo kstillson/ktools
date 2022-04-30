@@ -50,7 +50,7 @@ RP_FLAGS='--output - --plain --quiet '
 if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="kmdock:4443"; else KMHOST="jack:4443"; fi
 KM="https://${KMHOST}"
 
-DD="/root/docker-dev/dnsdock/files/etc/dnsmasq"
+DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"
 GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin /rw/dv/webdock/home/ken/homesec"
 KMD="/root/docker/dev/kmdock"
 KMD_P="/root/docker-dev/kmdock/files/home/km/km.data.gpg"
@@ -944,7 +944,7 @@ function main() {
 	push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
         syslog-queue-archive | queue-archive | sqa | qa) zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;  ## show full queue history
         syslog-queue-filter-ssh | queue-filter | sqf | qf) runner sed -i -e "/session opened/d" /rw/log/queue ;;  ## remove sshs from log queue
-        syslog-queue-zap | queue-zap | qz) runner bash -c ":>/rw/log/queue" ;;             ## wipe the current log queue
+        syslog-queue-zap | queue-zap | qz) bash -c :>/rw/log/queue ;;                      ## wipe the current log queue
         syslog-queue-view | syslog-queue | sqv | q) less /rw/log/queue ;;                  ## view the current log queue
         syslog-queue-view-no-ssh | sqv0 | q0) fgrep -v 'session opened' /rw/log/queue ;;   ## view the current log queue (w/o ssh)
         syslog-queue-view-yesterday-no-ssh | sqv1 | q1) fgrep -v 'session opened' /rw/log/Arc/queue.1 ;;   ## view yesterday's log queue

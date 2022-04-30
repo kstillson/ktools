@@ -17,7 +17,7 @@ docker-install: install-stamp docker-all docker-test
 docker-test: docker-all test-stamp
 
 docker-uninstall:
-	@echo ":install target doesn't really make sense for docker containers."
+	@echo ":uninstall target doesn't really make sense for docker containers."
 
 docker-update: all docker-test docker-install
 
