@@ -1,0 +1,11 @@
+
+# Local hardening settings.
+ACCOUNTS_DONT_DELETE_REGEX="^(.*)"
+GROUP_DONT_DELETE_REGEX="^(.*)"
+ROOT_RM_HOMEDIR=0
+SBIN_DONT_DELETE_REGEX="sshd|nologin"
+SHELL_DISABLE_LOGIN=0
+
+# --------------------
+
+ln -s /home/ken/git /git

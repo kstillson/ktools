@@ -1,0 +1,49 @@
+# Package generated configuration file
+# See the sshd_config(5) manpage for details
+
+# What ports, IPs and protocols we listen for
+Port 22
+
+# Use these options to restrict which interfaces/protocols sshd will bind to
+Protocol 2
+# HostKeys for protocol version 2
+HostKey /etc/ssh/hostkeys/ssh_host_rsa_key
+HostKey /etc/ssh/hostkeys/ssh_host_dsa_key
+
+#MaxAuthTries 3
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication:
+LoginGraceTime 120
+PermitRootLogin no
+StrictModes yes
+
+PubkeyAuthentication yes
+AuthorizedKeysFile	/etc/ssh/authkeys/%u
+
+IgnoreRhosts yes
+# similar for protocol version 2
+HostbasedAuthentication no
+IgnoreUserKnownHosts yes
+
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+PasswordAuthentication no
+
+X11Forwarding no
+PrintMotd yes
+TCPKeepAlive yes
+
+#MaxStartups 10:30:60
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+AllowTcpForwarding no
+
+# kds disconnect non-responsive clients after a bit
+ClientAliveCountMax 3
+ClientAliveInterval 120

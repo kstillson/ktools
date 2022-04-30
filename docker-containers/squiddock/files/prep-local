@@ -1,0 +1,3 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(squid)"
+SBIN_DONT_DELETE_REGEX="squid|su"
