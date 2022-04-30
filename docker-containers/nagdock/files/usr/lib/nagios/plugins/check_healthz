@@ -1,0 +1,35 @@
+#!/bin/bash
+
+if [[ "$1" == "--ssl" ]]; then PROTO="https"; shift; else PROTO="http"; fi
+
+SERVER="$1"
+PORT="$2"
+ADDR="${3:-/healthz}"
+
+if [[ "${PORT}" == "" ]]; then
+  if [[ "${PROTO}" == "https" ]]; then PORT=443; else PORT=80; fi
+fi
+
+URL="${PROTO}://${SERVER}:${PORT}${ADDR}"
+
+ARGS="--connect-timeout 10 -L --max-time 23 --retry 2 --retry-delay 2 -s -k"
+
+out=$(curl ${ARGS} ${URL} | head -1 | tr '[:upper:]' '[:lower:]')
+if [[ $PIPESTATUS != 0 ]]; then
+  echo "CRITICAL; error trying to retrieve ${URL}"
+  exit 2
+fi
+
+if [[ "${out}" == "ok"* ]]; then
+  echo "OK"
+  exit 0
+elif [[ "${out}" == "all ok"* ]]; then
+  echo "OK"
+  exit 0
+elif [[ "${out}" == *"warning"* ]]; then
+  echo "WARNING: ${out}"
+  exit 1
+fi
+
+echo "CRITICAL; saw : ${out}"
+exit 2
