@@ -1,0 +1,21 @@
+# /etc/aliases
+mailer-daemon: postmaster
+postmaster: root
+nobody: root
+hostmaster: root
+usenet: root
+news: root
+webmaster: root
+www: root
+ftp: root
+abuse: root
+noc: root
+security: root
+default: root
+
+ken: root
+tech: root
+nobody: root
+pi: root
+
+root: tech@point0.net

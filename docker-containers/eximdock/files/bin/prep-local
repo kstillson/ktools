@@ -1,0 +1,15 @@
+
+# Local hardening settings.
+ACCOUNTS_DONT_DELETE_REGEX="^(exim)"
+GROUP_DONT_DELETE_REGEX="^(exim)"
+SBIN_DONT_DELETE_REGEX="exim|nologin"
+
+# Create spool dir so that exim user doesn't have to.
+# Dockerfile treats this as a volume.
+mkdir -p /var/spool/exim
+chown -R exim:exim /var/spool/exim
+chmod 0755 /var/spool/exim
+
+# Remove suid bit from exim.
+chmod u-s /usr/sbin/exim
+
