@@ -1,10 +1,8 @@
 
 ## ++ktools tech
-   - backups: generalize & publish rclonedock and rsnapshot configs
-   - dns-and-dhcp: generalize & publish dnsdock
-   - monitoring: generalize & publish filewatchdock, nagdock, procmon
-   - services: decide what to keep, generalize & publish, subst links
-   - syslog: generalize & publish syslogdock
+   - other docks: web 
+   - monitoring: generalize & publish filewatchdock
+   - services: procmon, ?
    - review non-doc TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
