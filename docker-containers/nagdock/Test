@@ -9,7 +9,7 @@ import d_lib
 CMD_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/rw/nagios.cmd'
 LOG_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_log_nagios/nagios.log'
 STATUS_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/status.dat'
-UPDATE_DELAY = 10
+UPDATE_DELAY = 8
 
 PORT = 12345
 RESPONCE = 'all ok'
@@ -107,6 +107,9 @@ def main():
     d_lib.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
     time.sleep(UPDATE_DELAY)
 
+    ### TODO: this test appears to fail, next lines culprit:
+    # appears nagios not able to contact the test server...?
+    
     status_expect('current_state', '0')
     d_lib.file_expect('SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
 
@@ -115,4 +118,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-

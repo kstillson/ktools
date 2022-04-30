@@ -1,4 +1,4 @@
-FROM kstillson/kds-baseline:live
+FROM ktools/kcore-baseline:live
 
 # iputils for a real (setuid) version of ping
 

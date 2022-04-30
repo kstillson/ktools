@@ -25,7 +25,7 @@ docker-update: all docker-test docker-install
 
 build-stamp: ../kcore-baseline/install-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
 	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
-	sudo /root/bin/d-build
+	sudo -E /root/bin/d-build    # -E to preserve d-build environment vars
 	touch build-stamp
 
 install-stamp: build-stamp

@@ -75,7 +75,7 @@ fi
 # Remove unnecessary user accounts.
 if [[ -n "${ACCOUNTS_DONT_DELETE_REGEX}" ]]; then
   cp -f /etc/passwd /tmp/tmp
-  egrep "${ACCOUNTS_DONT_DELETE_REGEX}" < /tmp/tmp > /etc/passwd
+  egrep "${ACCOUNTS_DONT_DELETE_REGEX}" < /tmp/tmp > /etc/passwd || true
   rm -f /tmp/tmp
 fi
 
