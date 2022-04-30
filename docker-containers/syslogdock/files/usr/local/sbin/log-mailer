@@ -1,0 +1,15 @@
+#!/bin/bash
+
+subject="syslog-ng critical log"
+dest="root"
+
+while read event;
+do
+  /usr/sbin/ssmtp ${dest} <<EOF
+To: ${dest}
+From: syslog@syslogdock.h.point0.net
+Subject: ${subject}
+
+${event}
+EOF
+done

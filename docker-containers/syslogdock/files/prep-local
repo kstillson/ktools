@@ -1,0 +1,11 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(root|syslog)"
+GROUP_DONT_DELETE_REGEX="^(root|syslog)"
+ROOT_RM_HOMEDIR=0
+SBIN_DONT_DELETE_REGEX="nologin|syslog-ng|supervisord|ssmtp|sendmail"
+WORLD_WRITABLE_DIRS_RM=0
+
+
+# Fix syslog-specific permissions
+chgrp -R syslog /etc/ssmtp /etc/supervisord.conf /etc/syslog-ng /run /usr/local/sbin/log-mailer
+chmod g+w /run

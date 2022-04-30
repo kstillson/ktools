@@ -1,0 +1,29 @@
+#!/usr/bin/python
+
+import argparse, subprocess, sys, time
+
+sys.path.append('/root/bin')
+import d_lib
+
+
+def main():
+    ap = argparse.ArgumentParser(description='syslogdock test')
+    d_lib.add_testing_args(ap)
+    args = ap.parse_args()
+    name, ip, cow, dv = d_lib.launch_or_find_container(args)
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+
+    time.sleep(3)  # Give syslog a chance to start up.
+
+    cookie = d_lib.gen_random_cookie()
+    subprocess.check_call(['/usr/bin/logger', '-n', ip, '-p', 'local1.info', '-P', '1514', cookie])
+
+    time.sleep(2)  # Give syslog a chance to process.
+    d_lib.container_file_expect(cookie, name, '/var/log/queue')
+
+    print('pass')
+    
+
+if __name__ == "__main__":
+  main()
+
