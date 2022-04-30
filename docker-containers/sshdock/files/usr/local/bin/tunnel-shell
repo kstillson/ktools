@@ -1,0 +1,5 @@
+#!/bin/bash
+/usr/bin/logger -p local1.info "tunnel login - $USER"
+read -p "Ready. "
+echo "Ending."
+exit 0

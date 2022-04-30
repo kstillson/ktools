@@ -1,0 +1,36 @@
+#!/usr/bin/python
+
+## NB: depends on Ken-specific current dv/ content.
+## TODO: generalize?  make dep on default account from init script?
+
+
+import argparse, os, sys, subprocess, tempfile, time
+
+sys.path.append('/root/bin')
+import d_lib
+
+
+def main():
+    ap = argparse.ArgumentParser(description='sshdock test')
+    d_lib.add_testing_args(ap)
+    args = ap.parse_args()
+    name, ip, cow, dv = d_lib.launch_or_find_container(args)
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+
+    if args.run: time.sleep(1)  # Give ssh a chance to start
+
+    rslt = subprocess.check_output([
+            '/usr/bin/ssh', 
+            '-i', '/home/ken/.ssh/id_rsa', 
+            '-o', 'StrictHostKeyChecking=no',
+            'ken@' + ip, 
+            'cat', '.ssh/known_hosts'])
+
+    if '192.168.1.2' not in rslt: sys.exit('Unable to grab file via ssh')
+
+    print('pass')
+    
+
+if __name__ == "__main__":
+  main()
+
