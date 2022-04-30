@@ -1,0 +1,12 @@
+
+ports:
+  - 25:2525
+
+# Log is too verbose to send to syslog. 
+log: JSON
+
+mount_persistent_test_copy_tree:
+  - var_log: /var/log
+  - var_spool: /var/spool
+  - var_mail: /var/mail
+
