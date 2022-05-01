@@ -1,7 +1,7 @@
 
 PLIB := files/usr/lib/python3.9/site-packages
 COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymaster.crt \
-    $(PLIB)/kcore/auth.py
+    $(PLIB)/kcore
 
 # ---------- local custom logic
 
@@ -36,10 +36,9 @@ files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
 	mkdir -p files/usr/local/bin
 	cp $^ $@
 
-$(PLIB)/kcore/auth.py: ../../pylib/kcore/auth.py
-	mkdir -m 755 -p $(PLIB)/kcore
-	cp $^ $@
-	chmod 755 $@
+$(PLIB)/kcore: ../../pylib/kcore
+	cp -rpuv $^ $@
+	chmod -R go+rX $@
 
 
 # ---------- pass-throughs
