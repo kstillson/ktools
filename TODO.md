@@ -1,6 +1,7 @@
 
 ## ++ktools tech
-   - other docks: web 
+   - other docks: web
+   - nagdock test fails
    - monitoring: generalize & publish filewatchdock
    - services: procmon, ?
    - review non-doc TODO's
