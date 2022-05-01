@@ -194,9 +194,8 @@ class WebServerBase(object):
         else:
             answer = handler_data.func(request)
 
-        if isinstance(answer, int):   answer = Response(str(answer))
-        if isinstance(answer, float): answer = Response(str(answer))
-        if isinstance(answer, str):   answer = Response(answer)
+        if isinstance(answer, str): answer = Response(answer)
+        else: answer = Response(str(answer))
         if self.varz: V.bump('web-status-%d' % answer.status_code)
         return answer
 
