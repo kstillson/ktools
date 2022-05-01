@@ -589,6 +589,7 @@ function checks_real() {
     /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect "exim panic log empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect "exim reject log empty" "0"
+    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect "no unencrpted ktools secrets" "0"
     git_check_all |& expect "git dirs with local changes" ""
 }
 
