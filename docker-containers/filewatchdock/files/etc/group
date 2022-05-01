@@ -1,0 +1,7 @@
+root:x:0:root
+nagios:x:33:watch
+exim:x:101:watch
+mysql:x:999:watch
+ken:x:1000:watch
+watch:x:900:
+nobody:x:65534:
