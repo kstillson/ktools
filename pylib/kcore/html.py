@@ -1,4 +1,3 @@
-
 '''HTML generators: A few functions that take in strings and output HTML.'''
 
 # in: html body as string.  out: same, wrapped in html and body headers.
@@ -10,9 +9,10 @@ def html_page_wrap(body_contents, title=''):
 
 
 # in: a dict or a list of lists. out: html code for a table
-def list_to_table(list_in, table_fmt='border=1 cellpadding=2', header_list=[], autoexpand=True):
+def list_to_table(list_in, table_fmt='border=1 cellpadding=2', header_list=[], autoexpand=True, title=None):
     if not list_in: return ''
-    out = '<table %s>\n' % table_fmt
+    out = '<p/>' + wrap(title, 'b') + '<br/>\n' if title else ''
+    out += '<table %s>\n' % table_fmt
     if header_list: out += table_row(header_list, 'th')
     for i in list_in:
         if isinstance(list_in, dict):

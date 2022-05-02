@@ -168,7 +168,8 @@ def init_log(log_title='log', logfile='logfile',
 
     if logfile:
         try:
-            with open(logfile, 'a') as test: pass
+            if logfile != '-':
+                with open(logfile, 'a') as test: pass
             LOG_FILENAME = logfile
         except Exception as e:
             stderr('Error opening primary logfile %s: %s' % (logfile, e))
@@ -202,7 +203,10 @@ def log(msg, level=INFO):
     
     # Send to other destinations.
     if level >= FILTER_LEVEL_LOGFILE and LOG_FILENAME:
-        with open(LOG_FILENAME, 'a') as f: f.write('%s:%s:%s: %s\n' % (level_name, LOG_TITLE, time, msg))
+        msg = '%s:%s:%s: %s' % (level_name, LOG_TITLE, time, msg)
+        if LOG_FILENAME == '-': print(msg)
+        else: 
+            with open(LOG_FILENAME, 'a') as f: f.write(msg + '\n')
     if level >= FILTER_LEVEL_STDOUT: print(msg2)
     if level >= FILTER_LEVEL_STDERR: stderr(msg2)
     if level >= FILTER_LEVEL_SYSLOG:

@@ -55,14 +55,17 @@ common_all: $(SOURCES)   # nothing to do...
 # ----------------------------------------
 # Patterns for renaming and copying to install_dir
 
+$(INSTALL_DIR):
+	mkdir -p $(INSTALL_DIR)
+
 $(INSTALL_SH_TARGETS): $(INSTALL_DIR)/%: %.sh
-	  install $^ $@
+	install $^ $@
 
 $(INSTALL_PY_TARGETS): $(INSTALL_DIR)/%: %.py
-	  install $^ $@
+	install $^ $@
 
 $(INSTALL_PLAIN_TARGETS): $(INSTALL_DIR)/%: %
-	  install $^ $@
+	install $^ $@
 
 
 # ----------------------------------------
@@ -71,7 +74,7 @@ $(INSTALL_PLAIN_TARGETS): $(INSTALL_DIR)/%: %
 common_clean:
 	rm -rf $(TEST_LOG) __pycache__ .pytest_cache *.pyc tests/__pycache__ tests/*.pyc || { if [[ "$$UID" != "0" ]]; then echo "some cleaning failed; files probably created by root during sudo of previous make.  retrying clean with sudo."; sudo $(MAKE) common_clean; fi; }
 
-common_install: $(INSTALL_TARGETS)
+common_install: $(INSTALL_DIR) $(INSTALL_TARGETS)
 
 common_uninstall:
 	rm $(INSTALL_TARGETS)
