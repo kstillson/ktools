@@ -189,7 +189,7 @@ def hasher(plaintext):
   return hashlib.sha1(plaintext).hexdigest()
 
 
-def key_name(hostname, username): return '%s:%s' % (hostname, username)
+def puid_key_name(hostname, username): return '%s:%s' % (hostname, username)
 
 
 def now(): return int(time.time())
@@ -278,8 +278,8 @@ def generate_token_given_shared_secret(
 
 # ---------- server-side authN logic
 
-# This data is not internally persisted beyond module lifetime.
-LAST_RECEIVED_TIMES = {}  # maps key_name() -> epoch seconds of most recent success.
+# This data is not persisted beyond module lifetime.
+LAST_RECEIVED_TIMES = {}  # maps command-specific-key-name -> epoch seconds of most recent success.
 
 
 def validate_token(token, command, client_addr,
@@ -350,7 +350,7 @@ def validate_token_given_shared_secret(
       return False, f'Time difference too high.  sent:{sent_time} now:{time_now},  delta {time_delta} > {max_time_delta}', expected_hostname, username, sent_time
 
   if must_be_later_than_last_check:
-    keyname = key_name(expected_hostname, username)
+    keyname = f'{expected_hostname}:{username}:{command}'
     if keyname not in LAST_RECEIVED_TIMES:
       LAST_RECEIVED_TIMES[keyname] = sent_time
     else:
@@ -366,7 +366,7 @@ def validate_token_given_shared_secret(
 
 # ---------- server-side persistence
 
-REGISTRATION_DB = None     # maps keyname -> registration blob
+REGISTRATION_DB = None     # maps puid_key_name -> registration blob
 
 def load_registration_db(db_filename=DEFAULT_DB_FILENAME):
   global REGISTRATION_DB
@@ -381,7 +381,7 @@ def load_registration_db(db_filename=DEFAULT_DB_FILENAME):
 def get_shared_secret_from_db(hostname, username, db_filename=DEFAULT_DB_FILENAME):
   global REGISTRATION_DB
   if not REGISTRATION_DB and db_filename: load_registration_db(db_filename)
-  return REGISTRATION_DB.get(key_name(hostname, username))
+  return REGISTRATION_DB.get(puid_key_name(hostname, username))
 
 
 def register(shared_secret, db_filename=DEFAULT_DB_FILENAME):
@@ -393,7 +393,7 @@ def register(shared_secret, db_filename=DEFAULT_DB_FILENAME):
     if db_filename: load_registration_db(db_filename)
     else: REGISTRATION_DB = {}
 
-  keyname = key_name(hostname, username)
+  keyname = puid_key_name(hostname, username)
   REGISTRATION_DB[keyname] = shared_secret
 
   if db_filename:

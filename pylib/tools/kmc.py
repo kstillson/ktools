@@ -39,7 +39,7 @@ def query_km(keyname,
              keyname_prefix='%h-',
              override_hostname=None, username='', password='',
              km_host_port='keys:4444', km_cert='keymaster.crt',
-             timeout=5, retry_limit=None, retry_delay=5):
+             timeout=5, retry_limit=None, retry_delay=15):
   '''query the keymaster for a key
 
   Traditionally keymaster uses full keynames prefixed by the hostname of the

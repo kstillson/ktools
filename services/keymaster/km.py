@@ -169,9 +169,7 @@ def km_default_handler(request):
 
     secret = SECRETS.get(full_keyname)
     if not secret:
-        return ouch('no such key or validation error',
-                    f'attempt to get non-existent key: {full_keyname}',
-                    'keyfail-notfound')
+        return ouch('no such key', f'attempt to get non-existent key: {full_keyname}', 'keyfail-notfound')
 
     client_addr = request.remote_address.split(':')[0]
 
@@ -182,8 +180,7 @@ def km_default_handler(request):
         must_be_later_than_last_check=not ARGS.noratchet,
         max_time_delta=ARGS.window)
     if not okay:
-        return ouch('no such key or validation error',
-                    f'unsuccessful key retrieval attempt full_keyname={full_keyname}, req_hostname={hostname}, client_addr={client_addr}, username={username}, status={status}',
+        return ouch(status, f'unsuccessful key retrieval attempt full_keyname={full_keyname}, req_hostname={hostname}, client_addr={client_addr}, username={username}, status={status}',
                     'keyfail-hostname' if 'hostname' in status else 'keyfail-kauth')
     
     C.log(f'successful key retrieval: full_keyname={full_keyname} username={username}')
