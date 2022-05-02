@@ -1,0 +1,388 @@
+#!/usr/bin/python3
+'''
+TODO: doc
+
+# See https://pypi.python.org/pypi/psutil/1.2.1 for psutil API.
+
+'''
+
+import argparse, psutil, os, subprocess, sys, time
+from dataclasses import dataclass
+from typing import List
+
+import kcore.common as C
+import kcore.html as H
+import kcore.varz as V
+import kcore.webserver as W
+
+import procmon_whitelist as WL
+
+# ---------- Control constants
+
+WEB_HANDLERS = {
+  '/':        lambda request: root_handler(request),
+  '/healthz': lambda request: healthz_handler(request),
+  '/panic':   lambda request: panic_handler(request),
+  '/pstree':  lambda request: pstree_handler(request),
+  '/scan':    lambda request: scan_handler(request),
+}
+
+# ---------- Global state & types
+
+ARGS = None
+DOCKER_MAP = {}    # Maps container id (str) to container name (str).
+SCANNER = None     # Singleton of current scanner instance.
+
+
+@dataclass
+class ProcessData:
+  pid: int
+  container_name: str
+  ppid: int
+  username: str
+  child_pids: List[int]
+  cmdline: str
+  name: str
+  note: str = None
+  def desc(self):
+    note = '[[ ** %s ** ]] ' % self.note if self.note else ''
+    return '[%-9s](%-5s/%-5s) %s%s@%.120s' % (
+      self.container_name, self.pid, self.ppid, note, self.username, self.cmdline)
+
+  
+# ---------- general helpers
+
+def get_docker_map():
+  '''returns dict: cid:str -> container_name:str'''
+  cid_map = {}
+  for i in popen(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
+    cid, name = i.split(' ', 1)
+    cid_map[cid] = name
+  return cid_map
+
+
+def now(): return int(time.time())
+
+
+def popen(cmd, input=None):
+  p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  out, err = p.communicate(input)
+  if p.returncode != 0: return f'ERROR: status {p.returncode} error output: {err}'
+  return out.decode('utf-8')
+
+
+def is_file_populated(filename):
+  if not filename: return False
+  if not os.path.isfile(filename): return False
+  if os.path.getsize(filename) == 0: return False
+  return True
+
+
+# ---------- scanner business logic
+
+class Scanner(object):
+  def __init__(self):
+    self.cow_errors = []   # List of error msg strings
+    self.expected = []     # List of ProcessData
+    self.fs_errors = []    # List of error msg strings
+    self.missing = []      # List of WL.WL entries
+    self.pd_db = {}        # maps pid to ProcessData instance
+    self.unexpected = []   # List of ProcessData
+    self.greylisted = []        # List of ProcessData
+    for entry in WL.WHITELIST: entry.last_scan_hits = 0
+    global DOCKER_MAP
+    if not DOCKER_MAP: DOCKER_MAP = get_docker_map()
+
+  # ----- scanning
+  
+  def scan(self):
+    C.log("start scan")
+    V.bump('scans')
+    V.stamp('last_scan')
+    
+    self.add_process(1, '/')
+    self.scan_cow()
+    self.scan_ro()
+
+    # Check for missing processes.
+    for entry in WL.WHITELIST:
+      if entry.required and entry.hit_count_last_scan == 0:
+        self.missing.append(entry)
+
+    # Outputs
+    problems = self.problems_to_list_of_strings(False)
+    for i in problems: C.log(i)
+    if ARGS.queue:
+      with open(ARGS.queue, 'a') as f: f.write('\n'.join(problems) + '\n')
+    if ARGS.output:
+      with open(ARGS.output, 'w') as f: f.write(str(WL.WHITELIST).replace(' WL', '\n WL'))
+
+  def scan_cow(self):
+    for i in popen(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
+      if 'all ok' in i: continue
+      self.cow_errors.append(i)
+
+  def scan_ro(self):
+    stat = os.statvfs('/')
+    ro = bool(stat.f_flag & os.ST_RDONLY)
+    if not ro: self.fs_errors.append('root not mounted read only')
+
+
+  # ----- psutil -> ProcessData
+
+  def get_process_data(self, pid, container_name='?'):
+    p = psutil.Process(pid)
+    cmd_list = p.cmdline()
+    out = ProcessData(
+        pid = p.pid,
+        container_name = container_name,
+        ppid = p.ppid(),
+        username = p.username(),
+        child_pids = [i.pid for i in p.children(recursive=False)],
+        cmdline = ' '.join(cmd_list),
+        name = cmd_list[0])
+    self.pd_db[out.pid] = out
+    return out
+
+  
+  # ----- process tree building ("p" is psutil process object instances)
+
+  def add_process(self, pid, container_name):
+    try:
+      pd = self.get_process_data(pid, container_name)
+    except Exception as e:
+      C.log_error(f'Skipping pid with convertion error: {pid}: {str(e)}')
+      return
+    
+    wl = self.find_whitelist_entry(WL.WHITELIST, pd)
+    if wl:
+      wl.hit_last = now()
+      wl.hit_count += 1
+      wl.hit_count_last_scan += 1
+    if ARGS.debug: C.log_debug('proc: %s; wl: %s' % (pd.desc(), wl))
+    
+    if not wl:  # first check if its on the greylist.
+      gl = self.find_whitelist_entry(WL.GREYLIST, pd)
+      if gl:
+        if ARGS.debug: C.log_debug('proc: %s; gl: %s' % (pd.desc(), gl))
+        gl.hit_last = now()
+        gl.hit_count += 1
+        gl.hit_count_last_scan += 1
+        return self.add_to_plist(self.greylisted, pd)
+      
+      else:  # Neither whitelist nor greylist; this is an unexpected process.
+        if ARGS.debug: C.log_debug('UNEXPECTED: %s' % pd.desc())
+        return self.add_to_plist(self.unexpected, pd)
+
+    if wl.allow_children:
+      return self.add_to_plist(self.expected, pd, 'allowed w/ children')
+
+    # Not auto-accepting-children, so add the children for inspection.
+    self.add_to_plist(self.expected, pd)
+    if 'containerd-shim' in pd.name: return self.add_docker_tree(pd)
+    self.add_pid_list(pd.child_pids, container_name)
+
+
+  def add_docker_tree(self, pd):
+    shim_children_pids = pd.child_pids
+    init_pid = shim_children_pids[0]
+    try:
+      with open('/proc/%s/cpuset' % init_pid) as f: cpuset = f.readline()
+      cid = cpuset.replace('/docker/', '')[:12]
+      cname = DOCKER_MAP[cid]
+    except Exception as e:
+      if cid: cname = 'cid:' + cid    # Cant get name, but we have cid; use that.
+      else: return self.add_error_process(pd, f'Unable to parse docker shim; {cpuset=}, {cid=}, {match=}, {cname=}, {err=}')
+      
+    # We have a container name, so add the subtree.
+    if ARGS.debug: C.log_debug('adding docker subtree. parent pid=%d, cname=%s, cid=%s, children=%s' % (pd.pid, cname, cid, shim_children_pids))
+    self.add_pid_list(shim_children_pids, cname)
+
+    
+  def add_pid_list(self, pid_list, container_name):
+    for pid in pid_list: self.add_process(pid, container_name)
+
+      
+  def add_error_process(self, pd, note):
+    self.add_to_plist(self.unexpected, pd, note)
+
+    
+  # ---------- ProcessData-based methods
+  # ("pd" is a ProcessData instance)
+  # ("pl" is a list of ProcessData instances)
+  
+  def add_to_plist(self, plist, pd, note=''):
+    if pd.cmdline == '':
+      if ARGS.debug: C.log_debug(f'skipping add of process with empty cmdline: {pd.desc()}')
+      return
+    if note: pd.note = note
+    plist.append(pd)
+
+  def is_all_ok(self):
+    return len(self.missing) == 0 and len(self.expected) > 10 and len(self.unexpected) == 0 and len(self.cow_errors) == 0 and len(self.fs_errors) == 0
+
+  # -----
+  
+  def find_whitelist_entry(self, search_list, pd):
+    for w in search_list:
+      if ((w.user == '*' or w.user == pd.username) and
+          (w.container_name == '*' or w.container_name == pd.container_name)):
+        if w.pattern.match(pd.cmdline): return w
+
+  def problems_to_list_of_strings(self, expand_trees=False):
+    out = []
+    for pd in self.unexpected:
+      out.append('unexpected: %s' % self.proctree_to_string(pd) if expand_trees else pd.desc())
+    for ce in self.cow_errors: out.append('COW: %s' % ce)
+    for ce in self.fs_errors: out.append('FS: %s' % ce)
+    for m in self.missing: out.append('missing: %s' % m)
+    return sorted(out)
+
+  def proctree_to_string(self, pd):
+    level = 0
+    str = ''
+    while pd:
+      for i in range(level + 1): str += ' '
+      str += pd.desc()
+      str += '\n'
+      pd = self.pd_db.get(pd.ppid, None)
+      level += 1
+    return str
+
+
+# ---------- handler helpers
+
+def render_plist_to_table(title, plist):
+  rows = []
+  if plist:
+    for pd in plist:
+      rows.append([pd.container_name, pd.pid, pd.ppid, pd.note, pd.username, pd.cmdline[:40]])
+  else:
+    rows.append([title, 'all ok'])
+  return  H.list_to_table(rows, title=title)
+
+
+def render_file_errors_to_table(title, cow_errors, fs_errors):
+  rows = []
+  if cow_errors:
+    for ce in cow_errors: rows.append(['cow scan', ce])
+  else: rows.append(['cow scan', 'all ok'])
+  if fs_errors:
+    for fe in fs_errors: rows.append(['FS scan', fe])
+  else: rows.append(['FS scan', 'all ok'])
+  return H.list_to_table(rows, title=title)
+
+
+def render_queue_to_table(title):
+  rows = []
+  if not os.path.isfile(ARGS.queue): return ''
+  with open(ARGS.queue) as f:
+    for line in f: rows.append([line + '<br/>'])
+    return H.list_to_table(rows, title=title)
+
+  
+def render_missing_to_table(missing):
+  rows = []
+  if missing:
+    for m in missing: rows.append([m])
+  else: rows.append(['missing', 'all ok'])
+  return H.list_to_table(rows, title='missing')
+
+
+def varz_to_table(list_of_varz):
+  return H.list_to_table([[i, V.get(i)] for i in list_of_varz], title='varz')
+
+  
+# ---------- handlers
+
+def root_handler(request):
+  is_all_ok = SCANNER.is_all_ok() and not is_file_populated(ARGS.queue)
+  out = H.wrap('OK' if is_all_ok else 'Error', 'h2')
+  out += render_queue_to_table('queue')
+  out += varz_to_table(['last_scan', 'scans'])
+  out += render_plist_to_table('unexpected', SCANNER.unexpected)
+  out += render_file_errors_to_table('file errors', SCANNER.cow_errors, SCANNER.fs_errors)
+  out += render_missing_to_table(SCANNER.missing)
+  out += render_plist_to_table('greylisted', SCANNER.greylisted)
+  out += render_plist_to_table('expected', SCANNER.expected)
+  return H.html_page_wrap(out, 'procmon')
+  
+  
+def healthz_handler(request):
+  if is_file_populated(ARGS.queue):
+    return 'ERROR: queue alert' if SCANNER.is_all_ok() else 'ERROR: queue alert (still active)'
+  if SCANNER.is_all_ok(): return 'all ok'
+  
+  summary = 'ERROR'
+  out = ''
+  for i, err in enumerate(SCANNER.problems_to_list_of_strings(False)):
+    out += '\n%s' % err
+    C.log(err)
+    if i >= 10:
+      summary = 'ERROR OVERFLOW'
+      C.log_alert('procmon scan with overflow bad results.')
+      break
+  return f'{summary}\n\n{out}'
+
+
+def panic_handler(request):
+    return popen(['/usr/bin/sudo', '/usr/local/bin/panic'])
+
+
+def pstree_handler(request):
+  return popen(['/bin/ps', 'aux', '--forest'])
+
+
+def scan_handler(request):
+    new_scanner = Scanner()
+    new_scanner.scan()
+    SCANNER = new_scanner
+    return root_handler(request)
+  
+  
+
+
+# ---------- main
+
+def parse_args(argv):
+  parser = argparse.ArgumentParser(description='process scanner.')
+  parser.add_argument('--debug',   '-D', action='store_true', help='output debugging data to stdout (works best with -t)')
+  parser.add_argument('--delay',   '-d', type=int, default=120, help='delay between automatic rescans (seconds)')
+  parser.add_argument('--output',  '-o', default='/var/procmon/output', help='filename for statistics from last scan')
+  parser.add_argument('--port',    '-p', type=int, default=8080, help='web port to listen on.  0 to disable.')
+  parser.add_argument('--logfile', '-l', default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
+  parser.add_argument('--queue',   '-q', default='/var/procmon/queue', help='where to put the queue of current unexpected items from the most recent scan')
+  parser.add_argument('--test',    '-t', action='store_true', help='run single scan and output only to stdout')
+  return parser.parse_args(argv)
+  
+
+def main(argv=[]):
+  global ARGS
+  ARGS = parse_args(argv or sys.argv[1:])
+  C.init_log('procmon', ARGS.logfile,
+             filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER)
+  
+  global SCANNER
+  SCANNER = Scanner()
+  
+  if ARGS.test:
+    ARGS.queue = ''
+    ARGS.logfile = ''
+    SCANNER.scan()
+    out = '\n'.join(SCANNER.problems_to_list_of_strings(True))
+    print(out or 'all ok')
+    return 0
+  
+  ws = W.WebServer(WEB_HANDLERS, wrap_handlers=not ARGS.debug)
+  ws.start(port=ARGS.port)
+  
+  SCANNER.scan()
+  while True:
+    time.sleep(ARGS.delay)
+    new_scanner = Scanner()
+    new_scanner.scan()
+    SCANNER = new_scanner
+
+
+if __name__ == '__main__':
+  sys.exit(main())
