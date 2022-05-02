@@ -128,6 +128,8 @@ WHITELIST = [
     WL('sshdock',   '201002',      False, False, 'sshd: tunnel-glowbox1'),
     WL('sshdock',   '201004',      False, False, 'sshd: tunnel-gong2'),
     WL('sshdock',   '202000',      False, False, 'rsync'),
+    WL('sshdock',   '202002',      False, False, 'ssh: homesec1@notty'),
+    WL('sshdock',   '202002',      False, False, 'ssh: homesec2@notty'),
     WL('sshdock',   '202002',      False, False, 'rsync --server'),
     WL('sshdock',   '202003',      False, False, 'rsync --server'),
     WL('sshdock',   '202004',      False, False, 'rsync --server'),

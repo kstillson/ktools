@@ -90,8 +90,6 @@ class Scanner(object):
     self.unexpected = []   # List of ProcessData
     self.greylisted = []        # List of ProcessData
     for entry in WL.WHITELIST: entry.last_scan_hits = 0
-    global DOCKER_MAP
-    if not DOCKER_MAP: DOCKER_MAP = get_docker_map()
 
   # ----- scanning
   
@@ -99,7 +97,10 @@ class Scanner(object):
     C.log("start scan")
     V.bump('scans')
     V.stamp('last_scan')
-    
+
+    global DOCKER_MAP
+    DOCKER_MAP = get_docker_map()
+
     self.add_process(1, '/')
     self.scan_cow()
     self.scan_ro()
@@ -112,7 +113,7 @@ class Scanner(object):
     # Outputs
     problems = self.problems_to_list_of_strings(False)
     for i in problems: C.log(i)
-    if ARGS.queue:
+    if ARGS.queue and problems:
       with open(ARGS.queue, 'a') as f: f.write('\n'.join(problems) + '\n')
     if ARGS.output:
       with open(ARGS.output, 'w') as f: f.write(str(WL.WHITELIST).replace(' WL', '\n WL'))

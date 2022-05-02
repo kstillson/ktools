@@ -17,13 +17,13 @@ update: all test install
 
 # ---------- custom targets
 
-install: $(INSTALL_DIR) $(INSTALL_TARGETS)
+install: install-stamp
+
+install-stamp: $(PLAIN_TARGETS)
 	if [[ "$$ROOT_RO" == 1 ]]; then mount -o remount,rw /; fi
+	mkdir --mode 755 -p $(INSTALL_DIR)
 	$(MAKE) common_install
 	if [[ "$$ROOT_RO" == 1 ]]; then mount -o remount,ro /; fi
-
-#$(INSTALL_DIR):
-#	mkdir --mode 755 -p $(INSTALL_DIR)
 
 
 # ---------- pass-throughs
