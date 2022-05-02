@@ -3,7 +3,6 @@
    - other docks: web
    - nagdock test fails
    - keymaster: add last used key date
-   - services: procmon, ?
    - review non-doc TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
