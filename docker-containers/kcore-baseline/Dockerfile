@@ -6,7 +6,8 @@ RUN apk upgrade -U && \
     apk add --no-cache bash python3 py3-pip tzdata && \
     rm -rf /var/cache/apk/*
 
-ENV TZ America/New_York     # Needs apk tzdata.
+# Needs apk tzdata:
+ENV TZ America/New_York
 
 COPY files /
 
@@ -14,4 +15,3 @@ COPY files /
 RUN /prep-local
 
 CMD ["/bin/bash"]
-

@@ -1,5 +1,5 @@
 '''
-Trivial web-server for Circuit Python.
+Simple web-server for Circuit Python.
 adapted from https://github.com/deckerego/ampule; thanks deckerego!
 MIT license
 

@@ -24,8 +24,7 @@ all: copy docker-all
 clean:
 	rm -rf $(KMH_DIR) $(KCORE_DIR)
 
-update2: all update         # TODO: better name...?
-	d 01 keymaster
+update: docker-update
 	if [[ "$$p" == "" ]]; then read -s -p "km password for startup: " p; else sleep 1; fi && echo "" && curl --cacert files/home/km/keymaster.pem -d "password=$$p" https://keys:4444/load
 
 # ----- file copies
@@ -62,4 +61,3 @@ clean: docker-clean
 install: docker-install
 test: docker-test
 uninstall: docker-uninstall
-update: docker-update

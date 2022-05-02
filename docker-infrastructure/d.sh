@@ -145,7 +145,11 @@ function upgrade() {
   emit ""
   emitc blue "<> Building container ${name}"
   cd ${D_SRC_DIR}/${name}
-  ./Build
+  if [[ -r Makefile ]]; then
+      make
+  else
+      ./Build
+  fi
   if [[ "$(dlib_run latest_equals_live $name)" == "true" ]]; then
       emitc yellow "#latest == #live, so nothing more to do."
       return
@@ -155,7 +159,11 @@ function upgrade() {
       emitc yellow "result: $rslt (expected 'pass')"
       return 1
   fi
-  ./Build --setlive
+  if [[ -r Makefile ]]; then
+      d-build -s
+  else
+      ./Build --setlive
+  fi
   if [[ -f ./autostart ]]; then
       emitc blue "restarting $name"
       down $name

@@ -228,11 +228,11 @@ function git_add_repo() {
     name="$1"
     if [[ ! "$name" == *.git ]]; then name="${name}.git"; fi
     dir="/rw/dv/gitdock/home/ken/git/$name"
-    runner mkdir $dir
-    runner cd $dir
-    runner git init --bare
-    runner chown -R dken.200802 $dir
-    runner chmod -R go+rx,g+w $dir
+    runner "mkdir $dir"
+    runner "cd $dir"
+    runner "git init --bare"
+    runner "chown -R dken.200802 $dir"
+    runner "chmod -R go+rx,g+w $dir"
     emitc green "ready: git:git/${name}"
 }
 
@@ -261,7 +261,7 @@ function git_sync() {
     if [[ "$git_status" == "" ]]; then
         emitc green "no local changes: $dir"
     else
-        runner git commit -v -a
+        runner "git commit -v -a"
     fi
     runner "git remote | xargs -L1 -I@ echo git pull @ master"
     runner "git remote | xargs -L1 git push"
@@ -295,8 +295,8 @@ function git_pull_all() {
     need_ssh_agent
     for dir in $GIT_DIRS; do
         if [[ ! -d $dir ]]; then emit "missing dir: $dir"; continue; fi
-        runner cd $dir
-        runner git pull
+        runner "cd $dir"
+        runner "git pull"
     done
     emitc green "all done\n"
 }
@@ -366,8 +366,8 @@ function iptables_query() {
 # Save current iptables rules to disk for auto-restore upon boot.
 function iptables_save() {
     # TODO: move to standard location (with autodetect for ro root)
-    runner /bin/mv -f ~/iptables.rules ~/iptables.rules.mbk
-    runner /usr/sbin/iptables-save > ~/iptables.rules
+    runner "/bin/mv -f ~/iptables.rules ~/iptables.rules.mbk"
+    runner "/usr/sbin/iptables-save > ~/iptables.rules"
     emitc green "saved"
 }
 
@@ -424,9 +424,9 @@ function updater() {
 # I keep the root dir read-only on my primary server, so need to temp-enable writes...
 function enable_rsnap() {
     RUN_PARA "$(list_rsnap_hosts | without jack)" "/sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
-    runner mount -o remount,rw /
-    runner /sbin/setcap cap_dac_read_search+ei /usr/bin/rsync
-    runner mount -o remount,ro /
+    runner "mount -o remount,rw /"
+    runner "/sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
+    runner "mount -o remount,ro /"
 }
 
 # Output the list of DHCP leases which are not known to the local dnsmasq server's DNS list.
@@ -559,8 +559,8 @@ function procmon_update() {
         return
     fi
     echo "updating procmon and clearing queue..."
-    runner systemctl restart procmon
-    runner bash -c ":>$PROCQ"
+    runner "systemctl restart procmon"
+    runner ":>$PROCQ"
 }
 
 # push an update of the tools_pylib wheel distribute to select RPI's
@@ -589,6 +589,7 @@ function checks_real() {
     /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect "exim panic log empty" "0"
     /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect "exim reject log empty" "0"
+    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect "no unencrpted ktools secrets" "0"
     git_check_all |& expect "git dirs with local changes" ""
 }
 
@@ -687,7 +688,7 @@ function keymanager_update() {
 function keymanager_zap() {
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc blue "already zapped"; return 0; fi
-    runner curl -ksS ${KM}/zap >/dev/null
+    runner "curl -ksS ${KM}/zap >/dev/null"
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc orange "zapped"; return 0; fi
     emitc red "zap failed: $stat"
@@ -882,10 +883,10 @@ function main() {
         ps) ps_fixer ;;                                      ## colorized and improved ps output
         sort-skip-header | sort | snh) sort_skip_header ;;   ## sort stdin->stdout but skip 1 header row
         systemd-daemon-reload | sdr | sR) runner "systemctl daemon-reload && emit 'reloaded'" ;;   ## systemd daemon refresh
-        systemd-down | s0) runner systemctl stop ${1:-procmon} ;;            ## stop a specified service (procmon by default)
-        systemd-restart | sr) runner systemctl restart ${1:-procmon} ;;      ## restart a specified service (procmon by default)
-        systemd-status | ss | sq) runner systemctl status ${1:-procmon} ;;   ## check service status (procmon by default)
-        systemd-up | s1) runner systemctl start ${1:-procmon} ;;             ## start a specified service (procmon by default)
+        systemd-down | s0) runner "systemctl stop ${1:-procmon}" ;;          ## stop a specified service (procmon by default)
+        systemd-restart | sr) runner "systemctl restart ${1:-procmon}" ;;    ## restart a specified service (procmon by default)
+        systemd-status | ss | sq) runner "systemctl status ${1:-procmon}" ;; ## check service status (procmon by default)
+        systemd-up | s1) runner "systemctl start ${1:-procmon}" ;;           ## start a specified service (procmon by default)
         without | wo) cat | without "$@" ;;                        ## remove args (csv or regexp) from stdin (space, csv, or line separated)
     # general linux maintenance routines - for multiple hosts
         disk-free-all | dfa | linux-free | lf) RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;   ## root disk free for all linux hosts
@@ -920,7 +921,7 @@ function main() {
         exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
         exim-queue-zap | eqrm) runner "d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm'" ;;  ## clear the exim queue
         exim-queue-zap-frozen | eqrmf) runner "d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d' ' | xargs exim -Mrm'" ;;      ## clear frozen msgs from queue
-        exim-queue-run | eqr) runner d run eximdock exim -qff ;;          ## unfreeze and retry the queue
+        exim-queue-run | eqr) runner "d run eximdock exim -qff" ;;        ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo $1 to gitdock
         git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homesec
@@ -939,11 +940,11 @@ function main() {
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
         procmon-query | pq) curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;   ## check procmon status
         procmon-rescan | pr) curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;      ## procmon re-scan and show status
-        procmon-zap | homesec-reset | hr | pz) runner :>$PROCQ; echo 'procmon queue cleared.' ;;              ## clear procmon queue
+        procmon-zap | homesec-reset | hr | pz) runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;            ## clear procmon queue
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
 	push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
         syslog-queue-archive | queue-archive | sqa | qa) zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;  ## show full queue history
-        syslog-queue-filter-ssh | queue-filter | sqf | qf) runner sed -i -e "/session opened/d" /rw/log/queue ;;  ## remove sshs from log queue
+        syslog-queue-filter-ssh | queue-filter | sqf | qf) runner 'sed -i -e "/session opened/d" /rw/log/queue' ;;  ## remove sshs from log queue
         syslog-queue-zap | queue-zap | qz) bash -c :>/rw/log/queue ;;                      ## wipe the current log queue
         syslog-queue-view | syslog-queue | sqv | q) less /rw/log/queue ;;                  ## view the current log queue
         syslog-queue-view-no-ssh | sqv0 | q0) fgrep -v 'session opened' /rw/log/queue ;;   ## view the current log queue (w/o ssh)

@@ -1,0 +1,160 @@
+#!/usr/bin/python3
+
+import argparse, os, glob, subprocess, sys, time
+import kcore.common as C
+import kcore.html as H
+import kcore.webserver as W
+import kcore.varz as V
+
+
+# ---------- control constants
+
+DAY = 24 * 60 * 60
+
+CAM_AGE = 2 * DAY
+RSNAP_LOG_AGE = 2 * DAY                     # Should propogate to rsnapshot within 2 days.
+SYS_LOG_AGE = 2 * 60 * 60                   # Normal logs updated within a few hours
+SYS_LOG_AGE_SLOW = 24 * 60 * 60
+
+CONFIG = {
+  # rsnapshot based
+  '/root/rsnap/daily.0/a1/var/log/syslog':                       RSNAP_LOG_AGE,
+  '/root/rsnap/daily.0/home/home/ken/share/tmp/touch':           RSNAP_LOG_AGE,
+  '/root/rsnap/daily.0/home/home/blue-backup/backup/var/log/auth.log': 4 * DAY,
+  '/root/rsnap/echo-back/vault-touch':                           32 * DAY,
+  # syslog based
+  '/root/syslog/daemon.log':                     SYS_LOG_AGE,
+  '/root/dv/eximdock/var_log/exim/mainlog':      3 * DAY,
+  '/root/dv/mysqldock/var_log_mysql/mysql.log':  SYS_LOG_AGE_SLOW,
+  '/root/dv/nagdock/var_log_nagios/nagios.log':  SYS_LOG_AGE,
+  '/root/dv/rsnapdock/var_log/rsnapshot.log':    RSNAP_LOG_AGE,
+  '/root/dv/webdock/var_log_apache2/access.log': SYS_LOG_AGE,
+  # cron exceptions
+  '/root/syslog/cron-jack2.log':                 2 * DAY,
+  '/root/syslog/cron-glowbox1.log':              None,  # Disable globbed file.
+  # globs
+  '/root/syslog/cron*':                          SYS_LOG_AGE,
+  # specials
+  '/root/exim':                                  'DIR-EMPTY',
+  '/root/dnsmasq/dnsmasq.leases':                'NOT-FOUND:.9.',
+  '/root/rcam/homesec1/{NEWEST}':                CAM_AGE,
+  '/root/rcam/homesec2/{NEWEST}':                CAM_AGE,
+  '/root/rcam/hs-front/{NEWEST}':                CAM_AGE,
+}
+
+
+# ---------- helpers
+
+def find_newest_file(target):
+  dirname = target.replace('/{NEWEST}', '')
+  if not os.path.isdir(dirname): raise RuntimeError('not a dir: {dirname}')
+  files = glob.glob(f'{dirname}/*')
+  if not files: raise RuntimeError('no files for newest check')
+  try:
+    return max(files, key=os.path.getctime)
+  except Exception as e:
+    raise RuntimeError(f'Exception finding newst file (possibly broken symlink?): {target}: {e}')
+  
+  
+def grep(filename, target):
+  return subprocess.call(['/bin/fgrep', '-q', target, filename])
+
+
+# ---------- scanner business logic
+
+class Scanner:
+  def run_scan(self):
+    self.summary = 'all ok'
+    out = {}
+    for filename, rule in CONFIG.items():
+      answer = self.check(filename, rule)
+      if answer is None: continue
+      if not answer.startswith('ok'): C.log_warning(f'{filename}: {answer}')
+      out[filename] = answer
+    V.bump('scans')
+    V.set('latest-summary', self.summary)
+    V.set('num-rules', len(CONFIG))
+    return self.summary, out
+
+
+  def check(self, filename, rule):
+    if not rule: return None   # rule is to skip this check.
+  
+    if '{NEWEST}' in filename:
+      try:
+        newest = find_newest_file(filename)
+      except RuntimeError as e:
+        return self.problem(str(e))
+      return self.check(newest, rule) + f': {newest}'
+  
+    if '*' in filename:
+      file_list = glob.glob(filename)
+      if not file_list: return self.problem('glob failure')
+      for f in file_list:
+        if f in CONFIG: continue  # Defer to more specific rule.
+        self.check(f, rule)
+      return None # Nothing more to check for the glob rule itself.
+  
+    if isinstance(rule, int):  # int => max age rule
+      try:
+        t = os.path.getmtime(filename)
+        tstr = time.ctime(t)
+        if ((time.time() - t) > rule): return self.problem(f'too old: {tstr}')
+        else: return self.ok(f'ok: {tstr}')
+      except Exception as e:
+        return self.problem(f'stat error: {e}')
+  
+    if rule == 'DIR-EMPTY':
+      if not os.path.isdir(filename): return self.problem(f'DIR-EMPTY not a dir: {filename}')
+      found = glob.glob(f'{filename}/*')
+      if found: return self.problem('NOT EMPTY')
+      else: return self.ok('ok: empty')
+  
+    if rule.startswith('NOT-FOUND'):
+      _, target = rule.split(':', 1)
+      grep_status = grep(filename, target)
+      if not os.path.isfile(filename): return self.problem('file not found')
+      if grep_status == 0: return self.problem(f'saw unexpected "{target}"')
+      else: return self.ok(f'ok: not found: {target}')
+  
+    return self.problem(f'unknown rule: {filename}: {rule}')
+
+  
+  def ok(self, msg='ok'): return msg
+  
+  def problem(self, msg):
+    self.summary = 'ERROR'
+    V.bump('problems')
+    return f'ERROR: {msg}'
+  
+
+# ---------- handlers
+
+def web_handler(request):
+  summary, details = Scanner().run_scan()
+  out = H.wrap(summary, 'p')
+  out += H.list_to_table(details)
+  return H.html_page_wrap(out, 'filewatch')
+
+
+# ---------- main
+
+def main():
+  parser = argparse.ArgumentParser(description='File age checker')
+  parser.add_argument('--port', '-p', type=int, default=8080, help='Port on which to start server.')
+  parser.add_argument('--test', '-t', action='store_true', help='Run a single scan and output to stdout, then quit.')
+  args = parser.parse_args()
+
+  if args.test:
+    summary, details = Scanner().run_scan()
+    print(f'Overall status: {summary}')
+    for f in sorted(details):
+      print('%-30.30s : %s' % (f, details[f]))
+    sys.exit(0)
+
+  ws = W.WebServer(handlers={None: web_handler})
+  ws.start(port=args.port, background=False)  # Does not return.
+
+
+if __name__ == '__main__':
+  sys.exit(main())

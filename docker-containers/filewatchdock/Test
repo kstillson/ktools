@@ -1,0 +1,51 @@
+#!/usr/bin/python3
+
+import argparse, atexit, os, subprocess, sys, time
+
+sys.path.append('/root/bin')
+import kcore.docker_lib as D
+
+TOUCH_FILE = '/mnt/rsnap/daily.0/home/home/ken/share/tmp/touch'
+TOUCH_FILE_BACKUP = '/mnt/rsnap/daily.0/home/home/ken/share/tmp/touch.mbk'
+
+def cleanup():
+    if not os.path.isfile(TOUCH_FILE_BACKUP): return
+    subprocess.check_call(['/bin/cp', '-p', TOUCH_FILE_BACKUP, TOUCH_FILE])
+    os.unlink(TOUCH_FILE_BACKUP)
+
+
+def main():
+    ap = argparse.ArgumentParser(description='filewatchdock test')
+    D.add_testing_args(ap)
+    args = ap.parse_args()
+    name, ip, cow, dv = D.launch_or_find_container(args)
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+
+    if args.prod:
+        D.emit('caution- in-place prod functionality testing is limited.')
+        D.web_expect('all ok', ip, '/', 8080)
+        print('pass')
+        return
+
+    atexit.register(cleanup)
+
+    # First check that everything is ok.
+    cleanup()       # If we had an unclean exit from a previous test.
+    time.sleep(2)   # Allow for startup time.
+    D.web_expect('all ok', ip, '/', 8080)
+
+    # Backup tmp/touch file and set it's date to something old.
+    subprocess.check_call(['/bin/cp', '-p', TOUCH_FILE, TOUCH_FILE_BACKUP])
+    subprocess.check_call(['/usr/bin/touch', '-d', '20200101', TOUCH_FILE])
+    D.web_expect('ERROR', ip, '/', 8080)
+
+    # Put things back, and confirm everything is okay again.
+    cleanup()
+    D.web_expect('all ok', ip, '/', 8080)
+
+    print('pass')
+
+
+if __name__ == "__main__":
+  main()
+
