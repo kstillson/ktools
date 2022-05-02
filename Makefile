@@ -60,7 +60,7 @@ e:	everything   # simple alias for "everything"
 prep:	common/prep-stamp
 
 common/prep-stamp:	private.d/keymaster.pem private.d/wifi_secrets.py
-	@pgrep docker || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
+	@pgrep docker > /dev/null || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
 	touch common/prep-stamp
 
 private.d/keymaster.pem:   private.d/cert-settings

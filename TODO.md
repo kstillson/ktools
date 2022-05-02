@@ -2,7 +2,6 @@
 ## ++ktools tech
    - other docks: web
    - nagdock test fails
-   - monitoring: generalize & publish filewatchdock
    - keymaster: add last used key date
    - services: procmon, ?
    - review non-doc TODO's

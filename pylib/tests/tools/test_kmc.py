@@ -9,7 +9,7 @@ import kmc
 # ----------
 
 INCOMING_PATH = None            # What the webserver sees as its GET request path
-PORT = random.randrange(20000, 30000)
+PORT = random.randrange(10000, 19999)
 RESP = (200, 'response-content')
 
 # generate keyword args for the tests' query_km call.

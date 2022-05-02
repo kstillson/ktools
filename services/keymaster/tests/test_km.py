@@ -10,7 +10,7 @@ import km
 
 
 def test_basic_opration():
-    random_high_port = random.randrange(10000,29999)
+    random_high_port = random.randrange(10000,19999)
     argv = ['--certkeyfile', 'tests/server-cn=localhost.pem', '--datafile', 'tests/km-test.data.gpg', '--logfile', '-', '--port', str(random_high_port)]
     threading.Thread(target=km.main, args=(argv,), daemon=True).start()
     time.sleep(0.5)   # time for webserver to start-up
