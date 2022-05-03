@@ -60,11 +60,18 @@ mode, for example in cases where curious or malicious network users might
 cause a denial-of-service by panicing the server, use the --dont-panic flag to
 turn it off.
 
+TODO: under some circumstances (e.g. cert verification failure),
+requests.get() can retry multiple times in quick succession.  Currently that
+will cause the server to panic and lock-down.  Should we make a
+LAST_RECEIVED_TIMES ratchet failure non-panicing?  Problem is that this makes
+real replay attacks non-panicing...  hmmm...
+
 The secrets database is formatted as a Python serialized @dataclass.  See
 km-test.data.gpg for an example; the passphrase is "test123".  btw, that file
 was generated with $PUID="test".  Note that various tests are dependent on
 this file's current contents, so you might break them if you change it.  Your
 real secrets database goes in private.d/km.data.gpg.
+
 '''
 
 import argparse, getpass, os, sys

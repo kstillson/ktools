@@ -1,24 +1,27 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+
+# TODO!: fails on blue: /bin/cp: cannot stat '/rw/dv/squiddock/var_log_squid': No such file or directory
+
 
 import argparse, base64, os, subprocess, ssl, sys, time
 
 sys.path.append('/root/bin')
-import d_lib
+import kcore.docker_lib as D
 
 
 def main():
     ap = argparse.ArgumentParser(description='squiddock test')
-    d_lib.add_testing_args(ap)
+    D.add_testing_args(ap)
     args = ap.parse_args()
-    name, ip, cow, dv = d_lib.launch_or_find_container(args)
+    name, ip, cow, dv = D.launch_or_find_container(args)
     if not cow or not ip: sys.exit('cannot find container %s' % name)
 
     if args.run: time.sleep(2)  #  Give squid a chance to start up.
 
-    d_lib.web_expect('little place', 'www.kenstillson.com', '/', proxy_host=ip+':3128')
+    D.web_expect('little place', 'www.kenstillson.com', '/', proxy_host=ip+':3128')
 
     prefix = dv + ('/' if args.prod else '/_rw_dv_squiddock_')
-    d_lib.file_expect('http://www.kenstillson.com/', prefix + 'var_log_squid/access.log')
+    D.file_expect('http://www.kenstillson.com/', prefix + 'var_log_squid/access.log')
 
     print('pass')
     

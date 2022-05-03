@@ -1,10 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+
+# TODO!: move webserver to kcore, rm bad dep on thread.
 
 import argparse, os, re, sys, time, thread
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.append('/root/bin')
-import d_lib
+import kcore.docker_lib as D
 
 CMD_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/rw/nagios.cmd'
 LOG_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_log_nagios/nagios.log'
@@ -62,21 +64,21 @@ def find_test(conf):
 def status_expect(field, expected_status, conf=None):
   if not conf: conf = parse_nagios(STATUS_FILE)
   status = find_test(conf)
-  if not status: d_lib.abort('unable to find test-service data')
+  if not status: D.abort('unable to find test-service data')
   val = status[1].get(field)
   if val == expected_status:
-      d_lib.emit('success; field %s == %s' % (field, expected_status))
+      D.emit('success; field %s == %s' % (field, expected_status))
   else:
-      d_lib.abort('Field "%s" has wrong value %s != %s' % (field, val, expected_status))
+      D.abort('Field "%s" has wrong value %s != %s' % (field, val, expected_status))
 
 
 def main():
     ap = argparse.ArgumentParser(description='nagdock test')
-    d_lib.add_testing_args(ap)
+    D.add_testing_args(ap)
     args = ap.parse_args()
     if args.prod: sys.exit('sorry, in-place prod testing not supported')
 
-    name, ip, cow, dv = d_lib.launch_or_find_container(args)
+    name, ip, cow, dv = D.launch_or_find_container(args)
     if not cow or not ip: sys.exit('cannot find container %s' % name)
 
     # Check incoming assumptions
@@ -88,12 +90,12 @@ def main():
     # Enable checking
     send_cmd('ENABLE_SVC_CHECK;jack;test-service')
     send_cmd('SCHEDULE_FORCED_SVC_CHECK;jack;test-service;$NOW')
-    d_lib.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
+    D.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
     time.sleep(UPDATE_DELAY)
 
     # test server is off, so expect failure.
-    d_lib.file_expect('EXTERNAL COMMAND: ENABLE_SVC_CHECK;jack;test-service', LOG_FILE)
-    d_lib.file_expect('SERVICE ALERT: jack;test-service;CRITICAL;HARD;1;CRITICAL', LOG_FILE)
+    D.file_expect('EXTERNAL COMMAND: ENABLE_SVC_CHECK;jack;test-service', LOG_FILE)
+    D.file_expect('SERVICE ALERT: jack;test-service;CRITICAL;HARD;1;CRITICAL', LOG_FILE)
     conf = parse_nagios(STATUS_FILE)
     status_expect('active_checks_enabled', '1', conf)
     status_expect('has_been_checked', '1', conf)
@@ -104,18 +106,18 @@ def main():
     thread.start_new_thread(httpd.serve_forever, ())
 
     send_cmd('SCHEDULE_FORCED_SVC_CHECK;jack;test-service;$NOW')
-    d_lib.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
+    D.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
     time.sleep(UPDATE_DELAY)
 
     ### TODO: this test appears to fail, next lines culprit:
     # appears nagios not able to contact the test server...?
     # short circuit for now  TODO!! TODO !!
-    d_lib.emit('\n\nWARNING- THIS TEST IS SHORT CIRCUITED\n\n')
+    D.emit('\n\nWARNING- THIS TEST IS SHORT CIRCUITED\n\n')
     print('pass')
     return
     
     status_expect('current_state', '0')
-    d_lib.file_expect('SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
+    D.file_expect('SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
 
     print('pass')
     

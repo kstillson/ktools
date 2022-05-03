@@ -2,71 +2,131 @@
 
 ## About The Project
 
-This is a collection of tools and techniques developed over the last 20
-years or so, designed to use and manage a Linux-based home network and
-smart-home.  The author's machines are primarily Ubuntu and Raspberry PIs,
-although the tools should mostly work on any Debian-derived Linux systems.
+This is a collection of services, tools, and libraries, intended for
+moderately knowledable owners of Linux and Circuit-Python based systems.
 
-These tools represent years of tinkering and fine-tuning, and it is hoped
-that this code (even if its only the structural concepts and some of the
-specific techniques used) may be of use to those either building their own
-systems, or just trying to extend their Linux expertise.
+Some highlights:
 
-Many Googler engineeringisms are used: from the code formatting style to
-the fact that almost everything is a web-server, and the web-servers have
-lots of standardized handlers that end with the letter "z' (/logs,
-/healthz, /varz, etc.)  Collectively these are referred to as "/z handlers.
-However, the author was extremely careful to NOT actually use any Google
-intellectual property or trade secrets in the creation of these tools.
+- A smart-home control system
+
+- A home security system (integrated with the smart-home system)
+
+- A collection of scripts and Docker containers designed to provide
+  security-focused services, monitoring, and administrative automation for a
+  home-network of Linux servers (bigs ones and little ones like Raspberry PIs)
+
+- Docker infrastructure for quick and easy maintence of the provided
+  containers, and simple addition of new ones
+
+- A Python library that underpins all of the above, providing:
+
+   - A mechanism that provides authentication and automated secret retrieval
+     without needing to store private keys or other secrets in plaintext on
+     either the server or the clients.
+
+   - A very simple to use logging abstraction that integrates level filtering
+     for various outputs (files, stdout, stderr, syslog), as well a web-based
+     log retrieval.
+
+   - A web server and client designed for simplicity of use, and which also
+     provides a uniform interface for a number of platforms: Python 2 or 3,
+     Raspberry PI, and Circuit Python.  Also includes a bunch of
+     Google-engineering-inspired "standard handlers" that make remote
+     monitoring and debugging easier.
+
+   - A GPIO and Neopixel abstraction that works on full Linux, Raspberry PIs,
+     and Circuit Python boards.  Under full Linux, the GPIOs and Neopixels are
+     simulated (graphically).  This means you can develop on a full Linux
+     machine with PDB and all the other nicities, and upload the code to RPi
+     or Circuit Python once it's almost done.
+
+The collection represent years of tinkering and fine-tuning, and it is hoped
+that this code, even if only the structural concepts and some of the
+techniques, may be of use to those either building their own systems, or just
+trying to extend their Linux or Python expertise.
+
 
 ## About The Author
 
 Ken Stillson retired from Google's central security team in 2021.  He left
-with the rank of "Senior Staff" (level 7 out of 9).  Before that, he worked
-at MITRE / Mitretek, assisting the US Government with various
-telecommunications and security projects.  He left Mitretek as a "Senior
-Principal" (one level shy of "Fellow"), and earned a "Hammer Award" from
-the then US Vice President, for work that "makes the government work better
-and cost less."
+with the rank of "Senior Staff" (level 7 out of 9).  Before that, he worked at
+MITRE / Mitretek, assisting the US Government with various telecommunications
+and security projects.  He left Mitretek as a "Senior Principal" (one level
+shy of "Fellow"), and earned a "Hammer Award" from the then US Vice President,
+for work that "makes the government work better and cost less."
 
 Ken <<ktools@point0.net>> is now a free-range maker, tinkerer, artist, and
 hacker (in the good sense).
 
-## About The Structure
+
+## About the Status
 
 These tools were not originally designed to be shared, and made many
 assumptions about each other and the environment in which they run.  The
 process of disentangling and generalizing them is on-going, and some of the
-modules may be initially published in their not-yet-fully-detangled form.
-You're welcome to help out via pull requests, or just wait for me to get to
-it.
+modules are being published in their not-fully-detangled form.  You're welcome
+to help out via pull requests, or just wait for me to get to it.
 
-TODO: notes about opinionated dir structure.
+As an example, much of teh system current has various assumptions about
+directory structures.  Most Debian/Ubuntu users won't find my directory
+choices disturbing, but usually open-source projects allow users to choose
+where things should be installed.  It turns out that refitting a complicated
+system with many hard-coded directory assumptions is challenging.
 
-The project uses GNU Linux Makefiles.  The code is generally in Python or
-bash shell, so doesn't need compilation.  But I likes the way Makefiles
-document how things are to be combined, tested, and deployed.
 
-  * "make all" will gather production-ready versions of tools into staging
-    areas.  In a few cases, this involves merging in site-specific code or
-    data (which aren't included in the git repo due to .gitinclude rules).
-    This is how the author hides private or too-specialized-to-be-reusable
-    parts of the system.  The idea is that you can insert your own
-    site-specific plugins here, if desired.
+## Makefile's
+
+The project uses GNU Linux Makefile's.  A bit old fashioned, I know.  And the
+code is generally in Python or bash, i.e. no compilation phase, which might
+make "Make" seem like an odd choice.  However, I like the way Makefile's
+document dependencies and how things are to be combined, tested, and deployed.
+Even when an overall process becomes complicated, well-writen Makefile's
+remain small and reasonably easy to understand.
+
+  * "make prep" is a custom rule I added, which does some one-time prepratory
+    stuff, like making sure various dependencies are installed, and getting
+    information from you for populating the self-signed certificates used by
+    the authentication system.
+
+  * "make all" despite being the default make target, the top-level Makefile
+    "all" doesn't actually do anything except depend on "prep".  This is
+    because Python and Bash scripts don't need compiling.
+
+    The "all" target does build Docker containers when run in docker-container
+    subdirs, but I decided not to have the top level Makefile automatically
+    build the containers, as doing so has additional prerequisites (such as
+    installing Docker and running as root), and I figured users might be
+    alarmed if a top level "make all" started sudo'ing (which isn't common
+    practice).  If you do want to build Docker containers, run "make all"
+    either in a specific container's directory
+    (e.g. docker-containers/kcore-baseline), or in the ./docker-containers
+    diretory to build them all, or see the "make everything" target (below).
   
-  * "make test" will run whatever unit or integration tests are available.
+  * "make test" runs unit and/or integration tests.  For servers and Docker
+    containers, this involves actually starting the systems up and peppering
+    them with tests to confirm operation.
   
-  * "make install" will copy tools from the staging area to final
-    destination directories.  The Makefiles are generally written to allow
-    environment variables to override the installation directories, so you
-    can position the final tools where you like without needing to change
-    git controlled files.  For docker-based modules, the "install"
-    directive marks the image build by "all" as the currently "live"
-    version.  See [docker readme](docker/README.md) for details.
-  
-  * "make update" is primarily for the author's use.  It runs the above
-    sequence in order, then does local git commits, then pulls and pushes
-    for all remote repos.
+  * "make install"- for libaries and services, copies files into their
+    appropriate bin/ or lib/ directories.  For docker containers, tags
+    the ":latest" image as ":live", which will cause it to be used
+    the next time the container is restarted.
+
+  * "make update" basically runs "all" then "test" then "install"
+
+  * "make everything" This target is only in the top-level Makefile.  It
+    basically runs "make update" for everything, including all the Docker
+    containers.  It's also aware of the order dependencies for Docker builds,
+    specifically- that "kcore-baseline" container must be build *and
+    installed* (which just means tagging the image as "live") before the other
+    containers are built.  This is because the other containers use
+    "kcore-baseline" as their image starting point.
+
+
+@@
+Other general notes about the Makefile's:
+ - sudo
+ - interactive
+
 
 ## The Modules
 

@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import argparse, atexit, os, shutil, sys, subprocess, tempfile, time
 
 sys.path.append('/root/bin')
-import d_lib
+import kcore.docker_lib as D
 
 
 def cleanup(tmpdir, orig_dir):
@@ -13,21 +13,21 @@ def cleanup(tmpdir, orig_dir):
 
 def main():
     ap = argparse.ArgumentParser(description='gitdock test')
-    d_lib.add_testing_args(ap)
+    D.add_testing_args(ap)
     args = ap.parse_args()
-    name, ip, cow, dv = d_lib.launch_or_find_container(args)
+    name, ip, cow, dv = D.launch_or_find_container(args)
     if not cow or not ip: sys.exit('cannot find container %s' % name)
 
     orig_dir = os.getcwd()
     tmpdir = tempfile.mkdtemp()
-    d_lib.emit('tmpdir: ' + tmpdir)
+    D.emit('tmpdir: ' + tmpdir)
     atexit.register(cleanup, tmpdir, orig_dir)
     os.chdir(tmpdir)
 
     subprocess.check_call(
         ['git', 'clone', 'git-ro@%s:git/rc.git' % ip],
         env={ 'GIT_SSH_COMMAND': '/usr/bin/ssh -i /root/docker-dev/gitdock/git-ro-test-key -o StrictHostKeyChecking=no' })
-    d_lib.file_expect('exit with status', 'rc/.profile')
+    D.file_expect('exit with status', 'rc/.profile')
 
     print('pass')
     
