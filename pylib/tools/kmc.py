@@ -24,7 +24,7 @@ DEBUG = False   # warning: outputs lots of secrets to stderr.
 # ---------- general helpers
 
 def find_cert(filename):
-  if os.path.exists(filename): return filename
+  if os.path.exists(filename): return os.path.abspath(filename)
   candidate = os.path.join(os.path.dirname(__file__), filename)
   if os.path.exists(candidate): return candidate
   candidate = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
