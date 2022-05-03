@@ -23,7 +23,7 @@ SHELL := /bin/bash
 
 # ---------- standard targets
 
-all:	prep
+all:	prep common_all
 
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
