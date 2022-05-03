@@ -1,7 +1,8 @@
 
 ## ++ktools tech
+   - nagdock test fails on jack
+   - ~all docker tests fail on blue
    - other docks: web
-   - nagdock test fails
    - keymaster: add last used key date
    - review non-doc TODO's
    - re-confirm virgin build process

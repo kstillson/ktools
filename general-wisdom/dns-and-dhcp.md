@@ -1,5 +1,0 @@
-
-TODO
-
-# DNS and DHCP
-
