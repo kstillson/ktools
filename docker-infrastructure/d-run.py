@@ -97,6 +97,9 @@ def add_ports(cmnd, ports_list, enable_ipv6):
 
 def clone_dir(src, dest):
     if os.path.exists(dest): return False
+    if not os.path.exists(src):
+        err(f'Creating non-existent mountpoint source: {src}')
+        Path(src).mkdir(parents=True)
     os.mkdir(dest)
     stat = os.stat(src)
     os.chown(dest, stat.st_uid, stat.st_gid)
