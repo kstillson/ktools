@@ -6,7 +6,7 @@ TODO: doc
 
 '''
 
-import argparse, psutil, os, subprocess, sys, time
+import argparse, psutil, os, re, subprocess, sys, time
 from dataclasses import dataclass
 from typing import List
 
@@ -15,7 +15,6 @@ import kcore.html as H
 import kcore.varz as V
 import kcore.webserver as W
 
-import procmon_whitelist as WL
 
 # ---------- Control constants
 
@@ -32,6 +31,7 @@ WEB_HANDLERS = {
 ARGS = None
 DOCKER_MAP = {}    # Maps container id (str) to container name (str).
 SCANNER = None     # Singleton of current scanner instance.
+WL = None          # List[WL] (see procmon_whitelist.py)
 
 
 @dataclass
@@ -56,9 +56,23 @@ def get_docker_map():
   '''returns dict: cid:str -> container_name:str'''
   cid_map = {}
   for i in popen(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
+    if not i: continue
+    if not ' ' in i:
+      C.log_error(f'unexpected output from d-map: {i}')
+      continue
     cid, name = i.split(' ', 1)
     cid_map[cid] = name
   return cid_map
+
+
+def _load_file_as_module(filename, desired_module_name=None):
+  if not desired_module_name: desired_module_name = filename.replace('.py', '')
+  import importlib.machinery, importlib.util
+  loader = importlib.machinery.SourceFileLoader(desired_module_name, filename)
+  spec = importlib.util.spec_from_loader(desired_module_name, loader)
+  new_module = importlib.util.module_from_spec(spec)
+  loader.exec_module(new_module)
+  return new_module
 
 
 def now(): return int(time.time())
@@ -102,8 +116,8 @@ class Scanner(object):
     DOCKER_MAP = get_docker_map()
 
     self.add_process(1, '/')
-    self.scan_cow()
-    self.scan_ro()
+    if not ARGS.nocow: self.scan_cow()
+    if not ARGS.noro:  self.scan_ro()
 
     # Check for missing processes.
     for entry in WL.WHITELIST:
@@ -349,11 +363,14 @@ def parse_args(argv):
   parser = argparse.ArgumentParser(description='process scanner.')
   parser.add_argument('--debug',   '-D', action='store_true', help='output debugging data to stdout (works best with -t)')
   parser.add_argument('--delay',   '-d', type=int, default=120, help='delay between automatic rescans (seconds)')
+  parser.add_argument('--logfile', '-l', default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
+  parser.add_argument('--nocow',         action='store_true', help='skip COW scan (used for testing)')
+  parser.add_argument('--noro',          action='store_true', help='skip root-read-only check (used for testing)')
   parser.add_argument('--output',  '-o', default='/var/procmon/output', help='filename for statistics from last scan')
   parser.add_argument('--port',    '-p', type=int, default=8080, help='web port to listen on.  0 to disable.')
-  parser.add_argument('--logfile', '-l', default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
   parser.add_argument('--queue',   '-q', default='/var/procmon/queue', help='where to put the queue of current unexpected items from the most recent scan')
   parser.add_argument('--test',    '-t', action='store_true', help='run single scan and output only to stdout')
+  parser.add_argument('--whitelist', '-w', default='procmon_whitelist.py', help='name of file contianing whitelist data')
   return parser.parse_args(argv)
   
 
@@ -362,6 +379,11 @@ def main(argv=[]):
   ARGS = parse_args(argv or sys.argv[1:])
   C.init_log('procmon', ARGS.logfile,
              filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER)
+  
+  global WL
+  WL = _load_file_as_module(ARGS.whitelist, 'procmon_whitelist')
+  for entry in WL.WHITELIST: entry.pattern = re.compile(entry.regex)
+  for entry in WL.GREYLIST: entry.pattern = re.compile(entry.regex)
   
   global SCANNER
   SCANNER = Scanner()

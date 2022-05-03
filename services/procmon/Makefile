@@ -2,14 +2,18 @@
 # Supported meta-targets:  all, clean, test, install, update
 
 PLAIN_TARGETS := procmon procmon_whitelist.py
-INSTALL_DIR := /usr/local/procmon
+ifeq ($$UID, 0)
+	INSTALL_DIR := /usr/local/procmon
+else
+	INSTALL_DIR := $$HOME/procmon
+endif
 include ../../common/Makefile-unstaged
 
 SHELL := /bin/bash
 
 
 $(TEST_LOG): $(wildcard procmon*)
-	./procmon -t |& tee /dev/stderr | grep "all ok"
+	./procmon --logfile - --nocow --noro --output '' --queue '' --test --whitelist procmon_whitelist_test.py |& tee /dev/stderr | grep "all ok"
 	echo "passed" > $(TEST_LOG)
 
 update: all test install

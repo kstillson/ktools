@@ -5,10 +5,7 @@ TOP_TARGETS = all clean comp install test uninstall update
 
 # specify SUBDIRS as an environment variable for partial work.
 # remember that order matters.
-SUBDIRS ?= pylib tools-for-root services docker-infrastructure 
-
-SHELL := /bin/bash
-
+#
 # Note: docker-containers is excluded from the list of subdirs because
 # (a) building docker images requires root privs, and folks would rightly be
 #     concerned about a "make all" asking for sudo rights
@@ -20,7 +17,13 @@ SHELL := /bin/bash
 #
 # All of this is why the :everything target (shortcut :e) is provided;
 # it will build, test, and install everything, all in the right order.
+#
+SUBDIRS ?= pylib tools-for-root services docker-infrastructure 
+SHELL := /bin/bash
 
+# ---------- standard targets
+
+all:	prep
 
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
@@ -30,8 +33,6 @@ $(SUBDIRS):
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
 # ---------- special additions to common targets
-
-all:	prep
 
 # TODO: sudo for subparts where :everything leaves root owned files...?
 clean:
