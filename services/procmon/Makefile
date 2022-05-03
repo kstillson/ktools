@@ -2,7 +2,9 @@
 # Supported meta-targets:  all, clean, test, install, update
 
 PLAIN_TARGETS := procmon procmon_whitelist.py
-ifeq ($$UID, 0)
+
+USER := $(shell whoami)
+ifeq ($(USER),root)
 	INSTALL_DIR := /usr/local/procmon
 else
 	INSTALL_DIR := $$HOME/procmon

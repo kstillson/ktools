@@ -351,10 +351,9 @@ def pstree_handler(request):
 def scan_handler(request):
     new_scanner = Scanner()
     new_scanner.scan()
+    global SCANNER
     SCANNER = new_scanner
     return root_handler(request)
-  
-  
 
 
 # ---------- main

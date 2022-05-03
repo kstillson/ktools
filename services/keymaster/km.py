@@ -183,7 +183,7 @@ def km_default_handler(request):
         return ouch(status, f'unsuccessful key retrieval attempt full_keyname={full_keyname}, req_hostname={hostname}, client_addr={client_addr}, username={username}, status={status}',
                     'keyfail-hostname' if 'hostname' in status else 'keyfail-kauth')
     
-    C.log(f'successful key retrieval: full_keyname={full_keyname} username={username}')
+    C.log(f'successful key retrieval: full_keyname={full_keyname} client_addr={client_addr} username={username}')
     V.bump('key-success')
     return secret.secret
 
