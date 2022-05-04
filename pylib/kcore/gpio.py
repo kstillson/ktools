@@ -159,7 +159,7 @@ class KButton:
             GPIO.remove_event_detect(self._bcm_pin)
 
     def simulate_press(self, duration_ms=200):
-        if not SIMULATION: raise RuntimeException('cannot simulate button press when not in simulation mode.')
+        if not SIMULATION: raise RuntimeError('cannot simulate button press when not in simulation mode.')
         new_state = not self._normally_high
         if self._log: C.log('simulated push on %s to state %s for %s' % (self._name, new_state, duration_ms))
         SIM_BUTTONS[self._bcm_pin] = new_state
