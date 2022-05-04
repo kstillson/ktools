@@ -1,7 +1,7 @@
 
 # Supported meta-targets:  all, clean, test, install, update
 
-PLAIN_TARGETS := procmon procmon_whitelist.py
+PLAIN_TARGETS := procmon procmon_whitelist.py procmon_wl_type.py
 
 USER := $(shell whoami)
 ifeq ($(USER),root)
