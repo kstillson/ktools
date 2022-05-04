@@ -10,13 +10,20 @@
      - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
      - ? chmod 444 /sys/class/dmi/id/product_uuid 
    
-## General
-   - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
+## treasure hunt
+   - A's idea about several analytics collectors- prominantly document #1,
+     subtlely document #2, and really hide #3 (dns query only?).  encourage
+     code reviews, and make ppl think about foss security.
 
 ## ++ktools prose
    - review all doc TODO's
    - makefiles- lots of explanations and intros
    - general wisdom: lots of writing
+
+## General
+   - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
+     A: kwisdom/kwizdom?  (nb with k*: confusion w/ kuberneties)
+
 
 ## ---------- MILESTONE: ready for peer review ...?
 
