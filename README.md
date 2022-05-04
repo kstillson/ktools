@@ -178,43 +178,35 @@ of all the things included here.
 Finally, my design schemes for Linux system administration are laid out.
 Basically this is an explanation and road-map for the remaining services and
 Docker images.  You can certainly use these things without reading the docs,
-but chances are you'll end up missing out on some of the key benefits of
-things like running your own DHCP and DNS services, if you don't understand
-how I use DHCP configuration to create pseudo subnets with different levels of
-trust.
+but chances are you'll end up missing out on some of the key benefits.  For
+example, to get the full value of running your own DHCP and DNS services, you
+really need to understand how the configuration is used to create pseudo
+subnets with different levels of trust.
 
 - - -
 
-@@
+## homesec: a highly customizable home security system framework
 
-## homesec: a custom (and highly customizable) home security system framework
+Homesec is essentially a simple state machine, with states like "armed",
+"disarmed", "alarm", etc.
 
-<p style="color:purple"><b>not included yet: still being prepared for publication...</b></p>
+Various triggers move between the states, or cause actions depending on the
+current state.  For example, if the system is in the state "someone is home,"
+then a trigger that an external door has been opened might just ring a chime.
+However, a trigger saying "user 1 is leaving" could cause the system to decide
+no-one remains at home, and enter the "armed" state.  Then that same door
+trigger would move to "alarm triggered" state, which turns on some lights,
+sends a cellphone push alert, and speaks an announcement over the home audio
+system that "alarm triggered, 30 seconds to disarm."  If the system isn't
+moved to the "disarmed" state within that period, it moves to the "alarm"
+state, which turns on more lights, pushes more phone messages, and perhaps
+turns on some annoying sirens.
 
-homesec is essentially a state machine, where various external triggers move
-it between states, or cause actions depending on the current state.  For
-example, if the system is in the state "someone is home," then a trigger that
-an external door has been opened might just ring a chime.  However, a trigger
-saying "user 1 is leaving" could cause the system to decide no-one remains at
-home, and enter the "armed" state.  Then that same door trigger would move to
-"alarm triggered" state, which turns on some lights, sends a cellphone push
-alert, and speaks an announcement over the home audio system that "alarm
-triggered, 30 seconds to disarm."  If the system isn't moved to the "disarmed"
-state within that period, it moves to the "alarm" state, which turns on more
-lights, pushes more phone messages, and perhaps turns on some annoying sirens.
-
-Triggers are HTTP get requests, with an authentication system based off shared
-secrets (see the "keymaster" module), and designed to be simple enough so it
-can run on very small devices, like the Raspberry Pi Zero-w's, which are what
-generate most of the author's door, window, and motion sensor signals.
-
-homesec is the largest and most complicated of these modules, and will take
-the longest to detangle and generalize, so it might be a little while before
-this module gets populated.  It also currently uses Django as a framework, but
-the author has found Django to be annoying.  Django keeps changing in ways
-that require continuous re-writing of both user-code and Django integration
-and settings.  The intention is to replace Django with a simpler and
-lower-level Python web framework during the detangling. (Flask, perhaps...?)
+Triggers are HTTP get requests, with an in-hand application layer
+authentication system (based on shared secrets), and designed to be simple
+enough so it can run on very small devices, like the Raspberry Pi Zero-w's,
+which are what generate most of the author's door, window, and motion sensor
+signals.
 
 - - -
 
@@ -242,21 +234,12 @@ gracefully retry for long periods -- long enough for the human to provide the
 unlock key.  In this way, all services can auto-start, but ones that need
 secrets won't actually reach their serving state until KM is unlocked.
 Unlocking KM is the only manual action a human needs to take upon a
-network-wide cold-start -- once it's done, all the services waiting on their
-secrets move to their serving states.
+network-wide cold-start -- once it's done, all the waiting services get their
+bootstrap secrets and move to their serving states.
 
 - - -
 
-## tools: general stand-alone Linux command-line tools
-
-  * iptables_log_sum: summarize rejected packets from iptables logs.
-
-  * ratelimiter: incorporate easy rate-limits into shell scripts
-
-  * run_para: run commands in parallel, showing their real-time output in a
-    dashboard and (optionally) keeping an organized output transcript.
-
-And a special one...
+## tools: stand-alone Linux command-line tools
 
   * q: a collection of Linux shortcuts, tools, and bash tricks.  Hopefully it
     will eventually be detangeled so the parts that are hopelessly bound with
@@ -266,29 +249,39 @@ And a special one...
     contains a repository of bash tips and techniques that provide a good
     reference for such things.
 
+  * iptables_log_sum: summarize rejected packets from iptables logs.
+
+And a number of user-oriented tools...
+
+  * ratelimiter: incorporate easy rate-limits into shell scripts
+
+  * run_para: run commands in parallel, showing their real-time output in a
+    dashboard and (optionally) keeping an organized output transcript.
+
 - - -
 
-## home-control: tools for CLI control of tplink smart lights & plugs, setting
-   complex scenes, etc.
+## home-control: smart-home CLI and web service
 
-<p style="color:purple"><b>not included yet: still being prepared for publication...</b></p>
+home_control ("hc") can be used as a Python library, stand alone command, or
+easily be wrapped into a web service, or a Docker-based microservice.
+Examples of each of these are provided.
 
-The author tends to use TPLink switches, plugs and bulbs for smart-home
-automation.  Besides having reasonable reliability and cost, TPLink modules
-have a local server that allow manipulation and querying via local network
+HC supports arbirarily complex scenes, i.e. multiple devices reacting in
+different ways to a single command.  Scenes can include other scenes, which
+allows constructing complex arrangements elegantly and with little repition
+even when some elements are shared between scenes.  By default all devices are
+contacted concurrently, which can give a nice dramatic effect when changing
+lots of lights at the same time.  Scenes can also contain delayed actions,
+i.e. sequences of events triggered by a single scene command.
+
+HC uses a plug-in based mechanism to control actual external hardware devices.
+Currently plug-ins are provided for TPLink switches, plugs, and smart-bulbs
+(as this is primarily what the author uses), and for sending web-based
+commands.  Additional plug-ins are reasonably easy to write, and hopefully
+more will come along over time.
+
+Why TPLink?  Besides having reasonable reliability and cost, TPLink modules
+have a local server that allows manipulation and querying via local network
 HTTP.  i.e. you can control them from your own systems without needing to
 depend on cloud integration.
-
-TPLink has slightly obscured the socket interface, so you can't just use curl
-or wget.  Python code to work-around this simple xor-based "encryption" is
-widely available.  What's included here is built on top of that -- a system
-that allows mapping nice human-readable names to various smart-home actions,
-and the ability to define arbitrarily complex scenes, including the ability
-for scenes to reference other scenes, allowing construction of a more modular
-system.
-
-The "tplink" code can be run directly from CLI, or used as a Python library.
-Example cgi-servers are provided that render a bunch of buttons to control
-individual lights and scenes, and to animate a "party lights" sequence that
-slowly adjusts the color of RGB bulbs for a festive effect.
 

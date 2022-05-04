@@ -16,7 +16,6 @@
 ## ++ktools prose
    - review all doc TODO's
    - makefiles- lots of explanations and intros
-   - TOC / general intro write-up
    - general wisdom: lots of writing
 
 ## ---------- MILESTONE: ready for peer review ...?
