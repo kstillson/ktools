@@ -48,10 +48,10 @@ a specific whitelist entry for every {source-ip + dest-ip + destination-port}
 that needs to communicate.
 
 Obviously this doesn't work for workstations that have humans on them
-reguarly.  Humans want to roam all over the net.  And for that reason, you
+regularly.  Humans want to roam all over the net.  And for that reason, you
 really must consider your (and other human-infested workstations) to be a
 significant source of threat to your servers.  Do not set up an outer
-peremiter and put both human-occupied and automated-server systems as peers
+perimeter and put both human-occupied and automated-server systems as peers
 inside the outer walls.  Protect your servers from your human-occupied
 workstations just as you would from the Internet -- consider them hostile --
 even (especially) your own server.  I'm not saying don't allow any
@@ -60,7 +60,7 @@ unrestricted connectivity.  Choose your open ports deliberately.
 
 Furthermore, don't just have firewalls silently block things they don't allow.
 iptables has great features for logging rejected packets, but also adding
-ratelimiting to the logs, so they don't overwhelm your logs.
+rate-limiting to the logs, so they don't overwhelm your logs.
 
 When there's traffic that you don't want to let through but also you don't
 need to investigate, add a rule that drops that specific traffic before
@@ -98,7 +98,7 @@ to move a file from /root/bin to /usr/local/bin, or from /usr/local/bin to
 /usr/local/sbin, etc, you suddenly find that you've got to change all the
 references from one full path to the new one.
 
-It's a traditional security-vs-flexibility tradeoff.
+It's a traditional security-vs-flexibility trade-off.
 
 For the most part, you'll find things in this repo use full paths.
 This is why.

@@ -3,7 +3,7 @@
 ## About The Project
 
 This is a collection of services, tools, and libraries, intended for
-moderately knowledable owners of Linux and Circuit-Python based systems.
+moderately knowledgeable owners of Linux and Circuit-Python based systems.
 
 Some highlights:
 
@@ -13,15 +13,15 @@ Some highlights:
 
 - A collection of scripts and Docker containers designed to provide
   security-focused services, monitoring, and administrative automation for a
-  home-network of Linux servers (bigs ones and little ones like Raspberry PIs)
+  home-network of Linux servers (big ones and little ones like Raspberry PIs)
 
-- Docker infrastructure for quick and easy maintence of the provided
+- Docker infrastructure for quick and easy maintenance of the provided
   containers, and simple addition of new ones
 
 - A Python library that underpins all of the above, providing:
 
    - A mechanism that provides authentication and automated secret retrieval
-     without needing to store private keys or other secrets in plaintext on
+     without needing to store private keys or other secrets in plain-text on
      either the server or the clients.
 
    - A very simple to use logging abstraction that integrates level filtering
@@ -37,7 +37,7 @@ Some highlights:
    - A GPIO and Neopixel abstraction that works on full Linux, Raspberry PIs,
      and Circuit Python boards.  Under full Linux, the GPIOs and Neopixels are
      simulated (graphically).  This means you can develop on a full Linux
-     machine with PDB and all the other nicities, and upload the code to RPi
+     machine with PDB and all the other niceties, and upload the code to RPi
      or Circuit Python once it's almost done.
 
 The collection represent years of tinkering and fine-tuning, and it is hoped
@@ -64,10 +64,10 @@ hacker (in the good sense).
 These tools were not originally designed to be shared, and made many
 assumptions about each other and the environment in which they run.  The
 process of disentangling and generalizing them is on-going, and some of the
-modules are being published in their not-fully-detangled form.  You're welcome
+modules are being published in their not-fully-tangled form.  You're welcome
 to help out via pull requests, or just wait for me to get to it.
 
-As an example, much of teh system current has various assumptions about
+As an example, much of the system current has various assumptions about
 directory structures.  Most Debian/Ubuntu users won't find my directory
 choices disturbing, but usually open-source projects allow users to choose
 where things should be installed.  It turns out that refitting a complicated
@@ -80,10 +80,10 @@ The project uses GNU Linux Makefile's.  A bit old fashioned, I know.  And the
 code is generally in Python or bash, i.e. no compilation phase, which might
 make "Make" seem like an odd choice.  However, I like the way Makefile's
 document dependencies and how things are to be combined, tested, and deployed.
-Even when an overall process becomes complicated, well-writen Makefile's
+Even when an overall process becomes complicated, well-written Makefile's
 remain small and reasonably easy to understand.
 
-  * "make prep" is a custom rule I added, which does some one-time prepratory
+  * "make prep" is a custom rule I added, which does some one-time preparatory
     stuff, like making sure various dependencies are installed, and getting
     information from you for populating the self-signed certificates used by
     the authentication system.
@@ -100,13 +100,13 @@ remain small and reasonably easy to understand.
     practice).  If you do want to build Docker containers, run "make all"
     either in a specific container's directory
     (e.g. docker-containers/kcore-baseline), or in the ./docker-containers
-    diretory to build them all, or see the "make everything" target (below).
+    directory to build them all, or see the "make everything" target (below).
   
   * "make test" runs unit and/or integration tests.  For servers and Docker
     containers, this involves actually starting the systems up and peppering
     them with tests to confirm operation.
   
-  * "make install"- for libaries and services, copies files into their
+  * "make install"- for libraries and services, copies files into their
     appropriate bin/ or lib/ directories.  For docker containers, tags
     the ":latest" image as ":live", which will cause it to be used
     the next time the container is restarted.
@@ -140,7 +140,7 @@ TODO: all the below stuff will eventually be fixed..
 - In addition, a few of the "update" targets automatically restart a service
   or container as part of the process, but not all of them.  This needs to
   be made uniform and predictable.  Perhaps an environment variable to
-  toggle the behaviour...?
+  toggle the behavior...?
 
 - Several of the Makefile's have other custom targets, especially the one for
   "pylib", which has various options such as "install-wheel" (to use the pip3
@@ -221,7 +221,7 @@ whether these are shared secrets, private keys, or whatever else?
 Keymaster ("KM") is a secrets server.  The secrets are stored in an encrypted
 GPG text file.  When the server starts up, it does not have the key to unlock
 this data.  An authorized user must access the web-page and provide the GPG
-passphrase.  KM then decrypts the secrets into local memory.  Clients can then
+passphrase.  KM then de-crypts the secrets into local memory.  Clients can then
 request secrets, but only according to strict rules.  For example, the
 requestor's source IP address and which key they want must match expectations
 exactly.  Even a single unexpected request causes the KM to throw away all its
@@ -263,12 +263,12 @@ And a number of user-oriented tools...
 ## home-control: smart-home CLI and web service
 
 home_control ("hc") can be used as a Python library, stand alone command, or
-easily be wrapped into a web service, or a Docker-based microservice.
+easily be wrapped into a web service, or a Docker-based micro-service.
 Examples of each of these are provided.
 
-HC supports arbirarily complex scenes, i.e. multiple devices reacting in
+HC supports arbitrarily complex scenes, i.e. multiple devices reacting in
 different ways to a single command.  Scenes can include other scenes, which
-allows constructing complex arrangements elegantly and with little repition
+allows constructing complex arrangements elegantly and with little repetition
 even when some elements are shared between scenes.  By default all devices are
 contacted concurrently, which can give a nice dramatic effect when changing
 lots of lights at the same time.  Scenes can also contain delayed actions,

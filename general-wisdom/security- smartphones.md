@@ -20,7 +20,7 @@ So...
    their custom app.  Apps get way too much access to the phone's platform and
    potentially to other app's data.  Ask yourself- is there a reason they
    can't provide this functionality with a traditional website?  If you can't
-   think of a good reason, then be very suspcious of why they think you need
+   think of a good reason, then be very suspicious of why they think you need
    an app.  If you're forced to install an app, uninstall it as soon as the
    compelling reason for it goes away.
 

@@ -95,7 +95,7 @@ defend from.  Here's the threats that drive my requirements:
     mechanism and decryption pass-phrase.
 
       + To be useful, the original data must first be decrypted, then
-        re-encrpyted with the different mechanism.  If your primary data is
+        re-encrypted with the different mechanism.  If your primary data is
         encrypted and you've got multiple users with separate keys, this
         process would represent a significant security risk in itself.
         You'll have to weight the pro's & con's of your situation.
@@ -121,7 +121,7 @@ TODO
 
 ### step 1: Cloud pull
 
-"rclone" is an excellent tool for syncronizing cloud and local data.  As with
+"rclone" is an excellent tool for synchronizing cloud and local data.  As with
 most things, I run rclone inside a docker container -- although I don't run it
 as a continuous service, rather starting it up on-demand via cron.
 
@@ -130,7 +130,7 @@ primary server's /home directory.  This is so my cloud data will automatically
 benefit from my versioned local backups (see below).  For some data, like my
 Google Photos, I don't consider them sensitive, so they're pulled directly
 into local files.  For more sensitive content such as Google Drive files, I
-use encfs to syncronize against a transparently-encrypted folder (TODO: link).
+use encfs to synchronize against a transparently-encrypted folder (TODO: link).
 This means the data is "encrypted at rest" in my local /home folder, so it
 also gets the versioned backup, all safely encrypted.
 
@@ -166,10 +166,10 @@ where most of the magic happens.
 
 rsnapshot (TODO: link) is a wonderful tool for keeping versioned local
 backups.  It does away with the concepts of incremental and differential
-backups, and instead makes clever use of Linux filesystem hard-links.
+backups, and instead makes clever use of Linux file-system hard-links.
 
 A hard-link is just two-or-more directory entries that point to the same
-storage space (inode) on disk.  The filesystem keeps a reference counter so it
+storage space (inode) on disk.  The file-system keeps a reference counter so it
 knows to reclaim the space (i.e. delete the file) when the last reference is
 removed.  This means you can have any number of "copies" of a file, but only
 consume the storage for a single copy.
@@ -177,7 +177,7 @@ consume the storage for a single copy.
 Rsnapshot is given a schedule of snapshots to keep- for example, a daily
 snapshot for each of the last 7 days, a weekly snapshot for each of the last 4
 weeks, and a monthly snapshot for each of the last several months.  When
-rsnapshot makes these "copies," it uses hardlinks for all the files that have
+rsnapshot makes these "copies," it uses hard-links for all the files that have
 not changed between snapshots.
 
 This means you can have any number of snapshots and only need the amount of
@@ -185,13 +185,13 @@ space to store 1 copy of each version.  For files that never change,
 additional snapshots are essentially "free" (other than the space needed for
 the directory contents).  And each snapshot is complete and ready-to-use; you
 don't need to go through a restoration process to "assemble" some combination
-of differencial and incremental backups.
+of differential and incremental backups.
 
 
 #### My rsnapshot configuration: security
 
 My rsnapshot instance ssh's from the backup server to all the systems it needs
-data from, i.e. I "pull" the data.  The connection logs into an unprivlidged
+data from, i.e. I "pull" the data.  The connection logs into an unprivileged
 account, generally named "rsnap".  In-fact, rsnap is more restricted than most
 accounts, using "rsh" as the account's shell, set so that "rsync" is the only
 command it can run.
@@ -201,7 +201,7 @@ Specifically, I add the following to /etc/security/capability.conf:
 
 cap_dac_read_search     rsnap
 
-and also run this on each machine that provices backup data:
+and also run this on each machine that provides backup data:
 
 sbin/setcap cap_dac_read_search+ei /usr/bin/rsync
 
@@ -234,7 +234,7 @@ that are changed all-the-time by normal automated processes.
 I find it incredibly useful to review this -- obviously I can see the things I
 deliberately changed the previous day, but I can also see the side-effects of
 those changes, and any other unexpected changes.  If some Linux service
-modifies it's own configuration (or some other packages's (!))- I'll see it.
+modifies it's own configuration (or some other package's (!))- I'll see it.
 If it happens regularly and I decide I don't care, I can add it to the filter.
 
 Critically, if some sort of corruption starts to change data throughout my
@@ -243,7 +243,7 @@ here.  This allows me to pause automated snapshoting, to make sure the
 automated system doesn't merry go on replacing useful snapshots with corrupted
 ones - and figure out how to fix things before they get worse.
 
-Obvuously one has to have a moderate amount of Linux experience to understand
+Obviously one has to have a moderate amount of Linux experience to understand
 what the various changing files are, and what they mean.  But given this,
 rsnap-diff gives incredible insight into what's going -- and recall that
 because all the backed up systems are having their data pulled to the central
@@ -282,7 +282,7 @@ regularly.  Rsnapshot copies that to the backup server, then rclone copies it
 to my remote web storage.  Upon completion of the cloud push, the /etc/init
 script for rclone copies this file back from the cloud to a holding directory,
 and checks to see if it's matches the one back on the original primary server.
-This esentially confirms that the whole flow is working as expecte.
+This essentially confirms that the whole flow is working as expected.
 
 
 ### Step 4: Manual backup #1
@@ -295,7 +295,7 @@ the drives, connecting one of them to my backup server, and dumping the entire
 versioned backup contents.  Rsync has a mode that preserves hard-links, so the
 cleverness of rsnapshot isn't lost.  I never retrieve both of the offline
 drives at the same time, so I always have at least one versioned backup
-physically offline, even when it's alnerate is being updated.
+physically offline, even when it's alternate is being updated.
 
 The backup is triggered by running a script, which updates a log-file that is
 used for nothing else.  In this way, the last-change time-stamp of the
@@ -306,13 +306,13 @@ executed within the expected time-frame.
 
 ### Step 5: Manual backup #2
 
-Truthfully, I can't really think of any realisitc scenarios where my ability
+Truthfully, I can't really think of any realistic scenarios where my ability
 to decrypt encfs encrypted directories would stop working in a way that I
 couldn't restore at least temporarily.  None-the-less, it occurred to me that
 this whole fancy scheme has a single-point-of-failure: encfs.  Almost
 everything is encrypted with it- both my backups and my "live" copies.
 
-To aleviate this, whenever I'm pulling my offline drives for an update, I grab
+To alleviate this, whenever I'm pulling my offline drives for an update, I grab
 one last drive.  This one yet one more copy of the primary data backup image,
 but in each case where encfs was protecting data, it decrypts it and
 re-encrypts it using ecryptfs; just so I have the same data, still encrypted,

@@ -8,12 +8,12 @@ TODO: reliability vs. security monitoring (see also ID)
 Testing is great- especially automated unit tests which you can run every time
 you change something, to give you a reasonably assurance your change works.
 But no matter how well you test something, if you just leave it in-place and
-expect it work indefinately, you will be disappoined.  Environmental
-assumptions and dependncies you didn't even realize you have will change.
+expect it work indefinitely, you will be disappointed.  Environmental
+assumptions and dependencies you didn't even realize you have will change.
 Automated systems break down eventually.  *Always.*
 
 So any time you set up something that's supposed to provide a service
-indefinately, or run a process regularly- whether automatically or manually,
+indefinitely, or run a process regularly- whether automatically or manually,
 you should also design and implement a way to monitor it.
 
 
@@ -33,7 +33,7 @@ you started running more specific tests to figure out what.
 ### Timestamps
 
 One of my favorite things to monitor is file last-change timestamps.  As an
-example- I use syslog and ssh-tunnels to centrlize my Linux system log
+example- I use syslog and ssh-tunnels to centralize my Linux system log
 messages (TODO: link).  Part of my syslog-ng configuration takes messages from
 the "cron" and splits them out to separate files based on what host they came
 from (TODO: link).  That config is dynamic, i.e. I don't need to manually
@@ -44,7 +44,7 @@ I then use filewatch (TODO: link) to scan all those cron logfiles, and alert
 if any of them become more than an hour or so old.  Cron always does
 *something* at least every 15 minutes.  So a too-old cron file immediately
 tells me something is wrong.  If all the cron logs are too old at the same
-time, then most likely something is awry with the centrlized logging system
+time, then most likely something is awry with the centralized logging system
 (or filewatch).  If it's just one or two machines, it might be a system-wise
 problem on those machines, or just their logging system, or ssh tunnels, etc.
 But the filename of the too-old log tells me the machine(s) to look at, and
@@ -67,7 +67,7 @@ tracking file.  Then monitor the file for an expected change window.
 
 Another useful technique is to deliberate cause change (usually via cron)- for
 example, writing random contents to a file (that's what makes it a "cookie").
-Then, track the propogation of that random-but-known change as it moves from
+Then, track the propagation of that random-but-known change as it moves from
 place to place throughout your system.  I frequently use this technique to
 monitor backup systems.
 
@@ -80,7 +80,7 @@ monitoring, a great way for it to communicate monitoring results is via a web
 service.  I follow the Google standard of always having a web path "/healthz".
 Querying this path will return the simple 2 character answer "ok" if
 everything the program is aware of is fine, and a simple 1-line
-human-readaible explanation of what is wrong, if things are not "ok."
+human-readable explanation of what is wrong, if things are not "ok."
 
 It's really easy to design monitoring infrastructure to scan a bunch of web
 server /healthz's to see if they're all "ok".
@@ -88,12 +88,12 @@ server /healthz's to see if they're all "ok".
 
 ## Monitoring infrastructure: Nagios
 
-I use Nagios as my centrlized monitoring system (TODO: link).  Nagios is
-perhaps a bit overengineed for simple use-cases- it supports multiple teams
+I use Nagios as my centralized monitoring system (TODO: link).  Nagios is
+perhaps a bit over-engineered for simple use-cases- it supports multiple teams
 with dynamic schedules and cascading notifications, etc.  But it's reasonably
 easy to skip the complexity when you don't need it.
 
-Basically Nagios tracks a set of hosts (optionally orgnized into "host
+Basically Nagios tracks a set of hosts (optionally organized into "host
 groups").  Each host has a set of services, and each service is configured to
 use some sort of "check".  The checking system uses a plug-in mechanism that's
 quite easy to extend.  Most of the checks reach out to a host and take some
@@ -101,7 +101,7 @@ action to "pull" a status update, but there's also support for services
 pushing updates when a pull model isn't convenient.
 
 Nagios provides has various status dashboards, although I've written some
-simplifed ones that I prefer (TODO: link).  Nagios can also send emails- on
+simplified ones that I prefer (TODO: link).  Nagios can also send emails- on
 transitions for good-to-bad, and/or bad-to-good, and/or whenever something is
 bad, and also supports do-not-disturb times, etc.
 
@@ -116,4 +116,4 @@ Nagios cannot be contacted or doesn't seem to be updating checks.
 aNag also supports per-host or per-service silence requests that auto-expire
 after a specified time, and/or can "acknowledge" a problem, which basically
 tells Nagios that the necessary humans are working on it, and both Nagios and
-aNag should stop perstering.
+aNag should stop restoring.

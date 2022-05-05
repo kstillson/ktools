@@ -14,11 +14,11 @@ hostnames are assigned manually in the DHCP server.  Why?
   treated differently.
   
   2. Connectivity: Every device has a human-controlled name.  For example,
-  in the "tplink" module, it is necessary for the server to be able to
+  in the "TPLink" module, it is necessary for the server to be able to
   contact each of the smart plugs/switches/bulbs being controlled.
   
   3. Traceability: Every connection can be traced back to a known
-  registered device by IP.  For example, in the "keynmaster" section,
+  registered device by IP.  For example, in the "keymaster" section,
   connection source IP addresses are very important.
 
 It is worth noting that this arrangement requires a flat network.

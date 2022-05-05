@@ -15,7 +15,7 @@ somewhat..  But I do try to keep my internal monitoring a little different
 from this open-sourced version, and encourage users to do the same.
 
 Anyway, procmon is a process monitor.  At regular intervals, it scans all the
-running processes on the system, subtracks out a "whitelist" (apologies for
+running processes on the system, subtracts out a "whitelist" (apologies for
 the no-longer-PC term; I suppose I'll get around to renaming it at some
 point), and then alerts on any un-expected remainder.  It also tags some of
 the "expected" processes as "required", and alerts if they're missing.
@@ -48,7 +48,7 @@ container.
   means that any files that are created or changed in a container that weren't
   expected to do so will immediately be noticed.
 
-- As mentioned in my general linux security notes (TODO: link), I like to keep
+- As mentioned in my general Linux security notes (TODO: link), I like to keep
   my root file system read-only.  So procmon does a quick check to make sure
   it's write-locked, and alerts if not.
 
@@ -63,4 +63,4 @@ link) to stop indicating that all is well.  This will eventually bubble up
 through my normal monitoring system (TODO: link), first showing up as a check
 failure in Nagios, and eventually alerting on my phone via aNag.  This gives
 me several ways I can temporarily silence an alert (if I want to get to it
-later), or "acknowledge" it, which basically makes it go away indefinately.
+later), or "acknowledge" it, which basically makes it go away indefinitely.

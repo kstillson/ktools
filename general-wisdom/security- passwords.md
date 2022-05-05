@@ -5,7 +5,7 @@ remember and type in all the time aren't great.  There's an impossible tension
 between the need for long, complex, and different-for-every-system passwords,
 and ones that you can remember and aren't too annoying to type in.
 
-Fortuntely, there are a few tricks that can really help, until technology
+Fortunately, there are a few tricks that can really help, until technology
 moves on to alternative authentication mechanisms.
 
 
@@ -102,7 +102,7 @@ comfortable typing in.
 
 The main problem with PMs is that they are very obvious and very juicy targets
 for hackers.  Clearly you want one that does all the encryption locally- a PM
-that does centralized encrpytion presents a prize where a single hack gets a
+that does centralized encryption presents a prize where a single hack gets a
 huge number of passwords; very bad.  But one still has to worry that with
 something like a self-updating browser extension, a single hack to the code
 repository could push an update that sends all your decrypted passwords to the
@@ -143,7 +143,7 @@ any chance of interaction between highly different security levels.
 So here's an idea -- let's use a password that you can't change, and which you
 leave a copy of on every object you touch (or every high-rez camera you walk
 by, etc).  No..  Biometric authentication isn't a great idea.  Perhaps someday
-technology will evolove sufficiently that it can scan things that are hard to
+technology will evolve sufficiently that it can scan things that are hard to
 intercept or make clones of, but it's not there yet.
 
 I don't mind too much the idea of using a fingerprint to unlock your phone.

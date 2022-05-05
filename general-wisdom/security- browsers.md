@@ -50,10 +50,10 @@ would like to keep separate from each other:
   
   - General browsing: This is for sites where I have low-value accounts, or
     where I'm just doing general-purpose exploring of places that I don't
-    consider particuarly risky.  
+    consider particularly risky.  
 
   - The "bad boy browser": Used for sites I'm moderately suspicious of, or
-    just generally feel should be quaranteed from everything else.
+    just generally feel should be quarantined from everything else.
 
 
 ## Keeping separate browsers separate
@@ -93,13 +93,13 @@ I use Ubuntu's custom keyboard short-cut system to create a keyboard
 combination that runs:
   /usr/bin/sudo -u ken-bbb /home/ken-common/bin/run-chrome
 
-I have an /etc/sudoers entry that allows NOPASSWD exececution of this
+I have an /etc/sudoers entry that allows NOPASSWD execution of this
 particular command by uid/ken for each of the alternate uid's.  They have
 read-only access to /home/ken-common.  The script basically just launches
 Chrome under firejail.
 
 The script also creates a lock file upon launching a browser, and removes it
-when the browser closes.  Why?  I have a seperate system that monitors for
+when the browser closes.  Why?  I have a separate system that monitors for
 processes running as the alternate uid's when no browser lock-file is active
 for that uid.  This warns me if something unexpectedly persists beyond the
 lifetime of the browser.
@@ -140,7 +140,7 @@ To me, one of the primary purposes of a credit card is to provide a flexible
 barrier between ones money and the rest of the world.  Credit card companies
 are pretty good at noticing and blocking unusual transactions, and either you
 or the company can easily nix a card and issue a replacement.  And in my
-experience, getting any successful fradulent charges reversed is generally not
+experience, getting any successful fraudulent charges reversed is generally not
 that difficult.
 
 The fact that credit card numbers are so easily changed makes them a great
@@ -157,7 +157,7 @@ whether it's intercepted by unexpected parties in transit.
 Once-upon-a-time, Citibank had a cool feature where you could create on-demand
 virtual credit-card numbers attached to your real card only at the bank.  This
 essentially permitted creation of a separate virtual card number for each
-transaction, or at least for each vendor- each of which could be cancelled
+transaction, or at least for each vendor- each of which could be canceled
 separately.  This not only minimized the annoyance of needing to cancel a
 number, but also meant you got a pretty-darn-good lead on which vendor leaked
 or abused your number.  I wish that caught on.
