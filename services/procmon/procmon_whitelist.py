@@ -131,6 +131,7 @@ WHITELIST = [
     WL('syslogdock', 'dsyslog',    False, True,  '/usr/sbin/syslog-ng'),
     WL('webdock',   '200033',      False, False, '(/usr/bin/python3 )?/usr/lib/cgi-bin/kcmd.cgi'),
     WL('webdock',   '200033',      False, False, '(/usr/bin/python3 )?/usr/local/bin/party-lights'),
+    WL('webdock',   '200033',      False, False, '/usr/lib/nagios/cgi-bin/status.cgi'),
     WL('webdock',   '200033',      False, True,  '/usr/sbin/httpd'),
 ]
 

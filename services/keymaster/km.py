@@ -120,8 +120,12 @@ SECRETS = Secrets()
 
 def ouch(user_msg, log_msg, varz_name):
     if varz_name: V.bump(varz_name)
-    # Time delta errors seem common; not sure why. Make them non-panic'ing for now.
     if 'Time difference' in log_msg:
+        # Time delta errors seem common; not sure why. Make them non-panic'ing for now.
+        V.bump('keyfail-timedelta')
+        C.log_error(log_msg)
+    elif 'token is not later than a previous token' in log_msg:
+        # Multiple quick key retrieval attempts also seem common; because of automatic retries in the client's "requests" call.  Also make them non-panic'ing for now.
         V.bump('keyfail-timedelta')
         C.log_error(log_msg)
     elif ARGS.dont_panic:
