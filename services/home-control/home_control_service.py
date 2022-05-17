@@ -84,12 +84,6 @@ def parse_args(argv):
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
   
-  if args.logfile == '-':
-    args.logfile = None
-    stderr_level = C.INFO
-  else:
-    stderr_level = C.NEVER
-      
   C.init_log('hs server', args.logfile,
              filter_level_logfile=C.INFO, filter_level_stderr=stderr_level,
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
@@ -101,8 +95,8 @@ def main(argv=[]):
       '/control/.*': hs_control_handler,
       '/c.*': hs_c_handler,
   }
-  ws = W.WebServer(handlers, wrap_handlers=False)  ##@@ temp
-  ws.start(port=args.port, background=False)
+  ws = W.WebServer(handlers)
+  ws.start(port=args.port, background=False)  # Doesn't return.
 
   
 if __name__ == '__main__':
