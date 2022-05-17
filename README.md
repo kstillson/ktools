@@ -18,7 +18,40 @@ Some highlights:
 - Docker infrastructure for quick and easy maintenance of the provided
   containers, and simple addition of new ones
 
-- A Python library that underpins all of the above, providing:
+- A Python library that underpins all of the above.
+
+  This library has two founding principles:
+
+  1. Platform abstraction: I commonly run Python in 4 different ways:
+     (a) Python 3 on large servers, (b) some legacy Python 2,
+     (c) Raspberry PIs, and (d) Circuit Python (a Python subset created
+     by Adafruit for tiny microcontrollers).
+
+     I've been frequently frustrated by incompatibiilties between these 4
+     modes, and want an abstraction layer that allows the exact same code to
+     run on all of them.
+
+     For RPi's and Circ-py, I'm generally using GPIO pins and Neopixels.
+     Large servers generally don't have easily acceible pins, so I use
+     graphical libaries to simulate them.  This allows me to develop code
+     intended to run on the tiny platforms on nice large platforms with full
+     IDEs, pytest, PDB, etc, and only move onto the tiny platforms once the
+     code is just about done.
+
+  2. Dependency cutting: I acknowledge that modern Python has put a lot of
+     work into virtual environments and automatic dependency tree resolution
+     with things like PIP.  But from a security and reliability perspective,
+     things like PIP make me *very nervous*.  It's way too easy for folks to
+     put poor quality (or deliberately malicious) code into public repos, and
+     for other projects to start depending on it.
+
+     This library provides the minimal set of functionality I need for "most"
+     of my projects that goes beyond the Python built-in libaries, and has
+     almost no dependencies other than those built-in libraries.  It does not
+     try to be all things to all people- it focuses on minimal code and
+     minimal complexity to provide just what you need as a decent baseline.
+
+  Here's some highlights of the provided functionality:
 
    - A mechanism that provides authentication and automated secret retrieval
      without needing to store private keys or other secrets in plain-text on
@@ -29,18 +62,14 @@ Some highlights:
      log retrieval.
 
    - A web server and client designed for simplicity of use, and which also
-     provides a uniform interface for a number of platforms: Python 2 or 3,
-     Raspberry PI, and Circuit Python.  Also includes a bunch of
-     Google-engineering-inspired "standard handlers" that make remote
-     monitoring and debugging easier.
+     provides a uniform interface for Python 2 or 3, Raspberry PI, and Circuit
+     Python.  Also includes a bunch of Google-engineering-inspired "standard
+     handlers" that make remote monitoring and debugging easier.
 
    - A GPIO and Neopixel abstraction that works on full Linux, Raspberry PIs,
-     and Circuit Python boards.  Under full Linux, the GPIOs and Neopixels are
-     simulated (graphically).  This means you can develop on a full Linux
-     machine with PDB and all the other niceties, and upload the code to RPi
-     or Circuit Python once it's almost done.
+     and Circuit Python boards.
 
-The collection represent years of tinkering and fine-tuning, and it is hoped
+The collection represents years of tinkering and fine-tuning, and it is hoped
 that this code, even if only the structural concepts and some of the
 techniques, may be of use to those either building their own systems, or just
 trying to extend their Linux or Python expertise.
