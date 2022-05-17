@@ -9,14 +9,14 @@ import kcore.webserver as W
 
 
 WEB_HANDLERS = {
-    '/$',         view.root_view,
-    '/easy',      view.easy_view,
-    '/healthz',   view.healthz_view,
-    '/static.*',  view.static_view,
-    '/status',    view.status_view,
-    '/statusz',   view.statusz_view,
-    '/touchz',    view.touchz_view,
-    '/trigger.*', view.trigger_view,
+    '/$':         view.root_view,
+    '/easy':      view.easy_view,
+    '/healthz':   view.healthz_view,
+    '/static.*':  view.static_view,
+    '/status':    view.status_view,
+    '/statusz':   view.statusz_view,
+    '/touchz':    view.touchz_view,
+    '/trigger.*': view.trigger_view,
 }
 
 
@@ -37,7 +37,7 @@ def main(argv=[]):
   C.init_log('homesec', args.logfile,
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
 
-  ws = W.WebServer(WEB_HANDLERS)
+  ws = W.WebServer(WEB_HANDLERS, wrap_handlers=False)  ##@@ temp
   ws.start(port=args.port, background=False)  # Doesn't return.
 
   

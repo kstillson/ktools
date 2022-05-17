@@ -10,7 +10,7 @@ ALARM_TRIGGERED_DELAY = data.ALARM_TRIGGERED_DELAY
 ARM_AWAY_DELAY = data.ARM_AWAY_DELAY
 PANIC_DURATION = data.PANIC_DURATION
 SQUELCH_DURATION = data.SQUELCH_DURATION
-TARDY_SECS = data.TARDY_DAYS
+TARDY_SECS = data.TARDY_SECS
 TOUCH_WINDOW_SECS = data.TOUCH_WINDOW_SECS
 
 
@@ -71,7 +71,7 @@ def lookup_trigger_rule(state, partition, zone, trigger):
     if ((tr.state == state or tr.state == '*') and
         (tr.partition == partition or tr.partition == '*') and
         (tr.zone == zone or tr.zone == '*') and
-        (tr.trigger = trigger or tr.trigger == '*')):
+        (tr.trigger == trigger or tr.trigger == '*')):
       return tr.action, tr.param
   return None, None
 

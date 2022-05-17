@@ -1,9 +1,9 @@
 
 import datetime, functools, os
 import controller, model
-import ktools.common as C
-import ktools.html as H
-import ktools.webserver as W
+import kcore.common as C
+import kcore.html as H
+import kcore.webserver as W
 
 # ---------- helpers
 

@@ -1,5 +1,5 @@
 
-import theading
+import threading
 import model
 
 import kcore.common as C
@@ -56,7 +56,7 @@ def run_trigger(name, force_zone=None):
     model.touch(tracking['trigger'])
 
   V.set('last_action', tracking['action'])
-  V.bump(f'action_{tracking['action']}')
+  V.bump(f'action_{tracking["action"]}')
   return err or 'ok', tracking
 
 
