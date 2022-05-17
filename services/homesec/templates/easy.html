@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>homesec easy controls</title>
+  <meta name="viewport" content="width=device-width">
+  <link href='/homesec/static/style.css' rel='stylesheet' type='text/css' media='screen' />
+</head>
+<body>
+
+<script>
+  function trigger(url) {
+    frames[0].location.href = url;
+    setTimeout(function() { window.location.href = '/homesec/easy'; }, 2000);
+  }
+</script>
+
+<table border='2' cellpadding='5' class='states'>
+  <tr>
+    <td colspan='2' class='partition_default'>{{ status }}</td>
+  </tr><tr>
+    <td><button onClick="trigger('/homesec/trigger/disarm')" class='disarm_button'>Disarm</button></td>
+    <td><button onClick="trigger('/homesec/trigger/arm-auto')" class='arm_button'>Arm</button></td>
+  </tr>
+</table>
+
+<p>
+<iframe id='status2' width='90%' height='100' scrolling='auto' frameborder='0'></iframe>
+
+</body>
+</html>

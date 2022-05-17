@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>homesec</title>
+  <meta name="viewport" content="width=device-width">
+  <link href='/homesec/static/style.css' rel='stylesheet' type='text/css' media='screen' />
+</head>
+<body>
+
+<script>
+  FRAME_STATUS1 = 0;
+  FRAME_STATUS2 = 1;
+
+  function control(target, command="on") {
+      url = "https://home.point0.net/control/" + target + "/" + command;
+      frames[FRAME_STATUS2].location.href = url;
+  }
+
+  function trigger(target, zone="") {
+      url = "https://home.point0.net/homesec/trigger/" + target;
+      if (zone != "") { url += "/" + zone; }
+    frames[FRAME_STATUS2].location.href = url;
+    setTimeout(function() { frames[FRAME_STATUS1].location.href = "/homesec/status"; }, 1000);
+  }
+
+  function camupdate() {
+    d = document.getElementById('campic');
+    if (document.getElementById('cambutton').checked) {
+      d.src = 'https://home.point0.net/cam2';
+      d.height = d.width / 1.3;
+    } else {
+      d.src = 'data:text/html;charset=utf-8,';
+      d.height = 1;
+    }
+  }
+
+  function lightsupdate() {
+      cmnd = (document.getElementById("allonbutton").checked) ? "on" : "off"; 
+      control("all", cmnd)
+  }
+
+  function sirenupdate() {
+      cmnd = ((document.getElementById('sirenenable').checked) && 
+              (document.getElementById('sirenbutton').checked)) ? "on" : "off";
+      control("sirens", cmnd);
+  }
+</script>
+
+<iframe id='status1' width='100%' height='130' frameborder='0' src='/homesec/status'></iframe>
+
+<table><tr align="center">
+  <td><button onClick="trigger('/homesec/trigger/web/disarm')" class='disarm_button'>Disarm</button></td>
+  <td><button onClick="trigger('/homesec/trigger/web/arm-auto')">Arm-auto</button></td>
+  <td><button onClick="trigger('/homesec/trigger/web/arm-home')">Arm-home</button></td>
+  <td><button onClick="trigger('/homesec/trigger/web/arm-away')">Arm-away</button></td>
+  <td><button onClick="trigger('/homesec/trigger/panic')" class='panic_button')>PANIC</button></td>
+  </tr><tr align="center" style="background-color:#eeeeee">
+  <td>safe:</td>
+  <td><button onClick="trigger('/homesec/trigger/safe/disarm')">Disarm</button></td>
+  <td><button onClick="trigger('/homesec/trigger/safe/arm-home')">Arm-home</button></td>
+  <td><button onClick="trigger('/homesec/trigger/safe/arm-away-now')">Arm-away</button></td>
+</tr></table>
+
+<p>Recent touches (#home={{ count_home }}): </p>
+<iframe id='touchz' width='100%' height='90' frameborder='0' src='/homesec/touchz'></iframe>
+
+<p>
+<table><tr>
+  <td>Cam? <input id='cambutton' type='checkbox' onclick='camupdate();'> </td>
+ </tr><tr>
+  <td>All lights?<input id='allonbutton' type='checkbox' onclick='lightsupdate();'> </td>
+  <td>Siren enable?<input id='sirenenable' type='checkbox'> </td>
+  <td>Siren on?<input id='sirenbutton' type='checkbox' onclick='sirenupdate();'> </td>
+</tr></table>
+
+<br/>
+<img id='campic' width='480' height='1' border='0' src='/homesec/static/pixel.gif'>
+
+<p>
+<iframe id='status2' width='90%' height='100' scrolling='auto' frameborder='0'></iframe>
+
+<p>
+<button onClick="parent.location='/homesec/logout'">Logout</button>
+
+<p>Sensor last contact time:</p>
+{{ last_sensors }}
+
+</body>
+</html>

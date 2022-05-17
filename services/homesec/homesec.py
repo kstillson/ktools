@@ -1,0 +1,46 @@
+#!/usr/bin/python3
+'''TODO: doc
+'''
+
+import argparse, os, sys
+import view
+import kcore.common as C
+import kcore.webserver as W
+
+
+WEB_HANDLERS = {
+    '/$',         view.root_view,
+    '/easy',      view.easy_view,
+    '/healthz',   view.healthz_view,
+    '/static.*',  view.static_view,
+    '/status',    view.status_view,
+    '/statusz',   view.statusz_view,
+    '/touchz',    view.touchz_view,
+    '/trigger.*', view.trigger_view,
+}
+
+
+# ---------- main
+
+def parse_args(argv):
+  ap = argparse.ArgumentParser(description='home automation web server')
+  ap.add_argument('--debug', '-d', action='store_true', help='activate debug mode')
+  ap.add_argument('--logfile', '-l', default='homesec.log', help='filename for operations log.  "-" for stderr, blank to disable log file')
+  ap.add_argument('--port', '-p', type=int, default=8080, help='port to listen on')
+  ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
+  return ap.parse_args(argv)
+
+
+def main(argv=[]):
+  args = parse_args(argv or sys.argv[1:])
+
+  C.init_log('homesec', args.logfile,
+             filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
+
+  ws = W.WebServer(WEB_HANDLERS)
+  ws.start(port=args.port, background=False)  # Doesn't return.
+
+  
+if __name__ == '__main__':
+    sys.exit(main())
+

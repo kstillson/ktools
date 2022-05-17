@@ -1,0 +1,68 @@
+
+import subprocess, syslog
+import smtplib
+from email.mime.text import MIMEText
+
+import kcore.common as C
+
+
+# --------------------
+# Silent alarm message data
+
+SILENT_TO = ['rts@point0.net', 'mbs@point0.net']
+SILENT_SUBJ = 'URGENT- KEN STILLSON HAS ACTIVATED HOME SECURITY PANIC SYSTEM'
+SILENT_MSG = ('This message is generated when I trigger a silent alarm.\n\n'
+              'PLEASE CALL 911 AND DIRECT THEM TO 11921 Triple Crown Rd, Reston.\n\n'
+              'Use of the silent alarm indicates it is probably unwise to \n'
+              'call or text me; if I had wanted an obvious response, \n'
+              'I would have triggered a noisy panic.\n\n')
+
+if True:
+  SILENT_TO = ['ken@kenstillson.com', 'tech@@point0.net']
+  SILENT_SUBJ = SILENT_SUBJ.replace('URGENT', 'THIS IS A TEST - PLEASE IGNORE')
+
+# --------------------
+
+def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
+  C.log('announce [%s/%s]: %s: %s' % (push_level, syslog_level, msg, details))
+  if speak: C.read_web('http://pi1/speak/' + msg)
+  if details: msg += ': %s' % details
+  if push_level: push_notification(msg, push_level)
+  if syslog_level: syslog.syslog(syslog_level, msg)
+
+
+def control(target, command='on'):
+  out = C.read_web(f'https://home.point0.net/control/{target}/{command}')
+  if 'ok' in out:
+    C.log(f'sent control command {target} -> {command}')
+    return None
+  C.log_error(f'error sending control {target} -> {command}: {out}')
+  return out
+
+
+# levels supported by client-side: alert, info, other
+def push_notification(msg, level='other'):
+  C.log('pushbullet sending [level={level}]: {msg}')
+  if level != 'other': msg += ' !%s' % level
+  ok = subprocess.call(["/usr/local/bin/pb-push", msg])
+  return ok == 0
+
+
+def send_emails(from_addr, to, subj, contents):
+  msg = MIMEText(contents)
+  msg['Subject'] = subj
+  msg['From'] = from_addr
+  msg['To'] = ', '.join(to)
+  s = smtplib.SMTP('exim4.h.point0.net')
+  s.sendmail(from_addr, to, msg.as_string())
+  s.quit()
+
+
+def send_email(from_addr, to, subj, contents):
+  return send_emails(from_addr, [to], subj, contents)
+
+
+def silent_panic():
+  C.log_crit('SILENT PANIC ACTIVATED!')
+  send_emails('ken@kenstillson.com', SILENT_TO, SILENT_SUBJ, SILENT_MSG)
+

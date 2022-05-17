@@ -1,0 +1,68 @@
+
+.states {
+  text-align: center;
+  vertical-align: middle;
+  color: blue;
+  font-weight: bold;
+}
+
+.state_disarmed {
+  background-color: green;
+  color: black;
+}
+
+.state_arm-home {
+  background-color: aqua;
+  color: black;
+}
+
+.state_arm-homeauto {
+  background-color: aqua;
+  color: white;
+}
+
+.state_arming-away {
+  background-color: yellow;
+  color: black;
+}
+
+.state_arm-away {
+  background-color: blue;
+  color: black;
+}
+
+.state_arm-awayauto {
+  background-color: blue;
+  color: white;
+}
+
+.state_alarm-triggered {
+  background-color: purple;
+  color: white;
+}
+
+.state_alarm {
+  background-color: red;
+  color: black;
+}
+
+.state_silent-panic {
+  background-color: red;
+  color: black;
+}
+
+.panic_button {
+  background-color: red;
+  color: white;
+}
+
+.disarm_button {
+  background-color: green;
+  color: white;
+}
+
+.arm_button {
+  background-color: orange;
+  color: white;
+}
+
