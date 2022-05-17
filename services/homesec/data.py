@@ -172,8 +172,8 @@ class TouchData:
     def __post_init__(self): self.last_update_nice = nice_time(self.last_update)
 
 
-PARTITION_STATE_FILENAME = 'data_partition_state.data'
-TOUCH_DATA_FILENAME = 'data_touch.data'
+PARTITION_STATE_FILENAME = 'data/partition_state.data'
+TOUCH_DATA_FILENAME = 'data/touch.data'
 
 
 # ---------- specific dynamic data loaders
