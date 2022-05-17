@@ -86,7 +86,7 @@ def query_km(keyname,
 
     try:
       resp = requests.get(url, timeout=timeout, verify=verify)
-      if resp.status_code == 200 and not resp.text.startswith('ERROR'): return resp.text
+      if resp.status_code == 200 and not 'ERROR' in resp.text: return resp.text
       err = 'ERROR: status %d (%s)' % (resp.status_code, resp.text)
     except Exception as e:
         err = 'ERROR: %s' % e
