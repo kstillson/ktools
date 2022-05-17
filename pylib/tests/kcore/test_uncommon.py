@@ -26,16 +26,27 @@ def test_capture():
 class T1:
     a: str
     b: int
-        
+
 def test_dict_of_dataclasses():
     d = UC.DictOfDataclasses({'k1': T1('a1', 1), 'k2': T1('b2', 2)})
     s = d.to_string()
     d2 = UC.DictOfDataclasses()
     assert d2.from_string(s, T1) == 2
     assert d2['k1'].a == 'a1'
-    assert d2['k2'].b == 2    
+    assert d2['k2'].b == 2
 
-        
+def test_list_of_dataclasses():
+    l1 = UC.ListOfDataclasses([T1('a1', 1), T1('b2', 2)])
+    s = l1.to_string()
+    print(f'@@: {s}')
+    l2 = UC.ListOfDataclasses()
+    assert l2.from_string(s, T1) == 2
+    assert l2[0].a == 'a1'
+    assert l2[0].b == 1
+    assert l2[1].a == 'b2'
+    assert l2[1].b == 2
+
+
 def test_exec_wrapper():
     assert UC.exec_wrapper('print(1+2)').out == '3'
     # Try passing in a local variable.

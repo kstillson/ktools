@@ -15,7 +15,7 @@ else: import io
 
 
 # ----------------------------------------
-# Dict of dataclasses
+# Collections of DataClasses
 
 
 class DictOfDataclasses(dict):
@@ -25,7 +25,7 @@ class DictOfDataclasses(dict):
     def to_string(self):
         dict2 = {k: str(v) for k, v in self.items()}
         return '\n'.join([f'{k} = {v}' for k, v in dict2.items()])
-    
+
     def from_string(self, s, dataclass_type):
         locals = { dataclass_type.__name__: dataclass_type }
         count = 0
@@ -34,6 +34,24 @@ class DictOfDataclasses(dict):
             if not ' = ' in line: continue
             k, v_str = line.split(' = ', 1)
             self[k] = eval(v_str, {}, locals)
+            count += 1
+        return count
+
+
+class ListOfDataclasses(list):
+    '''Intended for use with lists of dataclass instances.
+       Adds methods to support serialization and deserialzation.
+    '''
+    def to_string(self):
+        return '\n'.join([str(x) for x in self])
+
+    def from_string(self, s, dataclass_type):
+        locals = { dataclass_type.__name__: dataclass_type }
+        count = 0
+        for line in s.split('\n'):
+            if not line or line.startswith('#'): continue
+            item = eval(line, {}, locals)
+            self.append(item)
             count += 1
         return count
 
