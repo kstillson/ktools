@@ -1,0 +1,2 @@
+TouchData(trigger='user1', last_update=123, value='away')
+TouchData(trigger='user2', last_update=456, value='home')

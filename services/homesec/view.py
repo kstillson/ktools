@@ -33,22 +33,17 @@ def easy_view(request):
 
 
 def healthz_view(request):
-  tardy_time = model.now() - model.TARDY_SECS
-  tardy = []
-  for t in model.get_friendly_touches():
-    if t.last_update <= tardy_time: 
-        tardy.append([t.friendly, t.last_update_nice])
+  touches = model.get_friendly_touches()
+  tardy = [[t.friendly_name, t.last_update_nice] for t in tardy_touches if t.tardy]
   if not tardy: return 'ok'
   return H.html_page_wrap('ERROR<p/>' + H.list_to_table(tardy, title='tardy triggers'))
     
 
 @authn_required
 def root_view(request):
-  tardy_time = model.now() - model.TARDY_SECS
   last = []
-  for t in get_friendly_touches():
-    tardy = t.last_update < tardy_time
-    last.append([t.trigger, t.friendly, t.last_update_nice, 'tardy' if tardy else ''])
+  for t in model.get_friendly_touches():
+    last.append([t.trigger, t.friendly_name, t.last_update_nice, 'tardy' if t.tardy else ''])
   return render('root.html',
     {'count_home': model.touches_with_value('home'),
      'last_sensors': H.list_to_table(last), })
@@ -94,5 +89,5 @@ def trigger_view(request):
   parts = request.path.split('/')
   trigger = parts[1]
   force_zone = parts[2] if len(parts) > 1 else None
-  status, tracking = controller.run_trigger(name, force_zone)
+  status, tracking = controller.run_trigger(request.__dict__, name, force_zone)
   return f'{status}\n\n{tracking}'

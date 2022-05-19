@@ -3,33 +3,28 @@ import datetime, time
 
 import data
 
-# ---------- copy over simple constants from the data module.
-
-ALARM_DURATION = data.ALARM_DURATION
-ALARM_TRIGGERED_DELAY = data.ALARM_TRIGGERED_DELAY
-ARM_AWAY_DELAY = data.ARM_AWAY_DELAY
-PANIC_DURATION = data.PANIC_DURATION
-SQUELCH_DURATION = data.SQUELCH_DURATION
-TARDY_SECS = data.TARDY_SECS
-TOUCH_WINDOW_SECS = data.TOUCH_WINDOW_SECS
-
 
 # ---------- getters
 
+CONSTANTS = data.CONSTANTS
+
+
 def get_all_touches():
   touches = data.get_touch_data()
-  return touches.sort(key=lambda x: x.last_update)
+  return sorted(touches, key=lambda x: x.last_update)
 
 
 def get_friendly_touches():
   '''touches where the friendly name is different than the trigger name are ones where we expect regularly touches or else the trigger is "tardy".'''
+  tardy_time = now() - CONSTANTS['TARDY_SECS']
   out = []
   for touch in get_all_touches():
-    zone, partition, friendly = lookup_trigger(touch.trigger)
-    if not friendly or friendly == touch.trigger: continue
-    touch.friendly = friendly
+    tl = lookup_trigger(touch.trigger)
+    if not tl or not tl.friendly_name: continue
+    touch.friendly_name = tl.friendly_name
+    touch.tardy = touch.last_update < tardy_time
     out.append(touch)
-  return out.sort(key=lambda x: x.last_update)
+  return out
 
 
 def get_state_rules(partition, transition, state):
@@ -44,19 +39,21 @@ def get_state_rules(partition, transition, state):
 
 
 def get_touch_status_for(username):
-  return last_trigger_touch(username)
+  for touch in get_all_touches():
+    if touch.trigger == username: return touch.value
+  return None
 
 
-def get_touches():
+def get_touches(search=['ken', 'dad']):
   touches = get_all_touches()
-  return [x for x in touches if x.trigger in ['ken', 'dad']]
+  return [x for x in touches if x.trigger in search]
 
 
 def last_trigger_touch(trigger):
   '''Returns int epoch seconds.'''
   for touch in get_all_touches():
     if touch.trigger == trigger: return touch.last_update
-  return None
+  return 0
 
 
 def lookup_trigger(trigger_name):
@@ -66,13 +63,13 @@ def lookup_trigger(trigger_name):
 
 
 def lookup_trigger_rule(state, partition, zone, trigger):
-  '''return (action, param) for the lowest priority matching rule.'''
+  '''return (action, param) for the first-matching rule.'''
   for tr in data.TRIGGER_RULES:
     if ((tr.state == state or tr.state == '*') and
         (tr.partition == partition or tr.partition == '*') and
         (tr.zone == zone or tr.zone == '*') and
         (tr.trigger == trigger or tr.trigger == '*')):
-      return tr.action, tr.param
+      return tr.action, tr.params
   return None, None
 
 
@@ -137,5 +134,5 @@ def touches_with_value(value):
   out = []
   for t in data.get_touch_data():
     if t.value == value: out.append(t)
-  return out
+  return len(out)
 

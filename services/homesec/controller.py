@@ -1,6 +1,7 @@
 
-import threading
-import model
+import datetime, threading
+
+import ext, model
 
 import kcore.common as C
 import kcore.varz as V
@@ -16,20 +17,24 @@ def get_statusz_state():
                        touches[0].value if len(touches) > 0 else '/')
 
 
-def run_trigger(name, force_zone=None):
+def run_trigger(request_dict, name, force_zone=None):
   '''returns (status text, tracking dict)'''
   V.bump('triggers')
   V.set('last_trigger', name)
 
-  tracking = {}
+  tracking = dict(request_dict)   # shallow copy; contains things like 'user'
   tracking['trigger'] = name
   tracking['force_zone'] = force_zone
 
-  tracking['lookup_zone'], tracking['partition'], tracking['trigger_friendly'] = model.lookup_trigger(name)
+  tl = model.lookup_trigger(name)
+  tracking['lookup_zone'] = tl.zone if tl else 'default'
+  tracking['partition'] = tl.partition if tl else 'default'
+  tracking['trigger_friendly'] = tl.friendly_name if tl else None
+  
   tracking['zone'] = force_zone or tracking['lookup_zone']
 
   # Check for too many hits from this trigger
-  if squelch(tracking['trigger'], tracker['zone']): return 'squelched', tracking
+  if squelch(tracking['trigger'], tracking['zone']): return 'squelched', tracking
 
   tracking['partition_start_state'] = model.partition_state(tracking['partition'])
   tracking['state'] = model.resolve_auto(tracking['partition_start_state'])
@@ -65,7 +70,7 @@ def run_trigger(name, force_zone=None):
 def lookup_action(state, partition, zone, trigger):
   '''returns (action, params)'''
   action, param = model.lookup_trigger_rule(state, partition, zone, trigger)
-  base.last_action = '%s(%s)' % (action, param)
+  V.set('last_action', '%s(%s)' % (action, param))
   return action, param
 
 
@@ -83,17 +88,19 @@ def set_state(tracking, new_state, skip_actions=False):
   for i in enter_actions: take_action(tracking, i[0], i[1])
 
 
-def schedule_trigger(delay, then_trigger, then_force_zone=None):
+def schedule_trigger(request_dict, delay, then_trigger, then_force_zone=None):
   '''Schedule a trigger to run after a time-delay.'''
   C.log(f'delay {delay} then trigger {then_trigger}/{then_force_zone}')
-  t = threading.Timer(delay, run_trigger, (then_trigger, then_force_zone)).start()
+  t = threading.Timer(int(delay), function=run_trigger, args=(request_dict, then_trigger, then_force_zone))
+  t.daemon = True
+  t.start()
 
 
 def squelch(trigger, zone):
   if zone not in ['chime', 'default', 'inside', 'outside']: return False
   last_run = model.last_trigger_touch(trigger)
-  time_since = (datetime.datetime.now() - last_run).total_seconds()
-  if time_since < model.SQUELCH_DURATION:
+  time_since = model.now() - last_run
+  if time_since < model.CONSTANTS['SQUELCH_DURATION']:
     C.log(f'squelched trigger {trigger}/{zone} (last used {time_since} seconds ago)')
     return True
   return False
@@ -101,41 +108,41 @@ def squelch(trigger, zone):
 
 def subst(tracking, input_string):
   if not input_string: return ''
-  out = input_string.replace('%t', tracking['trigger'])
-  out = out.replace('%f', tracking['trigger_friendly'])
-  out = out.replace('%z', tracking['zone'])
-  out = out.replace('%s', tracking['state'])
-  out = out.replace('%u', '%s' % tracking['user'])
-  out = out.replace('%p', tracking['partition'])
-  out = out.replace('%a', tracking['action'])
-  out = out.replace('%Ttouch', '%s' % model.TOUCH_WINDOW_SECS)
-  out = out.replace('%Tarm', '%s' % model.ARM_AWAY_DELAY)
-  out = out.replace('%Ttrig', '%s' % model.ALARM_TRIGGERED_DELAY)
-  out = out.replace('%Talarm', '%s' % model.ALARM_DURATION)
-  out = out.replace('%Tpanic', '%s' % model.PANIC_DURATION)
+  out = input_string.replace('%t', tracking.get('trigger') or '?')
+  out = out.replace('%f', tracking.get('trigger_friendly') or '?')
+  out = out.replace('%z', tracking.get('zone') or '?')
+  out = out.replace('%s', tracking.get('state') or '?')
+  out = out.replace('%u', str(tracking.get('user') or '?'))
+  out = out.replace('%p', tracking.get('partition') or '?')
+  out = out.replace('%a', tracking.get('action') or '?')
+  out = out.replace('%Ttouch', str(model.CONSTANTS['TOUCH_WINDOW_SECS']))
+  out = out.replace('%Tarm',   str(model.CONSTANTS['ARM_AWAY_DELAY']))
+  out = out.replace('%Ttrig',  str(model.CONSTANTS['ALARM_TRIGGERED_DELAY']))
+  out = out.replace('%Talarm', str(model.CONSTANTS['ALARM_DURATION']))
+  out = out.replace('%Tpanic', str(model.CONSTANTS['PANIC_DURATION']))
   return out
 
 
 def take_action(tracking):
-  '''Explicit actions called for my routing table.  Return error msg or None.'''
+  '''Explicit actions called for by routing table.  Return error msg or None.'''
   
   action = tracking['action']
-  params = subst(request, request['params'])
-  C.log(f'Taking action {action}:{params} for {request}')
+  params = subst(tracking, tracking['params'])
+  C.log(f'Taking action {action}:{params} for {tracking}')
   
   if action == 'state':
-    set_state(request, params)
+    set_state(tracking, params)
     
   elif action == 'state-delay-trigger':
     new_state, delay, then_trigger = params.split(', ')
-    if new_state != '-': set_state(request, new_state)
-    schedule_trigger(delay, then_trigger)
+    if new_state != '-': set_state(tracking, new_state)
+    schedule_trigger(tracking, delay, then_trigger)
     
   elif action == 'touch-home':
-    user = request['user'] if params == 'x' else params
+    user = tracking['user'] if params == 'x' else params
     # If touch-home after alarm triggered, reset the alarm state.
-    if request['state'] == 'alarm-triggered':
-      set_state(request, 'arm-auto', True)  # skip transition rules: no need to announce "auto arming mode by ..."
+    if tracking['state'] == 'alarm-triggered':
+      set_state(tracking, 'arm-auto', True)  # skip transition rules: no need to announce "auto arming mode by ..."
     if model.get_touch_status_for(user) == 'home':
       return ext.announce('%s is already home' % user)
     model.touch(user, 'home')
@@ -144,36 +151,36 @@ def take_action(tracking):
     if user != 'ken': ext.push_notification(msg, 'info')
     if datetime.datetime.now().hour >= 18:
       ext.control('home', 'go')
-    request['speak'] = msg
+    tracking['speak'] = msg
     ext.announce(msg)
     
   elif action == 'touch-away':
-    user = request['user'] if params == 'x' else params
+    user = params or tracking['user']
     if model.get_touch_status_for(user) == 'away':
       return ext.announce('%s is already away' % user)
-    state_before = model.resolve_auto(request['partition_start_state'])
+    state_before = model.resolve_auto(tracking['partition_start_state'])
     model.touch(user, 'away')
-    state_after = model.resolve_auto(request['partition_start_state'])
+    state_after = model.resolve_auto(tracking['partition_start_state'])
     if state_before != state_after:
       msg = 'homesec armed'
-      request['speak'] = msg
+      tracking['speak'] = msg
       ext.announce(msg)
       if user != 'ken': ext.push_notification(msg, 'info')
       if datetime.datetime.now().hour >= 18:
         ext.control('away', 'go')
     else:
-      request['speak'] = '%s is away' % user
+      tracking['speak'] = '%s is away' % user
       
   elif action == 'touch-away-delay':
     user, delay = params.split(', ')
-    if user == 'x': user = request['user']
+    if not user or user == 'x': user = tracking['user']
     if model.get_touch_status_for(user) == 'away':
       return ext.announce('%s is already away' % user)
     msg = 'goodbye %s' % user
     if model.touches_with_value('home') == 1:
       msg += ', system will arm in %s seconds' % delay
     ext.announce(msg)
-    schedule_trigger(delay, '%s/touch-away' % user, request)
+    schedule_trigger(tracking, delay, 'touch-away', tracking) ## TODO- user?
   elif action == 'pass':
     pass
 
@@ -196,7 +203,7 @@ def take_action(tracking):
   elif action == 'control2':
     unit, state, delay, unit2, state2 = params.split(', ')
     err = ext.control(unit, state)
-    schedule_trigger(delay, '%s, %s/control' % (unit2, state2))
+    schedule_trigger(tracking, delay, '%s, %s/control' % (unit2, state2))
     return err
 
   elif action == 'silent-panic':
@@ -206,6 +213,6 @@ def take_action(tracking):
     C.log('httpget action returned: %s' % C.read_web(params))
     
   else:
-    msg = 'Unknown action request: %s' % request
+    msg = 'Unknown action: %s' % tracking
     C.log_error(msg)
     return msg
