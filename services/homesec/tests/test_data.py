@@ -16,9 +16,9 @@ def test_user_secrets():
 
 
 def test_touch_data_getter():
-    D.TOUCH_DATA_FILENAME = 'testdata/touch.data'
+    D.TOUCH_DATA_FILENAME = 'testdata/test-touch.data'
     td = D.get_touch_data()
-    assert td[0].trigger == 'user1'
+    assert td[0].trigger == 'ken'
     assert td[1].last_update == 456
 
 

@@ -40,6 +40,7 @@ def control(target, command='on'):
   return out
 
 
+# put here so easier to mock out during testing.
 def read_web(url): return C.read_web(url)
 
 

@@ -10,21 +10,14 @@ import model as M
 @pytest.fixture(scope='module')
 def populate_data():
     tmpdir = tempfile.mkdtemp()
+    dest = tmpdir + '/test-partition-state.data'
+    shutil.copyfile('testdata/test-partition-state.data', dest)
+    M.data.PARTITION_STATE_FILENAME = dest
 
-    psf = M.data.PARTITION_STATE_FILENAME = os.path.join(tmpdir, 'test-partition-state.data')
-    with open(psf, 'w') as f:
-        f.write("PartitionState(partition='default', state='arm-auto', last_update=123)\n")
-        f.write("PartitionState(partition='safe', state='arm-away', last_update=345)\n")
-
-    tdf = M.data.TOUCH_DATA_FILENAME = os.path.join(tmpdir, 'test-touch.data')
-    with open(tdf, 'w') as f:
-        f.write("TouchData(trigger='user1', last_update=123, value='home')\n")
-        f.write("TouchData(trigger='user2', last_update=456, value='away')\n")
-        # These trigger names match some in data.TRIGGER_LOOKUPS
-        f.write("TouchData(trigger='back_door', last_update=654)\n")
-        f.write("TouchData(trigger='front_door', last_update=321)\n")
-        f.write("TouchData(trigger='other', last_update=999)\n")
-
+    dest = tmpdir + '/test-touch.data'
+    shutil.copyfile('testdata/test-touch.data', dest)
+    M.data.TOUCH_DATA_FILENAME = dest
+    
     yield tmpdir
     shutil.rmtree(tmpdir)
 
@@ -51,11 +44,11 @@ def test_get_state_rules(populate_data):
 
 
 def test_other_touch_tests(populate_data):
-    assert M.get_touch_status_for('user1') == 'home'
-    assert M.get_touch_status_for('user2') == 'away'
+    assert M.get_touch_status_for('ken') == 'home'
+    assert M.get_touch_status_for('dad') == 'away'
     assert M.get_touch_status_for('invalid') is None
 
-    touches = M.get_touches(search=['user1', 'user2'])
+    touches = M.get_touches()
     assert touches[0].last_update == 123
     assert touches[1].last_update == 456
 
