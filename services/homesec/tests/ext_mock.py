@@ -10,7 +10,6 @@ class LastCall:
   def __post_init__(self):
     print(f'Last call: {self.method}, args={self.args}, kwargs={self.kwargs}', file=sys.stderr)
     
-  
 LAST = None
 
 
@@ -24,6 +23,16 @@ def control(*args, **kwargs):
   LAST = LastCall('control', args, kwargs)
 
 
+def push_notification(*args, **kwargs):
+  global LAST
+  LAST = LastCall('push_notification', args, kwargs)
+
+
+def read_web(*args, **kwargs):
+  global LAST
+  LAST = LastCall('read_web', args, kwargs)
+
+  
 def send_emails(*args, **kwargs):
   global LAST
   LAST = LastCall('send_emails', args, kwargs)

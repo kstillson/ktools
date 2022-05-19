@@ -46,7 +46,7 @@ def run_trigger(request_dict, name, force_zone=None):
   statusz_before = get_statusz_state()
 
   # Perform requested action.
-  err = take_action(tracking)
+  err = take_action(tracking, tracking['action'], tracking['params'])
 
   # If statuz has changed, notify external tracking unit(s).
   statusz_after = get_statusz_state()
@@ -79,12 +79,12 @@ def set_state(tracking, new_state, skip_actions=False):
   C.log('partition %s : state %s -> %s' % (
     tracking['partition'], tracking['state'], new_state))
   if tracking['state'] == new_state: return
-  leave_actions = model.get_state_rules(tracking['partition'], '0', tracking['state'])
+  leave_actions = model.get_state_rules(tracking['partition'], 'leave', tracking['state'])
   tracking['state'] = new_state
   model.set_partition_state(tracking['partition'], new_state)
   if skip_actions: return
   for i in leave_actions: take_action(tracking, i[0], i[1])
-  enter_actions = model.get_state_rules(tracking['partition'], '1', new_state)
+  enter_actions = model.get_state_rules(tracking['partition'], 'enter', new_state)
   for i in enter_actions: take_action(tracking, i[0], i[1])
 
 
@@ -123,11 +123,9 @@ def subst(tracking, input_string):
   return out
 
 
-def take_action(tracking):
+def take_action(tracking, action, params):
   '''Explicit actions called for by routing table.  Return error msg or None.'''
-  
-  action = tracking['action']
-  params = subst(tracking, tracking['params'])
+  params = subst(tracking, params)
   C.log(f'Taking action {action}:{params} for {tracking}')
   
   if action == 'state':
@@ -203,14 +201,14 @@ def take_action(tracking):
   elif action == 'control2':
     unit, state, delay, unit2, state2 = params.split(', ')
     err = ext.control(unit, state)
-    schedule_trigger(tracking, delay, '%s, %s/control' % (unit2, state2))
+    schedule_trigger(tracking, delay, 'control/%s' % (unit2, state2))
     return err
 
   elif action == 'silent-panic':
     ext.silent_panic()
     
   elif action == 'httpget':
-    C.log('httpget action returned: %s' % C.read_web(params))
+    C.log('httpget action returned: %s' % ext.read_web(params))
     
   else:
     msg = 'Unknown action: %s' % tracking

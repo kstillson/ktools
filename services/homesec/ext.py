@@ -40,6 +40,9 @@ def control(target, command='on'):
   return out
 
 
+def read_web(url): return C.read_web(url)
+
+
 # levels supported by client-side: alert, info, other
 def push_notification(msg, level='other'):
   C.log('pushbullet sending [level={level}]: {msg}')
