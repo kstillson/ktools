@@ -1,12 +1,9 @@
 #!/usr/bin/python3
 
-# TODO!: move webserver to kcore, rm bad dep on thread.
+import argparse, os, re, sys, time
 
-import argparse, os, re, sys, time, thread
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-
-sys.path.append('/root/bin')
 import kcore.docker_lib as D
+import kcore.webserver as W
 
 CMD_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/rw/nagios.cmd'
 LOG_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_log_nagios/nagios.log'
@@ -14,21 +11,15 @@ STATUS_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/status.dat'
 UPDATE_DELAY = 8
 
 PORT = 12345
-RESPONCE = 'all ok'
 
-class WebHandler(BaseHTTPRequestHandler):
-  def do_GET(self):
-      global RESPONCE
-      self.send_response(200)
-      self.send_header("Content-type", "text/html")
-      self.end_headers()
-      self.wfile.write(RESPONCE)
-      return
+
+def default_handler(request):
+  return 'all ok'
 
 
 def send_cmd(cmd, alt=True):
   now = str(int(time.time()))
-  with open(CMD_FILE, 'w+') as f:
+  with open(CMD_FILE, 'a') as f:
     f.write('[%s] %s\n' % (now, cmd.replace('$NOW', now)))
 
 
@@ -102,8 +93,8 @@ def main():
     status_expect('current_state', '2', conf)
 
     # now enable the test service and try again.
-    httpd = HTTPServer(('0.0.0.0', PORT), WebHandler)
-    thread.start_new_thread(httpd.serve_forever, ())
+    ws = W.WebServer({None: default_handler})
+    ws.start(port=PORT)
 
     send_cmd('SCHEDULE_FORCED_SVC_CHECK;jack;test-service;$NOW')
     D.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
