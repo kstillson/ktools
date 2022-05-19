@@ -108,6 +108,7 @@ successfully queued.
 import argparse, fnmatch, glob, os, site, sys
 from dataclasses import dataclass
 from typing import Any
+import kcore.uncommon as UC
 import kcore.varz as V
 
 
@@ -145,17 +146,6 @@ INITIAL_SETTINGS = [
   Setting('test',        False,          "Just show what would be done, don't do it.", '-T'),
   Setting('timeout',     5,              'default timeout for external communications', '-t'),
 ]
-
-# ---------- general support
-
-def _load_file_as_module(filename, desired_module_name=None):
-  if not desired_module_name: desired_module_name = filename.replace('.py', '')
-  import importlib.machinery, importlib.util
-  loader = importlib.machinery.SourceFileLoader(desired_module_name, filename)
-  spec = importlib.util.spec_from_loader(desired_module_name, loader)
-  new_module = importlib.util.module_from_spec(spec)
-  loader.exec_module(new_module)
-  return new_module
 
 
 # ---------- data initialization
@@ -202,7 +192,7 @@ def load_plugins(settings):
   if SETTINGS['debug']: print(f'DEBUG: plugin_files={plugin_files}')
   plugins = {}
   for i in plugin_files:
-    new_module = _load_file_as_module(i)
+    new_module = UC.load_file_as_module(i)
     pi_names = new_module.init(settings)
     for j in pi_names:
       plugins[j] = new_module
@@ -218,7 +208,7 @@ def load_data(settings):
   scenes = {}
   devices = {}
   for f in datafiles:
-    temp_module = _load_file_as_module(f)
+    temp_module = UC.load_file_as_module(f)
     devices, scenes = temp_module.init(devices, scenes)
   if not devices: print('WARNING- no device data found.', file=sys.stderr)
   if not scenes: print('WARNING- no scene data found.', file=sys.stderr)

@@ -6,6 +6,7 @@ import context_kcore     # fix path to includes work as expected in tests
 import kcore.varz
 import kcore.uncommon as UC
 
+
 def test_capture():
     with UC.Capture(strip=False) as cap:
         print('test1')
@@ -38,7 +39,6 @@ def test_dict_of_dataclasses():
 def test_list_of_dataclasses():
     l1 = UC.ListOfDataclasses([T1('a1', 1), T1('b2', 2)])
     s = l1.to_string()
-    print(f'@@: {s}')
     l2 = UC.ListOfDataclasses()
     assert l2.from_string(s, T1) == 2
     assert l2[0].a == 'a1'
@@ -62,7 +62,12 @@ def test_exec_wrapper():
     assert UC.exec_wrapper('print(kcore.varz.VARZ["x"])', globals()).out == 'y'
 
 
-def test_gpg():
+def test_load_file_as_module():
+    m = UC.load_file_as_module('testdata/bad-filename.py')
+    assert m.data == 'hithere'
+    
+
+def test_gpg_symmetric():
     # not supported in python2
     if sys.version_info[0] == 2: return
 

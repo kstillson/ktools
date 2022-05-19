@@ -104,6 +104,16 @@ def exec_wrapper(cmd, locals=globals(), strip=True):
             return cap
 
 
+def load_file_as_module(filename, desired_module_name=None):
+  if not desired_module_name: desired_module_name = filename.replace('.py', '')
+  import importlib.machinery, importlib.util
+  loader = importlib.machinery.SourceFileLoader(desired_module_name, filename)
+  spec = importlib.util.spec_from_loader(desired_module_name, loader)
+  new_module = importlib.util.module_from_spec(spec)
+  loader.exec_module(new_module)
+  return new_module
+    
+
 # ----------------------------------------
 # GPG passthrough
 
