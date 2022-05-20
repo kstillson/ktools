@@ -11,9 +11,6 @@ BASIC_AUTH_REALM = 'homesec'
 
 # ---------- helpers
 
-def gen_basic_auth(user, password):
-    return base64.b64encode(bytes('%s:%s' % (user, password), 'utf-8')).decode('ascii')
-
 
 def authn_required(func):
     @functools.wraps(func)
@@ -29,15 +26,15 @@ def authn_required(func):
         if not auth_header: return W.Response('Please log in', 401,
                 extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
 
-        request.user = None
-        for username, password in model.get_user_login_dict().items():
-            if auth_header == 'Basic ' + gen_basic_auth(username, password):
-                request.user = username
-                C.log(f'successful basicAuth as {request.user}')
-                break
-
-        if not request.user: return W.Response('Invalid credentials', 401,
+        _, encoded = auth_header.split(' ', 1)
+        saw_username_b, saw_password_b = base64.b64decode(encoded).split(b':', 1)
+        saw_username = saw_username_b.decode()
+        saw_password = saw_password_b.decode()
+        user_db = model.get_user_login_dict()
+        if saw_username not in user_db or saw_password != user_db[saw_username]:
+            return W.Response('Invalid credentials', 401,
                 extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+        request.user = saw_username
         
         return func(*args, **kwargs)
     return wrapper_authn_required
