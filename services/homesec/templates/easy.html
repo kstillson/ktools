@@ -4,14 +4,14 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>homesec easy controls</title>
   <meta name="viewport" content="width=device-width">
-  <link href='/homesec/static/style.css' rel='stylesheet' type='text/css' media='screen' />
+  <link href='/static/style.css' rel='stylesheet' type='text/css' media='screen' />
 </head>
 <body>
 
 <script>
   function trigger(url) {
     frames[0].location.href = url;
-    setTimeout(function() { window.location.href = '/homesec/easy'; }, 2000);
+    setTimeout(function() { window.location.href = '/easy'; }, 2000);
   }
 </script>
 
@@ -19,8 +19,8 @@
   <tr>
     <td colspan='2' class='partition_default'>{{ status }}</td>
   </tr><tr>
-    <td><button onClick="trigger('/homesec/trigger/disarm')" class='disarm_button'>Disarm</button></td>
-    <td><button onClick="trigger('/homesec/trigger/arm-auto')" class='arm_button'>Arm</button></td>
+    <td><button onClick="trigger('/trigger/disarm')" class='disarm_button'>Disarm</button></td>
+    <td><button onClick="trigger('/trigger/arm-auto')" class='arm_button'>Arm</button></td>
   </tr>
 </table>
 

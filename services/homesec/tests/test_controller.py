@@ -67,7 +67,6 @@ def test_typical_sequence(setup_test):
         assert ext_mock.LAST == "ext.control('away', 'go')"
     else:
         assert ext_mock.LAST == "ext.announce('homesec armed')"
-        assert ext_mock.LAST_ARGS[0] == 'homesec armed'
 
     # An outside trigger has no effect.
     status, tracking = C.run_trigger(fake_request_dict, 'door', 'outside')

@@ -10,8 +10,8 @@ import kcore.webserver as W
 def authn_required(func):
     @functools.wraps(func)
     def wrapper_authn_required(*args, **kwargs):
-        if 'request' in kwargs: kwargs['request'].user = 'user123'
-        else: return 'ERROR: no request kwargs'
+        request = kwargs.get('request') or args[0]
+        request.user = 'user123'
         return func(*args, **kwargs)
     return wrapper_authn_required
 
@@ -19,8 +19,8 @@ def authn_required(func):
 def render(template_filename, repl):
     out = C.read_file(os.path.join('templates', template_filename), wrap_exceptions=False)
     for seek0, replace in repl.items():
-        seek = '{{ ' + seek + ' }}'
-        out = out.replace(seek, replace)
+        seek = '{{ ' + seek0 + ' }}'
+        out = out.replace(seek, str(replace))
     return out
 
 
@@ -34,7 +34,7 @@ def easy_view(request):
 
 def healthz_view(request):
   touches = model.get_friendly_touches()
-  tardy = [[t.friendly_name, t.last_update_nice] for t in tardy_touches if t.tardy]
+  tardy = [[t.friendly_name, t.last_update_nice] for t in touches if t.tardy]
   if not tardy: return 'ok'
   return H.html_page_wrap('ERROR<p/>' + H.list_to_table(tardy, title='tardy triggers'))
     
@@ -51,8 +51,11 @@ def root_view(request):
 
 def static_view(request):
   _, filename = request.path.split('/static/')
-  return C.read_file(os.path.join('static', os.path.basename(filename)),
-                     wrap_exceptions=False)
+  pathname = os.path.join('static', os.path.basename(filename))
+  if not os.path.isfile(pathname):
+      C.log_warning(f'attempt to read non-existent static file {pathname}')
+      return W.Response(404, 'file not found')
+  with open(pathname, 'rb') as f: return f.read()
     
 
 @authn_required
@@ -62,7 +65,7 @@ def status_view(request):
   for part in parts:
       tmp_class = part.state.replace('(','').replace(')','')
       html += f'''  <tr>
-    <td class='partition_{part.name}' width='50%'>{part.name}</td>
+    <td class='partition_{part.partition}' width='50%'>{part.partition}</td>
     <td class='state_{tmp_class}'>{part.state}<br/>
       <font size="-1">{part.last_update_nice}</font>
     </td>
@@ -81,7 +84,7 @@ def touchz_view(request):
   touches = []
   for t in model.get_touches():
     touches.append([t.trigger, t.value, t.last_update_nice])
-  return G.html_page_wrap(H.list_to_table(touches, title='touches'), title='last touches')
+  return H.html_page_wrap(H.list_to_table(touches, title='touches'), title='last touches')
 
 
 @authn_required

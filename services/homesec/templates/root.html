@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>homesec</title>
   <meta name="viewport" content="width=device-width">
-  <link href='/homesec/static/style.css' rel='stylesheet' type='text/css' media='screen' />
+  <link href='/static/style.css' rel='stylesheet' type='text/css' media='screen' />
 </head>
 <body>
 
@@ -18,10 +18,10 @@
   }
 
   function trigger(target, zone="") {
-      url = "https://home.point0.net/homesec/trigger/" + target;
+      url = "https://home.point0.net/trigger/" + target;
       if (zone != "") { url += "/" + zone; }
     frames[FRAME_STATUS2].location.href = url;
-    setTimeout(function() { frames[FRAME_STATUS1].location.href = "/homesec/status"; }, 1000);
+    setTimeout(function() { frames[FRAME_STATUS1].location.href = "/status"; }, 1000);
   }
 
   function camupdate() {
@@ -47,23 +47,23 @@
   }
 </script>
 
-<iframe id='status1' width='100%' height='130' frameborder='0' src='/homesec/status'></iframe>
+<iframe id='status1' width='100%' height='130' frameborder='0' src='/status'></iframe>
 
 <table><tr align="center">
-  <td><button onClick="trigger('/homesec/trigger/web/disarm')" class='disarm_button'>Disarm</button></td>
-  <td><button onClick="trigger('/homesec/trigger/web/arm-auto')">Arm-auto</button></td>
-  <td><button onClick="trigger('/homesec/trigger/web/arm-home')">Arm-home</button></td>
-  <td><button onClick="trigger('/homesec/trigger/web/arm-away')">Arm-away</button></td>
-  <td><button onClick="trigger('/homesec/trigger/panic')" class='panic_button')>PANIC</button></td>
+  <td><button onClick="trigger('/trigger/web/disarm')" class='disarm_button'>Disarm</button></td>
+  <td><button onClick="trigger('/trigger/web/arm-auto')">Arm-auto</button></td>
+  <td><button onClick="trigger('/trigger/web/arm-home')">Arm-home</button></td>
+  <td><button onClick="trigger('/trigger/web/arm-away')">Arm-away</button></td>
+  <td><button onClick="trigger('/trigger/panic')" class='panic_button')>PANIC</button></td>
   </tr><tr align="center" style="background-color:#eeeeee">
   <td>safe:</td>
-  <td><button onClick="trigger('/homesec/trigger/safe/disarm')">Disarm</button></td>
-  <td><button onClick="trigger('/homesec/trigger/safe/arm-home')">Arm-home</button></td>
-  <td><button onClick="trigger('/homesec/trigger/safe/arm-away-now')">Arm-away</button></td>
+  <td><button onClick="trigger('/trigger/safe/disarm')">Disarm</button></td>
+  <td><button onClick="trigger('/trigger/safe/arm-home')">Arm-home</button></td>
+  <td><button onClick="trigger('/trigger/safe/arm-away-now')">Arm-away</button></td>
 </tr></table>
 
 <p>Recent touches (#home={{ count_home }}): </p>
-<iframe id='touchz' width='100%' height='90' frameborder='0' src='/homesec/touchz'></iframe>
+<iframe id='touchz' width='100%' height='90' frameborder='0' src='/touchz'></iframe>
 
 <p>
 <table><tr>
@@ -75,13 +75,13 @@
 </tr></table>
 
 <br/>
-<img id='campic' width='480' height='1' border='0' src='/homesec/static/pixel.gif'>
+<img id='campic' width='480' height='1' border='0' src='/static/pixel.gif'>
 
 <p>
 <iframe id='status2' width='90%' height='100' scrolling='auto' frameborder='0'></iframe>
 
 <p>
-<button onClick="parent.location='/homesec/logout'">Logout</button>
+<button onClick="parent.location='/logout'">Logout</button>
 
 <p>Sensor last contact time:</p>
 {{ last_sensors }}

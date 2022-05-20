@@ -5,6 +5,8 @@ from email.mime.text import MIMEText
 
 import kcore.common as C
 
+DEBUG = False
+
 
 # --------------------
 # Silent alarm message data
@@ -17,14 +19,16 @@ SILENT_MSG = ('This message is generated when I trigger a silent alarm.\n\n'
               'call or text me; if I had wanted an obvious response, \n'
               'I would have triggered a noisy panic.\n\n')
 
-if True:
+if DEBUG:
   SILENT_TO = ['ken@kenstillson.com', 'tech@@point0.net']
   SILENT_SUBJ = SILENT_SUBJ.replace('URGENT', 'THIS IS A TEST - PLEASE IGNORE')
 
 # --------------------
 
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
-  C.log('announce [%s/%s]: %s: %s' % (push_level, syslog_level, msg, details))
+  msg = f'announce [{push_level}/{syslog_level}]: {msg}: {details}'
+  if DEBUG: return C.log_debug(f'ext would announce: {msg}')
+  C.log(msg)
   if speak: C.read_web('http://pi1/speak/' + msg)
   if details: msg += ': %s' % details
   if push_level: push_notification(msg, push_level)
@@ -32,6 +36,7 @@ def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
 
 
 def control(target, command='on'):
+  if DEBUG: return C.log_debug(f'ext would control {target} -> {command}')
   out = C.read_web(f'https://home.point0.net/control/{target}/{command}')
   if 'ok' in out:
     C.log(f'sent control command {target} -> {command}')
@@ -41,11 +46,16 @@ def control(target, command='on'):
 
 
 # put here so easier to mock out during testing.
-def read_web(url): return C.read_web(url)
+def read_web(url):
+  if DEBUG:
+    C.log_debug(f'ext would read_web: {url}')
+    return 'ok: debug mode; read-web skipped'
+  return C.read_web(url)
 
 
 # levels supported by client-side: alert, info, other
 def push_notification(msg, level='other'):
+  if DEBUG: return C.log_debug(f'ext would push notification {msg}@{level}')
   C.log('pushbullet sending [level={level}]: {msg}')
   if level != 'other': msg += ' !%s' % level
   ok = subprocess.call(["/usr/local/bin/pb-push", msg])
@@ -53,6 +63,7 @@ def push_notification(msg, level='other'):
 
 
 def send_emails(from_addr, to, subj, contents):
+  if DEBUG: return C.log_debug(f'ext would send email {to=} {subj=}')
   msg = MIMEText(contents)
   msg['Subject'] = subj
   msg['From'] = from_addr
@@ -67,6 +78,7 @@ def send_email(from_addr, to, subj, contents):
 
 
 def silent_panic():
+  if DEBUG: return C.log_debug(f'ext would run silent panic routine')
   C.log_crit('SILENT PANIC ACTIVATED!')
   send_emails('ken@kenstillson.com', SILENT_TO, SILENT_SUBJ, SILENT_MSG)
 
