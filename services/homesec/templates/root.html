@@ -18,7 +18,7 @@
   }
 
   function trigger(target, zone="") {
-      url = "https://home.point0.net/trigger/" + target;
+      url = "/trigger/" + target;
       if (zone != "") { url += "/" + zone; }
     frames[FRAME_STATUS2].location.href = url;
     setTimeout(function() { frames[FRAME_STATUS1].location.href = "/status"; }, 1000);
@@ -50,16 +50,16 @@
 <iframe id='status1' width='100%' height='130' frameborder='0' src='/status'></iframe>
 
 <table><tr align="center">
-  <td><button onClick="trigger('/trigger/web/disarm')" class='disarm_button'>Disarm</button></td>
-  <td><button onClick="trigger('/trigger/web/arm-auto')">Arm-auto</button></td>
-  <td><button onClick="trigger('/trigger/web/arm-home')">Arm-home</button></td>
-  <td><button onClick="trigger('/trigger/web/arm-away')">Arm-away</button></td>
-  <td><button onClick="trigger('/trigger/panic')" class='panic_button')>PANIC</button></td>
+  <td><button onClick="trigger('disarm')" class='disarm_button'>Disarm</button></td>
+  <td><button onClick="trigger('arm-auto')">Arm-auto</button></td>
+  <td><button onClick="trigger('arm-home')">Arm-home</button></td>
+  <td><button onClick="trigger('arm-away')">Arm-away</button></td>
+  <td><button onClick="trigger('panic')" class='panic_button')>PANIC</button></td>
   </tr><tr align="center" style="background-color:#eeeeee">
   <td>safe:</td>
-  <td><button onClick="trigger('/trigger/safe/disarm')">Disarm</button></td>
-  <td><button onClick="trigger('/trigger/safe/arm-home')">Arm-home</button></td>
-  <td><button onClick="trigger('/trigger/safe/arm-away-now')">Arm-away</button></td>
+  <td><button onClick="trigger('disarm/safe')">Disarm</button></td>
+  <td><button onClick="trigger('arm-home/safe')">Arm-home</button></td>
+  <td><button onClick="trigger('arm-away-now/safe')">Arm-away</button></td>
 </tr></table>
 
 <p>Recent touches (#home={{ count_home }}): </p>

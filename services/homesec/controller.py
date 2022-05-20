@@ -17,22 +17,20 @@ def get_statusz_state():
                        touches[0].value if len(touches) > 0 else '/')
 
 
-def run_trigger(request_dict, name, force_zone=None):
+def run_trigger(request_dict, name, trigger_param=None):
   '''returns (status text, tracking dict)'''
   V.bump('triggers')
   V.set('last_trigger', name)
 
   tracking = dict(request_dict)   # shallow copy; contains things like 'user'
   tracking['trigger'] = name
-  tracking['force_zone'] = force_zone
+  tracking['trigger_param'] = trigger_param
 
   tl = model.lookup_trigger(name)
-  tracking['lookup_zone'] = tl.zone if tl else 'default'
   tracking['partition'] = tl.partition if tl else 'default'
   tracking['trigger_friendly'] = tl.friendly_name if tl else None
+  tracking['zone'] = tl.zone if tl else 'default'
   
-  tracking['zone'] = force_zone or tracking['lookup_zone']
-
   # Check for too many hits from this trigger
   if squelch(tracking['trigger'], tracking['zone']): return 'squelched', tracking
 
@@ -45,6 +43,8 @@ def run_trigger(request_dict, name, force_zone=None):
   # Prep for statusz change detection
   statusz_before = get_statusz_state()
 
+  C.log(f'processing {tracking}')
+  
   # Perform requested action.
   err = take_action(tracking, tracking['action'], tracking['params'])
 
@@ -88,16 +88,16 @@ def set_state(tracking, new_state, skip_actions=False):
   for i in enter_actions: take_action(tracking, i[0], i[1])
 
 
-def schedule_trigger(request_dict, delay, then_trigger, then_force_zone=None):
+def schedule_trigger(request_dict, delay, then_trigger, then_trigger_param=None):
   '''Schedule a trigger to run after a time-delay.'''
-  C.log(f'delay {delay} then trigger {then_trigger}/{then_force_zone}')
-  t = threading.Timer(int(delay), function=run_trigger, args=(request_dict, then_trigger, then_force_zone))
+  C.log(f'delay {delay} then trigger {then_trigger}/{then_trigger_param}')
+  t = threading.Timer(int(delay), function=run_trigger, args=(request_dict, then_trigger, then_trigger_param))
   t.daemon = True
   t.start()
 
 
 def squelch(trigger, zone):
-  if zone not in ['chime', 'default', 'inside', 'outside']: return False
+  if zone not in ['chime', 'inside', 'outside', 'perimeter']: return False
   last_run = model.last_trigger_touch(trigger)
   time_since = model.now() - last_run
   if time_since < model.CONSTANTS['SQUELCH_DURATION']:
@@ -109,12 +109,13 @@ def squelch(trigger, zone):
 def subst(tracking, input_string):
   if not input_string: return ''
   out = input_string.replace('%t', tracking.get('trigger') or '?')
+  out = out.replace('%a', tracking.get('action') or '?')
   out = out.replace('%f', tracking.get('trigger_friendly') or '?')
-  out = out.replace('%z', tracking.get('zone') or '?')
+  out = out.replace('%P', tracking.get('trigger_param') or '')
+  out = out.replace('%p', tracking.get('partition') or '?')
   out = out.replace('%s', tracking.get('state') or '?')
   out = out.replace('%u', str(tracking.get('user') or '?'))
-  out = out.replace('%p', tracking.get('partition') or '?')
-  out = out.replace('%a', tracking.get('action') or '?')
+  out = out.replace('%z', tracking.get('zone') or '?')
   out = out.replace('%Ttouch', str(model.CONSTANTS['TOUCH_WINDOW_SECS']))
   out = out.replace('%Tarm',   str(model.CONSTANTS['ARM_AWAY_DELAY']))
   out = out.replace('%Ttrig',  str(model.CONSTANTS['ALARM_TRIGGERED_DELAY']))
@@ -126,7 +127,7 @@ def subst(tracking, input_string):
 def take_action(tracking, action, params):
   '''Explicit actions called for by routing table.  Return error msg or None.'''
   params = subst(tracking, params)
-  C.log(f'Taking action {action}:{params} for {tracking}')
+  C.log(f'Taking {action=} {params=}')
   
   if action == 'state':
     set_state(tracking, params)
@@ -137,7 +138,7 @@ def take_action(tracking, action, params):
     schedule_trigger(tracking, delay, then_trigger)
     
   elif action == 'touch-home':
-    user = tracking['user'] if params == 'x' else params
+    user = params or tracking['user']
     # If touch-home after alarm triggered, reset the alarm state.
     if tracking['state'] == 'alarm-triggered':
       set_state(tracking, 'arm-auto', True)  # skip transition rules: no need to announce "auto arming mode by ..."

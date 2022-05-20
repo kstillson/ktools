@@ -51,35 +51,35 @@ def test_typical_sequence(setup_test):
     assert status == 'ok'
     assert tracking == {
         'action': 'touch-away',
-        'force_zone': None,
-        'lookup_zone': 'default',
-        'params': '%u',
+        'params': '%P',
         'partition': 'default',
         'partition_start_state': 'arm-auto',
         'speak': 'homesec armed',
         'state': 'arm-home',
         'trigger': 'touch-away',
         'trigger_friendly': None,
+        'trigger_param': None,
         'zone': 'default',
         'user': 'ken', }
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
     if datetime.datetime.now().hour >= 18:
         assert ext_mock.LAST == "ext.control('away', 'go')"
     else:
-        assert ext_mock.LAST == "ext.announce('homesec armed')"
+        assert ext_mock.LAST == "ext.announce(msg)"
+        assert 'homesec armed' in ext_mock.LAST_ARGS[0]
 
     # An outside trigger has no effect.
-    status, tracking = C.run_trigger(fake_request_dict, 'door', 'outside')
+    status, tracking = C.run_trigger(fake_request_dict, 'motion_outside')
     assert status == 'ok'
     assert tracking['action'] == 'pass'
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
 
     # A duplicate trigger is squelched.
-    status, tracking = C.run_trigger(fake_request_dict, 'door', 'outside')
+    status, tracking = C.run_trigger(fake_request_dict, 'motion_outside')
     assert status == 'squelched'
 
     # An default trigger raises the alarm.
-    status, tracking = C.run_trigger(fake_request_dict, 'some-other-door')
+    status, tracking = C.run_trigger(fake_request_dict, 'front_door')
     assert status == 'ok'
     assert tracking['action'] == 'state-delay-trigger'
     assert C.get_statusz_state() == 'alarm-triggered/away/away'

@@ -41,6 +41,7 @@ def main(argv=[]):
   if args.debug:
     import ext
     ext.DEBUG = True
+    view.DEBUG = True
     C.log_warning('** DEBUG MODE ACTIVATED **')
   
   ws = W.WebServer(WEB_HANDLERS, wrap_handlers=not args.debug)

@@ -100,16 +100,17 @@ STATE_RULES = [
 # friendly names are used for vocal announcements, but also imply the is expected to be triggered regularly (i.e. can by 'tardy')
 TRIGGER_LOOKUPS = [
   #               trigger_regex   ->      zone           partition   friendly_name
-    TriggerLookup('back_door',            'default',     None,       'back door'),
-    TriggerLookup('front_door',           'chime',       None,       'front door'),
-    TriggerLookup('garage$',              'default',     None,       'door to garage'),
-    TriggerLookup('motion-cam-homesec1',  'inside',      None,       'camera motion family room'),
-    TriggerLookup('motion-cam-homesec2',  'inside',      None,       'camera motion lounge'),
-    TriggerLookup('motion_family_room',   'inside',      None,       'motion family room'),
-    TriggerLookup('motion_lounge',        'inside',      None,       'motion in lounge'),
-    TriggerLookup('panic.*',              'panic',       None,       'panic button'),
+    TriggerLookup('back_door',            'perimeter',   'default',  'back door'),
+    TriggerLookup('front_door',           'chime',       'default',  'front door'),
+    TriggerLookup('garage$',              'perimeter',   'default',  'door to garage'),
+    TriggerLookup('motion-cam-homesec1',  'inside',      'default',  'camera motion family room'),
+    TriggerLookup('motion-cam-homesec2',  'inside',      'default',  'camera motion lounge'),
+    TriggerLookup('motion_family_room',   'inside',      'default',  'motion family room'),
+    TriggerLookup('motion_lounge',        'inside',      'default',  'motion in lounge'),
+    TriggerLookup('motion_outside',       'outside',     'default',  'motion outdoors'),
+    TriggerLookup('panic.*',              'panic',       'default',  'panic button'),
     TriggerLookup('safe.*',               'safe',        'safe',     None),
-    TriggerLookup('side_door',            'default',     None,       'side door'),
+    TriggerLookup('side_door',            'perimeter',   'default',  'side door'),
 ]
 
 # Routing table for actions to take upon receiving a trigger, based on current state and trigger (and it's zone and/or partition)
@@ -147,13 +148,13 @@ TRIGGER_RULES = [
   # When in test mode, just announce triggers rather than otherwise acting on them.
     TriggerRule('test-mode'      , '*'      , '*',             '*'               , 'announce'           , 'test %f in %p'),
   # Triggers that indirectly set/influence arming state
-    TriggerRule('*'              , '*'      , '*',             'touch-home'      , 'touch-home'         , '%u'),
-    TriggerRule('*'              , '*'      , '*',             'touch-away'      , 'touch-away'         , '%u'),
-    TriggerRule('*'              , '*'      , '*',             'touch-away-delay', 'touch-away-delay'   , '%u, %Tarm'),
+    TriggerRule('*'              , '*'      , '*',             'touch-home'      , 'touch-home'         , '%P'),
+    TriggerRule('*'              , '*'      , '*',             'touch-away'      , 'touch-away'         , '%P'),
+    TriggerRule('*'              , '*'      , '*',             'touch-away-delay', 'touch-away-delay'   , '%P, %Tarm'),
   # Triggers that are actually external commands.
-    TriggerRule('*'              , '*'      , '*',             'ann'             , 'announce'           , '%z'),   # zone used as general param
+    TriggerRule('*'              , '*'      , '*',             'ann'             , 'announce'           , '%P'),
     TriggerRule('*'              , '*'      , '*',             'status'          , 'announce'           , 'status %s'),
-    TriggerRule('*'              , '*'      , '*',             'control'         , 'control'            , '%z'),   # zone used as general param
+    TriggerRule('*'              , '*'      , '*',             'control'         , 'control'            , '%P'),
   # Alarm mechanics based on zone of the trigger.
     TriggerRule('*'              , '*'      , 'panic'        , '*'               , 'state-delay-trigger', 'panic, %Tpanic, panic-timeout'),
     TriggerRule('arm-home'       , '*'      , 'inside'       , '*'               , 'pass'               , 'pass %t/%z (inside arm-home)'),

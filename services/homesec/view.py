@@ -5,6 +5,8 @@ import kcore.common as C
 import kcore.html as H
 import kcore.webserver as W
 
+DEBUG = False
+
 # ---------- helpers
 
 def authn_required(func):
@@ -37,7 +39,7 @@ def healthz_view(request):
   tardy = [[t.friendly_name, t.last_update_nice] for t in touches if t.tardy]
   if not tardy: return 'ok'
   return H.html_page_wrap('ERROR<p/>' + H.list_to_table(tardy, title='tardy triggers'))
-    
+
 
 @authn_required
 def root_view(request):
@@ -55,8 +57,9 @@ def static_view(request):
   if not os.path.isfile(pathname):
       C.log_warning(f'attempt to read non-existent static file {pathname}')
       return W.Response(404, 'file not found')
-  with open(pathname, 'rb') as f: return f.read()
-    
+  mode = 'r' if filename.endswith('.css') or filename.endswith('.html') else 'rb'
+  with open(pathname, mode) as f: return f.read()
+
 
 @authn_required
 def status_view(request):
@@ -71,7 +74,7 @@ def status_view(request):
     </td>
   </tr>
 '''
-  return H.html_page_wrap(html, 'homesec partition states')
+  return H.html_page_wrap(html, 'homesec partition states', css=['style.css'], other_heads=[])
 
 
 @authn_required
@@ -90,7 +93,11 @@ def touchz_view(request):
 @authn_required
 def trigger_view(request):
   parts = request.path.split('/')
-  trigger = parts[1]
-  force_zone = parts[2] if len(parts) > 1 else None
-  status, tracking = controller.run_trigger(request.__dict__, name, force_zone)
-  return f'{status}\n\n{tracking}'
+  _ = parts.pop(0)
+  _ = parts.pop(0)
+  trigger = parts.pop(0)
+  trigger_param = parts.pop(0) if parts else None
+  status, tracking = controller.run_trigger(request.__dict__, trigger, trigger_param)
+  out = status
+  if DEBUG: out += '\n\n' + str(tracking)
+  return out
