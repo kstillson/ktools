@@ -55,6 +55,9 @@ def get_touches(search=['ken', 'dad']):
   return [x for x in touches if x.trigger in search]
 
 
+def get_user_login_dict(): return data.USER_SECRETS
+
+  
 def last_trigger_touch(trigger):
   '''Returns int epoch seconds.'''
   for touch in get_all_touches():

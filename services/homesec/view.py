@@ -1,19 +1,44 @@
 
-import datetime, functools, os
+import base64, datetime, functools, os
 import controller, model
 import kcore.common as C
 import kcore.html as H
 import kcore.webserver as W
 
 DEBUG = False
+BASIC_AUTH_REALM = 'homesec'
+
 
 # ---------- helpers
+
+def gen_basic_auth(user, password):
+    return base64.b64encode(bytes('%s:%s' % (user, password), 'utf-8')).decode('ascii')
+
 
 def authn_required(func):
     @functools.wraps(func)
     def wrapper_authn_required(*args, **kwargs):
         request = kwargs.get('request') or args[0]
-        request.user = 'user123'
+
+        # ----- TODO: Try kcore.auth 
+
+        
+        # ----- Try basic auth
+        
+        auth_header = request.headers.get('Authorization')
+        if not auth_header: return W.Response('Please log in', 401,
+                extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+
+        request.user = None
+        for username, password in model.get_user_login_dict().items():
+            if auth_header == 'Basic ' + gen_basic_auth(username, password):
+                request.user = username
+                C.log(f'successful basicAuth as {request.user}')
+                break
+
+        if not request.user: return W.Response('Invalid credentials', 401,
+                extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+        
         return func(*args, **kwargs)
     return wrapper_authn_required
 
