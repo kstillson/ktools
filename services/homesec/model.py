@@ -107,8 +107,10 @@ def partition_states():
 
 
 def resolve_auto(state):
-  if state != 'arm-auto': return state
-  return 'arm-away' if touches_with_value('home') == 0 else 'arm-home'
+  if not 'auto' in state: return state
+  twvh = touches_with_value('home')
+  tmp = 'arm-away' if twvh == 0 else 'arm-home'
+  return tmp  
 
 
 # ---------- setters
@@ -134,7 +136,6 @@ def touch(name, value=""):
         return True
     # Not found, so make a new one.
     tdata.append(data.TouchData(name, now(), value))
-
 
 def touches_with_value(value):
   out = []

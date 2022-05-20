@@ -98,6 +98,6 @@ def trigger_view(request):
   trigger = parts.pop(0)
   trigger_param = parts.pop(0) if parts else None
   status, tracking = controller.run_trigger(request.__dict__, trigger, trigger_param)
-  out = status
+  out = str(status)
   if DEBUG: out += '\n\n' + str(tracking)
   return out

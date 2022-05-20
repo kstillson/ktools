@@ -213,12 +213,12 @@ TOUCH_DATA = CachedListData(TOUCH_DATA_FILENAME, TouchData)
 def get_list(cached_list_data):
     if not os.path.isfile(cached_list_data.filename):
         C.log_warning(f'{cached_list_data.filename} not found; starting fresh')
-        return cached_list_data.cached  # which is probably [].
+        return []
 
     # Return memory cached version if persistent store not modified.
     mtime = os.path.getmtime(cached_list_data.filename)
     if cached_list_data.cache and mtime == cached_list_data.last_mtime:
-      C.log_debug(f'returning cached {cached_list_data.filename}')
+      if False: C.log_debug(f'returning cached {cached_list_data.filename}')
       return cached_list_data.cache
 
     # Load persistent store and update local cache.
@@ -242,7 +242,7 @@ def list_saver(cached_list_data, new_data):
     if not isinstance(new_data, UC.ListOfDataclasses):
         old_data = new_data
         new_data = UC.ListOfDataclasses()
-        new_data.append(old_data)
+        new_data.extend(old_data)
     with open(cached_list_data.filename, 'w') as f: f.write(new_data.to_string())
     cached_list_data.last_mtime = os.path.getmtime(cached_list_data.filename)
     cached_list_data.cache = new_data
@@ -251,7 +251,7 @@ def list_saver(cached_list_data, new_data):
 # setter API
 @contextmanager
 def saved_list(cached_list_data):
-    data = list_loader(cached_list_data.filename, cached_list_data.datatype)
+    data = get_list(cached_list_data)
     yield data
     list_saver(cached_list_data, data)
 

@@ -94,7 +94,7 @@ def test_typical_sequence(setup_test):
     status, tracking = C.run_trigger(fake_request_dict, 'front_door')
     assert status == 'ok'
     assert tracking['action'] == 'state-delay-trigger'
-    assert C.get_statusz_state() == 'alarm-triggered/away/away'
+    assert tracking['state'] == 'alarm-triggered'
     assert ext_mock.LAST == 'ext.push_notification(msg, level)'
     assert 'alarm triggered' in ext_mock.LAST_ARGS[0]
 

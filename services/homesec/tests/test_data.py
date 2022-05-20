@@ -37,7 +37,7 @@ def test_touch_data_getter(setup_test):
     assert td[1].last_update == 456
 
 
-def test_saved_list_setter(tmp_path):
+def test_saved_list_setter(setup_test, tmp_path):
     filename = tmp_path / "touchdata"
     D.TOUCH_DATA.filename = filename
     D.TOUCH_DATA.cache = None
