@@ -241,12 +241,12 @@ def timestr():
 # ---------- So callers don't need to import logging...
 
 
-def log_crit(msg):    log(msg, level=CRITICAL)
-def log_alert(msg):   log(msg, level=CRITICAL)
-def log_error(msg):   log(msg, level=ERROR)
-def log_warning(msg): log(msg, level=WARNING)
-def log_info(msg):    log(msg, level=INFO)
-def log_debug(msg):   log(msg, level=DEBUG)
+def log_crit(msg):    return log(msg, level=CRITICAL)
+def log_alert(msg):   return log(msg, level=CRITICAL)
+def log_error(msg):   return log(msg, level=ERROR)
+def log_warning(msg): return log(msg, level=WARNING)
+def log_info(msg):    return log(msg, level=INFO)
+def log_debug(msg):   return log(msg, level=DEBUG)
 
 
 # ----------
