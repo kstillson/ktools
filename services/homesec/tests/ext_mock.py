@@ -1,49 +1,19 @@
 
-import sys
-from dataclasses import dataclass
+import inspect, sys
 
-@dataclass
-class LastCall:
-  method: str
-  args: list
-  kwargs: dict
-  def __post_init__(self):
-    print(f'Last call: {self.method}, args={self.args}, kwargs={self.kwargs}', file=sys.stderr)
-    
 LAST = None
+LAST_ARGS = None
+
+def generalized_mock(*args, **kwargs):
+  global LAST, LAST_ARGS
+  LAST = inspect.stack()[1].code_context[0].strip()
+  LAST_ARGS = args
+  print(f'ext_mock call: {LAST}; args={LAST_ARGS}', file=sys.stderr)
 
 
-def announce(*args, **kwargs):
-  global LAST
-  LAST = LastCall('announce', args, kwargs)
-
-
-def control(*args, **kwargs):
-  global LAST
-  LAST = LastCall('control', args, kwargs)
-
-
-def push_notification(*args, **kwargs):
-  global LAST
-  LAST = LastCall('push_notification', args, kwargs)
-
-
-def read_web(*args, **kwargs):
-  global LAST
-  LAST = LastCall('read_web', args, kwargs)
-
-  
-def send_emails(*args, **kwargs):
-  global LAST
-  LAST = LastCall('send_emails', args, kwargs)
-
-
-def send_email(*args, **kwargs):
-  global LAST
-  LAST = LastCall('send_email', args, kwargs)
-
-
-def silent_panic(*args, **kwargs):
-  global LAST
-  LAST = LastCall('silent_panic', args, kwargs)
+import ext
+for funcname in dir(ext):
+  lead = funcname[0]
+  if lead.isupper() or lead == '_': continue
+  vars()[funcname] = generalized_mock
 

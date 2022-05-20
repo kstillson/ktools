@@ -1,7 +1,7 @@
 
 import context_homesec     # fix path to includes work as expected in tests
 
-import os, shutil, tempfile, time
+import datetime, os, shutil, tempfile, time
 
 import kcore.common as common
 
@@ -19,7 +19,7 @@ C.ext = ext_mock
 def setup_test():
     # Log to stdout (for easier test debugging)
     common.init_log('debug log', '-')
-    
+
     # Test-friendly timing changes.
     C.model.data.CONSTANTS['ALARM_TRIGGERED_DELAY'] = 1
     C.model.data.CONSTANTS['ALARM_DURATION'] = 2
@@ -33,11 +33,11 @@ def setup_test():
     dest = tmpdir + '/test-touch.data'
     shutil.copyfile('testdata/test-touch.data', dest)
     C.model.data.TOUCH_DATA_FILENAME = dest
-    
+
     yield tmpdir
     shutil.rmtree(tmpdir)
 
-    
+
 # ---------- tests
 
 def test_typical_sequence(setup_test):
@@ -63,8 +63,11 @@ def test_typical_sequence(setup_test):
         'zone': 'default',
         'user': 'ken', }
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
-    assert ext_mock.LAST.method == 'announce'
-    assert ext_mock.LAST.args == ('homesec armed',)
+    if datetime.datetime.now().hour >= 18:
+        assert ext_mock.LAST == "ext.control('away', 'go')"
+    else:
+        assert ext_mock.LAST == "ext.announce('homesec armed')"
+        assert ext_mock.LAST_ARGS[0] == 'homesec armed'
 
     # An outside trigger has no effect.
     status, tracking = C.run_trigger(fake_request_dict, 'door', 'outside')
@@ -75,24 +78,25 @@ def test_typical_sequence(setup_test):
     # A duplicate trigger is squelched.
     status, tracking = C.run_trigger(fake_request_dict, 'door', 'outside')
     assert status == 'squelched'
-    
+
     # An default trigger raises the alarm.
     status, tracking = C.run_trigger(fake_request_dict, 'some-other-door')
     assert status == 'ok'
     assert tracking['action'] == 'state-delay-trigger'
     assert C.get_statusz_state() == 'alarm-triggered/away/away'
-    assert ext_mock.LAST.method == 'push_notification'
-    assert 'triggered' in ext_mock.LAST.args[0]
-    
+    assert ext_mock.LAST == 'ext.push_notification(msg, level)'
+    assert 'alarm triggered' in ext_mock.LAST_ARGS[0]
+
     time.sleep(0.7)
     if 'triggered' in C.get_statusz_state(): time.sleep(0.7)
     assert C.get_statusz_state() == 'alarm/away/away'
-    assert ext_mock.LAST.method == 'read_web'
-    assert 'panic' in ext_mock.LAST.args[0]
+    assert ext_mock.LAST == "C.log('httpget action returned: %s' % ext.read_web(params))"
+    assert '/panic' in ext_mock.LAST_ARGS[0]
 
     time.sleep(1.5)
     if 'alarm/' in C.get_statusz_state(): time.sleep(0.8)
     if 'alarm/' in C.get_statusz_state(): time.sleep(0.8)
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
-    assert ext_mock.LAST.method == 'push_notification'
-    assert 'automatic arming mode' in ext_mock.LAST.args[0]
+    assert ext_mock.LAST == 'ext.push_notification(msg, level)'
+    assert 'automatic arming mode' in ext_mock.LAST_ARGS[0]
+

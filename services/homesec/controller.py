@@ -178,7 +178,7 @@ def take_action(tracking, action, params):
     if model.touches_with_value('home') == 1:
       msg += ', system will arm in %s seconds' % delay
     ext.announce(msg)
-    schedule_trigger(tracking, delay, 'touch-away', tracking) ## TODO- user?
+    schedule_trigger(tracking, delay, 'touch-away', tracking)
   elif action == 'pass':
     pass
 
