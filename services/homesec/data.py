@@ -1,4 +1,5 @@
-import datetime, os, re, sys
+
+import datetime, os, re, typing
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -23,7 +24,7 @@ class StateRule:
     action: str
     params: str = ''
 
-    
+
 @dataclass
 class TriggerLookup:
     trigger_regex: str
@@ -42,7 +43,7 @@ class TriggerRule:
     trigger: str
     action: str
     params: str = ''
-    
+
 
 # ---------- hard-coded constants
 
@@ -181,7 +182,7 @@ class PartitionState:
 
     def __post_init__(self): self.last_update_nice = nice_time(self.last_update)
 
-    
+
 @dataclass
 class TouchData:
     trigger: str      # key
@@ -191,40 +192,71 @@ class TouchData:
     def __post_init__(self): self.last_update_nice = nice_time(self.last_update)
 
 
+# ---------- generic dynamic data getter
+
+@dataclass
+class CachedListData:
+  filename: str
+  datatype: typing.Any      # actually the class of the datatype
+  last_mtime: float = 0.0
+  cache: typing.Any = None  # actually a list of type datatype
+  def __post_init__(self): self.cache = []
+
+
 PARTITION_STATE_FILENAME = 'data/partition_state.data'
 TOUCH_DATA_FILENAME = 'data/touch.data'
 
-
-# ---------- specific dynamic data loaders
-
-def get_partition_state_data():
-    return list_loader(PARTITION_STATE_FILENAME, PartitionState)
-
-def get_touch_data():
-    return list_loader(TOUCH_DATA_FILENAME, TouchData)
+PARTITION_STATE = CachedListData(PARTITION_STATE_FILENAME, PartitionState)
+TOUCH_DATA = CachedListData(TOUCH_DATA_FILENAME, TouchData)
 
 
-# ---------- generic dynamic data persistance methods
+def get_list(cached_list_data):
+    if not os.path.isfile(cached_list_data.filename):
+        C.log_warning(f'{cached_list_data.filename} not found; starting fresh')
+        return cached_list_data.cached  # which is probably [].
+
+    # Return memory cached version if persistent store not modified.
+    mtime = os.path.getmtime(cached_list_data.filename)
+    if cached_list_data.cache and mtime == cached_list_data.last_mtime:
+      C.log_debug(f'returning cached {cached_list_data.filename}')
+      return cached_list_data.cache
+
+    # Load persistent store and update local cache.
+    cached_list_data.cache = list_loader(cached_list_data.filename, cached_list_data.datatype)
+    cached_list_data.last_mtime = mtime
+    return cached_list_data.cache
+
 
 def list_loader(filename, dataclass):
+    C.log_debug(f'loading list from {filename}')
     data = UC.ListOfDataclasses()
     data.from_string(C.read_file(filename) or '', dataclass)
-    if not data: print(f'@@ WARNING- {filename} returned no data', file=sys.stderr)
+    if not data: C.log_warning(f'{filename} returned no data; starting blank')
     return data
 
 
-def list_saver(filename, data):
-    if not isinstance(data, UC.ListOfDataclasses):
-        old_data = data
-        data = UC.ListOfDataclasses()
-        data.update(old_data)
-    with open(filename, 'w') as f: f.write(data.to_string())
-        
+# ---------- generic dynamic data setter
 
+def list_saver(cached_list_data, new_data):
+    C.log_debug(f'saving list to {cached_list_data.filename}')
+    if not isinstance(new_data, UC.ListOfDataclasses):
+        old_data = new_data
+        new_data = UC.ListOfDataclasses()
+        new_data.append(old_data)
+    with open(cached_list_data.filename, 'w') as f: f.write(new_data.to_string())
+    cached_list_data.last_mtime = os.path.getmtime(cached_list_data.filename)
+    cached_list_data.cache = new_data
+
+
+# setter API
 @contextmanager
-def saved_list(filename, dataclass):
-    data = list_loader(filename, dataclass)
+def saved_list(cached_list_data):
+    data = list_loader(cached_list_data.filename, cached_list_data.datatype)
     yield data
-    list_saver(filename, data)
+    list_saver(cached_list_data, data)
 
 
+# ---------- getter API: bind generics to specifics
+
+def get_partition_state_data(): return get_list(PARTITION_STATE)
+def get_touch_data(): return get_list(TOUCH_DATA)

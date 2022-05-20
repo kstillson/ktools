@@ -12,7 +12,7 @@ import kcore.varz as V
 def get_statusz_state():
   arm_state = model.partition_state_resolve_auto('default')
   touches = model.get_touches()
-  return '%s/%s/%s' % (arm_state, 
+  return '%s/%s/%s' % (arm_state,
                        touches[1].value if len(touches) > 1 else '?',
                        touches[0].value if len(touches) > 0 else '/')
 
@@ -30,7 +30,7 @@ def run_trigger(request_dict, name, trigger_param=None):
   tracking['partition'] = tl.partition if tl else 'default'
   tracking['trigger_friendly'] = tl.friendly_name if tl else None
   tracking['zone'] = tl.zone if tl else 'default'
-  
+
   # Check for too many hits from this trigger
   if squelch(tracking['trigger'], tracking['zone']): return 'squelched', tracking
 
@@ -44,7 +44,7 @@ def run_trigger(request_dict, name, trigger_param=None):
   statusz_before = get_statusz_state()
 
   C.log(f'processing {tracking}')
-  
+
   # Perform requested action.
   err = take_action(tracking, tracking['action'], tracking['params'])
 
@@ -57,7 +57,7 @@ def run_trigger(request_dict, name, trigger_param=None):
       C.log_error('error: unexpected status sending hs-mud update: %s' % status)
 
   # last action tracking
-  if tracking['action'] and tracking['action'].find('touch') < 0 and tracking['zone'] != 'control': 
+  if tracking['action'] and tracking['action'].find('touch') < 0 and tracking['zone'] != 'control':
     model.touch(tracking['trigger'])
 
   V.set('last_action', tracking['action'])
@@ -128,15 +128,15 @@ def take_action(tracking, action, params):
   '''Explicit actions called for by routing table.  Return error msg or None.'''
   params = subst(tracking, params)
   C.log(f'Taking {action=} {params=}')
-  
+
   if action == 'state':
     set_state(tracking, params)
-    
+
   elif action == 'state-delay-trigger':
     new_state, delay, then_trigger = params.split(', ')
     if new_state != '-': set_state(tracking, new_state)
     schedule_trigger(tracking, delay, then_trigger)
-    
+
   elif action == 'touch-home':
     user = params or tracking['user']
     # If touch-home after alarm triggered, reset the alarm state.
@@ -152,7 +152,7 @@ def take_action(tracking, action, params):
       ext.control('home', 'go')
     tracking['speak'] = msg
     ext.announce(msg)
-    
+
   elif action == 'touch-away':
     user = params or tracking['user']
     if model.get_touch_status_for(user) == 'away':
@@ -169,7 +169,7 @@ def take_action(tracking, action, params):
         ext.control('away', 'go')
     else:
       tracking['speak'] = '%s is away' % user
-      
+
   elif action == 'touch-away-delay':
     user, delay = params.split(', ')
     if not user or user == 'x': user = tracking['user']
@@ -194,7 +194,7 @@ def take_action(tracking, action, params):
     else: level = 'other'
     if level != 'other':
       ext.push_notification(msg, level)
-      
+
   elif action == 'control':
     unit, state = params.replace('+', ' ').replace('%20', ' ').split(', ')
     return ext.control(unit, state)
@@ -207,10 +207,10 @@ def take_action(tracking, action, params):
 
   elif action == 'silent-panic':
     ext.silent_panic()
-    
+
   elif action == 'httpget':
     C.log('httpget action returned: %s' % ext.read_web(params))
-    
+
   else:
     msg = 'Unknown action: %s' % tracking
     C.log_error(msg)

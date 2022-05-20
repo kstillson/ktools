@@ -27,6 +27,12 @@ def get_friendly_touches():
   return out
 
 
+def get_state(partition='default'):
+  for p in data.get_partition_state_data():
+    if p.partition == partition: return p.state
+  return None
+
+
 def get_state_rules(partition, transition, state):
   '''returns list of (action, params) pairs.  transition is 'enter' or 'leave'.'''
   answer = []
@@ -108,7 +114,7 @@ def resolve_auto(state):
 # ---------- setters
 
 def set_partition_state(partition, new_state):
-  with data.saved_list(data.PARTITION_STATE_FILENAME, data.PartitionState) as pdata:
+  with data.saved_list(data.PARTITION_STATE) as pdata:
     for ps in pdata:
       if ps.partition == partition:
         ps.state = new_state
@@ -120,7 +126,7 @@ def set_partition_state(partition, new_state):
 
 
 def touch(name, value=""):
-  with data.saved_list(data.TOUCH_DATA_FILENAME, data.TouchData) as tdata:
+  with data.saved_list(data.TOUCH_DATA) as tdata:
     for t in tdata:
       if t.trigger == name:
         t.last_update = now()
@@ -129,7 +135,7 @@ def touch(name, value=""):
     # Not found, so make a new one.
     tdata.append(data.TouchData(name, now(), value))
 
-  
+
 def touches_with_value(value):
   out = []
   for t in data.get_touch_data():

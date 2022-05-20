@@ -20,7 +20,7 @@ SILENT_MSG = ('This message is generated when I trigger a silent alarm.\n\n'
               'I would have triggered a noisy panic.\n\n')
 
 if DEBUG:
-  SILENT_TO = ['ken@kenstillson.com', 'tech@@point0.net']
+  SILENT_TO = ['ken@kenstillson.com', 'tech@point0.net']
   SILENT_SUBJ = SILENT_SUBJ.replace('URGENT', 'THIS IS A TEST - PLEASE IGNORE')
 
 # --------------------
