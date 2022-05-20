@@ -1,10 +1,15 @@
 '''HTML generators: A few functions that take in strings and output HTML.'''
 
 # in: html body as string.  out: same, wrapped in html and body headers.
-def html_page_wrap(body_contents, title=''):
-    out = '<html>\n<head>\n  <title>%s</title>\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n' % title
+def html_page_wrap(body_contents, title='', css=[],
+                   other_heads=['<meta name="viewport" content="width=device-width, initial-scale=1">']):
+    out = f'<html>\n <head>\n'
+    if title: out += f'  <title>{title}</title>\n'
+    for i in css: out += f"  <link href='/static/{i}' rel='stylesheet' type='text/css' media='screen' />"
+    for h in other_heads: out += f'  {h}\n'
+    out += ' </head>\n <body>\n'
     out += body_contents
-    out += '</body>\n</html>\n'
+    out += ' </body>\n</html>\n'
     return out
 
 

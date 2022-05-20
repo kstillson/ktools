@@ -64,7 +64,7 @@ install-wheel:
 # directly info to ~/.local.  This has some hard-coded path assumptions, and
 # won't automatically pick up new subdirs, so it might not work at all for you.
 # But when making lots of changes, this is quicker (when it works).
-install-simple:
+install-simple: tools/keymaster.crt
 	rm -rf */__pycache__ */.pytest_cache
 	mkdir -p $(LOCAL_SITE_DIR) ~/.local/bin
 	# circuitpy_sim
