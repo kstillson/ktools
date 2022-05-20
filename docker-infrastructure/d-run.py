@@ -131,6 +131,10 @@ def map_dir(destdir, name, include_tree=False, include_files=False):
         clone_dir(destdir, mapped)
         return mapped
     # Copy over everything; trimming exsting files' contents if requested.
+    if not os.path.isdir(destdir):
+        # Nothing to copy, just create dest dir. (Ownership/perms might be wrong...)
+        os.mkdir(mapped)
+        return mapped
     cmd = ['/bin/cp', '-a' ]
     if not include_files: cmd.append('--attributes-only')
     cmd.extend([destdir, mapped])

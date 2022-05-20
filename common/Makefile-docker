@@ -22,7 +22,7 @@ docker-uninstall:
 	@echo ":uninstall target doesn't really make sense for docker containers."
 
 docker-update: all docker-test docker-install
-	if [[ -f autostart ]]; then d 01 $(shell basename $(shell pwd)); fi
+
 
 # ----------
 
