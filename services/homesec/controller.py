@@ -52,7 +52,7 @@ def run_trigger(request_dict, name, trigger_param=None):
   statusz_after = get_statusz_state()
   if statusz_before != statusz_after:
     C.log('sending statusz update: ' + statusz_after)
-    status = C.read_web('http://hs-mud:8080/update?' + statusz_after)
+    status = ext.read_web('http://hs-mud:8080/update?' + statusz_after)
     if status != 'ok':
       C.log_error('error: unexpected status sending hs-mud update: %s' % status)
 

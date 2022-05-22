@@ -74,11 +74,8 @@ def test_typical_sequence(setup_test):
         'zone': 'default',
         'user': 'ken', }
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
-    if datetime.datetime.now().hour >= 18:
-        assert ext_mock.LAST == "ext.control('away', 'go')"
-    else:
-        assert ext_mock.LAST == "ext.announce(msg)"
-        assert 'homesec armed' in ext_mock.LAST_ARGS[0]
+    assert ext_mock.LAST == "status = ext.read_web('http://hs-mud:8080/update?' + statusz_after)"
+    assert ext_mock.LAST_ARGS[0] == 'http://hs-mud:8080/update?arm-away(auto)/away/away'
 
     # An outside trigger has no effect.
     status, tracking = C.run_trigger(fake_request_dict, 'motion_outside')
@@ -95,16 +92,14 @@ def test_typical_sequence(setup_test):
     assert status == 'ok'
     assert tracking['action'] == 'state-delay-trigger'
     assert tracking['state'] == 'alarm-triggered'
-    assert ext_mock.LAST == 'ext.push_notification(msg, level)'
-    assert 'alarm triggered' in ext_mock.LAST_ARGS[0]
+    assert ext_mock.LAST == "status = ext.read_web('http://hs-mud:8080/update?' + statusz_after)"
+    assert ext_mock.LAST_ARGS[0] == 'http://hs-mud:8080/update?alarm-triggered/away/away'
 
     assert wait_for_state('alarm')
     assert C.get_statusz_state() == 'alarm/away/away'
-    assert ext_mock.LAST == "C.log('httpget action returned: %s' % ext.read_web(params))"
-    assert '/panic' in ext_mock.LAST_ARGS[0]
 
     assert wait_for_state('arm-auto')
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
-    assert ext_mock.LAST == 'ext.push_notification(msg, level)'
-    assert 'automatic arming mode' in ext_mock.LAST_ARGS[0]
+    assert ext_mock.LAST == "status = ext.read_web('http://hs-mud:8080/update?' + statusz_after)"
+    assert ext_mock.LAST_ARGS[0] == 'http://hs-mud:8080/update?arm-away(auto)/away/away'
 
