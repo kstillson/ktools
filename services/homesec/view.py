@@ -1,6 +1,7 @@
 
 import base64, datetime, functools, os
 import controller, model
+import kcore.auth as A
 import kcore.common as C
 import kcore.html as H
 import kcore.webserver as W
@@ -17,25 +18,26 @@ def authn_required(func):
     def wrapper_authn_required(*args, **kwargs):
         request = kwargs.get('request') or args[0]
 
-        # ----- TODO: Try kcore.auth 
+        # ----- Try kcore.auth
 
-        
+        # @@
+
         # ----- Try basic auth
-        
+
         auth_header = request.headers.get('Authorization')
         if not auth_header: return W.Response('Please log in', 401,
                 extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
 
         _, encoded = auth_header.split(' ', 1)
-        saw_username_b, saw_password_b = base64.b64decode(encoded).split(b':', 1)
-        saw_username = saw_username_b.decode()
-        saw_password = saw_password_b.decode()
-        user_db = model.get_user_login_dict()
-        if saw_username not in user_db or saw_password != user_db[saw_username]:
+        provided_username_b, provided_password_b = base64.b64decode(encoded).split(b':', 1)
+        provided_username = provided_username_b.decode()
+        provided_password = provided_password_b.decode()
+
+        if not model.check_user_password(provided_username, provided_password):
             return W.Response('Invalid credentials', 401,
                 extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
-        request.user = saw_username
-        
+
+        request.user = provided_username
         return func(*args, **kwargs)
     return wrapper_authn_required
 
@@ -63,14 +65,20 @@ def healthz_view(request):
   return H.html_page_wrap('ERROR<p/>' + H.list_to_table(tardy, title='tardy triggers'))
 
 
+def logout_view(request):
+    if request.headers.get('Authorization'):
+        return W.Response('Please log in', 401, extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+    return H.redirect('/')
+
+
 @authn_required
 def root_view(request):
   last = []
   for t in model.get_friendly_touches():
-    last.append([t.trigger, t.friendly_name, t.last_update_nice, 'tardy' if t.tardy else ''])
+    last.append([t.friendly_name, t.last_update_nice, 'tardy' if t.tardy else ''])
   return render('root.html',
     {'count_home': model.touches_with_value('home'),
-     'last_sensors': H.list_to_table(last), })
+     'last_sensors': H.list_to_table(last) })
 
 
 def static_view(request):
@@ -123,3 +131,15 @@ def trigger_view(request):
   out = str(status)
   if DEBUG: out += '\n\n' + str(tracking)
   return out
+
+
+def user_view(request):
+  if not request.post_params: return '''
+<html><body><form action="" method="POST">\n
+username <input name="username"><br/>
+password <input name="password"><br/>
+<input type="submit">
+</form></body></html>'''
+  return model.hash_user_password(request.post_params.get('username'),
+                                  request.post_params.get('password'))
+

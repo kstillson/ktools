@@ -24,11 +24,6 @@ def test_post_init(setup_test):
     assert not tl.re.match('def')
 
 
-# TODO: requires a prep stage to populate an example private.d file.
-def test_user_secrets(setup_test):
-    assert len(D.USER_SECRETS) > 0
-
-
 def test_touch_data_getter(setup_test):
     D.TOUCH_DATA.filename = 'testdata/test-touch.data'
     D.TOUCH_DATA.cache = None

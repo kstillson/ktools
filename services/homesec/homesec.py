@@ -9,14 +9,16 @@ import kcore.webserver as W
 
 
 WEB_HANDLERS = {
-    '/$':         view.root_view,
-    '/easy':      view.easy_view,
-    '/healthz':   view.healthz_view,
-    '/static.*':  view.static_view,
-    '/status':    view.status_view,
-    '/statusz':   view.statusz_view,
-    '/touchz':    view.touchz_view,
-    '/trigger.*': view.trigger_view,
+  '/$':         view.root_view,
+  '/easy':      view.easy_view,
+  '/healthz':   view.healthz_view,
+  '/logout':    view.logout_view,
+  '/static.*':  view.static_view,
+  '/status':    view.status_view,
+  '/statusz':   view.statusz_view,
+  '/touchz':    view.touchz_view,
+  '/trigger.*': view.trigger_view,
+  '/user':      view.user_view,
 }
 
 
