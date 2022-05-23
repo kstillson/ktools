@@ -51,7 +51,7 @@ if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="kmdock:4443"; else KMHOST="jack:
 KM="https://${KMHOST}"
 
 DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"
-GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /home/ken/bin /rw/dv/webdock/home/ken/homesec"
+GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /rw/dv/webdock/home/ken/homesec"
 KMD="/root/docker/dev/kmdock"
 KMD_P="/root/docker-dev/kmdock/files/home/km/km.data.gpg"
 LIST_LINUX="a1 blue jack mc2 "
