@@ -254,7 +254,7 @@ def main(argv=[]):
       '/':             km_root_handler,
       None:            km_default_handler,
   }
-  ws = W.WebServer(handlers, wrap_handlers=False) ##@@ temp
+  ws = W.WebServer(handlers, wrap_handlers=not args.debug)
 
   ws.start(port=args.port, background=False,
            tls_cert_file=args.certkeyfile, tls_key_file=args.certkeyfile)
