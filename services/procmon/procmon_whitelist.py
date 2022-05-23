@@ -1,4 +1,3 @@
-
 from procmon_wl_type import WL
 
 #      Container    user           child? rqrd?  regex
@@ -17,9 +16,9 @@ WHITELIST = [
     WL('/',         'nobody',      False, True,  '/usr/local/bin/dhcp-helper -e eth1 -s 192.168.2.2'),
     WL('/',         'ntp',         False, False, '/usr/sbin/ntpd -p /var/run/ntpd.pid'),
     WL('/',         'root',        False, False, '.*chmod 644 /var/run/dmap'),
+    WL('/',         'root',        False, False, '/bin/(ba)?sh -c test -x /usr/sbin/anacron'),
     WL('/',         'root',        False, False, '/bin/(ba)?sh( -c)? */root/bin/d-run --cd rclonedock --fg --settings'),
     WL('/',         'root',        False, False, '/bin/login'),
-    WL('/',         'root',        False, False, '/bin/sh -c test -x /usr/sbin/anacron'),
     WL('/',         'root',        False, False, '/bin/systemd-tty-ask-password-agent'),
     WL('/',         'root',        False, False, '/sbin/agetty .*noclear tty1 linux'),
     WL('/',         'root',        False, False, '/sbin/fstrim --fstab'),
@@ -32,12 +31,10 @@ WHITELIST = [
     WL('/',         'root',        False, False, '/usr/lib/openssh/sftp-server'),
     WL('/',         'root',        False, False, '/usr/sbin/CRON -f'),
     WL('/',         'root',        False, False, '/usr/sbin/sendmail -i -FCronDaemon'),
-#    WL('/',         'root',        False, False, '/usr/sbin/thermald --no-daemon --dbus-enable'),
     WL('/',         'root',        False, False, 'containerd-shim'),
     WL('/',         'root',        False, False, 'ddclient'),
     WL('/',         'root',        False, False, 'docker ps --format'),
     WL('/',         'root',        False, False, 'docker-containerd --config /var/run/docker/containerd/containerd.toml'),
-#    WL('/',         'root',        False, False, 'setup-resolver'),
     WL('/',         'root',        False, False, 'sleep'),
     WL('/',         'root',        False, False, 'sshd: root@notty'),
     WL('/',         'root',        False, True,  '/lib/systemd/systemd-journald'),
@@ -134,6 +131,8 @@ WHITELIST = [
     WL('webdock',   '200033',      False, False, '/usr/lib/nagios/cgi-bin/status.cgi'),
     WL('webdock',   '200033',      False, True,  '/usr/sbin/httpd'),
 ]
+#    WL('/',         'root',        False, False, '/usr/sbin/thermald --no-daemon --dbus-enable'),
+#    WL('/',         'root',        False, False, 'setup-resolver'),
 
 #      Container    user           child? rqrd?  regex
 GREYLIST = [
@@ -145,4 +144,3 @@ GREYLIST = [
     WL('ssh',       'root',        False, False,  'sshd: ken'),
     WL('web',       'www-data',    False, False,  'sh'),
 ]
-

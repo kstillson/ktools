@@ -550,17 +550,20 @@ function procmon_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     t=$(gettemp procmon-queue-sorted)
     sort -u < $PROCQ > $t
-    emacs /home/ken/bin/procmon_wl.csv $t
-    /home/ken/bin/procmon -t | tee $t
+    cd /root/dev/ktools/services/procmon
+    emacs procmon_whitelist.py $t
+    ./procmon -t | tee $t
     last=$(tail -1 $t)
     rm -f $t
-    if [[ "$last" != "[]" ]]; then
+    if [[ "$last" != "all ok" ]]; then
         echoc yellow "SCAN DOESN'T LOOK CLEAN; NOT RESTARTING PROCMON."
         return
     fi
     echo "updating procmon and clearing queue..."
-    runner "systemctl restart procmon"
+    runner "make install"
     runner ":>$PROCQ"
+    runner "systemctl restart procmon"
+    echoc green "procmon restarted; ready for git commit in /root/dev/ktools/services/procmon"
 }
 
 # push an update of the tools_pylib wheel distribute to select RPI's
