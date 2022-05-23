@@ -43,6 +43,7 @@ def main():
     # and leave the system locked due to a source IP check failure.
     d_lib.web_expect('ok', ip, '/load', post_params={'password': 'test123'}, port=4444, https=True, verify_ssl=False)
     answer = kmc.query_km('nonexistent-key', override_hostname='*', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    print(f'@@ {kmc.__file__} {answer=}')
     if not 'ERROR: no such key' in answer: d_lib.abort('got unexpected answer for non-existent key: %s' % answer)
 
     # The system should now be locked.

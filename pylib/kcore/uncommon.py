@@ -24,15 +24,16 @@ class DictOfDataclasses(dict):
     '''
     def to_string(self):
         dict2 = {k: str(v) for k, v in self.items()}
-        return '\n'.join([f'{k} = {v}' for k, v in dict2.items()])
+        return '\n'.join([f"'{k}': {v}" for k, v in dict2.items()])
 
     def from_string(self, s, dataclass_type):
         locals = { dataclass_type.__name__: dataclass_type }
         count = 0
         for line in s.split('\n'):
             if not line or line.startswith('#'): continue
-            if not ' = ' in line: continue
-            k, v_str = line.split(' = ', 1)
+            if not ': ' in line: continue
+            k, v_str = line.split(': ', 1)
+            k = k.replace("'", "").replace('"', '')
             self[k] = eval(v_str, {}, locals)
             count += 1
         return count
@@ -112,7 +113,7 @@ def load_file_as_module(filename, desired_module_name=None):
   new_module = importlib.util.module_from_spec(spec)
   loader.exec_module(new_module)
   return new_module
-    
+
 
 # ----------------------------------------
 # GPG passthrough

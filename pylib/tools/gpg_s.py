@@ -50,6 +50,7 @@ def main(argv=[]):
   decrypt = '.gpg' in args.filename
 
   blob2 = UC.gpg_symmetric(blob, pswd, decrypt)
+  if blob2.startswith('ERROR'): sys.exit(blob2)
 
   outname = args.filename.replace('.gpg', '') if decrypt else args.filename + '.gpg'
   with open(outname, 'w') as f: f.write(blob2)

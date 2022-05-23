@@ -25,6 +25,7 @@ def test_basic_operation():
     use_hostname = 'myhostname'
     use_password = 'password123'
     use_username = 'myusername'
+    use_dbpasswd = 'dbpasswd'
     use_time = int(time.time())
 
     # ---------- simple standard successful use-case
@@ -38,42 +39,42 @@ def test_basic_operation():
     assert len(s_hash) > 10
 
     # registration phase - server
-    A.register(sec, None)
+    A.register(sec, db_passwd=use_dbpasswd, db_filename=None)
 
     # client side - generate token
     token = A.generate_token(use_command, use_hostname, use_username, use_password, use_time)
 
     # server side - check token
-    ok, status, hostname, username, sent_time = A.validate_token(token, use_command, use_hostname)
-    # print('results: %s, %s, %s, %s, %s' % (ok, status, hostname, username, sent_time))
-    assert ok
-    assert status == 'ok'
-    assert hostname == use_hostname
-    assert username == use_username
-    assert sent_time == use_time
+    rslt = A.validate_token(token, use_command, use_hostname, use_dbpasswd)
+    # print('results: %s' % rslt)
+    assert rslt.ok
+    assert rslt.status == 'ok'
+    assert rslt.registered_hostname == use_hostname
+    assert rslt.username == use_username
+    assert rslt.sent_time == use_time
 
     # ---------- confirm reply prevention
 
-    ok, status, hostname, username, sent_time = A.validate_token(token, use_command, use_hostname)
-    assert not ok
-    assert 'not later' in status
-    assert hostname == use_hostname
-    assert username == use_username
-    assert sent_time == use_time
+    rslt = A.validate_token(token, use_command, use_hostname, use_dbpasswd)
+    assert not rslt.ok
+    assert 'not later' in rslt.status
+    assert rslt.registered_hostname == use_hostname
+    assert rslt.username == use_username
+    assert rslt.sent_time == use_time
 
     # ---------- confirm disable reply prevention
 
     shared_secret = A.get_shared_secret_from_db(use_hostname, use_username)
     assert shared_secret is not None
-    ok, status, hostname, username, sent_time = A.validate_token_given_shared_secret(token, use_command, shared_secret, use_hostname, False, None)
-    assert ok
+    rslt = A.validate_token_given_shared_secret(token, use_command, shared_secret, use_hostname, False, None)
+    assert rslt.ok
 
     # ---------- confirm single byte command change breaks verification
 
     bad_command = use_command.replace('c', 'x')
-    ok, status, hostname, username, sent_time = A.validate_token_given_shared_secret(token, bad_command, shared_secret, use_hostname, False, None)
-    assert not ok
-    assert 'Token fails' in status
+    rslt = A.validate_token_given_shared_secret(token, bad_command, shared_secret, use_hostname, False, None)
+    assert not rslt.ok
+    assert 'Token fails' in rslt.status
 
 
 # Test the scenario where we're not differenciating between usernames,
@@ -89,11 +90,11 @@ def test_puid_only():
 
     token = A.generate_token_given_shared_secret(use_command, shared_secret)
 
-    ok, status, hostname, username, sent_time = A.validate_token_given_shared_secret(token, use_command, shared_secret, None)
-    print('results: %s, %s, %s, %s, %s' % (ok, status, hostname, username, sent_time))
-    assert ok
-    assert status == 'ok'
-    assert username == ''
+    rslt = A.validate_token_given_shared_secret(token, use_command, shared_secret, None)
+    print('results: %s' % rslt)
+    assert rslt.ok
+    assert rslt.status == 'ok'
+    assert rslt.username == ''
 
     # Regenerate machine registration with same $PUID, make sure it stays the same.
     shared_secret2 = A.generate_shared_secret()
@@ -110,13 +111,13 @@ def test_cli():
     shared_secret = cli(['-g', '-u', 'user1', '-p', 'pass1'])
     assert socket.gethostname() in shared_secret
 
-    out = cli(['-r', shared_secret])
+    out = cli(['--db-passwd', 'db321', '-r', shared_secret])
     assert 'Done' in out
 
     token = cli(['-c', 'command1', '-u', 'user1', '-p', 'pass1'])
     assert token.startswith('v2:')
 
-    out = cli(['-v', token, '-c', 'command1'])
+    out = cli(['-P', 'db321', '-v', token, '-c', 'command1'])
     assert 'validated? True' in out
 
     os.unlink(A.DEFAULT_DB_FILENAME)
