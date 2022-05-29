@@ -27,8 +27,7 @@ def check_db(filename, ref_dict):
 def test_basics(tmp_path):
     secrets_file = str(tmp_path / 'secrets-db.gpg')
     stnd_args = ['--datafile', secrets_file,
-                 '--password', PASSWORD,
-                 '--hostname', 'host1']
+                 '--password', PASSWORD]
 
     # generate test key and check it
 
@@ -38,12 +37,12 @@ def test_basics(tmp_path):
         assert cap.err == ''
     assert 'PGP MESSAGE' in testkey
     with open(secrets_file, 'w') as f: f.write(testkey)
-    check_db(secrets_file, {'*-testkey': 'mysecret'})
+    check_db(secrets_file, {'testkey': 'mysecret'})
 
     # add a key
 
-    assert K.main(stnd_args + ['--keyname', 'key1', '--secret', 'secret1']) == 0
-    check_db(secrets_file, {'*-testkey': 'mysecret', 'host1-key1': 'secret1'})
+    assert K.main(stnd_args + ['--acl', '@*', '--keyname', 'key1', '--secret', 'secret1']) == 0
+    check_db(secrets_file, {'testkey': 'mysecret', 'key1': 'secret1'})
 
     # try changing that key without --force
 
@@ -52,14 +51,14 @@ def test_basics(tmp_path):
         assert 'was expecting a failure.' == ''
     except SystemExit as e:
         assert 'already exists' in str(e)
-    check_db(secrets_file, {'*-testkey': 'mysecret', 'host1-key1': 'secret1'})
+    check_db(secrets_file, {'testkey': 'mysecret', 'key1': 'secret1'})
 
     # try changing that key with --force
 
     assert K.main(stnd_args + ['--keyname', 'key1', '--secret', 'secret1c', '--force']) == 0
-    check_db(secrets_file, {'*-testkey': 'mysecret', 'host1-key1': 'secret1c'})
+    check_db(secrets_file, {'testkey': 'mysecret', 'key1': 'secret1c'})
 
     # and try removing that key
 
     assert K.main(stnd_args + ['--remove', '--keyname', 'key1']) == 0
-    check_db(secrets_file, {'*-testkey': 'mysecret'})
+    check_db(secrets_file, {'testkey': 'mysecret'})

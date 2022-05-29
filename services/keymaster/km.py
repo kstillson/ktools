@@ -76,6 +76,7 @@ real secrets database goes in private.d/km.data.gpg.
 
 import argparse, getpass, os, sys
 from dataclasses import dataclass
+from typing import List
 
 import kcore.auth as A
 import kcore.common as C
@@ -88,14 +89,21 @@ import kcore.webserver as W
 
 @dataclass
 class Secret:
-    secret: str
-    username: str = None
-    comment: str = None
-    override_expected_client_addr: str = None
+    '''A secret stored by the keymaster.
 
+       The access-control list ("acl") is a list of strings in the form
+       "username@hostname".  username and/or hostname can be wildcarded with
+       "*".  hostname is the from the client point-of-view: i.e. if
+       SharedSecret.server_override_hostname was used, the acl should
+       specify the original hostname, not the overriden hostname.
+    '''
+    secret: str
+    acl: List[str]
+    comment: str = None
+    
 
 class Secrets(UC.DictOfDataclasses):
-    '''Dict from full-keyname to instance of Secret'''
+    '''Dict from keyname to instance of Secret'''
 
     def ready(self): return len(self) > 0
 
@@ -180,40 +188,44 @@ def km_root_handler(request):
     return '<html><body><form action="/load" name="loader" method="post">\n password: <input type="password" name="password">\n <input type="submit" value="Submit">\n</form>\n</body>\n</html>\n'
 
 
+def check_acl(acl_str, ver_result):
+    C.log_debug(f'check acl {acl_str} against {ver_result.username}@{ver_result.registered_hostname}')
+    acl_username, acl_hostname = acl_str.split('@', 1)
+    if acl_username != '*' and acl_username != ver_result.username: return False
+    if acl_hostname != '*' and not A.compare_hosts(acl_hostname, ver_result.registered_hostname): return False
+    return True    
+
+
 def km_default_handler(request):
     if not SECRETS.ready():
         C.log('keyfail-notready')
         V.bump('keyfail-notready')
         return W.Response('not ready', 503)
-    full_keyname = request.path[1:]  # trim leading /
+    keyname = request.path[1:]  # trim leading /
     token = request.get_params.get('a')
 
-    secret = SECRETS.get(full_keyname)
+    secret = SECRETS.get(keyname)
     if not secret:
-        return ouch('no such key', f'attempt to get non-existent key: {full_keyname}', 'keyfail-notfound')
+        return ouch('no such key', f'attempt to get non-existent key: {keyname}', 'keyfail-notfound')
 
     client_addr = request.remote_address.split(':')[0]
 
-    rslt = A.validate_token(token=token, command=full_keyname, client_addr=client_addr,
-                            db_filename=ARGS.db_filename, db_passwd=SECRETS_PASSWORD,
-                            override_expected_client_addr=secret.override_expected_client_addr,
-                            must_be_later_than_last_check=not ARGS.noratchet, max_time_delta=ARGS.window)
+    rslt = A.verify_token(token=token, command=keyname, client_addr=client_addr,
+                          db_filename=ARGS.db_filename, db_passwd=SECRETS_PASSWORD,
+                          must_be_later_than_last_check=not ARGS.noratchet, max_time_delta=ARGS.window)
     if not rslt.ok:
-        return ouch(rslt.status, f'unsuccessful key retrieval attempt full_keyname={full_keyname}, reg_hostname={rslt.registered_hostname}, client_addr={client_addr}, username={rslt.username}, status={rslt.status}',
+        return ouch(rslt.status, f'unsuccessful key retrieval attempt keyname={keyname}, reg_hostname={rslt.registered_hostname}, client_addr={client_addr}, username={rslt.username}, status={rslt.status}',
                     'keyfail-hostname' if 'hostname' in rslt.status else 'keyfail-kauth')
 
-    if secret.username and secret.username != rslt.username:
-        return ouch('bad user', f'unsuccessful key retreival attempt; wrong user.  expected={secret.username} but saw {rslt.username}', 'keyfail-username')
-
-    # If full keyname has the form {host}-{keyname}, then insist the request is coming from the specified host.
-    if '-' in full_keyname:
-        required_hostname, _ = full_keyname.split('-', 1)
-        if not A.compare_hostnames(required_hostname, rslt.registered_hostname):
-            return ouch('wrong client host', f'unsuccessful key retreival attempt; wrong client hostname.  expected={required_hostname,} but saw {rslt.registered_hostname}', 'keyfail-hostname')
-
-    C.log(f'successful key retrieval: full_keyname={full_keyname} client_addr={client_addr} username={rslt.username}')
-    V.bump('key-success')
-    return secret.secret
+    # Try to find a matching ACL.
+    for acl in secret.acl:
+        if check_acl(acl, rslt):
+            C.log(f'successful key retrieval: keyname={keyname} client_addr={client_addr} username={rslt.username}')
+            V.bump('key-success')
+            return secret.secret
+    
+    # No ACL matched.
+    return ouch('not authorized', f'unsuccessful key retreival attempt; no matching ACL.', 'keyfail-acl')
 
 
 # ---------- main
