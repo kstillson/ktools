@@ -358,6 +358,7 @@ def verify_token(token, command, client_addr, db_passwd,
       if DEBUG: print(f'DEBUG: load reg db {db_filename} failed. passwd={db_passwd}, cnt={cnt}', file=sys.stderr)
       return VerificationResults(False, f'unable to open/decrypt registration database {db_filename}', None, None, None)
 
+  if not token: return VerificationResults(False, f'no authN token provided', None, None, None)
   token_version, token_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
   shared_secret = get_shared_secret_from_db(token_hostname, username)
   if not shared_secret:

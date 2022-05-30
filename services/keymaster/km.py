@@ -100,7 +100,7 @@ class Secret:
     secret: str
     acl: List[str]
     comment: str = None
-    
+
 
 class Secrets(UC.DictOfDataclasses):
     '''Dict from keyname to instance of Secret'''
@@ -193,7 +193,7 @@ def check_acl(acl_str, ver_result):
     acl_username, acl_hostname = acl_str.split('@', 1)
     if acl_username != '*' and acl_username != ver_result.username: return False
     if acl_hostname != '*' and not A.compare_hosts(acl_hostname, ver_result.registered_hostname): return False
-    return True    
+    return True
 
 
 def km_default_handler(request):
@@ -223,7 +223,7 @@ def km_default_handler(request):
             C.log(f'successful key retrieval: keyname={keyname} client_addr={client_addr} username={rslt.username}')
             V.bump('key-success')
             return secret.secret
-    
+
     # No ACL matched.
     return ouch('not authorized', f'unsuccessful key retreival attempt; no matching ACL.', 'keyfail-acl')
 
