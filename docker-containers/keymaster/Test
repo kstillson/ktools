@@ -27,7 +27,7 @@ def main():
     os.environ['PUID'] = 'test'
     kmc.DEBUG = True
     hostport = '%s:%d' % (ip, 4444)
-    answer = kmc.query_km('testkey', override_hostname='*', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    answer = kmc.query_km('testkey', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
     if answer != 'mysecret': d_lib.abort('expected "mysecret", but saw "%s"' % answer)
 
     # Check the service health.
@@ -42,11 +42,11 @@ def main():
     # Now lets re-start the database and try for a bad key, which should fail
     # and leave the system locked due to a source IP check failure.
     d_lib.web_expect('ok', ip, '/load', post_params={'password': 'test123'}, port=4444, https=True, verify_ssl=False)
-    answer = kmc.query_km('nonexistent-key', override_hostname='*', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    answer = kmc.query_km('nonexistent-key', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
     if not 'ERROR: no such key' in answer: d_lib.abort('got unexpected answer for non-existent key: %s' % answer)
 
     # The system should now be locked.
-    answer = kmc.query_km('testkey', override_hostname='*', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    answer = kmc.query_km('testkey', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
     if 'not ready' not in answer: d_lib.abort('got unexpected answer for non-existent key: %s' % answer)
     d_lib.web_expect('not ready', ip, '/test', port=4444, https=True, verify_ssl=False)
 

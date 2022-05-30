@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+
+import argparse, base64, os, subprocess, ssl, sys, time
+
+sys.path.append('/root/bin')
+import kcore.docker_lib as D
+
+
+def main():
+    ap = argparse.ArgumentParser(description='webdock test')
+    D.add_testing_args(ap)
+    args = ap.parse_args()
+    name, ip, cow, dv = D.launch_or_find_container(args)
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+
+    if args.run: time.sleep(2)  #  Give apache a chance to start up.
+
+    D.web_expect('Launchpad', ip, '/', 8080)
+    D.web_expect('Launchpad', ip, '/', 8443, https=True, verify_ssl=False)
+
+    # Check that plain html is redirected to https (even for invalid links).
+    # Note: This actually redirects to home.point0.net by name, which means the
+    # actual content could be coming from prod rather than the test site.
+    # Other tests should generally use https directly to avoid this problem.
+    D.popen_expect(['/usr/bin/curl', 'http://%s:8080/q' % ip],
+                      'document has moved <a href="https://home.point0.net/q">here')
+
+    # Check name-based vhost redirects.
+    D.popen_expect(['/usr/bin/curl', '--header', 'Host: a', 'http://%s:8080/123' % ip],
+                      'document has moved <a href="http://adafru.it/123">here')
+
+    # homesec static and status pages (no login required)
+    D.web_expect('color:', ip, '/homesec/static/style.css', 8443, https=True, verify_ssl=False)
+    D.web_expect(['ok','tardy'], ip, '/homesec/healthz', 8443, https=True, verify_ssl=False)
+
+    # try basic homesec login
+    import mechanize
+    br = mechanize.Browser()
+    ssl._create_default_https_context = ssl._create_unverified_context
+    br.open('https://%s:8443/homesec' % ip)
+    br.select_form(nr=0)
+    br.form['username'] = 'ken'
+    br.form['password'] = 'kds0khwS'
+    resp = br.submit().get_data()
+    if not 'Sensor last contact time:' in resp: D.abort('homesec login failed')
+    D.emit('homesec login success')
+    resp = br.open('https://%s:8443/homesec/varz' % ip).get_data()
+    if not 'variables' in resp: D.abort('/varz failed')
+    D.emit('/varz confirmed')
+
+    # Check internal proxy with basic http auth
+    D.web_expect('', ip, '/procmon', 8443, expect_status=401, https=True, verify_ssl=False)
+    D.web_expect('<p><b>queue</b>', ip, '/procmon', 8443, https=True, verify_ssl=False,
+                    headers={'Authorization': 'Basic %s' % 
+                             base64.encodestring('%s:%s' % ('ken', 'kds-=0pkkaW,.')).replace('\n','')})
+
+    # Check cgi script basics
+    D.web_expect('wget', ip, '/rc/i/', 8443, https=True, verify_ssl=False)
+    D.web_expect('pax_global_header', ip, '/rc', 8443, https=True, verify_ssl=False)
+
+    print('pass')
+    
+
+if __name__ == "__main__":
+  main()
+

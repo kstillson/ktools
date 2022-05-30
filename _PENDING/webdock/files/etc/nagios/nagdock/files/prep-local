@@ -1,0 +1,20 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(nagios|root)"
+GROUP_DONT_DELETE_REGEX="^(nagios|root)"
+ROOT_RM_HOMEDIR=0
+SBIN_DONT_DELETE_REGEX="nagios|pl|nologin|fcgistarter|httpd|su|suexec|ssmtp|sendmail"
+SUID_DONT_DELETE_REGEX="su|ping"
+SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|chown|ln|od|strings)$"
+WORLD_WRITABLE_DIRS_RM=0
+
+# Fix ownerships.
+/bin/chgrp -R nagios /etc/nagios
+
+# Fix email from address
+/bin/sed -i -e 's/Linux User/Nagios/' /etc/passwd
+
+# Add symlink
+cd /bin
+ln -s /usr/bin/mail .
+
+cd /

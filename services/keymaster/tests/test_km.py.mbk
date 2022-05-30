@@ -14,12 +14,19 @@ DB_PASSWD = 'test123'
 def test_basic_opration(tmp_path):
     os.environ['PUID'] = 'test'
 
+    # Generate a registration for current host with no username or password,
+    # and bypassing client host id check.
+    auth_db_filename = str(tmp_path / 'kcore_auth_db-test.data.gpg')
+    sss = A.generate_shared_secret()
+    assert A.register(sss, db_passwd=DB_PASSWD, db_filename=auth_db_filename,
+                      override_hostname='*')
+
     # Start up a KM server on a local high port.   
     random_high_port = random.randrange(10000,19999)
     argv = ['--debug',
             '--certkeyfile', 'tests/server-cn=localhost.pem',
             '--datafile', 'tests/km-test.data.gpg',
-            '--db-filename', 'tests/kcore_auth_db-test.data.gpg',
+            '--db-filename', auth_db_filename,
             '--logfile', '-',
             '--port', str(random_high_port)]
     threading.Thread(target=km.main, args=(argv,), daemon=True).start()

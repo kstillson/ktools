@@ -25,6 +25,8 @@ SHELL := /bin/bash
 
 all:	prep common_all
 
+common_all:   # Nothing to do in top-level dir; allow to flow into subdirs.
+
 $(TOP_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)

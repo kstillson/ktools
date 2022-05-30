@@ -85,7 +85,8 @@ def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
   
   C.init_log('hs server', args.logfile,
-             filter_level_logfile=C.INFO, filter_level_stderr=stderr_level,
+             filter_level_logfile=C.INFO,
+             filter_level_stderr=C.DEBUG if args.debug else C.NEVER,
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
 
   if args.debug: HC.control('doesnt', 'matter', {'debug': True})

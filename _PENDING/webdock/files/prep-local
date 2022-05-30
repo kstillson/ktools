@@ -1,0 +1,18 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(apache)"
+GROUP_DONT_DELETE_REGEX="^(apache)"
+SBIN_DONT_DELETE_REGEX="nologin|httpd|ssmtp"
+WORLD_WRITABLE_DIRS_RM=0
+WORLD_WRITABLE_FILES_RM=0
+
+SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|chown|ln|od|strings)$"
+
+# fix perms
+/bin/chown apache.apache /run/apache2
+/bin/chgrp -R apache /etc/apache2 /usr/lib/cgi-bin /var/www
+
+# Some files stored in private.d subdirs to keep them out of git;
+# move them into their real positions.
+mv -f /usr/lib/cgi-bin/private.d/* /usr/lib/cgi-bin
+mv -f /etc/apache/private.d/* /etc/apache
+mv -f /etc/apache/conf.d/private.d/* /etc/apache/conf.d

@@ -6,7 +6,7 @@ if [[ -v DATA ]]; then CMD="$CMD --datafile $DATA "; fi
 
 if [[ -v TEST ]]; then
     echo ""
-    echo "!! TEST MODE !!  (log to stderr and no syslg)"
+    echo "!! TEST MODE !!  (log to stderr and no syslog)"
     echo ""
     CMD="$CMD --debug --datafile km-test.data.gpg --db-filename kcore_auth_db-test.data.gpg --logfile -"
 else
