@@ -35,7 +35,7 @@ def pgrep(srch='gpg-agent'):
 
 def parse_args(argv):
   ap = argparse.ArgumentParser(description=__doc__)
-  ap.add_argument('--password', '-p', default=None, help='password to encrypt/decrypt with.  - to read from stdin, $X to read from environment varaible X.')
+  ap.add_argument('--password', '-p', default='-', help='password to encrypt/decrypt with.  - to read from stdin, $X to read from environment varaible X.')
   ap.add_argument('filename', help='Name of file to encrypt/decrypt.  Which to do is driven by whether file has .gpg extension')
   return ap.parse_args(argv)
 

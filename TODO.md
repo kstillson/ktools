@@ -2,14 +2,15 @@
 ## ++ktools tech
    - nagdock test fails on jack
    - ~all docker tests fail on blue
-   - other docks: web
-   - keymaster: add last used key date
+   - webdock
+   - procmon not missing kmdock ?
    - review non-doc TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
      - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
-     - ? chmod 444 /sys/class/dmi/id/product_uuid 
-   
+     - ? chmod 444 /sys/class/dmi/id/product_uuid
+   - make e -> make all ?
+
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,
      subtlely document #2, and really hide #3 (dns query only?).  encourage
@@ -33,9 +34,6 @@
       - graphical interface for inputs and outputs
    - homectrl remote update (?)
 
-## homesec
-   - rebind to ktools
-
 ## Other
+   - keymaster: add last used key date
    - search for things that need to be rebound / updated to new ktools interfaces (e.g. art-projects)
-
