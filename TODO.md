@@ -1,5 +1,11 @@
 
 ## ++ktools tech
+   - jack make e seems to work up through rclonedock:Test, which triggers keymaster error:
+        2022-5-29 23:38:51: CRITICAL: unsuccessful key retrieval attempt keyname=rclone, reg_hostname=test-rclonedock, client_addr=192.168.2.1, username=, status=Wrong hostname. Saw "192.168.2.1", expected "test-rclonedock".
+        how did this work before?
+	  + looks like old /ulb/kmc would query host "km" which is 2.9, rather than keys, which is 1.2.
+	  + need a docker-specific host override for "keys" -> 2.33 ?  nope.
+	
    - nagdock test fails on jack
    - ~all docker tests fail on blue
    - webdock
