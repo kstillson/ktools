@@ -47,17 +47,6 @@ class TriggerRule:
 
 # ---------- hard-coded constants
 
-# ----- load secrets
-
-USER_SECRETS = {}
-USER_SECRETS_FILE = 'private.d/user_secrets.py'
-if os.path.isfile(USER_SECRETS_FILE):
-  m = UC.load_file_as_module('private.d/user_secrets.py', 'user_secrets')
-  USER_SECRETS.update(m.USER_SECRETS)
-else:
-  C.log_error(f'no user logins available; {USER_SECRETS_FILE} not found.')
-
-
 # ----- simple constants
 
 CONSTANTS = {
@@ -70,6 +59,10 @@ CONSTANTS = {
   'TOUCH_WINDOW_SECS':     20 * 60,     # %Ttouch
 }
 
+
+USER_LOGINS = {
+  'ken':          '984ae982bf04e0bfab49ed0b1205ff43bfadae13',
+}
 
 # What to do upon entering or leaving various states.
 STATE_RULES = [
@@ -104,8 +97,6 @@ TRIGGER_LOOKUPS = [
     TriggerLookup('back_door',            'perimeter',   'default',  'back door'),
     TriggerLookup('front_door',           'chime',       'default',  'front door'),
     TriggerLookup('garage$',              'perimeter',   'default',  'door to garage'),
-    TriggerLookup('motion-cam-homesec1',  'inside',      'default',  'camera motion family room'),
-    TriggerLookup('motion-cam-homesec2',  'inside',      'default',  'camera motion lounge'),
     TriggerLookup('motion_family_room',   'inside',      'default',  'motion family room'),
     TriggerLookup('motion_lounge',        'inside',      'default',  'motion in lounge'),
     TriggerLookup('motion_outside',       'outside',     'default',  'motion outdoors'),

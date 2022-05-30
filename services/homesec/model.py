@@ -1,5 +1,5 @@
 
-import datetime, time
+import datetime, hashlib, os, time
 
 import data
 
@@ -53,9 +53,6 @@ def get_touch_status_for(username):
 def get_touches(search=['ken', 'dad']):
   touches = get_all_touches()
   return [x for x in touches if x.trigger in search]
-
-
-def get_user_login_dict(): return data.USER_SECRETS
 
   
 def last_trigger_touch(trigger):
@@ -114,6 +111,19 @@ def resolve_auto(state):
   twvh = touches_with_value('home')
   tmp = 'arm-away' if twvh == 0 else 'arm-home'
   return tmp  
+
+
+# ---------- getters with authn internal logic
+
+def check_user_password(username, password):
+  hashed = hash_user_password(username, password)
+  return data.USER_LOGINS.get(username) == hashed
+
+
+def hash_user_password(username, password):
+  salt = os.environ.get('SALT', os.environ.get('PUID', ''))
+  plaintext = f'v2a:{username}:{password}:{salt}'.encode('utf-8')
+  return hashlib.sha1(plaintext).hexdigest()
 
 
 # ---------- setters

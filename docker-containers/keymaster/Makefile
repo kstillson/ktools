@@ -3,10 +3,10 @@ KMH_DIR := files/home/km
 KMH_FILES := km.py
 KMH_TARGETS := $(addprefix $(KMH_DIR)/, $(KMH_FILES))
 
-KMH_TEST_FILES := km-test.data.gpg 
+KMH_TEST_FILES := kcore_auth_db-test.data.gpg km-test.data.gpg 
 KMH_TEST_TARGETS := $(addprefix $(KMH_DIR)/, $(KMH_TEST_FILES))
 
-PRIV_FILES := keymaster.pem km.data.gpg
+PRIV_FILES := kcore_auth_db.data.gpg keymaster.pem km.data.gpg
 PRIV_TARGETS := $(addprefix $(KMH_DIR)/, $(PRIV_FILES))
 
 KCORE_DIR := files/usr/lib/python3.9/site-packages/kcore

@@ -1,35 +1,55 @@
 #!/usr/bin/python3
 '''A client-machine-locked authentication token generator.
 
+This is essentially a shared-secret based system for a client to authenticate
+to a server, but it's got a few extra twists:
+
+1. The shared secret (hereafter referred to as the "client registration") is
+derived from several components, including one that is obtained from the
+hardware of the client (e.g. the motherboard serial number).  So even if the
+same username/password is used, verification will fail if its attempted from a
+different client machine.
+
+2. Neither the client-machine-specific data nor the derived registration code
+is stored anywhere on the disk of client machines, so even an attacker with
+access to a full disk backup of the client cannot impersonate it.
+
+3. The secret client registrations are stored on the server, but a mechanism
+is provided to keep them encrypted, so full disk backups of the server
+also shouldn't compromise security.
+
+4. Authentication tokens also contain the time-stamp when they were created-
+to prevent replay attacks, and a hash of the command being verified- to
+prevent transferring tokens from a valid command to an invalid one.
+
+                  --------------------------------
+
 An example session using the command-line interface:
 
->> [1 time] On the client machine, we generate a shared secret:
+>> [one time] On the client machine, we generate the shared secret:
 CLIENT$ k_auth -g -u user1 -p pass1
 v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
 
->> [1 time] On the server, we register that secret:
-SERVER$ k_auth -r v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
+>> [one time] On the server, we register that secret:
+SERVER$ k_auth --db-passwd db123 -r v2:blue2:user1:0d4b17b4080cc2ada031ceb276b5beec9f06b95e
 
->> On the client, we generate a token to authenticate a command:
+>> On the client, we generate a token to authenticate a command string:
 CLIENT$ k_auth -c 'command1' -u user1 -p pass1
 v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7
 
->> On the server, we validate the token for that command:
-SERVER$ k_auth -v v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7 -c 'command1'
-validated? True
+>> On the server, we verify the token for that command:
+SERVER$ k_auth --db-passwd db123 -v v2:blue2:user1:1648266958:8c0c0da11eed666e3fefd0a30263f84ee6f671e7 -c 'command1'
+verified? True
 
-This successful validation demonstrates that:
+This successful verification demonstrates that:
 
-- The command was not changed between token creation and validation.
+- The command was not changed between token creation and verification.
 
-- The token was created recently and hasn't been used before (i.e. replay
-  protection).
+- The token was created recently and hasn't been used before.
 
 - The same password was used during secret generation and token creation.
 
 - The same machine was used for secret generation and token creation.
-  i.e. even if the password is stolen, it won't work for token generation on
-  any machine except the one where the secret was generated.
 
 Note that we didn't have to store the generated secret on the client,
 and the password was never given to the server.
@@ -52,23 +72,20 @@ running a single service), you can skip the username and password: the
 hostname and machine-unique-data take their place.  However, if the client is
 not running as root and not on a Raspberry Pi, you might consider using a
 password anyway, as the client-machine-unique-data might need to fall back to
-using the root disk's UUID, which is often revealed in system logs.
+using the root disk's UUID, which can be revealed in system logs.
 
 Notes:
 
 - "username" is unrelated to Linux uids; it's just an arbitrary string used to
   distinguish different authentication subjects from the same client machine.
 
-- Tokens contain the username, source hostname, and time in plaintext.
-  Including the hostname allows for source-ip validation.  You can set the
-  hostname to "*" to disable source-ip validation, but tokens will still only
-  validate if generated using the same client-generated secret (which is
-  client-machnine specific, unless you override it by setting $PUID).
+- Tokens contain the username, client hostname, and time in plaintext.
+  Including the hostname allows for source-ip verification.
 
 - The server-side logic will remember the last timestamp accepted from each
   {hostname+username}, and require each subsequent request to be later than
-  the previous ones.  THIS IMPLIES A LIMIT OF 1 VALIDATION REQUEST PER SECOND.
-  You can turn this check off in the validation request call, or it will be
+  the previous ones.  THIS IMPLIES A LIMIT OF 1 VERIFICATION REQUEST PER SECOND.
+  You can turn this check off in the verification request call, or it will be
   disabled implicitly if the module doesn't persist between checks.
 
 - Indepentently, the server-side validator checks that the time of the token
@@ -77,31 +94,102 @@ Notes:
   has expired, so pick your acceptance window-size accordingly (along with how
   closely you can keep your client and server clocks in sync).
 
-- If you want to register all your secrets on the server-side, rather than 
+- If you want to register all your secrets on the server-side, rather than
   switching back and forth between client and server (as outlined above), see
   services/keymaster/km-helper.py.
 
 '''
 
-import argparse, hashlib, json, os, socket, subprocess, sys, time
+import argparse, copy, hashlib, getpass, json, os, socket, subprocess, sys, time
+from dataclasses import dataclass
+
+import kcore.uncommon as UC
+
 PY_VER = sys.version_info[0]
 
-# ---------- global constants and types
+
+# ---------- global constants
 
 DEBUG = False   # WARNING- outputs lots of secrets!
 DEFAULT_MAX_TIME_DELTA = 90
-DEFAULT_DB_FILENAME = 'k_auth_db.json'
+DEFAULT_DB_FILENAME = 'kcore_auth_db.data.gpg'
 TOKEN_VERSION = 'v2'
+
+
+# ---------- types
+
+@dataclass
+class SharedSecret:
+  version_tag: str
+  hostname: str
+  username: str
+  secret: str
+  server_override_hostname: str = None   # see below.
+
+  def lookup_key(self): return f'{self.hostname}:{self.username}'
+
+  @staticmethod
+  def from_string(src_str):
+    return eval(src_str, {}, {'SharedSecret': SharedSecret})
+
+  @staticmethod
+  def generate(username, user_password):
+    hostname = socket.gethostname()
+    data_to_hash = '%s:%s:%s:%s' % (hostname, get_machine_private_data(), username, user_password)
+    if DEBUG: print(f'DEBUG: generating SharedSecret from plaintext: {data_to_hash}', file=sys.stderr)
+    item = SharedSecret(hostname=hostname, username=username, secret=hasher(data_to_hash), version_tag=TOKEN_VERSION)
+    return item
+
+
+# Regarding server_override_hostname: populating this field on the client-side
+# has no effect.  Popuating it on the server-side (-H during registration),
+# can be used in two ways:
+#
+# 1) If the server sees the client's hostname/IP-address differently from the
+#    way the client sees itself (e.g. due to DNS or NAT), this field can be
+#    used to give the server an expected hostname or IP address that the
+#    client's connection will appear to come from, for source-address
+#    verification.
+#
+# 2) If the field is set to "*", then server-side source-address verification is
+#    disabled when validating tokens.  THE CLIENT'S MACHINE-SPECIFIC SECRET IS
+#    STILL BLENDED INTO THE HASHED_SECRET, so this doesn't actually allow the
+#    secret to be retrieved by "any" client, unless $PUID is used to override
+#    machine secrets on all would-be clients during registration and token
+#    generation.
+#
+# Note that shared secret lookup is done by a combination of hostname+username.
+# So if you want a client to operate in normal machine-secret mode and in a
+# shared (i.e. $PUID overriden) mode, the two registrations must use different
+# usernames, so as not to collide.
+
+
+@dataclass
+class VerificationResults:
+  ok: bool
+  status: str
+  registered_hostname: str
+  username: str
+  sent_time: int
+
 
 class AuthNError(Exception):
   pass
 
 
+# ---------- global state
+
+LAST_RECEIVED_TIMES = {}  # maps command-specific-key-name -> epoch seconds of most recent success.
+# LAST_RECEIVED_TIMES is not persisted beyond module lifetime.
+
+REGISTRATION_DB = UC.DictOfDataclasses()    # maps lookup_key -> SharedSecret
+
+
 # ---------- general purpose helpers
 
-def compare_hostnames(host1, host2):
+def compare_hosts(host1, host2):
   '''Compare hosts by name and/or IP address.'''
-  
+
   if host1 == host2: return True
 
   # Translate hostnmes to IP addresses and then compare those.
@@ -110,6 +198,15 @@ def compare_hostnames(host1, host2):
     if not host2[0].isdigit(): host2 = socket.gethostbyname(host2)
   except Exception: return False
   return host1 == host2
+
+
+def hasher(plaintext):
+  '''Return sha1 hash of a string as a string. Py2 or 3.'''
+  if PY_VER == 3: plaintext = plaintext.encode('utf-8')
+  return hashlib.sha1(plaintext).hexdigest()
+
+
+def now(): return int(time.time())
 
 
 def safe_read(filename):
@@ -135,10 +232,10 @@ def get_machine_private_data():
   When running in a Docker container (or similar), there really may be no
   suitable container-specific secret.  The cgroup id changes each container
   launch, so it fails the "consistent" requirement.  For this reason, this
-  method checks the environment variable $PUID (platform unique id), and will
-  unquestioningly use the value there if provided.  Docker container clients
-  should arrange for this variable to be populated, preferably with the value
-  returned by this method from outside the container, or with a
+  method checks the environment variable $PUID ("platform unique id"), and
+  will unquestioningly use the value there if provided.  Docker container
+  clients should arrange for this variable to be populated, preferably with
+  the value returned by this method from outside the container, or with a
   random-but-persistent per-container value.
 
   The method will throw an AuthNError exception if it can't generate a value
@@ -183,171 +280,121 @@ def get_machine_private_data():
   raise AuthNError('unable to find suitable machine private data. consider setting $PUID.')
 
 
-def hasher(plaintext):
-  '''Return sha1 hash of a string as a string. Py2 or 3.'''
-  if PY_VER == 3: plaintext = plaintext.encode('utf-8')
-  return hashlib.sha1(plaintext).hexdigest()
-
-
-def puid_key_name(hostname, username): return '%s:%s' % (hostname, username)
-
-
-def now(): return int(time.time())
-
-
 # ---------- client-side authN logic
 
-def generate_shared_secret(use_hostname=None, username='', user_password=''):
+def generate_shared_secret(username='', user_password=''):
   '''Generate the shared secret used to register a client.
 
      Should be run on the client machine because machine-specific data is
-     merged into the generated data (unless $PUID is set).
+     merged into the generated data (unless $PUID is used).
 
      The output of this method is a string that should be passed to register()
-     on the server(s) where token validation will be performed.  The client
+     on the server(s) where token verification will be performed.  The client
      does not need to save this shared secret; it will be automatically
      re-generated when generate_token() is called.
-
-     You generally don't want to override the hostname: pass None and allow
-     the method to autodetect the client's hostname.  This is because by
-     default the server will check to see if a client's request is actually
-     coming from the hostname it was registered with.  
-
-     There are two advanced-usage exceptions: 
-
-     (1) passing '*' as the hostname will tell the server not to check the
-     remote address of a request based off this shared secret.  This can allow
-     the secret to be retrieved by multiple hosts- HOWEVER- the shared secret
-     still contains machine-specific data.  So if you really want the secret
-     to be retriable from any host, you'll also need to set $PUID both before
-     generating the secret with this method also, with the same $PUID value,
-     each time any client generates a token that will be validated with the
-     registration generated here.
-
-     (2) it is sometimes convenient to generate a registration secret on some
-     system other than the client (e.g. the server).  To do this, you get the
-     machine-specific data from the client machine (see
-     get_machine_private_data()), and securely transfer that to the system
-     where you want to generate the shared secret registration, and set $PUID
-     with the client's machine-specific data when calling this method. '''
-  
-  hostname = use_hostname or socket.gethostname()
-  data_to_hash = '%s:%s:%s:%s' % (hostname, get_machine_private_data(), username, user_password)
-  if DEBUG: print('DEBUG: client registration hash data: %s' % data_to_hash, file=sys.stderr)
-  return '%s:%s:%s:%s' % (TOKEN_VERSION, hostname, username, hasher(data_to_hash))
+  '''
+  return SharedSecret.generate(username, user_password)
 
 
-def generate_token(command, use_hostname=None, username='', user_password='', override_time=None):
+def generate_token(command, username='', user_password='', override_time=None):
   '''Generate a token that authenticates "command".
 
-     The generated token can be validated using validate_token() [below].
-     Before validation will work, the client generating a token must register
+     The generated token can be verifyd using verify_token() [below].
+     Before verification will work, the client generating a token must register
      a shared secret with the server.  i.e. call generate_shared_secret() on
      the client, and then register() on the server.
+  '''
+  regenerated_registration = generate_shared_secret(username, user_password)
 
-     If "use_hostname" was used during shared secret generation, e.g. "*" was
-     used to enable multi-host retrieval, the same "use_hostname" value must
-     be passed here, or the token won't validate.  That's because this method
-     works by re-generating the registration secret, so you don't have to 
-     store it on the client.'''
-  
-  regenerated_registration = generate_shared_secret(use_hostname, username, user_password)
   return generate_token_given_shared_secret(
-    command, regenerated_registration, use_hostname, username, override_time)
+    command=command, shared_secret=regenerated_registration,
+    username=username, override_time=override_time)
 
 
 def generate_token_given_shared_secret(
     command, shared_secret, use_hostname=None, username='', override_time=None):
   '''Generate a token for "command" given a pre-generated shared secret.
+     This method is intended for internal-use by the verification logic.
+  '''
 
-     This method is really for internal-use by the validation side of the
-     logic, but...
-
-     Part of the idea of the auth module is that client's shouldn't have to
-     save their shared secret, as it can be regenerated during token
-     creation.  However, if for some reason you have a shared secret and
-     want to generate a token from it, this method can do it for you.'''
+  # shared_secret.server_override_hostname is a server-side only concept, if
+  # generate_token_given_shared_secret() is called from the client side, it will
+  # likely be blank or different, so we need to exclude it from the contents of
+  # the token's plaintext on both sides in order to get a match.
+  if shared_secret.server_override_hostname:
+    temp = copy.copy(shared_secret)
+    temp.server_override_hostname = None
+    shared_secret_str = str(temp)
+  else:
+    shared_secret_str = str(shared_secret)
     
   hostname = use_hostname or socket.gethostname()
   time_now = override_time or now()
   plaintext_context = '%s:%s:%s:%s' % (TOKEN_VERSION, hostname, username, time_now)
-  data_to_hash = '%s:%s:%s' % (plaintext_context, command, shared_secret)
+  data_to_hash = '%s:%s:%s' % (plaintext_context, command, shared_secret_str)
   if DEBUG: print('DEBUG: hash data: "%s"' % data_to_hash, file=sys.stderr)
   return '%s:%s' % (plaintext_context, hasher(data_to_hash))
 
 
 # ---------- server-side authN logic
 
-# This data is not persisted beyond module lifetime.
-LAST_RECEIVED_TIMES = {}  # maps command-specific-key-name -> epoch seconds of most recent success.
+def verify_token(token, command, client_addr, db_passwd,
+                   must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA,
+                   db_filename=DEFAULT_DB_FILENAME):
+  '''Verify "token" for "command", using a previously registered shared secret.
 
-
-def validate_token(token, command, client_addr,
-                   must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA):
-  '''Validate "token" for "command", using a previously register()'ed shared secret.
-
+     client_addr can be an IP address in string format, a hostname, or None.
      Passing None as client_addr will disable the check that the incoming
-     request is coming from the hostname set during registration.  However, 
+     request is coming from the hostname set during registration.  However,
      this undermines an important aspect of this module's security model.
 
-     Returns: okay?(bool), status(text), registered_hostname, username, sent_time'''
-  
-  token_version, registered_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
-  shared_secret = get_shared_secret_from_db(registered_hostname, username)
+     Returns: VerificationResults
+  '''
+
+  global REGISTRATION_DB
+  if not REGISTRATION_DB:
+    cnt = load_registration_db(db_passwd, db_filename)
+    if cnt <= 0:
+      if DEBUG: print(f'DEBUG: load reg db {db_filename} failed. passwd={db_passwd}, cnt={cnt}', file=sys.stderr)
+      return VerificationResults(False, f'unable to open/decrypt registration database {db_filename}', None, None, None)
+
+  token_version, token_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
+  shared_secret = get_shared_secret_from_db(token_hostname, username)
   if not shared_secret:
-    return False, 'could not find client registration for %s:%s' % (registered_hostname, username), None, None, None
-  return validate_token_given_shared_secret(
+    return VerificationResults(False, f'could not find client registration for {token_hostname}:{username}', None, None, None)
+
+  return verify_token_given_shared_secret(
     token=token, command=command, shared_secret=shared_secret, client_addr=client_addr,
     must_be_later_than_last_check=must_be_later_than_last_check, max_time_delta=max_time_delta)
 
 
-def validate_token_given_shared_secret(
-    token, command, shared_secret,
-    client_addr, override_expected_client_addr=None,
+def verify_token_given_shared_secret(
+    token, command, shared_secret, client_addr,
     must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA):
-  '''Validate "token" for "command", using a provided shared secret.
-
-     Normally you validate tokens using validate_token().  However, if you're
-     using some other mechanism other than this module's built-in database to
-     persist registration shared-secrets, you can perform token validation
-     using this method.
-
-     By default, the expected hostname will be pulled out of the provided
-     shared secret, which was generally created on the client.  However, the
-     hostname/address by which the client knows itself differs from the one
-     the server will see (due to DNS or NAT issues), you can override the
-     "expected_client_addr" to tell the server what address it should expect
-     to match "client_addr" (which is generally provided by the web server).
-
-     The expected hostname check can be bypassed if the expected client addr
-     (from either the param or extracted from the shared secret) is "*", or if
-     the caller provides None as the actual client_addr.  Bypassing the client
-     identity check undermines an important aspect of this module's security
-     model.
-
-     Returns: okay?(bool), status(text), registered_hostname, username, sent_time
-
+  '''Verify "token" for "command", using a provided shared secret.
+     Returns VerificationResults.
   '''
-
-  if DEBUG: print(f'DEBUG: starting validation token={token} command={command} shared_secret={shared_secret} client_addr={client_addr}', file=sys.stderr)
+  if isinstance(shared_secret, str): shared_secret = SharedSecret.from_string(shared_secret)
+    
+  if DEBUG: print(f'DEBUG: starting verification token={token} command={command} shared_secret={shared_secret} client_addr={client_addr}', file=sys.stderr)
   try:
-    token_version, shared_secret_expected_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
+    token_version, token_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
     sent_time = int(sent_time_str)
   except Exception:
-    return False, 'token fails to parse', None, None, None
+    return VerificationResults(False, 'token fails to parse', None, None, None)
 
   if token_version != TOKEN_VERSION:
-    return False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', shared_secret_expected_hostname, username, sent_time
+    return VerificationResults(False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', shared_secret_expected_hostname, username, sent_time)
 
-  expected_hostname = override_expected_client_addr or shared_secret_expected_hostname
-  if client_addr and expected_hostname != '*' and not compare_hostnames(expected_hostname, client_addr):
-    return False, f'Wrong hostname.  Saw "{client_addr}", expected "{expected_hostname}".', expected_hostname, username, sent_time
+  expected_hostname = shared_secret.server_override_hostname or shared_secret.hostname
+  if client_addr and expected_hostname != '*' and not compare_hosts(expected_hostname, client_addr):
+    return VerificationResults(False, f'Wrong hostname.  Saw "{client_addr}", expected "{expected_hostname}".', expected_hostname, username, sent_time)
 
   if max_time_delta:
     time_now = now()
     time_delta = abs(time_now - sent_time)
     if time_delta > max_time_delta:
-      return False, f'Time difference too high.  sent:{sent_time} now:{time_now},  delta {time_delta} > {max_time_delta}', expected_hostname, username, sent_time
+      return VerificationResults(False, f'Time difference too high.  sent:{sent_time} now:{time_now},  delta {time_delta} > {max_time_delta}', expected_hostname, username, sent_time)
 
   if must_be_later_than_last_check:
     keyname = f'{expected_hostname}:{username}:{command}'
@@ -355,49 +402,65 @@ def validate_token_given_shared_secret(
       LAST_RECEIVED_TIMES[keyname] = sent_time
     else:
       if sent_time <= LAST_RECEIVED_TIMES[keyname]:
-        return False, f'Received token is not later than a previous token: {sent_time} < {LAST_RECEIVED_TIMES[keyname]}', expected_hostname, username, sent_time
+        return VerificationResults(False, f'Received token is not later than a previous token: {sent_time} < {LAST_RECEIVED_TIMES[keyname]}', expected_hostname, username, sent_time)
 
-  expect_token = generate_token_given_shared_secret(command, shared_secret, shared_secret_expected_hostname, username, sent_time)
+  expect_token = generate_token_given_shared_secret(
+    command=command, shared_secret=shared_secret,
+    use_hostname=shared_secret.hostname, username=username, override_time=sent_time)
   if DEBUG: print(f'DEBUG: expect_token={expect_token} expected_hostname={expected_hostname}', file=sys.stderr)
-  if token != expect_token: return False, f'Token fails to validate  Saw "{token}", expected "{expect_token}".', expected_hostname, username, sent_time
+  if token != expect_token: return VerificationResults(False, f'Token fails to verify  Saw "{token}", expected "{expect_token}".', expected_hostname, username, sent_time)
 
-  return True, 'ok', expected_hostname, username, sent_time
+  return VerificationResults(True, 'ok', expected_hostname, username, sent_time)
 
 
 # ---------- server-side persistence
 
-REGISTRATION_DB = None     # maps puid_key_name -> registration blob
-
-def load_registration_db(db_filename=DEFAULT_DB_FILENAME):
+def load_registration_db(db_passwd, db_filename=DEFAULT_DB_FILENAME):
+  '''Returs number of entries in db, or -1 on error.'''
   global REGISTRATION_DB
+  REGISTRATION_DB.clear()
+  if not os.path.isfile(db_filename):
+    if DEBUG: print(f'DEBUG: reg file {db_filename} does not exist; starting fresh.', file=sys.stderr)
+    return 0
   try:
-    with open(db_filename) as f: REGISTRATION_DB = json.loads(f.read())
-    return True
-  except Exception:
-    REGISTRATION_DB = {}
-    return False
+    with open(db_filename) as f: encrypted = f.read()
+    decrypted = UC.gpg_symmetric(encrypted, db_passwd)
+    if decrypted.startswith('ERROR'):
+      if DEBUG: print(f'DEBUG: error during decryption: {decrypted}', file=sys.stderr)
+      return -1
+    REGISTRATION_DB.from_string(decrypted, SharedSecret)
+    if DEBUG: print(f'DEBUG: loaded ok.  {len(REGISTRATION_DB)} entries.', file=sys.stderr)
+    return len(REGISTRATION_DB)
+  except Exception as e:
+    if DEBUG: print(f'DEBUG: exception during decrypt: {str(e)}', file=sys.stderr)
+    return -1
 
 
-def get_shared_secret_from_db(hostname, username, db_filename=DEFAULT_DB_FILENAME):
-  global REGISTRATION_DB
-  if not REGISTRATION_DB and db_filename: load_registration_db(db_filename)
-  return REGISTRATION_DB.get(puid_key_name(hostname, username))
+def get_shared_secret_from_db(hostname=None, username=''):
+  '''Must call load_registration_db first.'''
+  if not hostname: hostname = socket.gethostname()
+  lookup_key = f'{hostname}:{username}'
+  return REGISTRATION_DB.get(lookup_key)
 
 
-def register(shared_secret, db_filename=DEFAULT_DB_FILENAME):
-  token_version, hostname, username, _hash = shared_secret.split(':')
-  if token_version != TOKEN_VERSION: return False
+def register(shared_secret, db_passwd, db_filename=DEFAULT_DB_FILENAME,
+             override_hostname=None):
+  if isinstance(shared_secret, str): shared_secret = SharedSecret.from_string(shared_secret)
+  if shared_secret.version_tag != TOKEN_VERSION: return False
+  if override_hostname: shared_secret.server_override_hostname = override_hostname
 
   global REGISTRATION_DB
   if REGISTRATION_DB is None:
-    if db_filename: load_registration_db(db_filename)
-    else: REGISTRATION_DB = {}
+    if db_filename: load_registration_db(db_passwd, db_filename)
+    else: REGISTRATION_DB.clear()
 
-  keyname = puid_key_name(hostname, username)
-  REGISTRATION_DB[keyname] = shared_secret
+  REGISTRATION_DB[shared_secret.lookup_key()] = shared_secret
 
   if db_filename:
-    with open(db_filename, 'w') as f: f.write(json.dumps(REGISTRATION_DB))
+    plaintext = REGISTRATION_DB.to_string()
+    encrypted = UC.gpg_symmetric(plaintext, db_passwd, decrypt=False)
+    if encrypted.startswith('ERROR'): return False
+    with open(db_filename, 'w') as f: f.write(encrypted)
 
   return True
 
@@ -406,25 +469,29 @@ def register(shared_secret, db_filename=DEFAULT_DB_FILENAME):
 
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='authN token generator')
-  ap.add_argument('--username', '-u', default='', help='when using multiple-users per machine, this specifies which username to generate a registration for.  These do not need to match Linux usernames, they are arbitrary strings.')
+  ap.add_argument('--username', '-u', default='', help='Does not need to match Linux usernames, they are arbitrary strings.')
   ap.add_argument('--password', '-p', default='', help='when using multiple-users per machine, this secret identifies a particular user')
-  ap.add_argument('--hostname', '-H', default=None, help='hostname to generate/save registration for. (required for server-side commands;  autodetected if not specified for client-side commands)')
 
   group1 = ap.add_argument_group('client-side registration', 'client registration')
-  group1.add_argument('--generate', '-g', action='store_true', help='generate a shared secret that includes a hashed machine-specific secret from this machine (i.e. must be run on the machine where future client requests will originate)')
+  group1.add_argument('--generate', '-g', action='store_true', help='generate a shared secret that includes a hashed machine-specific secret from this machine (i.e. must be run on the machine where future client requests will originate, unless $PUID is used.)')
 
-  group2 = ap.add_argument_group('server-side registration', 'register a client (enable token validation from that client)')
-  group2.add_argument('--register', '-r', default=None, metavar='SHARED_SECRET', help='register the shared secret from --generate into a validation server')
-  group2.add_argument('--filename', '-f', default=DEFAULT_DB_FILENAME, help='name of file in which to save registrations')
+  group2 = ap.add_argument_group('server-side registration', 'register a client (enable token verification from that client)')
+  group2.add_argument('--register', '-r', default=None, metavar='SHARED_SECRET', help='register the shared secret from the client\'s --generate command')
+  group2.add_argument('--override-hostname', '-O', default=None, help='use this as the expected hostname/IP when checking clients peer address.  "*" to disable the check.')
+  group2.add_argument('--db-filename', '-f', default=DEFAULT_DB_FILENAME, help='name of file on server to store shared registration secrets')
+  group2.add_argument('--db-passwd', '-P', default=None, help='GPG passphrase for --filename.  Default ("-") to query from stdin.  Use "$X" to read password from environment variable X')
 
-  group3 = ap.add_argument_group('token', 'creating or verifying tokens for a command')
+  group3 = ap.add_argument_group('create token', 'creating an authentication token on the client')
   group3.add_argument('--command', '-c', default=None, help='specify the command to generate or verify a token for')
-  group3.add_argument('--verify', '-v', default=None, metavar='TOKEN', help='verify the provided token for the specified command')
-  group3.add_argument('--max-time-delta', '-m', default=DEFAULT_MAX_TIME_DELTA, type=int, help='max # seconds between token generation and consumption.')
 
-  group4 = ap.add_argument_group('special' 'other alternate modes')
-  group4.add_argument('--extract-machine-secret', '-e', action='store_true', help='output the machine-unique-private data and stop.  Use -e on a would-be client machine, and then you can use that data with -s to generate shared secrets or tokens on a machine other than the real client machine.')
-  group4.add_argument('--use-machine-secret', '-s', default=None, help='use the provided secret rather than querying the current machine for its real secret.  Equivalent to setting $PUID to the secret value.')
+  group4 = ap.add_argument_group('verify token', 'check token on the server')
+  group4.add_argument('--verify', '-v', default=None, metavar='TOKEN', help='verify the provided token.  Must also provide --hostname, --command, and --db-passwd.  Must provide --username and --password if used, and --filename if not using the default.')
+  group4.add_argument('--hostname', '-H', default='', help='hostname the token being verified came from')
+  group4.add_argument('--max-time-delta', '-m', default=DEFAULT_MAX_TIME_DELTA, type=int, help='max # seconds between token generation and consumption.')
+
+  group5 = ap.add_argument_group('special' 'other alternate modes')
+  group5.add_argument('--extract-machine-secret', '-e', action='store_true', help='run on the client to output the machine-unique-private data and stop.  See -s.')
+  group5.add_argument('--use-machine-secret', '-s', default=None, help='on the client, use this provided client machine secret rather than querying the machine for its real secret.  Equivalent to setting $PUID.')
 
   return ap.parse_args(argv)
 
@@ -432,38 +499,51 @@ def parse_args(argv):
 
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
-  
+
   if args.extract_machine_secret:
     print(get_machine_private_data())
     return 0
 
   if args.use_machine_secret: os.environ['PUID'] = args.use_machine_secret
 
+  if args.db_passwd:
+    if args.db_passwd == "-":
+        args.db_passwd = getpass.getpass(f'Enter value for registration database: ')
+    elif args.db_passwd.startswith('$'):
+        varname = args.db_passwd[1:]
+        tmp = os.environ.get(args.db_passwd[1:])
+        if tmp: args.db_passwd = tmp
+        else: sys.exit(f'--db-passwd indicated to use {args.db_passwd}, but variable is not set.')
+
   if args.generate:
     if not args.password: sys.exit('WARNING: password not specified.  Registering a host without a password will allow anyone with access to the host to authenticate as the host.  If this is really what you want, specify "-" as the password.')
     password = '' if args.password == '-' else args.password
     if args.username and not password: sys.exit('specifying a username without a password is not useful.')
-    print(generate_shared_secret(args.hostname, args.username, password))
+    print(str(generate_shared_secret(args.username, password)))
     return 0
 
   elif args.register:
-    ok = register(args.register, args.filename)
+    if not args.db_passwd: sys.exit('must provide --db-passwd to --register.')
+    shared_secret = SharedSecret.from_string(args.register)
+    ok = register(shared_secret, args.db_passwd, args.db_filename,
+                  override_hostname=args.override_hostname)
     if ok:
       print('Done.  Registration file now has %d entries.' % len(REGISTRATION_DB))
       return 0
-    print('Something went wrong (probably could not parse shared secret)')
+    print('Something went wrong (wrong --db-passwd?)')
     return -1
 
   elif args.command and not args.verify:
-    print(generate_token(args.command, args.hostname, args.username, args.password))
+    print(generate_token(args.command, args.username, args.password))
     return 0
 
   elif args.verify:
-    ok, status, hostname, username, sent = validate_token(
-      token=args.verify, command=args.command,
-      client_addr=args.hostname, max_time_delta=args.max_time_delta)
-    print('validated? %s\nstatus: %s\ngenerated on host: %s\ngenerated by user: %s\ntime sent: %s (%s)' % (
-      ok, status, hostname, username, sent, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(sent))))
+    if not args.db_passwd: sys.exit('must provide --db-passwd to --verify.')
+    if not args.hostname: print('WARNING- no client address provided via --hostname flag, so client host checking is disabled.')
+    rslt = verify_token(token=args.verify, command=args.command, client_addr=args.hostname,
+                          db_passwd=args.db_passwd, max_time_delta=args.max_time_delta)
+    friendly_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(rslt.sent_time))
+    print(f'verified? {rslt.ok}\nstatus: {rslt.status}\ngenerated on host: {rslt.registered_hostname}\ngenerated by user: {rslt.username}\ntime sent: {rslt.sent_time} ({friendly_time})')
     return 0
 
   else:
@@ -473,4 +553,3 @@ def main(argv=[]):
 
 if __name__ == '__main__':
   sys.exit(main())
-

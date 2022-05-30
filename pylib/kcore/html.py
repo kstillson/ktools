@@ -35,6 +35,12 @@ def dict_to_page(d, title=''):
     return html_page_wrap(list_to_table(out), title)
 
 
+def redirect(to):
+    return html_page_wrap(
+        f'Please <a href="{to}">click here</a>.',
+        other_heads=[f'<meta http-equiv="refresh" content="0; url=\'{to}\'" />'])
+
+
 # in: any iterable, out: html for a row of data in a table.
 def table_row(items, item_type='td'):
     out = ''

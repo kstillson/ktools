@@ -76,6 +76,7 @@ real secrets database goes in private.d/km.data.gpg.
 
 import argparse, getpass, os, sys
 from dataclasses import dataclass
+from typing import List
 
 import kcore.auth as A
 import kcore.common as C
@@ -88,14 +89,22 @@ import kcore.webserver as W
 
 @dataclass
 class Secret:
-    keyname: str
-    secret: str
-    kauth_secret: str
-    comment: str = None
-    override_expected_client_addr: str = None
+    '''A secret stored by the keymaster.
 
+       The access-control list ("acl") is a list of strings in the form
+       "username@hostname".  username and/or hostname can be wildcarded with
+       "*".  hostname is the from the client point-of-view: i.e. if
+       SharedSecret.server_override_hostname was used, the acl should
+       specify the original hostname, not the overriden hostname.
+    '''
+    secret: str
+    acl: List[str]
+    comment: str = None
+    
 
 class Secrets(UC.DictOfDataclasses):
+    '''Dict from keyname to instance of Secret'''
+
     def ready(self): return len(self) > 0
 
     def reset(self):
@@ -105,16 +114,23 @@ class Secrets(UC.DictOfDataclasses):
         V.set('loaded-keys', 0)
 
     def load_from_gpg_file(self, filename, password):
-        with open(filename) as f: crypted = f.read()
-        resp = self.from_string(UC.gpg_symmetric(crypted, password), Secret)
+        '''returns error message or None if all ok.'''
+        encrypted = C.read_file(filename)
+        if not encrypted: return f'{filename} cannot be read or is empty'
+        decrypted = UC.gpg_symmetric(encrypted, password)
+        if decrypted.startswith('ERROR'): return decrypted
+        cnt = self.from_string(decrypted, Secret)
+        if cnt < 0: return f'Error parsing decrypted secrets from {filename}'
         V.set('loaded-keys', len(self))
-        return resp
+        return None
 
-            
+
 # ---------- global state
 
 ARGS = {}
 SECRETS = Secrets()
+SECRETS_PASSWORD = None
+
 
 # ---------- helpers
 
@@ -142,15 +158,17 @@ def ouch(user_msg, log_msg, varz_name):
 
 def km_healthz_handler(request):
     return 'ok' if SECRETS.ready() else 'error- not ready; need password.'
-    
-    
+
+
 def km_load_handler(request):
     SECRETS.reset()
-    SECRETS.load_from_gpg_file(ARGS.datafile, request.post_params.get('password'))
-    if not SECRETS.ready():
-        C.log_alert('incorrect password received for key manager load request')
+    err = SECRETS.load_from_gpg_file(ARGS.datafile, request.post_params.get('password'))
+    if err or not SECRETS.ready():
+        C.log_alert(f'unable to load secrets from {ARGS.datafile}: {err}')
         V.bump('reloads-fails')
         return 'error'
+    global SECRETS_PASSWORD
+    SECRETS_PASSWORD = request.post_params.get('password')
     V.bump('reloads-ok')
     C.log('LOADED KEYS OK- READY')
     return 'ok'
@@ -170,41 +188,54 @@ def km_root_handler(request):
     return '<html><body><form action="/load" name="loader" method="post">\n password: <input type="password" name="password">\n <input type="submit" value="Submit">\n</form>\n</body>\n</html>\n'
 
 
+def check_acl(acl_str, ver_result):
+    C.log_debug(f'check acl {acl_str} against {ver_result.username}@{ver_result.registered_hostname}')
+    acl_username, acl_hostname = acl_str.split('@', 1)
+    if acl_username != '*' and acl_username != ver_result.username: return False
+    if acl_hostname != '*' and not A.compare_hosts(acl_hostname, ver_result.registered_hostname): return False
+    return True    
+
+
 def km_default_handler(request):
     if not SECRETS.ready():
         C.log('keyfail-notready')
         V.bump('keyfail-notready')
         return W.Response('not ready', 503)
-    full_keyname = request.path[1:]  # trim leading /
+    keyname = request.path[1:]  # trim leading /
     token = request.get_params.get('a')
 
-    secret = SECRETS.get(full_keyname)
+    secret = SECRETS.get(keyname)
     if not secret:
-        return ouch('no such key', f'attempt to get non-existent key: {full_keyname}', 'keyfail-notfound')
+        return ouch('no such key', f'attempt to get non-existent key: {keyname}', 'keyfail-notfound')
 
     client_addr = request.remote_address.split(':')[0]
 
-    okay, status, hostname, username, sent_time = A.validate_token_given_shared_secret(
-        token=token, command=full_keyname, shared_secret=secret.kauth_secret,
-        client_addr=client_addr,
-        override_expected_client_addr=secret.override_expected_client_addr,
-        must_be_later_than_last_check=not ARGS.noratchet,
-        max_time_delta=ARGS.window)
-    if not okay:
-        return ouch(status, f'unsuccessful key retrieval attempt full_keyname={full_keyname}, req_hostname={hostname}, client_addr={client_addr}, username={username}, status={status}',
-                    'keyfail-hostname' if 'hostname' in status else 'keyfail-kauth')
-    
-    C.log(f'successful key retrieval: full_keyname={full_keyname} client_addr={client_addr} username={username}')
-    V.bump('key-success')
-    return secret.secret
+    rslt = A.verify_token(token=token, command=keyname, client_addr=client_addr,
+                          db_filename=ARGS.db_filename, db_passwd=SECRETS_PASSWORD,
+                          must_be_later_than_last_check=not ARGS.noratchet, max_time_delta=ARGS.window)
+    if not rslt.ok:
+        return ouch(rslt.status, f'unsuccessful key retrieval attempt keyname={keyname}, reg_hostname={rslt.registered_hostname}, client_addr={client_addr}, username={rslt.username}, status={rslt.status}',
+                    'keyfail-hostname' if 'hostname' in rslt.status else 'keyfail-kauth')
 
-            
+    # Try to find a matching ACL.
+    for acl in secret.acl:
+        if check_acl(acl, rslt):
+            C.log(f'successful key retrieval: keyname={keyname} client_addr={client_addr} username={rslt.username}')
+            V.bump('key-success')
+            return secret.secret
+    
+    # No ACL matched.
+    return ouch('not authorized', f'unsuccessful key retreival attempt; no matching ACL.', 'keyfail-acl')
+
+
 # ---------- main
 
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='key manager server')
   ap.add_argument('--certkeyfile', '-k', default='keymaster.pem', help='name of file with both server TLS key and matching certificate.  set to blank to serve http rather than https (NOT RECOMMENDED!)')
   ap.add_argument('--datafile', '-d', default='km.data.gpg', help='name of encrypted file with secrets database')
+  ap.add_argument('--db-filename', '-D', default='kcore_auth_db.data.gpg', help='name of the encrypted registration database file')
+  ap.add_argument('--debug', action='store_true', help='puts kcore.auth into debug mode. WARNING- outputs logs of secrets.')
   ap.add_argument('--dont-panic', action='store_true', help='By default the server will panic (i.e. clear its decrypted secrets database) if just about anything unexpected happens, including any denied request for a key.  This flag disables that, favoring stability over pananoia.')
   ap.add_argument('--logfile', '-l', default='km.log', help='filename for operations log.  "-" for stderr, blank to disable log file')
   ap.add_argument('--port', '-p', type=int, default=4444, help='port to listen on')
@@ -220,16 +251,12 @@ def main(argv=[]):
   global ARGS
   ARGS = args  # easy communication to things like the handlers.
 
-  if args.logfile == '-':
-    args.logfile = None
-    stderr_level = C.INFO
-  else:
-    stderr_level = C.NEVER
-      
+  if args.debug: A.DEBUG = True
+
   C.init_log('km server', args.logfile,
-             filter_level_logfile=C.INFO, filter_level_stderr=stderr_level,
+             filter_level_logfile=C.DEBUG if args.debug else C.INFO,
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
-  
+
   handlers = {
       '/healthz':      km_healthz_handler,
       '/load':         km_load_handler,
@@ -239,12 +266,12 @@ def main(argv=[]):
       '/':             km_root_handler,
       None:            km_default_handler,
   }
-  ws = W.WebServer(handlers)
-  
+  ws = W.WebServer(handlers, wrap_handlers=not args.debug)
+
   ws.start(port=args.port, background=False,
            tls_cert_file=args.certkeyfile, tls_key_file=args.certkeyfile)
 
-  
+
 if __name__ == '__main__':
     sys.exit(main())
 

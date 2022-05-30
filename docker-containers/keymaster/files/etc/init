@@ -8,7 +8,7 @@ if [[ -v TEST ]]; then
     echo ""
     echo "!! TEST MODE !!  (log to stderr and no syslg)"
     echo ""
-    CMD="$CMD --logfile -"
+    CMD="$CMD --debug --datafile km-test.data.gpg --db-filename kcore_auth_db-test.data.gpg --logfile -"
 else
     CMD="$CMD --logfile /var/log/km/km.log --syslog"
 fi
