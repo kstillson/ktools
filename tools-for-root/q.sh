@@ -743,7 +743,7 @@ function list_all() {
 }
 
 function list_linux() {
-    echo -n $LIST_LINUX
+    echo -n "$LIST_LINUX"
     list_pis
 }
 

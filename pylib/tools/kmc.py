@@ -94,7 +94,7 @@ def query_km(keyname,
     retry += 1
 
   C.log_error('out of retries; giving up.')
-  return None
+  return err  # return most recent error code
 
 
 # ---------- key registration API

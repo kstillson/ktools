@@ -50,7 +50,7 @@ def test_simple_successful_get_without_authn_check(web_server):
 def test_all_retries_fail(web_server):
     global RESP
     RESP = (401, 'error')
-    assert kmc.query_km('key3', **KWARGS) is None
+    assert kmc.query_km('key3', **KWARGS).startswith('ERROR')
 
 
 def test_full_authn_cycle(web_server):
