@@ -1,17 +1,17 @@
 #!/bin/bash
 
-CMD="/home/km/km.py "
-
-if [[ -v DATA ]]; then CMD="$CMD --datafile $DATA "; fi
+SVC="${SVC:-/home/km/km.py}"
 
 if [[ -v TEST ]]; then
     echo ""
     echo "!! TEST MODE !!  (log to stderr and no syslog)"
     echo ""
-    CMD="$CMD --debug --datafile km-test.data.gpg --db-filename kcore_auth_db-test.data.gpg --logfile -"
+    COMMAND="$SVC --debug --datafile km-test.data.gpg --db-filename kcore_auth_db-test.data.gpg --logfile -"
+
 else
-    CMD="$CMD --logfile /var/log/km/km.log --syslog"
+    FLAGS="${FLAGS:- --logfile /var/log/km/km.log --syslog}"
+    COMMAND="$SVC $FLAGS"
 fi
 
-echo "init transferring to: $CMD"
-exec $CMD
+echo "init transferring to: $COMMAND"
+exec $COMMAND
