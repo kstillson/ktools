@@ -220,12 +220,12 @@ def km_default_handler(request):
     # Try to find a matching ACL.
     for acl in secret.acl:
         if check_acl(acl, rslt):
-            C.log(f'successful key retrieval: keyname={keyname} client_addr={client_addr} username={rslt.username}')
+            C.log(f'successful key retrieval: keyname={keyname}, client_addr={client_addr}, username={rslt.username}')
             V.bump('key-success')
             return secret.secret
 
     # No ACL matched.
-    return ouch('not authorized', f'unsuccessful key retreival attempt; no matching ACL.', 'keyfail-acl')
+    return ouch('not authorized', f'unsuccessful key retreival attempt; no matching ACL. keyname={keyname}, reg_hostname={rslt.registered_hostname}, client={client_addr}, username={rslt.username}', 'keyfail-acl')
 
 
 # ---------- main
