@@ -88,7 +88,7 @@ WHITELIST = [
     WL('nagdock',   '200360',      True,  True,  '/usr/sbin/nagios'),
     WL('privdock',  '200100',      False, True,  '/usr/sbin/httpd'),
     WL('rclonedock','droot',       False, False, '/bin/bash /etc/init'),
-    WL('rclonedock','droot',       False, False, '/usr/bin/encfs --extpass /usr/local/bin/kmc default /root/gdrive /root/gdrive-efs'),
+    WL('rclonedock','droot',       False, False, '/usr/bin/encfs --extpass /usr/local/bin/kmc encfs-default /root/gdrive /root/gdrive-efs'),
     WL('rclonedock','droot',       False, False, '/usr/bin/script --append --flush --return --command /etc/init'),
     WL('rclonedock','droot',       False, False, 'fgrep -v non'),
     WL('rclonedock','droot',       False, False, 'rclone (sync|copy)'),
