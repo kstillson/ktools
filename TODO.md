@@ -1,9 +1,17 @@
 
 ## ++ktools tech
+   - procmon not missing kmdock ?
+   - homesec
+     - view
+       - add kcore.auth
+       - tests
+       - allow views to enforce preferred auth method ?
+     - add docker container
+     - test in prod
+     - change clients to use kcore.auth
    - nagdock test fails on jack
    - ~all docker tests fail on blue
-   - webdock
-   - procmon not missing kmdock ?
+   - webdock (holding on homesec transition)
    - review non-doc TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
@@ -39,4 +47,5 @@
 
 ## Other
    - keymaster: add last used key date
+   - bashlib ?
    - search for things that need to be rebound / updated to new ktools interfaces (e.g. art-projects)
