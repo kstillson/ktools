@@ -4,6 +4,7 @@
 
 import argparse, os, sys
 import view
+import kcore.auth as A
 import kcore.common as C
 import kcore.webserver as W
 import ktools.kmc as KMC
@@ -47,7 +48,7 @@ def main(argv=[]):
 
   if args.kauth_db_password == '-': args.kauth_db_password = KMC.query_km('kauth')
   kauth_params = A.VerificationParams(
-    db_passwd=args.kauth_db_password, db_filename=args.--kauth_db_filename
+    db_passwd=args.kauth_db_password, db_filename=args.kauth_db_filename,
     max_time_delta=args.kauth_max_delta, must_be_later_than_last_check=not args.kauth_no_ratchet)
   view.init_kauth(kauth_params)
   

@@ -1,5 +1,5 @@
 
-import base64, datetime, functools, os
+import base64, datetime, functools, os, time
 import controller, model
 import kcore.auth as A
 import kcore.common as C
@@ -55,6 +55,7 @@ def authn_required(func):
     provided_password = provided_password_b.decode()
 
     if not PASSWORD_CHECKER(provided_username, provided_password):
+      C.log_warning(f'unsuccessful basic-auth for user {provided_username}')
       time.sleep(2)
       return W.Response('Invalid credentials', 401,
           extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
