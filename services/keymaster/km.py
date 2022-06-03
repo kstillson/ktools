@@ -190,6 +190,9 @@ def km_root_handler(request):
 
 def check_acl(acl_str, ver_result):
     C.log_debug(f'check acl {acl_str} against {ver_result.username}@{ver_result.registered_hostname}')
+    if not '@' in acl_str:
+        C.log_error(f'badly formatted ACL: {acl_str}')
+        return False
     acl_username, acl_hostname = acl_str.split('@', 1)
     if acl_username != '*' and acl_username != ver_result.username: return False
     if acl_hostname != '*' and not A.compare_hosts(acl_hostname, ver_result.registered_hostname): return False
