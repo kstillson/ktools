@@ -76,6 +76,7 @@ WHITELIST = [
     WL('fsdock',    'droot',       False, False, '/usr/sbin/rsyslogd'),
     WL('fsdock',    'droot',       False, False, 'sshd: /usr/sbin/sshd -D'),
     WL('fsdock',    'droot',       False, False, 'sshd: ken \[priv\]'),
+    WL('homesecdock', '200802',    False, False, '/usr/bin/python3 /home/hs/homesec.py'),
     WL('gitdock',   '*',           False, False, 'sshd: [a-z]* ?\[net\]'),
     WL('gitdock',   'droot',       False, False, 'sshd: [a-z0-9-]* \[priv\]'),
     WL('gitdock',   'droot',       False, False, 'sshd: \[accepted\]'),
