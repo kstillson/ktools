@@ -1,0 +1,3 @@
+root:x:0:root
+hs:x:802:
+nobody:x:65534:
