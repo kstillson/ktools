@@ -17,6 +17,7 @@ WEB_HANDLERS = {
   '/static.*':  view.static_view,
   '/status':    view.status_view,
   '/statusz':   view.statusz_view,
+  '/test':      view.test_view,
   '/touchz':    view.touchz_view,
   '/trigger.*': view.trigger_view,
   '/user':      view.user_view,

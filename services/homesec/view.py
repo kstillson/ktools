@@ -9,9 +9,12 @@ import kcore.webserver as W
 
 # ---------- global controls
 
-BASIC_AUTH_REALM = 'homesec'
-DEBUG = False
-KAUTH_PARAMS = None
+BASIC_AUTH_REALM = 'homesec'    # can be overriden by caller/importer
+DEBUG = False                   # set by flag
+KAUTH_PARAMS = None          	# set by calling init_kauth()
+PASSWORD_CHECKER = model.check_user_password   # overrideen by tests
+STATIC_DIR = 'static'           # can be overriden by caller/importer
+TEMPLATE_DIR = 'templates'      # can be overriden by caller/importer
 
 
 # ---------- Authentication helpers
@@ -28,7 +31,7 @@ def authn_required(func):
 
     # ----- Try kcore.auth
 
-    kauth_token = request.get('a2')
+    kauth_token = request.get_params.get('a2')
     if kauth_token and KAUTH_PARAMS:
       rslt = A.verify_token(token=kauth_token, command=request.path, client_addr=request.remote_address,
                             db_passwd=KAUTH_DB_PASSWD, db_filename=KAUTH_DB_FILENAME)
@@ -40,32 +43,32 @@ def authn_required(func):
       C.log_warning(f'unsuccessful kauth request: {rslt}')
       return W.Response('authentication failure', 403)
             
-      # ----- Try basic auth
+    # ----- Try basic auth
 
-      auth_header = request.headers.get('Authorization')
-      if not auth_header: return W.Response('Please log in', 401,
-        extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+    auth_header = request.headers.get('Authorization')
+    if not auth_header: return W.Response('Please log in', 401,
+      extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
 
-      _, encoded = auth_header.split(' ', 1)
-      provided_username_b, provided_password_b = base64.b64decode(encoded).split(b':', 1)
-      provided_username = provided_username_b.decode()
-      provided_password = provided_password_b.decode()
+    _, encoded = auth_header.split(' ', 1)
+    provided_username_b, provided_password_b = base64.b64decode(encoded).split(b':', 1)
+    provided_username = provided_username_b.decode()
+    provided_password = provided_password_b.decode()
 
-      if not model.check_user_password(provided_username, provided_password):
-        time.sleep(2)
-        return W.Response('Invalid credentials', 401,
-            extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+    if not PASSWORD_CHECKER(provided_username, provided_password):
+      time.sleep(2)
+      return W.Response('Invalid credentials', 401,
+          extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
 
-      request.user = provided_username
-      C.log(f'successful http-basic authN as {request.user}')
-      return func(*args, **kwargs)
+    request.user = provided_username
+    C.log(f'successful http-basic authN as {request.user}')
+    return func(*args, **kwargs)
   return wrapper_authn_required
 
 
 # ---------- template system
 
 def render(template_filename, repl):
-  out = C.read_file(os.path.join('templates', template_filename), wrap_exceptions=False)
+  out = C.read_file(os.path.join(TEMPLATE_DIR, template_filename), wrap_exceptions=False)
   for seek0, replace in repl.items():
     seek = '{{ ' + seek0 + ' }}'
     out = out.replace(seek, str(replace))
@@ -104,11 +107,12 @@ def root_view(request):
 
 
 def static_view(request):
+  if not '/static/' in request.path: return W.Response('invalid /static/ request', 400)
   _, filename = request.path.split('/static/')
-  pathname = os.path.join('static', os.path.basename(filename))
+  pathname = os.path.join(STATIC_DIR, os.path.basename(filename))
   if not os.path.isfile(pathname):
       C.log_warning(f'attempt to read non-existent static file {pathname}')
-      return W.Response(404, 'file not found')
+      return W.Response('file not found', 404)
   mode = 'r' if filename.endswith('.css') or filename.endswith('.html') else 'rb'
   with open(pathname, mode) as f: return f.read()
 
@@ -132,6 +136,11 @@ def status_view(request):
 @authn_required
 def statusz_view(request):
   return controller.get_statusz_state()
+
+
+@authn_required
+def test_view(request):
+  return f'hello {request.user}'
 
 
 @authn_required
