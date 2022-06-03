@@ -49,7 +49,9 @@ def query_km(keyname, username='', password='',
   that the keymaster needs to be manually initialized before it can serve keys,
   so retrying for a long time is a good idea.
 
-  Returns the retrieved secret/key (as a string), or None upon failure.
+  Returns the retrieved secret/key (as a string), or a string beginning with
+  "ERROR" upon failure.
+
   '''
   hostname = socket.gethostname()
 

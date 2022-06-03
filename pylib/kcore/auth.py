@@ -141,6 +141,14 @@ class SharedSecret:
     return item
 
 
+@dataclass
+class VerificationParams:
+  db_passwd: str
+  db_filename: str = DEFAULT_DB_FILENAME
+  max_time_delta: int = DEFAULT_MAX_TIME_DELTA
+  must_be_later_than_last_check: bool = True
+  
+
 # Regarding server_override_hostname: populating this field on the client-side
 # has no effect.  Popuating it on the server-side (-H during registration),
 # can be used in two ways:
@@ -338,9 +346,17 @@ def generate_token_given_shared_secret(
 
 # ---------- server-side authN logic
 
+def verify_token_with_params(token, command, client_addr, verification_params):
+  return verify_token(token=token, command=command, client_addr=client_addr,
+                      db_passwd=verification_params.db_passwd,
+                      must_be_later_than_last_check=verification_params.must_be_later_than_last_check,
+                      max_time_delta= verification_params.max_time_delta,
+                      db_filename=verification_params.db_filename)
+
+
 def verify_token(token, command, client_addr, db_passwd,
-                   must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA,
-                   db_filename=DEFAULT_DB_FILENAME):
+                 must_be_later_than_last_check=True, max_time_delta=DEFAULT_MAX_TIME_DELTA,
+                 db_filename=DEFAULT_DB_FILENAME):
   '''Verify "token" for "command", using a previously registered shared secret.
 
      client_addr can be an IP address in string format, a hostname, or None.
