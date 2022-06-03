@@ -63,7 +63,7 @@ CONSTANTS = {
 # TODO: defer to private.d ...?
 
 USER_LOGINS = {
-  'ken':          '984ae982bf04e0bfab49ed0b1205ff43bfadae13',
+  'ken':          '5a687385e35154afffb29f723da3325bf14ab606',
 }
 
 # What to do upon entering or leaving various states.
