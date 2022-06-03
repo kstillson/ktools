@@ -60,6 +60,8 @@ CONSTANTS = {
 }
 
 
+# TODO: defer to private.d ...?
+
 USER_LOGINS = {
   'ken':          '984ae982bf04e0bfab49ed0b1205ff43bfadae13',
 }

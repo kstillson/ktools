@@ -1,11 +1,9 @@
 
 ## ++ktools tech
-   - procmon not missing kmdock ?
    - homesec
      - view
        - add kcore.auth
        - tests
-       - allow views to enforce preferred auth method ?
      - add docker container
      - test in prod
      - change clients to use kcore.auth
@@ -34,7 +32,7 @@
 ## General
    - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
      A: kwisdom/kwizdom?  (nb with k*: confusion w/ kuberneties)
-
+     kwizmet ?
 
 ## ---------- MILESTONE: ready for peer review ...?
 

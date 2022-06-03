@@ -25,6 +25,6 @@ update: all test install
 
 # ----- :test
 
-$(TEST_LOG): $(wildcard */*.py */*/*.py)
+$(TEST_LOG): $(wildcard *.py tests/*.py)
 	script -e -c "pytest-3 tests" $(TEST_LOG)
 

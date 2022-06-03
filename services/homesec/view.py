@@ -6,48 +6,70 @@ import kcore.common as C
 import kcore.html as H
 import kcore.webserver as W
 
-DEBUG = False
+
+# ---------- global controls
+
 BASIC_AUTH_REALM = 'homesec'
+DEBUG = False
+KAUTH_PARAMS = None
 
 
-# ---------- helpers
+# ---------- Authentication helpers
 
+def init_kauth(params):
+  global KAUTH_PARMS
+  KAUTH_PARMS = params
+    
 
 def authn_required(func):
-    @functools.wraps(func)
-    def wrapper_authn_required(*args, **kwargs):
-        request = kwargs.get('request') or args[0]
+  @functools.wraps(func)
+  def wrapper_authn_required(*args, **kwargs):
+    request = kwargs.get('request') or args[0]
 
-        # ----- Try kcore.auth
+    # ----- Try kcore.auth
 
-        # @@
-
-        # ----- Try basic auth
-
-        auth_header = request.headers.get('Authorization')
-        if not auth_header: return W.Response('Please log in', 401,
-                extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
-
-        _, encoded = auth_header.split(' ', 1)
-        provided_username_b, provided_password_b = base64.b64decode(encoded).split(b':', 1)
-        provided_username = provided_username_b.decode()
-        provided_password = provided_password_b.decode()
-
-        if not model.check_user_password(provided_username, provided_password):
-            return W.Response('Invalid credentials', 401,
-                extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
-
-        request.user = provided_username
+    kauth_token = request.get('a2')
+    if kauth_token and KAUTH_PARAMS:
+      rslt = A.verify_token(token=kauth_token, command=request.path, client_addr=request.remote_address,
+                            db_passwd=KAUTH_DB_PASSWD, db_filename=KAUTH_DB_FILENAME)
+      if rslt.ok:
+        request.user = rslt.username or rslt.registered_hostname
+        C.log(f'successful kauth as {request.user}')
         return func(*args, **kwargs)
-    return wrapper_authn_required
 
+      C.log_warning(f'unsuccessful kauth request: {rslt}')
+      return W.Response('authentication failure', 403)
+            
+      # ----- Try basic auth
+
+      auth_header = request.headers.get('Authorization')
+      if not auth_header: return W.Response('Please log in', 401,
+        extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+
+      _, encoded = auth_header.split(' ', 1)
+      provided_username_b, provided_password_b = base64.b64decode(encoded).split(b':', 1)
+      provided_username = provided_username_b.decode()
+      provided_password = provided_password_b.decode()
+
+      if not model.check_user_password(provided_username, provided_password):
+        time.sleep(2)
+        return W.Response('Invalid credentials', 401,
+            extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+
+      request.user = provided_username
+      C.log(f'successful http-basic authN as {request.user}')
+      return func(*args, **kwargs)
+  return wrapper_authn_required
+
+
+# ---------- template system
 
 def render(template_filename, repl):
-    out = C.read_file(os.path.join('templates', template_filename), wrap_exceptions=False)
-    for seek0, replace in repl.items():
-        seek = '{{ ' + seek0 + ' }}'
-        out = out.replace(seek, str(replace))
-    return out
+  out = C.read_file(os.path.join('templates', template_filename), wrap_exceptions=False)
+  for seek0, replace in repl.items():
+    seek = '{{ ' + seek0 + ' }}'
+    out = out.replace(seek, str(replace))
+  return out
 
 
 # ---------- handlers
