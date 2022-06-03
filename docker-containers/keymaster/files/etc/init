@@ -8,6 +8,9 @@ if [[ -v TEST ]]; then
     echo ""
     COMMAND="$SVC --debug --datafile km-test.data.gpg --db-filename kcore_auth_db-test.data.gpg --logfile -"
 
+elif [[ -v DEBUG ]]; then
+    COMMAND="$SVC --debug --logfile -"
+
 else
     FLAGS="${FLAGS:- --logfile /var/log/km/km.log --syslog}"
     COMMAND="$SVC $FLAGS"
