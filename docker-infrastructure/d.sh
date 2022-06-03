@@ -130,8 +130,8 @@ function test() {
   fi
   emitc blue "Testing ${name}."
   out="/rw/dv/TMP/${name}/test.out"
-  rslt=$(./Test -r -o "${out}" "$@" | tail -1)
-  if [[ "$rslt" == "pass" ]]; then
+  rslt=$(./Test -r -o "${out}" "$@")
+  if [[ "$rslt" == *"pass"* ]]; then
           emitc green "test passed    ( $out )."
           echo "pass"
   else

@@ -47,13 +47,12 @@ RP_FLAGS='--output - --plain --quiet '
 # ---------- hard-coded control constants
 # (almost certainly wrong for anyone else but the author...)
 
-if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="kmdock:4443"; else KMHOST="jack:4443"; fi
+if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="keymaster:4444"; else KMHOST="jack:4444"; fi
 KM="https://${KMHOST}"
 
 DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"
 GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /rw/dv/webdock/home/ken/homesec"
-KMD="/root/docker/dev/kmdock"
-KMD_P="/root/docker-dev/kmdock/files/home/km/km.data.gpg"
+KMD_P="$HOME/dev/ktools/private.d/km.data.gpg"
 LIST_LINUX="a1 blue jack mc2 "
 LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"
 LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
@@ -626,49 +625,41 @@ function keypad_commands {
         column -t -s: | $fmt
 }
 
-# Scan the keymanager logs.  List all errors and a summary of successes.
-function keymanager_logs() {
+# Scan the keymaster logs.  List all errors and a summary of successes.
+function keymaster_logs() {
     tmp=$(gettemp km-logs)
-    zcat -f /rw/log/docker.log /rw/log/Arc/docker.log* | fgrep 'kmdock' > $tmp
-
-    emitc yellow "\nfailures"
-    fgrep 'ERR ' $tmp
-
-    emitc cyan "\nsuccesses"
-    python3 - $tmp <<EOF
-import sys
-count = {}; last = {}
-with open(sys.argv[1]) as f:
-  for line in f:
-    if not 'success' in line: continue
-    name = line.split(' ')[-1].strip()
-    date = line[0:6]
-    if name not in count: count[name] = 1; last[name] = date
-    else: count[name] += 1
-for name, cnt in sorted(count.items(), key=lambda i: i[1]):
-  print(f'{cnt:>5}  {last[name]:>8}  {name}')
-EOF
-    rmtemp $tmp
+    zcat -f /rw/dv/keymaster/var_log_km/km.log* | \
+	fgrep ': ' | fgrep -v 'GET: ' | fgrep -v 'POST: ' | \
+	cut -d: -f6- | sed -e 's/:16[0-9]*/:T/g' -e 's/delta [0-9]*/delta D/' | \
+	sort | uniq -c | sort -rn | \
+	less --quit-if-one-screen
 }
 
-# Enter the keymanager password to get the service ready.
-function keymanager_reload() {
+# Enter the keymaster password to get the service ready.
+function keymaster_reload() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == "ok" ]]; then emitc blue "already ok"; return 0; fi
     read -s -p "km password: " passwd
     echo ""
-    stat=$(curl -ksS -d "password=$passwd" "${KM}/" | html2text)
+    stat=$(curl -ksS -d "password=$passwd" "${KM}/load" | html2text)
     if [[ "$stat" != "ok" ]]; then emitc red "$stat"; return 1; fi
     emitc green ok
 }
 
+function keymaster_status() {
+    curl -ksS "${KM}/healthz"
+    echo ""
+}
+    
 # Decrypt, edit, and re-encrypt the KM database, then rebuild and restart KM.
-function keymanager_update() {
+function keymaster_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     read -s -p "km password: " passwd
-    tmp=$(gettemp km-temp)
-    echo "$passwd" | gpg -d --batch --passphrase-fd 0 $KMD_P > $tmp
+    export passwd
+    cd "$(dirname $KMD_P)"
+    gpg_s -p'$passwd' $(basename $KMD_P)
+    tmp=km.data
     s1=$(stat -t $tmp)
     emacs $tmp
     s2=$(stat -t $tmp)
@@ -676,22 +667,22 @@ function keymanager_update() {
     read -p "ok to proceed? " ok
     if [[ "$ok" != "y" ]]; then emitc yellow "aborted."; rm $tmp; return; fi
     mv -f $KMD_P ${KMD_P}.prev
-    echo "$passwd" | gpg -c --batch --output $KMD_P --passphrase-fd 0 $tmp
+    gpg_s -p'$passwd' $tmp
+    rm $tmp
     killall gpg-agent || true
     emitc green "re-encryption done; attempting to rebuild kmdock"
-    d u kmdock   # allow -e to abort if this fails.
-    rm $tmp
+    d u keymaster   # allow -e to abort if this fails.
     emitc blue "waiting for km to stabalize..."
     sleep 2
-    echo "$passwd" | keymanager_reload
-    emitc green "keymanager update done."
+    echo "$passwd" | keymaster_reload
+    emitc green "keymaster update done."
 }
 
-# Disable the keymanager.
-function keymanager_zap() {
+# Disable the keymaster.
+function keymaster_zap() {
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc blue "already zapped"; return 0; fi
-    runner "curl -ksS ${KM}/zap >/dev/null"
+    runner "curl -ksS ${KM}/qqq >/dev/null"
     stat=$(curl -ksS ${KM}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc orange "zapped"; return 0; fi
     emitc red "zap failed: $stat"
@@ -935,11 +926,12 @@ function main() {
         lease-query-red | lqr | 9) fgrep --color=auto -F ".9." $LEASES || echoc green "ok\n" ;;  ## list red network leases
         keypad | key | k) run_keypad_command "$1" ;;                      ## run command $1 as if typed on homectrl keypad
         keypad-commands | kc) keypad_commands "$1" ;;                     ## list homesec keypad common commands ($1 to search)
-	keymanager-reload | kmr | kms) keymanager_reload ;;               ## load/reload keymanager state (requires password)
-	keymanager-logs | kml | kmq) keymanager_logs ;;                   ## analyze km logs
-	keymanager-update | kmu) keymanager_update ;;                     ## edit keymanager encrypted data and restart
-	keymanager-zap | kmz) keymanager_zap ;;                           ## clear keymanager state (and raise alerts)
-        panic-reset | PR) keymanager_reload; /usr/local/bin/panic reset ;;        ## recover from a homesec panic
+	keymaster-reload | kmr) keymaster_reload ;;                       ## load/reload keymaster state (requires password)
+	keymaster-logs | kml | kmq) keymaster_logs ;;                     ## analyze km logs
+	keymaster-status | kms) keymaster_status ;;                       ## edit keymaster encrypted data and restart
+	keymaster-update | kmu) keymaster_update ;;                       ## edit keymaster encrypted data and restart
+	keymaster-zap | kmz) keymaster_zap ;;                             ## clear keymaster state (and raise alerts)
+        panic-reset | PR) keymaster_reload; /usr/local/bin/panic reset ;;        ## recover from a homesec panic
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
         procmon-query | pq) curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;   ## check procmon status
         procmon-rescan | pr) curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;      ## procmon re-scan and show status
