@@ -19,16 +19,16 @@ SILENT_MSG = ('This message is generated when I trigger a silent alarm.\n\n'
               'call or text me; if I had wanted an obvious response, \n'
               'I would have triggered a noisy panic.\n\n')
 
-if DEBUG:
+if True:  ##@@ TODO:   if DEBUG:
   SILENT_TO = ['ken@kenstillson.com', 'tech@point0.net']
   SILENT_SUBJ = SILENT_SUBJ.replace('URGENT', 'THIS IS A TEST - PLEASE IGNORE')
 
 # --------------------
 
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
-  msg = f'announce [{push_level}/{syslog_level}]: {msg}: {details}'
-  if DEBUG: return C.log_debug(f'ext would announce: {msg}')
-  C.log(msg)
+  log_msg = f'announce [{push_level}/{syslog_level}]: {msg}: {details}'
+  if DEBUG: return C.log_debug(f'ext would announce: {log_msg}')
+  C.log(log_msg)
   if speak: C.read_web('http://pi1/speak/' + msg)
   if details: msg += ': %s' % details
   if push_level: push_notification(msg, push_level)
