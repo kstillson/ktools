@@ -80,7 +80,7 @@ STATE_RULES = [
     StateRule('*', 'arm-home',        'enter', 'announce',     '#i, @chime7, armed at home mode by %u %f'),
     StateRule('*', 'arming-auto',     'enter', 'announce',     '#i, @chime2, auto arming by %u %f in %Tarm seconds'),
     StateRule('*', 'arming-away',     'enter', 'announce',     '#i, @chime2, arming by %u %f in %Tarm seconds'),
-    StateRule('*', 'disarmed',        'enter', 'announce',     '#i, @chime8, system disarmed by %u %f'),
+    StateRule('*', 'disarmed',        'enter', 'announce',     '#i, @chime8, system disarmed by %u'),
     StateRule('*', 'disarmed',        'enter', 'control',      'sirens, off'),
     StateRule('*', 'panic',           'enter', 'announce',     '#a, @alarm3, panic mode activated by %u %f'),
     StateRule('*', 'panic',           'enter', 'control',      'all, on'),

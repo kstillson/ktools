@@ -14,14 +14,7 @@ DEFAULT_RATE_LIMIT="1,300"  # Allow 1 push every 5 minutes.
 RL_BIN="/usr/local/bin/ratelimiter"
 RL_FILE="/tmp/pb.rl"
 
-# TODO: somewhat Ken specific.
-# Default LOG location is in the apache log dir.  But if that doesn't
-# exist, it indicates this script is being called from outside docker,
-# so instead use the full host path to the same file.
-LOG="/var/log/apache2/pb-push.log"
-if [[ ! -f "${LOG}" ]]; then
-  LOG="/rw/dv/webdock/var_log_apache2/pb-push.log"
-fi
+LOG="/var/log/homesec/pb-push.log"
 
 if [[ ! -f "${RL_FILE}" ]]; then $RL_BIN -i $DEFAULT_RATE_LIMIT $RL_FILE; fi
 $RL_BIN /tmp/pb.rl || { echo "$(date): RATELIMITED: $MSG" |& tee -a $LOG; exit 1; }

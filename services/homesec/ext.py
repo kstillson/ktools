@@ -56,7 +56,7 @@ def read_web(url):
 # levels supported by client-side: alert, info, other
 def push_notification(msg, level='other'):
   if DEBUG: return C.log_debug(f'ext would push notification {msg}@{level}')
-  C.log('pushbullet sending [level={level}]: {msg}')
+  C.log(f'pushbullet sending [level={level}]: {msg}')
   if level != 'other': msg += ' !%s' % level
   ok = subprocess.call(["/usr/local/bin/pb-push", msg])
   return ok == 0

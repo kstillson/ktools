@@ -110,7 +110,7 @@ def subst(tracking, input_string):
   if not input_string: return ''
   out = input_string.replace('%t', tracking.get('trigger') or '?')
   out = out.replace('%a', tracking.get('action') or '?')
-  out = out.replace('%f', tracking.get('trigger_friendly') or '?')
+  out = out.replace('%f', tracking.get('trigger_friendly') or '')
   out = out.replace('%P', tracking.get('trigger_param') or '')
   out = out.replace('%p', tracking.get('partition') or '?')
   out = out.replace('%s', tracking.get('state') or '?')
