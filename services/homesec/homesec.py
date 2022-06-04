@@ -46,7 +46,10 @@ def main(argv=[]):
              filter_level_logfile=C.DEBUG if args.debug else C.INFO,
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
 
-  if args.kauth_db_password == '-': args.kauth_db_password = KMC.query_km('kauth')
+  if args.kauth_db_password == '-':
+    args.kauth_db_password = KMC.query_km('kauth')
+    if args.kauth_db_password.startswith('ERROR'): C.log_critical('unable to retrieve kauth password')
+    else: C.log('successfully retrieved kauth password')
   kauth_params = A.VerificationParams(
     db_passwd=args.kauth_db_password, db_filename=args.kauth_db_filename,
     max_time_delta=args.kauth_max_delta, must_be_later_than_last_check=not args.kauth_no_ratchet)

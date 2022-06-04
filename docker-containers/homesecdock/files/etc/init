@@ -11,7 +11,7 @@ elif [[ -v DEBUG ]]; then
     COMMAND="$SVC --debug --logfile -"
     
 else
-    COMMAND="$SVC --logfile /var/log/hc/hc.log --syslog"
+    COMMAND="$SVC --logfile /var/log/homesec/homesec.log --syslog"
 fi
 
 echo "init transferring to: $COMMAND"
