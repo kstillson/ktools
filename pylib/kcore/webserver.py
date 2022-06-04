@@ -13,9 +13,11 @@ PY_VER = sys.version_info[0]
 if PY_VER == 2:
     from urlparse import parse_qs
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+    DEFAULT_SERVER_CLASS = HTTPServer
 else:
     from urllib.parse import parse_qs
-    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    DEFAULT_SERVER_CLASS = ThreadingHTTPServer
 
 
 class Worker(BaseHTTPRequestHandler):
@@ -72,7 +74,7 @@ class WebServer(WebServerBase):
 
     def start(self, port=80, listen='0.0.0.0', background=True,
               tls_cert_file=None, tls_key_file=None, tls_key_password=None,
-              server_class=HTTPServer):
+              server_class=DEFAULT_SERVER_CLASS):
         self.httpd = server_class((listen, port), Worker)
 
         if tls_key_password: raise RuntimeError('TODO: support tls_key_password')
