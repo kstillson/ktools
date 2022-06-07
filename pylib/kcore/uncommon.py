@@ -127,16 +127,33 @@ class PopenOutput:
     pid: int
     def __post_init__(self):
         if self.exception_str:
-            self.out = 'ERROR: ' + self.exception_str
+            self.out = 'ERROR: exception: ' + self.exception_str
         elif self.ok and self.stdout:
             self.out = self.stdout
         else:
-            self.out = 'ERROR: ' + self.stderr
+            self.out = f'ERROR: [{self.returncode}] {self.stderr}'
     def __str__(self): return self.out
 
 
 def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
+    '''Slightly improved API for subprocess.Popen().
+
+       args can be a simple string or a list of string args (which is safer).
+       timeout is in seconds, and strip causes stdout and stderr to have any
+       trailing newlines removed.  Any other flags usually sent to
+       subprocess.Popen will be carried over by kwargs_to_popen.
+
+       Returns a populated PopenOutput dataclass instance.  This has all the
+       various outputs in separate fields, but the idea is that all you should
+       need is the .out field.  If the command worked, this will contain its
+       output (by default a stripped and normal (non-binary) string), and if
+       the command failed, .out will start with 'ERROR:'.
+
+       If you indeed don't need anything other than .out, you might use
+       popener() instead, which just returns the .out field directly.
+    '''
     text_mode = kwargs_to_popen.get('text', True)
+    if not text_mode: strip = False
     try:
         proc = subprocess.Popen(
             args, text=text_mode, stdin=subprocess.PIPE if stdin_str else None,
@@ -153,6 +170,21 @@ def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
         except Exception as e2: pass
         return PopenOutput(ok=False, returncode=-255,
                            stdout=None, stderr=None, exception_str=str(e), pid=-1)
+
+
+def popener(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
+    '''A very simple interface to subprocess.Popen.
+
+       See uncommon.popen for fuller explaination of the arguments, but basically
+       you pass the command to run in args (either a simple string or a list of
+       strings).  By default you get back a non-binary stripped string with the
+       output of the command, or a string that starts with 'ERROR:' if something
+       went wrong.
+
+       If you need more precise visibility into output (e.g. separating stdout
+       from stderr), use uncommon.popen() instead.
+    '''
+    return popen(args, stdin_str, timeout, strip, **kwargs_to_popen).out
 
 
 # ----------------------------------------

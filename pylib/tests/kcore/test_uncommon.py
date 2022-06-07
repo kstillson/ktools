@@ -86,11 +86,11 @@ def test_popen():
     assert rslt.stdout == ''
     assert 'cannot access' in rslt.stderr
     assert rslt.exception_str is None
-    assert rslt.out == f'ERROR: {rslt.stderr}'
+    assert rslt.out == f'ERROR: [2] {rslt.stderr}'
 
     rslt = UC.popen(['/invalid'])
     assert not rslt.ok
-    assert str(rslt) == f'ERROR: {rslt.exception_str}'
+    assert str(rslt) == f'ERROR: exception: {rslt.exception_str}'
     assert 'No such file' in str(rslt)
 
     rslt = UC.popen('echo hello', shell=True)
@@ -111,6 +111,13 @@ def test_popen():
         assert 'expected exception on attempt to kill timed out pid' == ''
     except:
         pass
+
+
+def test_popener():
+    assert UC.popener('echo 3+4|bc', shell=True) == '7'
+    assert 'shadow' in UC.popener(['/bin/ls', '/etc'])
+    assert UC.popener(['/bin/ls', '/invalid']).startswith('ERROR')
+    assert 'exception' in UC.popener('/bin/invalid')
 
 
 def test_gpg_symmetric():
