@@ -5,8 +5,8 @@
      - change clients to use kcore.auth
    - nagdock test fails on jack
    - ~all docker tests fail on blue
-   - add uc.popen ?
    - webdock (holding on homesec transition)
+   - make internal use of UC.popen ?
    - review non-doc TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep

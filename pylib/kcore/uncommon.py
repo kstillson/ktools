@@ -8,6 +8,7 @@ for Circuit Python.
 '''
 
 import grp, os, pwd, subprocess, sys
+from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
 if PY_VER == 2: import StringIO as io
@@ -20,7 +21,7 @@ else: import io
 
 class DictOfDataclasses(dict):
     '''Intended for use when dict values are dataclass instances.
-       Adds methods to support serialization and deserialzation.
+       Adds methods to support human-readable serialization and deserialzation.
     '''
     def to_string(self):
         dict2 = {k: str(v) for k, v in self.items()}
@@ -41,7 +42,7 @@ class DictOfDataclasses(dict):
 
 class ListOfDataclasses(list):
     '''Intended for use with lists of dataclass instances.
-       Adds methods to support serialization and deserialzation.
+       Adds methods to support human-readable serialization and deserialzation.
     '''
     def to_string(self):
         return '\n'.join([str(x) for x in self])
@@ -113,6 +114,45 @@ def load_file_as_module(filename, desired_module_name=None):
   new_module = importlib.util.module_from_spec(spec)
   loader.exec_module(new_module)
   return new_module
+
+
+@dataclass
+class PopenOutput:
+    ok: bool
+    # out: str   (set by __post_init__)
+    returncode: int
+    stdout: str
+    stderr: str
+    exception_str: str
+    pid: int
+    def __post_init__(self):
+        if self.exception_str:
+            self.out = 'ERROR: ' + self.exception_str
+        elif self.ok and self.stdout:
+            self.out = self.stdout
+        else:
+            self.out = 'ERROR: ' + self.stderr
+    def __str__(self): return self.out
+
+
+def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
+    text_mode = kwargs_to_popen.get('text', True)
+    try:
+        proc = subprocess.Popen(
+            args, text=text_mode, stdin=subprocess.PIPE if stdin_str else None,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            **kwargs_to_popen)
+        stdout, stderr = proc.communicate(stdin_str, timeout=timeout)
+        return PopenOutput(ok=(proc.returncode == 0),
+                           returncode=proc.returncode,
+                           stdout=stdout.strip() if strip else stdout,
+                           stderr=stderr.strip() if strip else stderr,
+                           exception_str=None, pid=proc.pid)
+    except Exception as e:
+        try: proc.kill()
+        except Exception as e2: pass
+        return PopenOutput(ok=False, returncode=-255,
+                           stdout=None, stderr=None, exception_str=str(e), pid=-1)
 
 
 # ----------------------------------------

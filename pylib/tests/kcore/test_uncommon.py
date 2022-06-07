@@ -65,7 +65,53 @@ def test_exec_wrapper():
 def test_load_file_as_module():
     m = UC.load_file_as_module('testdata/bad-filename.py')
     assert m.data == 'hithere'
-    
+
+
+def test_popen():
+    assert UC.popen('echo 1+2 | bc', shell=True).out == '3'
+
+    assert str(UC.popen(['/usr/bin/cut', '-d:', '-f2'], 'abc:123:def')) == '123'
+
+    assert UC.popen('/bin/cat', 'hello world').out == 'hello world'
+
+    rslt = UC.popen(['/bin/ls', '/etc'])
+    assert rslt.ok
+    assert rslt.returncode == 0
+    assert 'passwd' in str(rslt)
+
+    rslt = UC.popen(['/bin/ls', '/invalid'])
+    assert not rslt.ok
+    assert 'ERROR' in rslt.out
+    assert rslt.returncode == 2
+    assert rslt.stdout == ''
+    assert 'cannot access' in rslt.stderr
+    assert rslt.exception_str is None
+    assert rslt.out == f'ERROR: {rslt.stderr}'
+
+    rslt = UC.popen(['/invalid'])
+    assert not rslt.ok
+    assert str(rslt) == f'ERROR: {rslt.exception_str}'
+    assert 'No such file' in str(rslt)
+
+    rslt = UC.popen('echo hello', shell=True)
+    assert rslt.ok
+    assert rslt.stdout == str(rslt)
+    assert rslt.stderr == ''
+    assert rslt.exception_str is None
+    assert rslt.stdout == 'hello'
+
+    rslt = UC.popen(['/bin/sleep', '3'], timeout=1)
+    assert not rslt.ok
+    assert rslt.stdout is None
+    assert rslt.stderr is None
+    assert 'timed out' in rslt.exception_str
+    assert 'timed out' in str(rslt)
+    try:
+        os.kill(rslt.pid, 0)
+        assert 'expected exception on attempt to kill timed out pid' == ''
+    except:
+        pass
+
 
 def test_gpg_symmetric():
     # not supported in python2
