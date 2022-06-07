@@ -26,10 +26,13 @@ if True:  ##@@ TODO:   if DEBUG:
 # --------------------
 
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
-  log_msg = f'announce [{push_level}/{syslog_level}]: {msg}: {details}'
+  log_msg = f'announce [{push_level}/{syslog_level}]: {msg}'
+  if details: log_msg += f': {details}'
   if DEBUG: return C.log_debug(f'ext would announce: {log_msg}')
   C.log(log_msg)
-  if speak: C.read_web('http://pi1/speak/' + msg)
+  if speak:
+    rslt = C.read_web('http://pi1/speak/' + msg)
+    if not '<p>ok' in rslt: C.log_error(f'unexpected result from speak command: {rslt}')
   if details: msg += ': %s' % details
   if push_level: push_notification(msg, push_level)
   if syslog_level: syslog.syslog(syslog_level, msg)

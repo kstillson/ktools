@@ -1,14 +1,11 @@
 
 ## ++ktools tech
    - homesec
-     - view
-       - add kcore.auth
-       - tests
-     - add docker container
      - test in prod
      - change clients to use kcore.auth
    - nagdock test fails on jack
    - ~all docker tests fail on blue
+   - add uc.popen ?
    - webdock (holding on homesec transition)
    - review non-doc TODO's
    - re-confirm virgin build process

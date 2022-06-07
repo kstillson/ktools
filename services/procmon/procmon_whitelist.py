@@ -8,7 +8,7 @@ WHITELIST = [
     WL('/',         'blue-backup', False, False, 'sshd: blue-backup'),
     WL('/',         'ken',         False, False, '(/bin/bash -c *)?(/usr/bin/retry -d [0-9]* -t 4 )?(/usr/bin/python3 )?/usr/local/bin/tplink'),
     WL('/',         'ken',         False, False, '(/bin/bash -c *)?({ )?/usr/local/bin/heliocron wait --event sunset'),
-    WL('/',         'ken',         False, False, '(/bin/sh -c *)?/usr/local/bin/tplink tree on'),
+    WL('/',         'ken',         False, False, '(/bin/sh -c *)?/usr/local/bin/tplink tree'),
     WL('/',         'ken',         False, False, '/usr/sbin/sendmail'),
     WL('/',         'messagebus',  False, True,  '/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation'),
     WL('/',         'nobody',      False, False, '(/bin/bash -c *)?/bin/ping -c1 -q -w4 hs-front'),
