@@ -192,21 +192,27 @@ def popener(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
 
 # ---------- Symmetric encryption
 
-def symmetric_crypt(data, password, salt=None, decrypt=False):
+ENCRYPTION_PREFIX = 'pcrypt1:'   # Can be used to auto-detect whether to encrypt or decrypt.
+
+def symmetric_crypt(data, password, salt=None, decrypt=None):
+    if decrypt is None: decrypt = data.startswith(ENCRYPTION_PREFIX)
     import base64
     from cryptography.fernet import Fernet
     from cryptography.hazmat.backends import default_backend
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
     if not salt: salt = DEFAULT_SALT
+    if decrypt: data = data.replace(ENCRYPTION_PREFIX, '')
     try:
         kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt.encode(),
                          iterations=150000, backend=default_backend())
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         f = Fernet(key)
         in_bytes = data.encode()
-        out = f.decrypt(in_bytes) if decrypt else f.encrypt(in_bytes)
-        return out.decode()
+        out_bytes = f.decrypt(in_bytes) if decrypt else f.encrypt(in_bytes)
+        out = out_bytes.decode()
+        if not decrypt: out = ENCRYPTION_PREFIX + out
+        return out
     except Exception as e:
         return 'ERROR: ' + (str(e) or 'invalid password or salt')
 

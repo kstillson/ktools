@@ -10,9 +10,6 @@ import kcore.common as C
 import kcore.uncommon as UC
 
 
-ENCRYPTION_PREFIX = 'pcrypt1:'   # used to auto-detect whether to encrypt or decrypt
-
-
 def parse_args(argv):
   ap = argparse.ArgumentParser(description=__doc__)
   ap.add_argument('--infile',   '-i', default='-', help='file to encrypt or decrypt; default ("-") will read from stdin')
@@ -29,13 +26,8 @@ def main(argv=[]):
   data = C.read_file(args.infile)
   if data.startswith('ERROR'): sys.exit(data)
 
-  decrypt = data.startswith(ENCRYPTION_PREFIX)
-  if decrypt: data = data.replace(ENCRYPTION_PREFIX, '')
-
-  output = UC.symmetric_crypt(data, pswd, salt, decrypt)
+  output = UC.symmetric_crypt(data, pswd, salt)
   if output.startswith('ERROR'): sys.exit(output)
-
-  if not decrypt: output = ENCRYPTION_PREFIX + output
   C.write_file(args.out, output)
 
 
