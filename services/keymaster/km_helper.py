@@ -5,7 +5,7 @@ TODO
 
 '''
 
-import argparse, getpass, os, sys
+import argparse, os, sys
 
 # kcore stuff
 import kcore.auth as A
@@ -17,24 +17,6 @@ from km import Secret, Secrets
 
 
 # ---------- helpers
-
-def get_special_arg(args, argname, required=True):
-    '''Resolve - and $ special arg values. Also write resolved value back so we dont have to do it again.'''
-    arg_val = getattr(args, argname)
-    value = None
-    if arg_val == "-":
-        value = getpass.getpass(f'Enter value for {argname}: ')
-        if value: setattr(args, argname, value)
-    elif arg_val and arg_val.startswith('$'):
-        varname = arg_val[1:]
-        value = os.environ.get(varname)
-        if not value: sys.exit(f'{argname} indicated to use environment variable {arg_val}, but variable is not set.')
-        args.argname = value
-    else: value = arg_val
-
-    if required and not value: sys.exit(f'Unable to get required value for {argname}.')
-    return value
-
 
 def require(args, argname):
     val = getattr(args, argname)
@@ -113,7 +95,7 @@ def main(argv=[]):
 
   keyname = require(args, 'keyname')
   db_filename = require(args, 'datafile')
-  password = get_special_arg(args, 'password')
+  password = UC.resolve_special_arg(args, 'password')
 
   err = secrets.load_from_encrypted_file(db_filename, password)
   if err: sys.exit(f'Unable to load secrets file: {err}')
@@ -130,7 +112,7 @@ def main(argv=[]):
 
   if keyname in secrets and not args.force: sys.exit(f'key {keyname} already exists in database, and --force not specified')
 
-  new_secret = get_special_arg(args, 'secret')
+  new_secret = UC.resolve_special_arg(args, 'secret')
 
   acl = list(map(str.split, args.acl.split(',')))
   entry = Secret(secret=new_secret, acl=acl, comment=args.comment)

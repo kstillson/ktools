@@ -131,9 +131,8 @@ def test_symmetric_encryption():
     assert UC.decrypt(encrypted, password, salt) == plaintext
     assert UC.decrypt(encrypted, 'wrong-password', salt).startswith('ERROR')
     assert UC.decrypt(encrypted, password, 'wrong-salt').startswith('ERROR')
-    
-    
-    
+
+
 ''' TODO: DISABLED.
     calling gpg via subprocess requires /usr/bin/gpg-agent, which I've disabled
     on my system, which causes this test to fail.  Disabling for now.
@@ -154,3 +153,35 @@ def test_gpg_symmetric():
     assert err.startswith('ERROR:')
 
 '''
+
+@dataclass
+class FakeArgs:
+    x: str
+
+def test_resolve_special_arg():
+    args = FakeArgs('plain')
+    assert UC.resolve_special_arg(args, 'x') == 'plain'
+
+    os.environ['tmp1'] = 'value1'
+    args.x = '$tmp1'
+    assert UC.resolve_special_arg(args, 'x') == 'value1'
+    assert args.x == 'value1'
+
+    args.x = '$missing'
+    try:
+        UC.resolve_special_arg(args, 'x')
+        assert '' == 'expected exception for missing variable'
+    except ValueError:
+        pass
+
+    os.environ['tmp1'] = ''
+    args.x = '$tmp1'
+    try:
+        UC.resolve_special_arg(args, 'x')
+        assert '' == 'expected exception for empty required value'
+    except ValueError:
+        pass
+
+    args.x = '$tmp1'
+    assert UC.resolve_special_arg(args, 'x', required=False) == ''
+    assert args.x == ''

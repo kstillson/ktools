@@ -14,10 +14,12 @@ PY_VER = sys.version_info[0]
 if PY_VER == 2: import StringIO as io
 else: import io
 
+# ---------- control constants
 
-# ----------------------------------------
-# Collections of DataClasses
+DEFAULT_SALT = 'its-bland-without-salt'
 
+
+# ---------- Collections of DataClasses
 
 class DictOfDataclasses(dict):
     '''Intended for use when dict values are dataclass instances.
@@ -58,8 +60,7 @@ class ListOfDataclasses(list):
         return count
 
 
-# ----------------------------------------
-# I/O
+# ---------- I/O
 
 class Capture():
     '''Temporarily captures stdout and stderr and makes them available.
@@ -189,31 +190,33 @@ def popener(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
     return popen(args, stdin_str, timeout, strip, **kwargs_to_popen).out
 
 
-# ----------------------------------------
-# Symmetric encryption
+# ---------- Symmetric encryption
 
-def encrypt(plaintext, password, salt=None, decrypt=False):
+def symmetric_crypt(data, password, salt=None, decrypt=False):
     import base64
     from cryptography.fernet import Fernet
     from cryptography.hazmat.backends import default_backend
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-    if not salt: salt = 'its-bland-without-salt'
+    if not salt: salt = DEFAULT_SALT
     try:
         kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt.encode(),
-                         iterations=100000, backend=default_backend())
+                         iterations=150000, backend=default_backend())
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         f = Fernet(key)
-        in_bytes = plaintext.encode()
+        in_bytes = data.encode()
         out = f.decrypt(in_bytes) if decrypt else f.encrypt(in_bytes)
         return out.decode()
     except Exception as e:
         return 'ERROR: ' + (str(e) or 'invalid password or salt')
-    
+
+def encrypt(plaintext, password, salt=None):
+    return symmetric_crypt(plaintext, password, salt, decrypt=False)
 
 def decrypt(encrypted, password, salt=None):
-    return encrypt(encrypted, password, salt, True)
-    
+    return symmetric_crypt(encrypted, password, salt, decrypt=True)
+
+# -----
 
 def gpg_symmetric(plaintext, password, decrypt=True):
     if PY_VER == 2: return 'ERROR: not supported for python2'  # need pass_fds
@@ -230,8 +233,7 @@ def gpg_symmetric(plaintext, password, decrypt=True):
     return out.decode() if p.returncode == 0 else 'ERROR: ' + err.decode()
 
 
-# ----------------------------------------
-# System interaction
+# ---------- System interaction
 
 def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     if os.getuid() != 0: return
@@ -241,5 +243,43 @@ def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     os.setgid(running_gid)
     os.setuid(running_uid)
     old_umask = os.umask(0o077)
+
+
+# ---------- Argparse helpers
+
+def resolve_special_arg(args, argname, required=True):
+    '''Process various special argument values.  Write resolved value back into args and return it.
+
+       args.argname can be "-" to read as a password from tty,
+       $X to indicate to use environment variable as value,
+       *A[/B/C] to query keymaster for key A under username B and password C,
+       or can just be a normal string.
+    '''
+    arg_val = getattr(args, argname)
+    if arg_val == "-":
+        import getpass
+        value = getpass.getpass(f'Enter value for {argname}: ')
+        setattr(args, argname, value)
+
+    elif arg_val and arg_val.startswith('$'):
+        varname = arg_val[1:]
+        value = os.environ.get(varname)
+        if value is None: raise ValueError(f'{argname} indicated to use environment variable {arg_val}, but variable is not set.')
+        setattr(args, argname, value)
+
+    elif arg_val and arg_val.startswith('*'):
+        parts = arg_val[1:].split('/')
+        keyname = parts[0]
+        username = parts[1] if len(parts) >= 2 else None
+        password = parts[2] if len(parts) >= 3 else None
+        import kmc
+        arg_val = kmc.query_km(keyname, username, password, timeout=3, retry_limit=2, retry_delay=2)
+        if arg_val.startswith('ERROR:'): raise ValueError(f'failed to retrieve {keyname} from keymaster: {arg_val}.')
+        setattr(args, argname, value)
+
+    else: value = arg_val
+
+    if required and not value: raise ValueError(f'Unable to get required value for {argname}.')
+    return value
 
 

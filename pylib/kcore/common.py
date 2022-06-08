@@ -104,6 +104,21 @@ def read_file(filename, list_of_lines=False, strip=False, wrap_exceptions=True):
     return data
 
 
+def write_file(filename, data, wrap_exceptions=True):
+    '''Write data to a file, or stdout if filename is "-".  Returns True on success.'''
+    if filename == '-':
+        print(data)
+        return True
+    if wrap_exceptions:
+        try:
+            with open(filename, 'w') as f: f.write(data)
+        except:
+            return False
+    else:
+        with open(filename, 'w') as f: f.write(data)
+    return True
+
+
 # ----------------------------------------
 # logging
 
