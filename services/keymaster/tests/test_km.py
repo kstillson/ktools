@@ -18,8 +18,8 @@ def test_basic_opration(tmp_path):
     random_high_port = random.randrange(10000,19999)
     argv = ['--debug',
             '--certkeyfile', 'tests/server-cn=localhost.pem',
-            '--datafile', 'tests/km-test.data.gpg',
-            '--db-filename', 'tests/kcore_auth_db-test.data.gpg',
+            '--datafile', 'tests/km-test.data.pcrypt',
+            '--db-filename', 'tests/kcore_auth_db-test.data.pcrypt',
             '--logfile', '-',
             '--port', str(random_high_port)]
     threading.Thread(target=km.main, args=(argv,), daemon=True).start()

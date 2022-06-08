@@ -82,14 +82,20 @@ def stderr(msg):
 
 
 def read_file(filename, list_of_lines=False, strip=False, wrap_exceptions=True):
-    '''Returns contents as a string or list of strings.
+    '''Returns contents as a string or list of strings.  filename to "-" for stdin.
        Returns None on error.  list_of_lines + strip will strip all lines.'''
     if wrap_exceptions:
         try:
-            with open(filename) as f: data = f.read()
+            if filename == '-':
+                data = sys.stdin.read()
+            else:
+                with open(filename) as f: data = f.read()
         except: return None
     else:
-        with open(filename) as f: data = f.read()
+        if filename == '-':
+            data = sys.stdin.read()
+        else:
+            with open(filename) as f: data = f.read()
     if list_of_lines:
         data = data.split('\n')
         if strip: data = [i.strip() for i in data if i != '']

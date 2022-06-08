@@ -152,18 +152,20 @@ def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
        If you indeed don't need anything other than .out, you might use
        popener() instead, which just returns the .out field directly.
     '''
-    text_mode = kwargs_to_popen.get('text', True)
+    text_mode = kwargs_to_popen.pop('text', True)
     if not text_mode: strip = False
+    stdin = kwargs_to_popen.pop('stdin', subprocess.PIPE)
+    stdout = kwargs_to_popen.pop('stdout', subprocess.PIPE)
+    stderr = kwargs_to_popen.pop('stderr', subprocess.PIPE)
     try:
         proc = subprocess.Popen(
-            args, text=text_mode, stdin=subprocess.PIPE if stdin_str else None,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            args, text=text_mode, stdin=stdin, stdout=stdout, stderr=stderr,
             **kwargs_to_popen)
         stdout, stderr = proc.communicate(stdin_str, timeout=timeout)
         return PopenOutput(ok=(proc.returncode == 0),
                            returncode=proc.returncode,
-                           stdout=stdout.strip() if strip else stdout,
-                           stderr=stderr.strip() if strip else stderr,
+                           stdout=stdout.strip() if strip and stdout else stdout,
+                           stderr=stderr.strip() if strip and stderr else stderr,
                            exception_str=None, pid=proc.pid)
     except Exception as e:
         try: proc.kill()
@@ -188,7 +190,30 @@ def popener(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
 
 
 # ----------------------------------------
-# GPG passthrough
+# Symmetric encryption
+
+def encrypt(plaintext, password, salt=None, decrypt=False):
+    import base64
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    if not salt: salt = 'its-bland-without-salt'
+    try:
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt.encode(),
+                         iterations=100000, backend=default_backend())
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        f = Fernet(key)
+        in_bytes = plaintext.encode()
+        out = f.decrypt(in_bytes) if decrypt else f.encrypt(in_bytes)
+        return out.decode()
+    except Exception as e:
+        return 'ERROR: ' + (str(e) or 'invalid password or salt')
+    
+
+def decrypt(encrypted, password, salt=None):
+    return encrypt(encrypted, password, salt, True)
+    
 
 def gpg_symmetric(plaintext, password, decrypt=True):
     if PY_VER == 2: return 'ERROR: not supported for python2'  # need pass_fds

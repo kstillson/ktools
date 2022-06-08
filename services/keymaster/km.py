@@ -12,13 +12,13 @@ between the client machine and the keymaster server), and that secret is
 hardware-locked to the machine on which it was generated, which should be the
 machine that km requests are going to come from.
 
-The km secrets database is stored in a symmetrically encypted GPG file, and
+The km secrets database is stored in a symmetrically encypted file, and
 the server does not know the password to it.  This makes it safe to backup the
 source directory without exposing secrets (although see notes below concerning
 the security of the TLS private key).
 
 To enable the server (i.e. decrypt the database), the service owner must
-manually provide the GPG passphrase via a web client (a login-style form is
+manually provide the encryption passphrase via a web client (a login-style form is
 provided).  Once this is done, the service is up and can serve secrets.
 
 The intended use for KM is services that require some sort of password in
@@ -52,7 +52,7 @@ the key registration and when retrieving the secret.
 By default, the server is deliberately hyper-sentitive, meaning that a single
 unauthorized or not-understood request will cause the server to panic and
 clear it's decrypted copy of the database.  The key-master owner must then
-re-enter the GPG passphrase before any more secrets can be served.  This is
+re-enter the passphrase before any more secrets can be served.  This is
 intended to discourage hacking or experimentation against the server.  It also
 means you probably need to continuously monitor the KM; see the /healthz
 handler for an easy way to do that.  If you don't want the hyper-sensitive
@@ -67,10 +67,10 @@ LAST_RECEIVED_TIMES ratchet failure non-panicing?  Problem is that this makes
 real replay attacks non-panicing...  hmmm...
 
 The secrets database is formatted as a Python serialized @dataclass.  See
-km-test.data.gpg for an example; the passphrase is "test123".  btw, that file
+km-test.data.pcrypt for an example; the passphrase is "test123".  btw, that file
 was generated with $PUID="test".  Note that various tests are dependent on
 this file's current contents, so you might break them if you change it.  Your
-real secrets database goes in private.d/km.data.gpg.
+real secrets database goes in private.d/km.data.pcrypt .
 
 '''
 
@@ -113,11 +113,11 @@ class Secrets(UC.DictOfDataclasses):
         V.bump('resets')
         V.set('loaded-keys', 0)
 
-    def load_from_gpg_file(self, filename, password):
+    def load_from_encrypted_file(self, filename, password):
         '''returns error message or None if all ok.'''
         encrypted = C.read_file(filename)
         if not encrypted: return f'{filename} cannot be read or is empty'
-        decrypted = UC.gpg_symmetric(encrypted, password)
+        decrypted = UC.decrypt(encrypted, password)
         if decrypted.startswith('ERROR'): return decrypted
         cnt = self.from_string(decrypted, Secret)
         if cnt < 0: return f'Error parsing decrypted secrets from {filename}'
@@ -162,7 +162,7 @@ def km_healthz_handler(request):
 
 def km_load_handler(request):
     SECRETS.reset()
-    err = SECRETS.load_from_gpg_file(ARGS.datafile, request.post_params.get('password'))
+    err = SECRETS.load_from_encrypted_file(ARGS.datafile, request.post_params.get('password'))
     if err or not SECRETS.ready():
         C.log_alert(f'unable to load secrets from {ARGS.datafile}: {err}')
         V.bump('reloads-fails')
@@ -236,8 +236,8 @@ def km_default_handler(request):
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='key manager server')
   ap.add_argument('--certkeyfile', '-k', default='keymaster.pem', help='name of file with both server TLS key and matching certificate.  set to blank to serve http rather than https (NOT RECOMMENDED!)')
-  ap.add_argument('--datafile', '-d', default='km.data.gpg', help='name of encrypted file with secrets database')
-  ap.add_argument('--db-filename', '-D', default='kcore_auth_db.data.gpg', help='name of the encrypted registration database file')
+  ap.add_argument('--datafile', '-d', default='km.data.pcrypt', help='name of encrypted file with secrets database')
+  ap.add_argument('--db-filename', '-D', default='kcore_auth_db.data.pcrypt', help='name of the encrypted registration database file')
   ap.add_argument('--debug', '-Z', action='store_true', help='puts kcore.auth into debug mode. WARNING- outputs logs of secrets.')
   ap.add_argument('--dont-panic', action='store_true', help='By default the server will panic (i.e. clear its decrypted secrets database) if just about anything unexpected happens, including any denied request for a key.  This flag disables that, favoring stability over pananoia.')
   ap.add_argument('--logfile', '-l', default='km.log', help='filename for operations log.  "-" for stderr, blank to disable log file')

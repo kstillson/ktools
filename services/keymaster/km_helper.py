@@ -44,8 +44,7 @@ def require(args, argname):
 
 def save_db(secrets, password, db_filename):
     plaintext = secrets.to_string()
-    encrypted = UC.gpg_symmetric(plaintext, password, decrypt=False)
-    if not 'PGP MESSAGE' in encrypted: sys.exit('encryption failed: ' + encrypted)
+    encrypted = UC.encrypt(plaintext, password)
     backup_filename = f'{db_filename}.prev'
     if os.path.isfile(backup_filename): os.unlink(backup_filename)
     if os.path.isfile(db_filename): os.rename(db_filename, backup_filename)
@@ -85,10 +84,10 @@ def parse_args(argv):
   group3 = ap.add_argument_group('alternate run modes')
   group3.add_argument('--remove',     '-Z', action='store_true', help='remove secret from --datafile with "keyname".  Other flags ignored.')
   group3.add_argument('--restart-km', '-R', default=None, help="Pass hostname:port of a keymanager server to attempt to restart to pick up added keys.  Note that if the server's data is in a docker filesystem, this probably won't have any effect and you need to rebuild the image instead.")
-  group3.add_argument('--testkey',    '-T', action='store_true', help="Generate the contents of km-test.data.gpg; all other flags ignored.")
+  group3.add_argument('--testkey',    '-T', action='store_true', help="Generate the contents of km-test.data.pcrypt; all other flags ignored.")
 
   # optional params
-  ap.add_argument('--datafile',      '-d', default='km.data.gpg', help='name of encrypted secrets file we are going to modify')
+  ap.add_argument('--datafile',      '-d', default='km.data.pcrypt', help='name of encrypted secrets file we are going to modify')
   ap.add_argument('--force',         '-f', action='store_true', help='overwrite an existing secret with the new value')
 
   return ap.parse_args(argv)
@@ -116,7 +115,7 @@ def main(argv=[]):
   db_filename = require(args, 'datafile')
   password = get_special_arg(args, 'password')
 
-  err = secrets.load_from_gpg_file(db_filename, password)
+  err = secrets.load_from_encrypted_file(db_filename, password)
   if err: sys.exit(f'Unable to load secrets file: {err}')
   if len(secrets) == 0: print(f'WARNING- No keys loaded from {db_filename}; starting fresh.')
 
