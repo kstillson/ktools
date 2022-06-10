@@ -302,10 +302,10 @@ case "$cmd" in
     docker inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
     ;;
   get-all-ips | ips)                   ## Print IPs for all up containers.
-    t=$(mktemp)
-    list-buildable > $t
-    fgrep -f $t /root/docker-dev/dnsdock/files/etc/dnsmasq/dnsmasq.hosts | sort -k 2 | cut -f1-2
-    rm $t
+    for name in $(docker ps --format "{{.Names}}"); do
+	echo -n "${name}   "
+	docker inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
+    done | column -t | sort
     ;;
   list-up | lu | ls | l | ps | p)      ## List all up containers
     docker ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
