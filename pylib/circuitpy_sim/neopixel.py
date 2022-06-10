@@ -33,6 +33,14 @@ GRBW = 0
 
 # ---------- tkinter based Neopixel simulator
 
+def sep_rgb(rgb):
+    b = rgb & 0xff
+    tmp = rgb >> 8
+    g = tmp & 0xff
+    r = tmp >> 8
+    return r, g, b
+
+
 class NeoPixel:
     def __init__(self, pin, num_pixels, **kwargs):
         if LOG_LEVEL_SETUP: C.log(f'NeoPixel: new array of {num_pixels} dots', LOG_LEVEL_SETUP)
@@ -68,17 +76,20 @@ class NeoPixel:
 
     def __len__(self): return self.n
 
-    def __setitem__(self, index, val):
+    def __setitem__(self, index, val_orig):
+        val = val_orig
         if isinstance(index, slice):
             seq_index = 0
             for i in range(index.start or 0, index.stop or self.n, index.step or 1):
                 self.__setitem__(i, val[seq_index])
                 seq_index += 1
             return
-        if isinstance(val, int): val=(val, val, val)
+        if isinstance(val, int):
+            if val <= 255: val=(val, val, val)
+            else: val = sep_rgb(val)
         if self.brightness != 1.0:
             val = (int(val[0] * self.brightness), int(val[1] * self.brightness), int(val[2] * self.brightness))
-        if LOG_LEVEL_SET_PIXEL: C.log(f'NeoPixel: set {index} to {val}', LOG_LEVEL_SET_PIXEL)
+        if LOG_LEVEL_SET_PIXEL: C.log(f'NeoPixel: set {index} to {val}  {val_orig=}', LOG_LEVEL_SET_PIXEL)
         if not GRAPHICS: return
         col = (val[0] << 16) + (val[1] << 8) + val[2]
         hexcol = "#"+"{0:#0{1}x}".format(col, 8)[2:]
