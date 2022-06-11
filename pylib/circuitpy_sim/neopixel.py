@@ -84,15 +84,12 @@ class NeoPixel:
                 self.__setitem__(i, val[seq_index])
                 seq_index += 1
             return
-        if isinstance(val, int):
-            if val <= 255: val=(val, val, val)
-            else: val = sep_rgb(val)
+        if isinstance(val, int): val = sep_rgb(val)
         if self.brightness != 1.0:
             val = (int(val[0] * self.brightness), int(val[1] * self.brightness), int(val[2] * self.brightness))
         if LOG_LEVEL_SET_PIXEL: C.log(f'NeoPixel: set {index} to {val}  {val_orig=}', LOG_LEVEL_SET_PIXEL)
         if not GRAPHICS: return
-        col = (val[0] << 16) + (val[1] << 8) + val[2]
-        hexcol = "#"+"{0:#0{1}x}".format(col, 8)[2:]
+        hexcol = '#%02x%02x%02x' % val
         self.canvas.itemconfig(self.rects[index], fill=hexcol)
 
     def __setslice__(self, start, stop, val):
