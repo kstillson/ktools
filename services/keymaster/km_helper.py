@@ -5,7 +5,7 @@ TODO
 
 '''
 
-import argparse, getpass, os, sys
+import argparse, os, sys
 
 # kcore stuff
 import kcore.auth as A
@@ -18,24 +18,6 @@ from km import Secret, Secrets
 
 # ---------- helpers
 
-def get_special_arg(args, argname, required=True):
-    '''Resolve - and $ special arg values. Also write resolved value back so we dont have to do it again.'''
-    arg_val = getattr(args, argname)
-    value = None
-    if arg_val == "-":
-        value = getpass.getpass(f'Enter value for {argname}: ')
-        if value: setattr(args, argname, value)
-    elif arg_val and arg_val.startswith('$'):
-        varname = arg_val[1:]
-        value = os.environ.get(varname)
-        if not value: sys.exit(f'{argname} indicated to use environment variable {arg_val}, but variable is not set.')
-        args.argname = value
-    else: value = arg_val
-
-    if required and not value: sys.exit(f'Unable to get required value for {argname}.')
-    return value
-
-
 def require(args, argname):
     val = getattr(args, argname)
     if not val: sys.exit(f'arg {argname} is required.')
@@ -44,8 +26,7 @@ def require(args, argname):
 
 def save_db(secrets, password, db_filename):
     plaintext = secrets.to_string()
-    encrypted = UC.gpg_symmetric(plaintext, password, decrypt=False)
-    if not 'PGP MESSAGE' in encrypted: sys.exit('encryption failed: ' + encrypted)
+    encrypted = UC.encrypt(plaintext, password)
     backup_filename = f'{db_filename}.prev'
     if os.path.isfile(backup_filename): os.unlink(backup_filename)
     if os.path.isfile(db_filename): os.rename(db_filename, backup_filename)
@@ -85,10 +66,10 @@ def parse_args(argv):
   group3 = ap.add_argument_group('alternate run modes')
   group3.add_argument('--remove',     '-Z', action='store_true', help='remove secret from --datafile with "keyname".  Other flags ignored.')
   group3.add_argument('--restart-km', '-R', default=None, help="Pass hostname:port of a keymanager server to attempt to restart to pick up added keys.  Note that if the server's data is in a docker filesystem, this probably won't have any effect and you need to rebuild the image instead.")
-  group3.add_argument('--testkey',    '-T', action='store_true', help="Generate the contents of km-test.data.gpg; all other flags ignored.")
+  group3.add_argument('--testkey',    '-T', action='store_true', help="Generate the contents of km-test.data.pcrypt; all other flags ignored.")
 
   # optional params
-  ap.add_argument('--datafile',      '-d', default='km.data.gpg', help='name of encrypted secrets file we are going to modify')
+  ap.add_argument('--datafile',      '-d', default='km.data.pcrypt', help='name of encrypted secrets file we are going to modify')
   ap.add_argument('--force',         '-f', action='store_true', help='overwrite an existing secret with the new value')
 
   return ap.parse_args(argv)
@@ -114,9 +95,9 @@ def main(argv=[]):
 
   keyname = require(args, 'keyname')
   db_filename = require(args, 'datafile')
-  password = get_special_arg(args, 'password')
+  password = UC.resolve_special_arg(args, 'password')
 
-  err = secrets.load_from_gpg_file(db_filename, password)
+  err = secrets.load_from_encrypted_file(db_filename, password)
   if err: sys.exit(f'Unable to load secrets file: {err}')
   if len(secrets) == 0: print(f'WARNING- No keys loaded from {db_filename}; starting fresh.')
 
@@ -131,7 +112,7 @@ def main(argv=[]):
 
   if keyname in secrets and not args.force: sys.exit(f'key {keyname} already exists in database, and --force not specified')
 
-  new_secret = get_special_arg(args, 'secret')
+  new_secret = UC.resolve_special_arg(args, 'secret')
 
   acl = list(map(str.split, args.acl.split(',')))
   entry = Secret(secret=new_secret, acl=acl, comment=args.comment)

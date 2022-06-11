@@ -1,10 +1,7 @@
 
 ## ++ktools tech
+   - confirm transition to pcrypt is okay
    - homesec
-     - view
-       - add kcore.auth
-       - tests
-     - add docker container
      - test in prod
      - change clients to use kcore.auth
    - nagdock test fails on jack

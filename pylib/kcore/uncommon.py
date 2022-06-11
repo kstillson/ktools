@@ -8,19 +8,22 @@ for Circuit Python.
 '''
 
 import grp, os, pwd, subprocess, sys
+from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
 if PY_VER == 2: import StringIO as io
 else: import io
 
+# ---------- control constants
 
-# ----------------------------------------
-# Collections of DataClasses
+DEFAULT_SALT = 'its-bland-without-salt'
 
+
+# ---------- Collections of DataClasses
 
 class DictOfDataclasses(dict):
     '''Intended for use when dict values are dataclass instances.
-       Adds methods to support serialization and deserialzation.
+       Adds methods to support human-readable serialization and deserialzation.
     '''
     def to_string(self):
         dict2 = {k: str(v) for k, v in self.items()}
@@ -41,7 +44,7 @@ class DictOfDataclasses(dict):
 
 class ListOfDataclasses(list):
     '''Intended for use with lists of dataclass instances.
-       Adds methods to support serialization and deserialzation.
+       Adds methods to support human-readable serialization and deserialzation.
     '''
     def to_string(self):
         return '\n'.join([str(x) for x in self])
@@ -57,8 +60,7 @@ class ListOfDataclasses(list):
         return count
 
 
-# ----------------------------------------
-# I/O
+# ---------- I/O
 
 class Capture():
     '''Temporarily captures stdout and stderr and makes them available.
@@ -115,8 +117,112 @@ def load_file_as_module(filename, desired_module_name=None):
   return new_module
 
 
-# ----------------------------------------
-# GPG passthrough
+@dataclass
+class PopenOutput:
+    ok: bool
+    # out: str   (set by __post_init__)
+    returncode: int
+    stdout: str
+    stderr: str
+    exception_str: str
+    pid: int
+    def __post_init__(self):
+        if self.exception_str:
+            self.out = 'ERROR: exception: ' + self.exception_str
+        elif self.ok and self.stdout:
+            self.out = self.stdout
+        else:
+            self.out = f'ERROR: [{self.returncode}] {self.stderr}'
+    def __str__(self): return self.out
+
+
+def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
+    '''Slightly improved API for subprocess.Popen().
+
+       args can be a simple string or a list of string args (which is safer).
+       timeout is in seconds, and strip causes stdout and stderr to have any
+       trailing newlines removed.  Any other flags usually sent to
+       subprocess.Popen will be carried over by kwargs_to_popen.
+
+       Returns a populated PopenOutput dataclass instance.  This has all the
+       various outputs in separate fields, but the idea is that all you should
+       need is the .out field.  If the command worked, this will contain its
+       output (by default a stripped and normal (non-binary) string), and if
+       the command failed, .out will start with 'ERROR:'.
+
+       If you indeed don't need anything other than .out, you might use
+       popener() instead, which just returns the .out field directly.
+    '''
+    text_mode = kwargs_to_popen.pop('text', True)
+    if not text_mode: strip = False
+    stdin = kwargs_to_popen.pop('stdin', subprocess.PIPE)
+    stdout = kwargs_to_popen.pop('stdout', subprocess.PIPE)
+    stderr = kwargs_to_popen.pop('stderr', subprocess.PIPE)
+    try:
+        proc = subprocess.Popen(
+            args, text=text_mode, stdin=stdin, stdout=stdout, stderr=stderr,
+            **kwargs_to_popen)
+        stdout, stderr = proc.communicate(stdin_str, timeout=timeout)
+        return PopenOutput(ok=(proc.returncode == 0),
+                           returncode=proc.returncode,
+                           stdout=stdout.strip() if strip and stdout else stdout,
+                           stderr=stderr.strip() if strip and stderr else stderr,
+                           exception_str=None, pid=proc.pid)
+    except Exception as e:
+        try: proc.kill()
+        except Exception as e2: pass
+        return PopenOutput(ok=False, returncode=-255,
+                           stdout=None, stderr=None, exception_str=str(e), pid=-1)
+
+
+def popener(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
+    '''A very simple interface to subprocess.Popen.
+
+       See uncommon.popen for fuller explaination of the arguments, but basically
+       you pass the command to run in args (either a simple string or a list of
+       strings).  By default you get back a non-binary stripped string with the
+       output of the command, or a string that starts with 'ERROR:' if something
+       went wrong.
+
+       If you need more precise visibility into output (e.g. separating stdout
+       from stderr), use uncommon.popen() instead.
+    '''
+    return popen(args, stdin_str, timeout, strip, **kwargs_to_popen).out
+
+
+# ---------- Symmetric encryption
+
+ENCRYPTION_PREFIX = 'pcrypt1:'   # Can be used to auto-detect whether to encrypt or decrypt.
+
+def symmetric_crypt(data, password, salt=None, decrypt=None):
+    if decrypt is None: decrypt = data.startswith(ENCRYPTION_PREFIX)
+    import base64
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    if not salt: salt = DEFAULT_SALT
+    if decrypt: data = data.replace(ENCRYPTION_PREFIX, '')
+    try:
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt.encode(),
+                         iterations=150000, backend=default_backend())
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        f = Fernet(key)
+        in_bytes = data.encode()
+        out_bytes = f.decrypt(in_bytes) if decrypt else f.encrypt(in_bytes)
+        out = out_bytes.decode()
+        if not decrypt: out = ENCRYPTION_PREFIX + out
+        return out
+    except Exception as e:
+        return 'ERROR: ' + (str(e) or 'invalid password or salt')
+
+def encrypt(plaintext, password, salt=None):
+    return symmetric_crypt(plaintext, password, salt, decrypt=False)
+
+def decrypt(encrypted, password, salt=None):
+    return symmetric_crypt(encrypted, password, salt, decrypt=True)
+
+# -----
 
 def gpg_symmetric(plaintext, password, decrypt=True):
     if PY_VER == 2: return 'ERROR: not supported for python2'  # need pass_fds
@@ -133,8 +239,7 @@ def gpg_symmetric(plaintext, password, decrypt=True):
     return out.decode() if p.returncode == 0 else 'ERROR: ' + err.decode()
 
 
-# ----------------------------------------
-# System interaction
+# ---------- System interaction
 
 def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     if os.getuid() != 0: return
@@ -144,5 +249,43 @@ def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     os.setgid(running_gid)
     os.setuid(running_uid)
     old_umask = os.umask(0o077)
+
+
+# ---------- Argparse helpers
+
+def resolve_special_arg(args, argname, required=True):
+    '''Process various special argument values.  Write resolved value back into args and return it.
+
+       args.argname can be "-" to read as a password from tty,
+       $X to indicate to use environment variable as value,
+       *A[/B/C] to query keymaster for key A under username B and password C,
+       or can just be a normal string.
+    '''
+    arg_val = getattr(args, argname)
+    if arg_val == "-":
+        import getpass
+        value = getpass.getpass(f'Enter value for {argname}: ')
+        setattr(args, argname, value)
+
+    elif arg_val and arg_val.startswith('$'):
+        varname = arg_val[1:]
+        value = os.environ.get(varname)
+        if value is None: raise ValueError(f'{argname} indicated to use environment variable {arg_val}, but variable is not set.')
+        setattr(args, argname, value)
+
+    elif arg_val and arg_val.startswith('*'):
+        parts = arg_val[1:].split('/')
+        keyname = parts[0]
+        username = parts[1] if len(parts) >= 2 else None
+        password = parts[2] if len(parts) >= 3 else None
+        import kmc
+        arg_val = kmc.query_km(keyname, username, password, timeout=3, retry_limit=2, retry_delay=2)
+        if arg_val.startswith('ERROR:'): raise ValueError(f'failed to retrieve {keyname} from keymaster: {arg_val}.')
+        setattr(args, argname, value)
+
+    else: value = arg_val
+
+    if required and not value: raise ValueError(f'Unable to get required value for {argname}.')
+    return value
 
 

@@ -1,34 +1,14 @@
 #!/usr/bin/python3
 '''simple wrapper around gpg symmetric encrpytion'''
 
-import argparse, getpass, os, signal, subprocess, sys
+import argparse, os, signal, sys
 
 import kcore.uncommon as UC
 
 # ---------- helpers
 
-def get_special_arg(args, argname, required=True):
-    '''Resolve - and $ special arg values. Also write resolved value back so we dont have to do it again.'''
-    arg_val = getattr(args, argname)
-    value = None
-    if arg_val == "-":
-        value = getpass.getpass(f'Enter value for {argname}: ')
-        if value: setattr(args, argname, value)
-    elif arg_val and arg_val.startswith('$'):
-        varname = arg_val[1:]
-        value = os.environ.get(varname)
-        if not value: sys.exit(f'{argname} indicated to use environment variable {arg_val}, but variable is not set.')
-        args.argname = value
-    else: value = arg_val
-
-    if required and not value: sys.exit(f'Unable to get required value for {argname}.')
-    return value
-
-
 def pgrep(srch='gpg-agent'):
-    p = subprocess.Popen(['pgrep', srch], stdout=subprocess.PIPE)
-    out, _ = p.communicate()
-    return out.decode().strip()
+    return set(UC.popener(['pgrep'], srch).split('\n'))
 
 
 # ---------- main
@@ -43,9 +23,9 @@ def parse_args(argv):
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
 
-  gpg_pid_initial = pgrep()
+  gpg_pids_initial = pgrep()
 
-  pswd = get_special_arg(args, 'password')
+  pswd = UC.resolve_special_arg(args, 'password')
   with open(args.filename) as f: blob = f.read()
   decrypt = '.gpg' in args.filename
 
@@ -55,8 +35,9 @@ def main(argv=[]):
   outname = args.filename.replace('.gpg', '') if decrypt else args.filename + '.gpg'
   with open(outname, 'w') as f: f.write(blob2)
 
-  gpg_pid_final = pgrep()
-  if gpg_pid_final and not gpg_pid_initial: os.kill(int(gpg_pid_final), signal.SIGTERM)
+  gpg_pids_final = pgrep()
+  for pid in gpg_pids_final - gpg_pids_initial:
+      os.kill(int(pid), signal.SIGTERM)
 
   return 0
 

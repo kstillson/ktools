@@ -1,5 +1,5 @@
 
-INSTALLED_SCRIPTS := gpg_s hc k_auth kmc ratelimiter run_para
+INSTALLED_SCRIPTS := hc k_auth kmc pcrypt ratelimiter run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
 
@@ -87,7 +87,7 @@ install-simple: tools/keymaster.crt
 	mkdir -p $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/gpg_s.py ~/.local/bin/gpg_s
-	cp -puv tools/kmc.py ~/.local/bin/kmc
+	cp -puv tools/pcrypt.py ~/.local/bin/pcrypt
 	cp -puv tools/keymaster.crt ~/.local/bin/keymaster.crt
 	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
 	cp -puv tools/run_para.py ~/.local/bin/run_para

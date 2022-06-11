@@ -29,13 +29,15 @@ WEB_HANDLERS = {
 # ---------- Global state & types
 
 ARGS = None
-DOCKER_MAP = {}    # Maps container id (str) to container name (str).
-SCANNER = None     # Singleton of current scanner instance.
-WL = None          # List[WL] (see procmon_whitelist.py)
+DOCKER_MAP = {}          # Maps container id (str) to container name (str).
+SCANNER = None           # Singleton of current scanner instance.
+UNEXPECTED_PREV = set()  # set of pids from the previous scan, used for change detection.
+WL = None                # List[WL] (see procmon_whitelist.py)
 
 
 @dataclass
 class ProcessData:
+  # desc: str  -- created by __post_init__
   pid: int
   container_name: str
   ppid: int
@@ -44,12 +46,13 @@ class ProcessData:
   cmdline: str
   name: str
   note: str = None
-  def desc(self):
+  def __post_init__(self):
     note = '[[ ** %s ** ]] ' % self.note if self.note else ''
-    return '[%-9s](%-5s/%-5s) %s%s@%.120s' % (
+    self.desc = '[%-9s](%-5s/%-5s) %s%s@%.120s' % (
       self.container_name, self.pid, self.ppid, note, self.username, self.cmdline)
+  def __str__(self): return desc
 
-  
+
 # ---------- general helpers
 
 def get_docker_map():
@@ -96,24 +99,24 @@ def is_file_populated(filename):
 
 class Scanner(object):
   def __init__(self):
-    self.cow_errors = []   # List of error msg strings
-    self.expected = []     # List of ProcessData
-    self.fs_errors = []    # List of error msg strings
-    self.missing = []      # List of WL.WL entries
-    self.pd_db = {}        # maps pid to ProcessData instance
-    self.unexpected = []   # List of ProcessData
-    self.greylisted = []        # List of ProcessData
+    self.cow_errors = []         # List of error msg strings
+    self.expected = set()        # set of pids
+    self.fs_errors = []          # List of error msg strings
+    self.missing = []            # List of WL.WL entries
+    self.pd_db = {}              # map from pid to ProcessData instance
+    self.unexpected = set()      # set of pids
+    self.greylisted = set()      # set of pids
     for entry in WL.WHITELIST: entry.last_scan_hits = 0
 
   # ----- scanning
-  
+
   def scan(self):
     C.log("start scan")
     V.bump('scans')
     V.stamp('last_scan')
 
     global DOCKER_MAP
-    DOCKER_MAP = get_docker_map()
+    DOCKER_MAP = get_docker_map() if not ARGS.nodmap else {}
 
     self.add_process(1, '/')
     if not ARGS.nocow: self.scan_cow()
@@ -124,11 +127,16 @@ class Scanner(object):
       if entry.required and entry.hit_count_last_scan == 0:
         self.missing.append(entry)
 
+    # Separate out just the new problems for adding to the queue.
+    global UNEXPECTED_PREV
+    new_unexpected = self.unexpected - UNEXPECTED_PREV
+    UNEXPECTED_PREV = set(self.unexpected)
+
     # Outputs
-    problems = self.problems_to_list_of_strings(False)
-    for i in problems: C.log(i)
-    if ARGS.queue and problems:
-      with open(ARGS.queue, 'a') as f: f.write('\n'.join(problems) + '\n')
+    new_problems = self.problems_to_list_of_strings(new_unexpected, False)
+    for i in new_problems: C.log(i)
+    if ARGS.queue and new_problems:
+      with open(ARGS.queue, 'a') as f: f.write('\n'.join(new_problems) + '\n')
     if ARGS.output:
       with open(ARGS.output, 'w') as f: f.write(str(WL.WHITELIST).replace(' WL', '\n WL'))
 
@@ -159,41 +167,41 @@ class Scanner(object):
     self.pd_db[out.pid] = out
     return out
 
-  
+
   # ----- process tree building ("p" is psutil process object instances)
 
   def add_process(self, pid, container_name):
     try:
       pd = self.get_process_data(pid, container_name)
     except Exception as e:
-      C.log_error(f'Skipping pid with convertion error: {pid}: {str(e)}')
+      C.log_error(f'Skipping pid with convertion error (usually a defunct process): {pid}: {str(e)}')
       return
-    
+
     wl = self.find_whitelist_entry(WL.WHITELIST, pd)
     if wl:
       wl.hit_last = now()
       wl.hit_count += 1
       wl.hit_count_last_scan += 1
-    if ARGS.debug: C.log_debug('proc: %s; wl: %s' % (pd.desc(), wl))
-    
+    if ARGS.debug: C.log_debug('proc: %s; wl: %s' % (pd.desc, wl))
+
     if not wl:  # first check if its on the greylist.
       gl = self.find_whitelist_entry(WL.GREYLIST, pd)
       if gl:
-        if ARGS.debug: C.log_debug('proc: %s; gl: %s' % (pd.desc(), gl))
+        if ARGS.debug: C.log_debug('proc: %s; gl: %s' % (pd.desc, gl))
         gl.hit_last = now()
         gl.hit_count += 1
         gl.hit_count_last_scan += 1
-        return self.add_to_plist(self.greylisted, pd)
-      
+        return self.add_to_pset(self.greylisted, pd)
+
       else:  # Neither whitelist nor greylist; this is an unexpected process.
-        if ARGS.debug: C.log_debug('UNEXPECTED: %s' % pd.desc())
-        return self.add_to_plist(self.unexpected, pd)
+        if ARGS.debug: C.log_debug('UNEXPECTED: %s' % pd.desc)
+        return self.add_to_pset(self.unexpected, pd)
 
     if wl.allow_children:
-      return self.add_to_plist(self.expected, pd, 'allowed w/ children')
+      return self.add_to_pset(self.expected, pd, 'allowed w/ children')
 
     # Not auto-accepting-children, so add the children for inspection.
-    self.add_to_plist(self.expected, pd)
+    self.add_to_pset(self.expected, pd)
     if 'containerd-shim' in pd.name: return self.add_docker_tree(pd)
     self.add_pid_list(pd.child_pids, container_name)
 
@@ -208,46 +216,46 @@ class Scanner(object):
     except Exception as e:
       if cid: cname = 'cid:' + cid    # Cant get name, but we have cid; use that.
       else: return self.add_error_process(pd, f'Unable to parse docker shim; {cpuset=}, {cid=}, {match=}, {cname=}, {err=}')
-      
+
     # We have a container name, so add the subtree.
     if ARGS.debug: C.log_debug('adding docker subtree. parent pid=%d, cname=%s, cid=%s, children=%s' % (pd.pid, cname, cid, shim_children_pids))
     self.add_pid_list(shim_children_pids, cname)
 
-    
+
   def add_pid_list(self, pid_list, container_name):
     for pid in pid_list: self.add_process(pid, container_name)
 
-      
-  def add_error_process(self, pd, note):
-    self.add_to_plist(self.unexpected, pd, note)
 
-    
+  def add_error_process(self, pd, note):
+    self.add_to_pset(self.unexpected, pd, note)
+
+
   # ---------- ProcessData-based methods
-  # ("pd" is a ProcessData instance)
-  # ("pl" is a list of ProcessData instances)
-  
-  def add_to_plist(self, plist, pd, note=''):
+  # ("pd" is always a ProcessData instance)
+
+  def add_to_pset(self, pset, pd, note=''):
     if pd.cmdline == '':
-      if ARGS.debug: C.log_debug(f'skipping add of process with empty cmdline: {pd.desc()}')
+      if ARGS.debug: C.log_debug(f'skipping add of process with empty cmdline: {pd.desc}')
       return
     if note: pd.note = note
-    plist.append(pd)
+    pset.add(pd.pid)
 
   def is_all_ok(self):
     return len(self.missing) == 0 and len(self.expected) > 10 and len(self.unexpected) == 0 and len(self.cow_errors) == 0 and len(self.fs_errors) == 0
 
   # -----
-  
+
   def find_whitelist_entry(self, search_list, pd):
     for w in search_list:
       if ((w.user == '*' or w.user == pd.username) and
           (w.container_name == '*' or w.container_name == pd.container_name)):
         if w.pattern.match(pd.cmdline): return w
 
-  def problems_to_list_of_strings(self, expand_trees=False):
+  def problems_to_list_of_strings(self, unexpected_pids, expand_trees=False):
     out = []
-    for pd in self.unexpected:
-      out.append('unexpected: %s' % self.proctree_to_string(pd) if expand_trees else pd.desc())
+    for pid in unexpected_pids:
+      pd = self.pd_db[pid]
+      out.append('unexpected: %s' % self.proctree_to_string(pd) if expand_trees else pd.desc)
     for ce in self.cow_errors: out.append('COW: %s' % ce)
     for ce in self.fs_errors: out.append('FS: %s' % ce)
     for m in self.missing: out.append('missing: %s' % m)
@@ -258,24 +266,24 @@ class Scanner(object):
     str = ''
     while pd:
       for i in range(level + 1): str += ' '
-      str += pd.desc()
+      str += pd.desc
       str += '\n'
       pd = self.pd_db.get(pd.ppid, None)
       level += 1
     return str
 
+  def render_pset_to_table(self, title, pset):
+    rows = []
+    if pset:
+      for pid in pset:
+        pd = self.pd_db[pid]
+        rows.append([pd.container_name, pd.pid, pd.ppid, pd.note, pd.username, pd.cmdline[:40]])
+    else:
+      rows.append([title, 'all ok'])
+    return H.list_to_table(rows, title=title)
+
 
 # ---------- handler helpers
-
-def render_plist_to_table(title, plist):
-  rows = []
-  if plist:
-    for pd in plist:
-      rows.append([pd.container_name, pd.pid, pd.ppid, pd.note, pd.username, pd.cmdline[:40]])
-  else:
-    rows.append([title, 'all ok'])
-  return  H.list_to_table(rows, title=title)
-
 
 def render_file_errors_to_table(title, cow_errors, fs_errors):
   rows = []
@@ -295,7 +303,7 @@ def render_queue_to_table(title):
     for line in f: rows.append([line + '<br/>'])
     return H.list_to_table(rows, title=title)
 
-  
+
 def render_missing_to_table(missing):
   rows = []
   if missing:
@@ -307,7 +315,7 @@ def render_missing_to_table(missing):
 def varz_to_table(list_of_varz):
   return H.list_to_table([[i, V.get(i)] for i in list_of_varz], title='varz')
 
-  
+
 # ---------- handlers
 
 def root_handler(request):
@@ -315,22 +323,22 @@ def root_handler(request):
   out = H.wrap('OK' if is_all_ok else 'Error', 'h2')
   out += render_queue_to_table('queue')
   out += varz_to_table(['last_scan', 'scans'])
-  out += render_plist_to_table('unexpected', SCANNER.unexpected)
+  out += SCANNER.render_pset_to_table('unexpected', SCANNER.unexpected)
   out += render_file_errors_to_table('file errors', SCANNER.cow_errors, SCANNER.fs_errors)
   out += render_missing_to_table(SCANNER.missing)
-  out += render_plist_to_table('greylisted', SCANNER.greylisted)
-  out += render_plist_to_table('expected', SCANNER.expected)
+  out += SCANNER.render_pset_to_table('greylisted', SCANNER.greylisted)
+  out += SCANNER.render_pset_to_table('expected', SCANNER.expected)
   return H.html_page_wrap(out, 'procmon')
-  
-  
+
+
 def healthz_handler(request):
   if is_file_populated(ARGS.queue):
     return 'ERROR: queue alert' if SCANNER.is_all_ok() else 'ERROR: queue alert (still active)'
   if SCANNER.is_all_ok(): return 'all ok'
-  
+
   summary = 'ERROR'
   out = ''
-  for i, err in enumerate(SCANNER.problems_to_list_of_strings(False)):
+  for i, err in enumerate(SCANNER.problems_to_list_of_strings(SCANNER.unexpected, False)):
     out += '\n%s' % err
     C.log(err)
     if i >= 10:
@@ -364,6 +372,7 @@ def parse_args(argv):
   parser.add_argument('--delay',   '-d', type=int, default=120, help='delay between automatic rescans (seconds)')
   parser.add_argument('--logfile', '-l', default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
   parser.add_argument('--nocow',         action='store_true', help='skip COW scan (used for testing)')
+  parser.add_argument('--nodmap',        action='store_true', help='skip getting the map from container ids to names.  Mainly for testing (avoids a sudo call), as makes whitelist entries based on container names useless.')
   parser.add_argument('--noro',          action='store_true', help='skip root-read-only check (used for testing)')
   parser.add_argument('--output',  '-o', default='/var/procmon/output', help='filename for statistics from last scan')
   parser.add_argument('--port',    '-p', type=int, default=8080, help='web port to listen on.  0 to disable.')
@@ -371,33 +380,33 @@ def parse_args(argv):
   parser.add_argument('--test',    '-t', action='store_true', help='run single scan and output only to stdout')
   parser.add_argument('--whitelist', '-w', default='procmon_whitelist.py', help='name of file contianing whitelist data')
   return parser.parse_args(argv)
-  
+
 
 def main(argv=[]):
   global ARGS
   ARGS = parse_args(argv or sys.argv[1:])
   C.init_log('procmon', ARGS.logfile,
              filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER)
-  
+
   global WL
   WL = _load_file_as_module(ARGS.whitelist, 'procmon_whitelist')
   for entry in WL.WHITELIST: entry.pattern = re.compile(entry.regex)
   for entry in WL.GREYLIST: entry.pattern = re.compile(entry.regex)
-  
+
   global SCANNER
   SCANNER = Scanner()
-  
+
   if ARGS.test:
     ARGS.queue = ''
     ARGS.logfile = ''
     SCANNER.scan()
-    out = '\n'.join(SCANNER.problems_to_list_of_strings(True))
+    out = '\n'.join(SCANNER.problems_to_list_of_strings(SCANNER.unexpected, True))
     print(out or 'all ok')
     return 0
-  
+
   ws = W.WebServer(WEB_HANDLERS, wrap_handlers=not ARGS.debug)
   ws.start(port=ARGS.port)
-  
+
   SCANNER.scan()
   while True:
     time.sleep(ARGS.delay)

@@ -30,9 +30,9 @@ WEB_HANDLERS = {
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='home automation web server')
   ap.add_argument('--debug', '-d', action='store_true', help='debug mode; log to stdout, disable all external comm')
-  ap.add_argument('--kauth-db-filename', '-F', default='kcore_auth_db.data.gpg', help='kauth shared secrets filename')
+  ap.add_argument('--kauth-db-filename', '-F', default=A.DEFAULT_DB_FILENAME, help='kauth shared secrets filename')
   ap.add_argument('--kauth-db-password', '-P', default='-', help='kauth shared secrets encryption password.  "-" means query keymanager for "kauth".  Blank disables kauth authN, i.e. clients must use http basic auth when authN required.')
-  ap.add_argument('--kauth-max-delta', '-D', type=int, default=90, help='max seconds between client and server token times (i.e. replay attack window)')
+  ap.add_argument('--kauth-max-delta', '-D', type=int, default=A.DEFAULT_MAX_TIME_DELTA, help='max seconds between client and server token times (i.e. replay attack window)')
   ap.add_argument('--kauth-no-ratchet', '-R', action='store_true', help='disable requirement that each kauth request have a later timestamp than the previous one.')  
   ap.add_argument('--logfile', '-l', default='homesec.log', help='filename for operations log.  "-" for stdout, blank to disable log file')
   ap.add_argument('--port', '-p', type=int, default=8080, help='port to listen on')
@@ -46,7 +46,10 @@ def main(argv=[]):
              filter_level_logfile=C.DEBUG if args.debug else C.INFO,
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
 
-  if args.kauth_db_password == '-': args.kauth_db_password = KMC.query_km('kauth')
+  if args.kauth_db_password == '-':
+    args.kauth_db_password = KMC.query_km('kauth')
+    if args.kauth_db_password.startswith('ERROR'): C.log_critical('unable to retrieve kauth password')
+    else: C.log('successfully retrieved kauth password')
   kauth_params = A.VerificationParams(
     db_passwd=args.kauth_db_password, db_filename=args.kauth_db_filename,
     max_time_delta=args.kauth_max_delta, must_be_later_than_last_check=not args.kauth_no_ratchet)

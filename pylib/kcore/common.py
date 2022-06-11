@@ -82,20 +82,41 @@ def stderr(msg):
 
 
 def read_file(filename, list_of_lines=False, strip=False, wrap_exceptions=True):
-    '''Returns contents as a string or list of strings.
+    '''Returns contents as a string or list of strings.  filename to "-" for stdin.
        Returns None on error.  list_of_lines + strip will strip all lines.'''
     if wrap_exceptions:
         try:
-            with open(filename) as f: data = f.read()
+            if filename == '-':
+                data = sys.stdin.read()
+            else:
+                with open(filename) as f: data = f.read()
         except: return None
     else:
-        with open(filename) as f: data = f.read()
+        if filename == '-':
+            data = sys.stdin.read()
+        else:
+            with open(filename) as f: data = f.read()
     if list_of_lines:
         data = data.split('\n')
         if strip: data = [i.strip() for i in data if i != '']
     else:
         if strip: data = data.strip()
     return data
+
+
+def write_file(filename, data, wrap_exceptions=True):
+    '''Write data to a file, or stdout if filename is "-".  Returns True on success.'''
+    if filename == '-':
+        print(data)
+        return True
+    if wrap_exceptions:
+        try:
+            with open(filename, 'w') as f: f.write(data)
+        except:
+            return False
+    else:
+        with open(filename, 'w') as f: f.write(data)
+    return True
 
 
 # ----------------------------------------
@@ -241,12 +262,13 @@ def timestr():
 # ---------- So callers don't need to import logging...
 
 
-def log_crit(msg):    return log(msg, level=CRITICAL)
-def log_alert(msg):   return log(msg, level=CRITICAL)
-def log_error(msg):   return log(msg, level=ERROR)
-def log_warning(msg): return log(msg, level=WARNING)
-def log_info(msg):    return log(msg, level=INFO)
-def log_debug(msg):   return log(msg, level=DEBUG)
+def log_crit(msg):     return log(msg, level=CRITICAL)
+def log_crit0cal(msg): return log(msg, level=CRITICAL)
+def log_alert(msg):    return log(msg, level=CRITICAL)
+def log_error(msg):    return log(msg, level=ERROR)
+def log_warning(msg):  return log(msg, level=WARNING)
+def log_info(msg):     return log(msg, level=INFO)
+def log_debug(msg):    return log(msg, level=DEBUG)
 
 
 # ----------

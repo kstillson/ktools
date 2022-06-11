@@ -112,7 +112,7 @@ PY_VER = sys.version_info[0]
 
 DEBUG = False   # WARNING- outputs lots of secrets!
 DEFAULT_MAX_TIME_DELTA = 90
-DEFAULT_DB_FILENAME = 'kcore_auth_db.data.gpg'
+DEFAULT_DB_FILENAME = 'kcore_auth_db.data.pcrypt'
 TOKEN_VERSION = 'v2'
 
 
@@ -441,7 +441,7 @@ def load_registration_db(db_passwd, db_filename=DEFAULT_DB_FILENAME):
     return 0
   try:
     with open(db_filename) as f: encrypted = f.read()
-    decrypted = UC.gpg_symmetric(encrypted, db_passwd)
+    decrypted = UC.decrypt(encrypted, db_passwd)
     if decrypted.startswith('ERROR'):
       if DEBUG: print(f'DEBUG: error during decryption: {decrypted}', file=sys.stderr)
       return -1
@@ -475,7 +475,7 @@ def register(shared_secret, db_passwd, db_filename=DEFAULT_DB_FILENAME,
 
   if db_filename:
     plaintext = REGISTRATION_DB.to_string()
-    encrypted = UC.gpg_symmetric(plaintext, db_passwd, decrypt=False)
+    encrypted = UC.encrypt(plaintext, db_passwd)
     if encrypted.startswith('ERROR'): return False
     with open(db_filename, 'w') as f: f.write(encrypted)
 
@@ -496,7 +496,7 @@ def parse_args(argv):
   group2.add_argument('--register', '-r', default=None, metavar='SHARED_SECRET', help='register the shared secret from the client\'s --generate command')
   group2.add_argument('--override-hostname', '-O', default=None, help='use this as the expected hostname/IP when checking clients peer address.  "*" to disable the check.')
   group2.add_argument('--db-filename', '-f', default=DEFAULT_DB_FILENAME, help='name of file on server to store shared registration secrets')
-  group2.add_argument('--db-passwd', '-P', default=None, help='GPG passphrase for --filename.  Default ("-") to query from stdin.  Use "$X" to read password from environment variable X')
+  group2.add_argument('--db-passwd', '-P', default=None, help='encryption passphrase for --filename.  Default ("-") to query from stdin.  Use "$X" to read password from environment variable X')
 
   group3 = ap.add_argument_group('create token', 'creating an authentication token on the client')
   group3.add_argument('--command', '-c', default=None, help='specify the command to generate or verify a token for')

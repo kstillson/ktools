@@ -14,7 +14,7 @@ PASSWORD = 'test123'
 
 def check_db(filename, ref_dict):
     secrets = Secrets()
-    secrets.load_from_gpg_file(filename, PASSWORD)
+    secrets.load_from_encrypted_file(filename, PASSWORD)
     for expected_keyname, expected_secret in ref_dict.items():
         assert expected_keyname in secrets
         assert secrets.get(expected_keyname).secret == expected_secret
@@ -25,7 +25,7 @@ def check_db(filename, ref_dict):
 # ---------- tests
 
 def test_basics(tmp_path):
-    secrets_file = str(tmp_path / 'secrets-db.gpg')
+    secrets_file = str(tmp_path / 'secrets-db.pcrypt')
     stnd_args = ['--datafile', secrets_file,
                  '--password', PASSWORD]
 
@@ -35,7 +35,6 @@ def test_basics(tmp_path):
         assert K.main(['--testkey']) == 0
         testkey = cap.out
         assert cap.err == ''
-    assert 'PGP MESSAGE' in testkey
     with open(secrets_file, 'w') as f: f.write(testkey)
     check_db(secrets_file, {'testkey': 'mysecret'})
 

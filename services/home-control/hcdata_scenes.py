@@ -12,7 +12,7 @@ SCENES = {
   'main'        : [ 'fam', 'kit', 'lng', 'office' ],
 
  # Groupings by similar purpose    
-  'sirens'      : [ 'siren1', 'siren2', 'siren3' ],
+  'sirens'      : [ 'tp-siren1', 'tp-siren2', 'tp-siren3' ],
   'accents'     : [ 'BULB-tp-color-sofa-left', 'BULB-tp-color-sofa-right', 'BULB-tp-color-moon', 'BULB-tp-color-stairs' ],
 
  # Activity-based

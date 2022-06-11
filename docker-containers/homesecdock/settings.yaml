@@ -1,0 +1,10 @@
+
+ports:
+  - 1111:8080
+  
+mount_persistent_test_copy_files:
+  - hs_data: /home/hs/data
+
+mount_logs:
+  - var_log_hs: /var/log/homesec
+
