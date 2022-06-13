@@ -5,9 +5,15 @@
 Requires: python3-ephem
 
 For example, to use cron (which doesn't support dynamically timed events) to
-turn on some lights half an hour before sunset:
+turn on some lights half-an-hour before sunset:
 
 0 16 * * *   nobody     sunsetter -o -30 && turn-on-the-lights
+
+Thanks to mfreeborn and the 'heliocron' project for the inspiration.
+(https://github.com/mfreeborn/heliocron). But I've had nothing but frustration
+with Rust (eternal problems of deep dependencies being incompatible with other
+deep dependencies), so figured I'd generate a minimal re-implementation of
+what I need in Python, and which has only one very-easy dependency: ephem.
 
 '''
 

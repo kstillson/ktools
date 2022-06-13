@@ -86,7 +86,6 @@ install-simple: tools/keymaster.crt
 	rm -rf $(LOCAL_SITE_DIR)/ktools
 	mkdir -p $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
-	cp -puv tools/gpg_s.py ~/.local/bin/gpg_s
 	cp -puv tools/pcrypt.py ~/.local/bin/pcrypt
 	cp -puv tools/keymaster.crt ~/.local/bin/keymaster.crt
 	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
