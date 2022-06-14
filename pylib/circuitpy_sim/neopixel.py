@@ -87,7 +87,7 @@ class NeoPixel:
         if isinstance(val, int): val = sep_rgb(val)
         if self.brightness != 1.0:
             val = (int(val[0] * self.brightness), int(val[1] * self.brightness), int(val[2] * self.brightness))
-        if LOG_LEVEL_SET_PIXEL: C.log(f'NeoPixel: set {index} to {val}  {val_orig=}', LOG_LEVEL_SET_PIXEL)
+        if LOG_LEVEL_SET_PIXEL: C.log(f'NeoPixel: set {index} to {val}  val_orig={val_orig}', LOG_LEVEL_SET_PIXEL)
         if not GRAPHICS: return
         hexcol = '#%02x%02x%02x' % val
         self.canvas.itemconfig(self.rects[index], fill=hexcol)

@@ -187,8 +187,9 @@ class WebServerBase(object):
             try:
                 answer = handler_data.func(request)
             except Exception as e:
+                import traceback
                 if self.logger and self.logger.log_exceptions:
-                    self.logger.log_exceptions('handler exception. path=%s, error=%s' % (request.path, e))
+                    self.logger.log_exceptions('handler exception. path=%s, error=%s, details: %s' % (request.path, e, traceback.format_exc()))
                 if self.varz: V.bump('web-handler-exception')
                 return Response(None, -1, exception=e)
         else:
