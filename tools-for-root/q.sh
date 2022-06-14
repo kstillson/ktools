@@ -203,8 +203,8 @@ function RUN_PARA() {
     shift
     cmd="/usr/local/bin/run_para $RP_FLAGS --subst $HOST_SUBST --timeout $TIMEOUT  $type"
     if [[ "$TEST" == 1 ]]; then
-	emit "TEST; would run: $cmd '$@'"
-	return
+        emit "TEST; would run: $cmd '$@'"
+        return
     fi
     echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | $cmd "$@"
     return $?
@@ -214,7 +214,7 @@ function RUN_PARA() {
 function sort_skip_header() {
     t=$(gettemp sortskipheader)
     cat > $t
-    head -n 1 $t && tail -n +2 $t | sort
+    head -n 1 $t && tail -n +2 $t | sort "$@"
     rmtemp $t
 }
 
@@ -584,7 +584,7 @@ function checks_real() {
     leases_list_orphans |& expect "dns orphans" "all ok"
     cat $PROCQ | expect "procmon queue" ""
     fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
-    $0 dup-check | expect "$0 dup cmds" "all ok"
+    $0 dup-check | expect "$(basename $0) dup cmds" "all ok"
     dns_check | expect "dns config check" "all ok"
     /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
     /root/bin/d check-all-up |& expect "docker instances" "all ok"
@@ -629,10 +629,10 @@ function keypad_commands {
 function keymaster_logs() {
     tmp=$(gettemp km-logs)
     zcat -f /rw/dv/keymaster/var_log_km/km.log* | \
-	fgrep ': ' | fgrep -v 'GET: ' | fgrep -v 'POST: ' | \
-	cut -d: -f6- | sed -e 's/:16[0-9]*/:T/g' -e 's/delta [0-9]*/delta D/' | \
-	sort | uniq -c | sort -rn | \
-	less --quit-if-one-screen
+        fgrep ': ' | fgrep -v 'GET: ' | fgrep -v 'POST: ' | \
+        cut -d: -f6- | sed -e 's/:16[0-9]*/:T/g' -e 's/delta [0-9]*/delta D/' | \
+        sort | uniq -c | sort -rn | \
+        less --quit-if-one-screen
 }
 
 # Enter the keymaster password to get the service ready.
@@ -651,7 +651,7 @@ function keymaster_status() {
     curl -ksS "${KM}/healthz"
     echo ""
 }
-    
+
 # Decrypt, edit, and re-encrypt the KM database, then rebuild and restart KM.
 function keymaster_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
@@ -827,7 +827,7 @@ function myhelp() {
 }
 
 function main() {
-    
+
     # ---------- parse flags
 
     POSITIONAL=()
@@ -860,49 +860,63 @@ function main() {
     shift
     case "$cmd" in
     # general linux maintenance routines for localhost
-        df) df -h | egrep -v '/docker|/snap|tmpfs|udev' ;;   ## df with only interesting output
-        epoch-day | ed | ED) date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;                 ## epoch day $1 to m/d/y
-        epoch-seconds | es | ES) echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;  ## epoch seconds $1 to standard date format
-        es-day-now | es-now-day | EDnow | day) echo $(( $(date -u +%s) / 86400 )) ;;    ## print current epoch day
+        df) df -h | egrep -v '/docker|/snap|tmpfs|udev' ;;         ## df with only interesting output
+        epoch-day | ed | ED)                                       ## epoch day $1 to m/d/y
+            date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;
+        epoch-seconds | es | ES)                                   ## epoch seconds $1 to standard date format
+            echo "$1" | sed -e 's/,//g' | xargs -iQ date -d @Q ;;
+        es-day-now | es-now-day | EDnow | day)                     ## print current epoch day
+            echo $(( $(date -u +%s) / 86400 )) ;;
         es-now | ESnow | now) date -u +%s ;;                       ## print current epoch seconds
         iptables-list-chains | iptc | ic) iptables_list_chains ;;  ## print list of iptables chains
         iptables-list-tables | iptt | it) iptables_list_tables ;;  ## print list of iptables tables
-        iptables-query | iptq | iq) iptables_query $1 ;;     ## print/query iptables ($1 to search)
-        iptables-save | ipts | is) iptables_save ;;          ## save current iptables
-        journal | j) journalctl -u ${1:-procmon} ;;          ## show systemd journal
-        git-check-all | gca | gc) git_check_all ;;           ## list any known git dirs with local changes
+        iptables-query | iptq | iq) iptables_query $1 ;;           ## print/query iptables ($1 to search)
+        iptables-save | ipts | is) iptables_save ;;                ## save current iptables
+        journal | j) journalctl -u ${1:-procmon} ;;                ## show systemd journal
+        git-check-all | gca | gc) git_check_all ;;                 ## list any known git dirs with local changes
         git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;  ## git sync a single directory (defaults to .)
-        git-sync-all | git-all | ga) git_sync_all ;;         ## check all git dirs for unsubmitted changes and submit them
-        pi-root | pir) pi_root ${1:-rp} ;;                   ## copy root pubkey to root@ arg1's a_k via pi std login.
-        ps) ps_fixer ;;                                      ## colorized and improved ps output
-        sort-skip-header | sort | snh) sort_skip_header ;;   ## sort stdin->stdout but skip 1 header row
-        systemd-daemon-reload | sdr | sR) runner "systemctl daemon-reload && emit 'reloaded'" ;;   ## systemd daemon refresh
+        git-sync-all | git-all | ga) git_sync_all ;;               ## check all git dirs for unsubmitted changes and submit them
+        pi-root | pir) pi_root ${1:-rp} ;;                         ## copy root pubkey to root@ arg1's a_k via pi std login.
+        ports | listening | l)                                     ## list listening TCP ports
+            ss -tupln | tail -n +2 | awk '{$3=$4=$6=""; print; }' | sed -e 's/users:((//' -e 's/))//' -e 's/,/ /g' -e 's/"//g' | column -t | sort -n ;;
+        ps) ps_fixer ;;                                            ## colorized and improved ps output
+        sort-skip-header | sort | snh) sort_skip_header ;;         ## sort stdin->stdout but skip 1 header row
+        systemd-daemon-reload | sdr | sR)                                    ## systemd daemon refresh
+            runner "systemctl daemon-reload && emit 'reloaded'" ;;
         systemd-down | s0) runner "systemctl stop ${1:-procmon}" ;;          ## stop a specified service (procmon by default)
         systemd-restart | sr) runner "systemctl restart ${1:-procmon}" ;;    ## restart a specified service (procmon by default)
         systemd-status | ss | sq) runner "systemctl status ${1:-procmon}" ;; ## check service status (procmon by default)
         systemd-up | s1) runner "systemctl start ${1:-procmon}" ;;           ## start a specified service (procmon by default)
         without | wo) cat | without "$@" ;;                        ## remove args (csv or regexp) from stdin (space, csv, or line separated)
     # general linux maintenance routines - for multiple hosts
-        disk-free-all | dfa | linux-free | lf) RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;   ## root disk free for all linux hosts
-        ping-pis | p) pinger "$(list_pis)" ;;                    ## ping all pis
-        ping-pis-continuous | ppc | pp) RP_FLAGS="--quiet"; RUN_PARA LOCAL "$(list_pis)" "ping @" ;;                  ## ping all pi's continuously until stopped
-        ping-tps | ptp) pinger "$(list_tps)" ;;                       ## ping all tplinks
-        reboot-counts-month | rcm) m=$(date +%b); RUN_PARA "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;  ## count of reboots this month on all pi's
-        reboot-counts | rc) d=$(date "+%b %d " | sed -e "s/ 0/  /"); echo "$d"; RUN_PARA "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep '$d' | wc -l" ;;  ## count of reboots today on all pi's
-        re-wifi-pi | rwp) RUN_PARA "$(list_pis)" "wpa_cli -i wlan0 reconfigure" ;;             ## reconf wifi ap on pis
-        update-all | update_all | ua) updater "$(list_linux | without jack,blue,mc2)" ;;       ## run apt-get upgrade on all linux hosts
-        uptime | uta | ut) RUN_PARA "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;  ## uptime for all linux hosts
-    # list multiple hosts (or multiple other things)
-        list-all | la) list_all | without $EXCLUDE ;;                 ## list all known local-network hosts (respecting -x) via dhcp server leases
-        list-git-dirs | lg) echo $GIT_DIRS ;;                         ## list all known git dirs (hard-coded list)
-        list-linux | ll) list_linux | without $EXCLUDE ;;             ## list all linux machines (hard-coded list)
-        list-pis | lp) list_pis | without $EXCLUDE ;;                 ## list all pi's (hard-coded list)
-        list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;      ## list all hosts using rsnapshot (hard-coded list)
-        list-tps | ltp | lt) list_tps | without $EXCLUDE ;;           ## list all tplink hosts (via dhcp leases prefix search)
+        disk-free-all | dfa | linux-free | lf)                     ## root disk free for all linux hosts
+            RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;
+        ping-pis | p) pinger "$(list_pis)" ;;                      ## ping all pis
+        ping-pis-continuous | ppc | pp)                            ## ping all pi's continuously until stopped
+            RP_FLAGS="--quiet"; RUN_PARA LOCAL "$(list_pis)" "ping @" ;;
+        ping-tps | ptp) pinger "$(list_tps)" ;;                    ## ping all tplinks
+        reboot-counts-month | rcm)                                 ## count of reboots this month on all pi's
+            m=$(date +%b); RUN_PARA "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;
+        reboot-counts | rc)                                        ## count of reboots today on all pi's
+            d=$(date "+%b %d " | sed -e "s/ 0/  /"); echo "$d"; RUN_PARA "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep '$d' | wc -l" ;;
+        re-wifi-pi | rwp)                                          ## reconf wifi ap on pis
+            RUN_PARA "$(list_pis)" "wpa_cli -i wlan0 reconfigure" ;;
+        update-all | update_all | ua)                              ## run apt-get upgrade on all linux hosts
+            updater "$(list_linux | without jack,blue,mc2)" ;;
+        uptime | uta | ut)                                         ## uptime for all linux hosts list multiple hosts (or multiple other things)
+            RUN_PARA "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;
+        list-all | la) list_all | without $EXCLUDE ;;              ## list all known local-network hosts (respecting -x) via dhcp server leases
+        list-git-dirs | lg) echo $GIT_DIRS ;;                      ## list all known git dirs (hard-coded list)
+        list-linux | ll) list_linux | without $EXCLUDE ;;          ## list all linux machines (hard-coded list)
+        list-pis | lp) list_pis | without $EXCLUDE ;;              ## list all pi's (hard-coded list)
+        list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;   ## list all hosts using rsnapshot (hard-coded list)
+        list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
-        listp) RUN_PARA LOCAL "$(cat)" "$@" ;;      ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
-        run | run-remote | rr | r) hostspec=$1; shift; RUN_PARA "$(list_dynamic $hostspec)" "$@" ;;  ## run cmd $2+ on listed hosts $1
-        run-local | rl) hostspec=$1; shift; RUN_PARA LOCAL "$(list_dynamic $hostspec)" "$@" ;;       ## eg: q run-local linux scp localfile @:/destdir
+        listp) RUN_PARA LOCAL "$(cat)" "$@" ;;                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
+        run | run-remote | rr | r)                                 ## run cmd $2+ on listed hosts $1
+            hostspec=$1; shift; RUN_PARA "$(list_dynamic $hostspec)" "$@" ;;
+        run-local | rl)                                            ## eg: q run-local linux scp localfile @:/destdir
+            hostspec=$1; shift; RUN_PARA LOCAL "$(list_dynamic $hostspec)" "$@" ;;
         run-pis | rpis | rp) RUN_PARA "$(list_pis)" "$@" ;;               ## run command on all pi's
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
@@ -910,11 +924,15 @@ function main() {
         dns-check | dhcp-check | dc) dns_check ;;                         ## check dnsmasq config for dups/missing/etc.
         dns-missing | dhcp-missing | who-is-off | dm) dns_missing ;;      ## any assigned green network hostnames missing from the leases?
         dns-update | mac-update | du | mu | mac) dns_update ;;            ## add/change a mac or dhcp assignment
-        exim-queue-count | eqc) d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;              ## count current mail queue
-        exim-queue-count-frozen | eqcf) d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;   ## count current frozen msgs in queue
+        exim-queue-count | eqc)                                           ## count current mail queue
+            d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' ;;
+        exim-queue-count-frozen | eqcf)                                   ## count current frozen msgs in queue
+            d run eximdock bash -c 'exim -bpr | grep frozen | wc -l' ;;
         exim-queue-list | eq) d run eximdock exim -bp ;;                  ## list current mail queue
-        exim-queue-zap | eqrm) runner "d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm'" ;;  ## clear the exim queue
-        exim-queue-zap-frozen | eqrmf) runner "d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d' ' | xargs exim -Mrm'" ;;      ## clear frozen msgs from queue
+        exim-queue-zap | eqrm)                                            ## clear the exim queue
+            runner "d run eximdock bash -c 'cd /var/spool/exim/input; ls -1 *-D | sed -e s/-D// | xargs exim -Mrm'" ;;
+        exim-queue-zap-frozen | eqrmf)                                    ## clear frozen msgs from queue
+            runner "d run eximdock bash -c 'exim -bpr | grep frozen | cut -f4 -d' ' | xargs exim -Mrm'" ;;
         exim-queue-run | eqr) runner "d run eximdock exim -qff" ;;        ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo $1 to gitdock
@@ -926,28 +944,38 @@ function main() {
         lease-query-red | lqr | 9) fgrep --color=auto -F ".9." $LEASES || echoc green "ok\n" ;;  ## list red network leases
         keypad | key | k) run_keypad_command "$1" ;;                      ## run command $1 as if typed on homectrl keypad
         keypad-commands | kc) keypad_commands "$1" ;;                     ## list homesec keypad common commands ($1 to search)
-	keymaster-reload | kmr) keymaster_reload ;;                       ## load/reload keymaster state (requires password)
-	keymaster-logs | kml | kmq) keymaster_logs ;;                     ## analyze km logs
-	keymaster-status | kms) keymaster_status ;;                       ## edit keymaster encrypted data and restart
-	keymaster-update | kmu) keymaster_update ;;                       ## edit keymaster encrypted data and restart
-	keymaster-zap | kmz) keymaster_zap ;;                             ## clear keymaster state (and raise alerts)
-        panic-reset | PR) keymaster_reload; /usr/local/bin/panic reset ;;        ## recover from a homesec panic
+        keymaster-reload | kmr) keymaster_reload ;;                       ## load/reload keymaster state (requires password)
+        keymaster-logs | kml | kmq) keymaster_logs ;;                     ## analyze km logs
+        keymaster-status | kms) keymaster_status ;;                       ## edit keymaster encrypted data and restart
+        keymaster-update | kmu) keymaster_update ;;                       ## edit keymaster encrypted data and restart
+        keymaster-zap | kmz) keymaster_zap ;;                             ## clear keymaster state (and raise alerts)
+        panic-reset | PR)                                                 ## recover from a homesec panic
+            keymaster_reload; /usr/local/bin/panic reset ;;
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
-        procmon-query | pq) curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;   ## check procmon status
-        procmon-rescan | pr) curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;      ## procmon re-scan and show status
-        procmon-zap | homesec-reset | hr | pz) runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;            ## clear procmon queue
+        procmon-query | pq)                                               ## check procmon status
+            curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;
+        procmon-rescan | pr)                                              ## procmon re-scan and show status
+            curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;
+        procmon-zap | homesec-reset | hr | pz)                            ## clear procmon queue
+            runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
-	push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
-        syslog-queue-archive | queue-archive | sqa | qa) zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;  ## show full queue history
-        syslog-queue-filter-ssh | queue-filter | sqf | qf) runner 'sed -i -e "/session opened/d" /rw/log/queue' ;;  ## remove sshs from log queue
-        syslog-queue-zap | queue-zap | qz) bash -c :>/rw/log/queue ;;                      ## wipe the current log queue
-        syslog-queue-view | syslog-queue | sqv | q) less /rw/log/queue ;;                  ## view the current log queue
-        syslog-queue-view-no-ssh | sqv0 | q0) fgrep -v 'session opened' /rw/log/queue ;;   ## view the current log queue (w/o ssh)
-        syslog-queue-view-yesterday-no-ssh | sqv1 | q1) fgrep -v 'session opened' /rw/log/Arc/queue.1 ;;   ## view yesterday's log queue
+        push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
+        syslog-queue-archive | queue-archive | sqa | qa)                  ## show full queue history
+            zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;
+        syslog-queue-filter-ssh | queue-filter | sqf | qf)                ## remove sshs from log queue
+            runner 'sed -i -e "/session opened/d" /rw/log/queue' ;;
+        syslog-queue-zap | queue-zap | qz) bash -c :>/rw/log/queue ;;     ## wipe the current log queue
+        syslog-queue-view | syslog-queue | sqv | q) less /rw/log/queue ;; ## view the current log queue
+        syslog-queue-view-no-ssh | sqv0 | q0)                             ## view the current log queue (w/o ssh)
+            fgrep -v 'session opened' /rw/log/queue ;;
+        syslog-queue-view-yesterday-no-ssh | sqv1 | q1)                   ## view yesterday's log queue
+            fgrep -v 'session opened' /rw/log/Arc/queue.1 ;;
     # internal
         help | h) myhelp "$@";;                                           ## display this help ($1 to search)
-        commands) myhelp | fgrep -v '#' | sed -e 's/\t/ /g' -e 's/^  *//' -e 's/   .*//' | tr '|' '\n' | tr -d ' ' | sort --version-sort  ;;  ## list q commands and flags
-        dup-check | check | chk) ( $0 commands | uniq -c | fgrep -v '  1 ' ) || echoc green 'all ok\n' ;;  ## check this script for duplicated cmd strings
+        commands)                                                         ## list q commands and flags
+            myhelp | fgrep -v '#' | sed -e 's/\t/ /g' -e 's/^  *//' -e 's/   .*//' | tr '|' '\n' | tr -d ' ' | sort --version-sort  ;;
+        dup-check | check | chk)                                          ## check this script for duplicated cmd strings
+            ( $0 commands | uniq -c | fgrep -v '  1 ' ) || echoc green 'all ok\n' ;;
         *) emit "invalid command: $cmd"; exit 3 ;;
     esac
 }
