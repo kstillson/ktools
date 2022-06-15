@@ -136,7 +136,8 @@ def stop_container_at_exit(args):
     cid = get_cid(args.real_name)
     if not cid: return False    # Already stopped
     rslt = UC.popener(['/usr/bin/docker', 'stop', '-t', '2', args.real_name])
-    return rslt.ok
+    return not rslt.startswith('ERROR')
+
 
 # filename is in the regular (jack host) filesystem.
 def file_expect(expect, filename, invert=False, missing_ok=False):
