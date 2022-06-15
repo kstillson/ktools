@@ -6,7 +6,7 @@ import kcore.varz as V   # this is where the test plugin stores it stuff.
 import hc
 
 SETTINGS = {
-    'data-dir': ['testdata/home_control'],
+    'data_dir': ['testdata/home_control'],
     'debug': True,
     'plugins': ['plugin_test.py'],  # skip the other plugins...
 }

@@ -6,7 +6,7 @@ import context_hc  # fixes path
 import hc
 
 TEST_SETTINGS = {
-    'data-dir': ['testdata/home_control'],
+    'data_dir': ['testdata/home_control'],
     'debug': True,
     'plugins': ['plugin_test.py'],  # skip the other plugins...
 }

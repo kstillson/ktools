@@ -136,13 +136,13 @@ class Setting:
   short_flag: str = None
 
 INITIAL_SETTINGS = [
-  Setting('data-dir',    ['.'],          'base directories in which to search for data files (see also private-dir)'),
-  Setting('datafiles',   ['hcdata*.py'], 'glob-list of files (within data-dir) to load devices and scenes from', '-D'),
+  Setting('data_dir',    ['.'],          'base directories in which to search for data files (see also private_dir)'),
+  Setting('datafiles',   ['hcdata*.py'], 'glob-list of files (within data_dir) to load devices and scenes from', '-D'),
   Setting('debug',       False,          'print debugging info and use syncronous mode (no parallelism)', '-d'),
-  Setting('plugin-args', [],             'plugin-specific settings in the form key=value', '-p'),
-  Setting('plugins-dir', ['.'],          'base directories in which to search for plugin files (see also private-dir)'),
+  Setting('plugin_args', [],             'plugin-specific settings in the form key=value', '-p'),
+  Setting('plugins_dir', ['.'],          'base directories in which to search for plugin files (see also private_dir)'),
   Setting('plugins',     ['plugin_*.py'],'glob-list of files to load as plugins'),
-  Setting('private-dir' ,'private.d',    'extra directory (relative to data-dir and plugins-dir) in which to search for files.  Note: if you change this, you might need to make corresponding changes to .gitignore to keep your files private.', '-P'),
+  Setting('private_dir' ,'private.d',    'extra directory (relative to data_dir and plugins_dir) in which to search for files.  Note: if you change this, you might need to make corresponding changes to .gitignore to keep your files private.', '-P'),
   Setting('test',        False,          "Just show what would be done, don't do it.", '-T'),
   Setting('timeout',     5,              'default timeout for external communications', '-t'),
 ]
@@ -187,8 +187,8 @@ def file_finder(list_of_base_dirs, privdir, list_of_globs):
 def load_plugins(settings):
   '''returns dict of plugin prefix strings to plugin module instances.'''
   plugin_files = file_finder(
-    settings['plugins-dir'] + [os.path.dirname(__file__), os.path.join(site.getusersitepackages(), 'home_control')],
-    settings['private-dir'], settings['plugins'])
+    settings['plugins_dir'] + [os.path.dirname(__file__), os.path.join(site.getusersitepackages(), 'home_control')],
+    settings['private_dir'], settings['plugins'])
   if SETTINGS['debug']: print(f'DEBUG: plugin_files={plugin_files}')
   plugins = {}
   for i in plugin_files:
@@ -203,8 +203,8 @@ def load_plugins(settings):
 
 
 def load_data(settings):
-  datafiles = file_finder(settings['data-dir'] + [os.environ.get('HC_DATA_DIR')],
-                          settings['private-dir'], settings['datafiles'])
+  datafiles = file_finder(settings['data_dir'] + [os.environ.get('HC_DATA_DIR')],
+                          settings['private_dir'], settings['datafiles'])
   scenes = {}
   devices = {}
   for f in datafiles:
