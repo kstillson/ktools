@@ -69,27 +69,27 @@ USER_LOGINS = {
 # What to do upon entering or leaving various states.
 STATE_RULES = [
   #     partition  state          transition -> action          params
-    StateRule('*', 'alarm',           'enter', 'announce',     '#a, alarm triggered, @alarm1'),
+    StateRule('*', 'alarm',           'enter', 'announce',     '#a,alarm triggered,@alarm1'),
     StateRule('*', 'alarm',           'enter', 'control',      'all, on'),
     StateRule('*', 'alarm',           'enter', 'httpget',      'http://jack:8080/panic'),
-    StateRule('*', 'alarm',           'leave', 'announce',     '#i, @alarm5, alarm reset'),
+    StateRule('*', 'alarm',           'leave', 'announce',     '#i,@alarm5,alarm reset'),
     StateRule('*', 'alarm',           'leave', 'control',      'all, off'),
-    StateRule('*', 'alarm-triggered', 'enter', 'announce',     '#i, @chime3, %f alarm triggered. %Ttrig seconds to disarm'),
-    StateRule('*', 'arm-auto',        'enter', 'announce',     '#i, @chime6, automatic arming mode by %u %f'),
-    StateRule('*', 'arm-away',        'enter', 'announce',     '#i, @chime5, system armed by %u %f'),
-    StateRule('*', 'arm-home',        'enter', 'announce',     '#i, @chime7, armed at home mode by %u %f'),
-    StateRule('*', 'arming-auto',     'enter', 'announce',     '#i, @chime2, auto arming by %u %f in %Tarm seconds'),
-    StateRule('*', 'arming-away',     'enter', 'announce',     '#i, @chime2, arming by %u %f in %Tarm seconds'),
-    StateRule('*', 'disarmed',        'enter', 'announce',     '#i, @chime8, system disarmed by %u'),
+    StateRule('*', 'alarm-triggered', 'enter', 'announce',     '#i,@chime3,%f alarm triggered. %Ttrig seconds to disarm'),
+    StateRule('*', 'arm-auto',        'enter', 'announce',     '#i,@chime6,automatic arming mode by %u %f'),
+    StateRule('*', 'arm-away',        'enter', 'announce',     '#i,@chime5,system armed by %u %f'),
+    StateRule('*', 'arm-home',        'enter', 'announce',     '#i,@chime7,armed at home mode by %u %f'),
+    StateRule('*', 'arming-auto',     'enter', 'announce',     '#i,@chime2,auto arming by %u %f in %Tarm seconds'),
+    StateRule('*', 'arming-away',     'enter', 'announce',     '#i,@chime2,arming by %u %f in %Tarm seconds'),
+    StateRule('*', 'disarmed',        'enter', 'announce',     '#i,@chime8,system disarmed by %u'),
     StateRule('*', 'disarmed',        'enter', 'control',      'sirens, off'),
-    StateRule('*', 'panic',           'enter', 'announce',     '#a, @alarm3, panic mode activated by %u %f'),
+    StateRule('*', 'panic',           'enter', 'announce',     '#a,@alarm3,panic mode activated by %u %f'),
     StateRule('*', 'panic',           'enter', 'control',      'all, on'),
     StateRule('*', 'panic',           'enter', 'control',      'sirens, on'),
     StateRule('*', 'panic',           'enter', 'httpget',      'http://jack:8080/panic'),
     StateRule('*', 'panic',           'leave', 'control',      'sirens, off'),
-    StateRule('*', 'silent-panic',    'enter', 'announce',     '#i, @chime8, system deactivated'),
+    StateRule('*', 'silent-panic',    'enter', 'announce',     '#i,@chime8,system deactivated'),
     StateRule('*', 'silent-panic',    'enter', 'silent-panic', ''),
-    StateRule('*', 'test-mode',       'enter', 'announce',     '#i, @chime1, entering test mode by %u %f'),
+    StateRule('*', 'test-mode',       'enter', 'announce',     '#i,@chime1,entering test mode by %u %f'),
 ]
 
 # Used to set zone / partition / friendly names for particular triggers
@@ -156,7 +156,7 @@ TRIGGER_RULES = [
     TriggerRule('arm-home'       , '*'      , 'chime'        , '*'               , 'announce'           , '@chime10'),
     TriggerRule('arm-away'       , '*'      , 'outside'      , '*'               , 'pass'               , 'could turn on a light or such..'),
   # Remaining alarm mechanics.
-    TriggerRule('arm-home'       , '*'      , '*'            , '*'               , 'announce'           , '#o, @chime4, %f'),
+    TriggerRule('arm-home'       , '*'      , '*'            , '*'               , 'announce'           , '#o,@chime4,%f'),
     TriggerRule('arm-away'       , '*'      , '*'            , '*'               , 'state-delay-trigger', 'alarm-triggered, %Ttrig, alarm'),
     TriggerRule('alarm-triggered', '*'      , '*'            , 'alarm'           , 'state-delay-trigger', 'alarm, %Talarm, alarm-timeout'),
     TriggerRule('alarm'          , '*'      , '*'            , 'alarm-timeout'   , 'state'              , 'arm-auto'),

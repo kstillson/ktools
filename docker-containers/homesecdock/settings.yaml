@@ -1,7 +1,7 @@
 
-ports:
-  - 1111:8080
-  
+# Port mapping must be done via iptables DNAT rather than docker proxy,
+# to preserve incoming peer IP addresses for client access control check.
+
 mount_persistent_test_copy_files:
   - hs_data: /home/hs/data
 

@@ -29,12 +29,14 @@ clean:
 	rm -rf $(COPIED_FILES)
 
 files/usr/local/bin/kmc: ../../pylib/tools/kmc.py
-	mkdir -p files/usr/local/bin
+	mkdir --mode=755 --parents files/usr/local/bin
 	cp $^ $@
+	chmod 755 $@
 
 files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
-	mkdir -p files/usr/local/bin
+	mkdir --mode=755 --parents files/usr/local/bin
 	cp $^ $@
+	chmod 644 $@
 
 $(PLIB)/kcore: ../../pylib/kcore
 	cp -rpuv $^ $@

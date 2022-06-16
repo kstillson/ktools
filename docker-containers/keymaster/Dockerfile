@@ -1,7 +1,7 @@
 FROM ktools/kcore-baseline:live
 
 RUN apk upgrade -U && \
-    apk add --no-cache gnupg && \
+    apk add --no-cache py3-cryptography && \
     rm -rf /var/cache/apk/*
 
 EXPOSE 4444

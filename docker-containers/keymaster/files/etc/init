@@ -6,7 +6,7 @@ if [[ -v TEST ]]; then
     echo ""
     echo "!! TEST MODE !!  (log to stderr and no syslog)"
     echo ""
-    COMMAND="$SVC --debug --datafile km-test.data.gpg --db-filename kcore_auth_db-test.data.gpg --logfile -"
+    COMMAND="$SVC --debug --datafile km-test.data.pcrypt --db-filename kcore_auth_db-test.data.pcrypt --logfile -"
 
 elif [[ -v DEBUG ]]; then
     COMMAND="$SVC --debug --logfile -"

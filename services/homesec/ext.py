@@ -26,12 +26,12 @@ if True:  ##@@ TODO:   if DEBUG:
 # --------------------
 
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
-  log_msg = f'announce [{push_level}/{syslog_level}]: {msg}'
+  log_msg = f'announce [{speak=}/{push_level=}/{syslog_level=}]: {msg}'
   if details: log_msg += f': {details}'
   if DEBUG: return C.log_debug(f'ext would announce: {log_msg}')
   C.log(log_msg)
   if speak:
-    rslt = C.read_web('http://pi1/speak/' + msg)
+    rslt = C.read_web('http://pi1/speak/' + C.quote_plus(msg))
     if not '<p>ok' in rslt: C.log_error(f'unexpected result from speak command: {rslt}')
   if details: msg += ': %s' % details
   if push_level: push_notification(msg, push_level)
@@ -62,6 +62,7 @@ def push_notification(msg, level='other'):
   C.log(f'pushbullet sending [level={level}]: {msg}')
   if level != 'other': msg += ' !%s' % level
   ok = subprocess.call(["/usr/local/bin/pb-push", msg])
+  if ok != 0: C.log_warning(f'pushbullet returned unexpected status {ok}')
   return ok == 0
 
 

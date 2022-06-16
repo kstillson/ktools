@@ -110,7 +110,7 @@ def subst(tracking, input_string):
   if not input_string: return ''
   out = input_string.replace('%t', tracking.get('trigger') or '?')
   out = out.replace('%a', tracking.get('action') or '?')
-  out = out.replace('%f', tracking.get('trigger_friendly') or '')
+  out = out.replace('%f', tracking.get('trigger_friendly') or tracking.get('trigger') or '?')
   out = out.replace('%P', tracking.get('trigger_param') or '')
   out = out.replace('%p', tracking.get('partition') or '?')
   out = out.replace('%s', tracking.get('state') or '?')
@@ -179,7 +179,7 @@ def take_action(tracking, action, params):
     if model.touches_with_value('home') == 1:
       msg += ', system will arm in %s seconds' % delay
     ext.announce(msg)
-    schedule_trigger(tracking, delay, 'touch-away', tracking)
+    schedule_trigger(tracking, delay, 'touch-away', user)
   elif action == 'pass':
     pass
 

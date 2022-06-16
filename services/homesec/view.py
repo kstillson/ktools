@@ -20,8 +20,9 @@ TEMPLATE_DIR = 'templates'      # can be overriden by caller/importer
 # ---------- Authentication helpers
 
 def init_kauth(params):
-  global KAUTH_PARMS
-  KAUTH_PARMS = params
+  global KAUTH_PARAMS
+  KAUTH_PARAMS = params
+  C.log('init_kauth done')
     
 
 def authn_required(func):
@@ -34,7 +35,7 @@ def authn_required(func):
     kauth_token = request.get_params.get('a2')
     if kauth_token and KAUTH_PARAMS:
       rslt = A.verify_token(token=kauth_token, command=request.path, client_addr=request.remote_address,
-                            db_passwd=KAUTH_DB_PASSWD, db_filename=KAUTH_DB_FILENAME)
+                            db_passwd=KAUTH_PARAMS.db_passwd, db_filename=KAUTH_PARAMS.db_filename)
       if rslt.ok:
         request.user = rslt.username or rslt.registered_hostname
         C.log(f'successful kauth as {request.user}')
@@ -46,8 +47,10 @@ def authn_required(func):
     # ----- Try basic auth
 
     auth_header = request.headers.get('Authorization')
-    if not auth_header: return W.Response('Please log in', 401,
-      extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
+    if not auth_header:
+      C.log(f'No auth header; sending 401. {request.full_path}')
+      return W.Response(
+        'Please log in', 401, extra_headers={'WWW-Authenticate': f'Basic realm="{BASIC_AUTH_REALM}"'})
 
     _, encoded = auth_header.split(' ', 1)
     provided_username_b, provided_password_b = base64.b64decode(encoded).split(b':', 1)
@@ -131,7 +134,7 @@ def status_view(request):
     </td>
   </tr>
 '''
-  return H.html_page_wrap(html, 'homesec partition states', css=['style.css'], other_heads=[])
+  return H.html_page_wrap(html, 'homesec partition states', css=['static/style.css'], other_heads=[])
 
 
 @authn_required

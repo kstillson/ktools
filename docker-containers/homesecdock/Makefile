@@ -3,10 +3,10 @@ HSH_DIR := files/home/hs
 HSH_FILES := controller.py data.py ext.py homesec.py model.py reset_dynamic_data.py view.py static templates
 HSH_TARGETS := $(addprefix $(HSH_DIR)/, $(HSH_FILES))
 
-PRIV_FILES := kcore_auth_db.data.gpg keymaster.crt
+PRIV_FILES := kcore_auth_db.data.pcrypt keymaster.crt
 PRIV_TARGETS := $(addprefix $(HSH_DIR)/, $(PRIV_FILES))
 
-KMH_TEST_FILES := kcore_auth_db-test.data.gpg km-test.data.gpg 
+KMH_TEST_FILES := kcore_auth_db-test.data.pcrypt km-test.data.pcrypt 
 KMH_TEST_TARGETS := $(addprefix $(HSH_DIR)/, $(KMH_TEST_FILES))
 
 KCORE_DIR := files/usr/lib/python3.9/site-packages/kcore
@@ -14,7 +14,7 @@ KCORE_FILES := auth.py common.py html.py uncommon.py varz.py webserver.py
 KCORE_TARGETS := $(addprefix $(KCORE_DIR)/, $(KCORE_FILES))
 
 KTOOLS_DIR := files/usr/lib/python3.9/site-packages/ktools
-KTOOLS_FILES := kmc.py
+KTOOLS_FILES := kmc.py ratelimiter.py pb-push.sh
 KTOOLS_TARGETS := $(addprefix $(KTOOLS_DIR)/, $(KTOOLS_FILES))
 
 DIRS := $(HSH_DIR) $(KCORE_DIR) $(KTOOLS_DIR)

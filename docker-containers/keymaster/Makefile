@@ -3,10 +3,10 @@ KMH_DIR := files/home/km
 KMH_FILES := km.py
 KMH_TARGETS := $(addprefix $(KMH_DIR)/, $(KMH_FILES))
 
-KMH_TEST_FILES := kcore_auth_db-test.data.gpg km-test.data.gpg 
+KMH_TEST_FILES := kcore_auth_db-test.data.pcrypt km-test.data.pcrypt 
 KMH_TEST_TARGETS := $(addprefix $(KMH_DIR)/, $(KMH_TEST_FILES))
 
-PRIV_FILES := kcore_auth_db.data.gpg keymaster.pem km.data.gpg
+PRIV_FILES := kcore_auth_db.data.pcrypt keymaster.pem km.data.pcrypt
 PRIV_TARGETS := $(addprefix $(KMH_DIR)/, $(PRIV_FILES))
 
 KCORE_DIR := files/usr/lib/python3.9/site-packages/kcore
@@ -48,7 +48,7 @@ $(KCORE_TARGETS): $(KCORE_DIR)/% : ../../pylib/kcore/%
 
 # -----
 
-../../private.d/km.data.gpg: ../../services/keymaster/tests/km-test.data.gpg
+../../private.d/km.data.pcrypt: ../../services/keymaster/tests/km-test.data.pcrypt
 	@echo "COULD NOT FIND $@, SO USING $^ AS A STARTING POINT"
 	cp -p $^ $@
 

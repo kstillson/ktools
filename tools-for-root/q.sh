@@ -52,7 +52,7 @@ KM="https://${KMHOST}"
 
 DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"
 GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /rw/dv/webdock/home/ken/homesec"
-KMD_P="$HOME/dev/ktools/private.d/km.data.gpg"
+KMD_P="$HOME/dev/ktools/private.d/km.data.pcrypt"
 LIST_LINUX="a1 blue jack mc2 "
 LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"
 LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
@@ -656,10 +656,8 @@ function keymaster_status() {
 function keymaster_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     read -s -p "km password: " passwd
-    export passwd
-    cd "$(dirname $KMD_P)"
-    gpg_s -p'$passwd' $(basename $KMD_P)
-    tmp=km.data
+    tmp=$(gettemp kmd)
+    gpg_s -p'$passwd' -i "$KMD_P" -o "$tmp"
     s1=$(stat -t $tmp)
     emacs $tmp
     s2=$(stat -t $tmp)
@@ -667,9 +665,8 @@ function keymaster_update() {
     read -p "ok to proceed? " ok
     if [[ "$ok" != "y" ]]; then emitc yellow "aborted."; rm $tmp; return; fi
     mv -f $KMD_P ${KMD_P}.prev
-    gpg_s -p'$passwd' $tmp
+    pcrypt -p'$passwd' -i "$tmp" -o "$KMD_P"
     rm $tmp
-    killall gpg-agent || true
     emitc green "re-encryption done; attempting to rebuild kmdock"
     d u keymaster   # allow -e to abort if this fails.
     emitc blue "waiting for km to stabalize..."

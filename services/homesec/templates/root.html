@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>homesec</title>
   <meta name="viewport" content="width=device-width">
-  <link href='/static/style.css' rel='stylesheet' type='text/css' media='screen' />
+  <link href='/homesec/static/style.css' rel='stylesheet' type='text/css' media='screen' />
 </head>
 <body>
 
@@ -18,10 +18,10 @@
   }
 
   function trigger(target, zone="") {
-      url = "/trigger/" + target;
+      url = "trigger/" + target;
       if (zone != "") { url += "/" + zone; }
     frames[FRAME_STATUS2].location.href = url;
-    setTimeout(function() { frames[FRAME_STATUS1].location.href = "/status"; }, 1000);
+    setTimeout(function() { frames[FRAME_STATUS1].location.href = "status"; }, 1000);
   }
 
   function camupdate() {
@@ -36,7 +36,7 @@
   }
 
   function lightsupdate() {
-      cmnd = (document.getElementById("allonbutton").checked) ? "on" : "off"; 
+      cmnd = (document.getElementById("allonbutton").checked) ? "full" : "off"; 
       control("all", cmnd)
   }
 
@@ -47,7 +47,7 @@
   }
 </script>
 
-<iframe id='status1' width='100%' height='130' frameborder='0' src='/status'></iframe>
+<iframe id='status1' width='100%' height='130' frameborder='0' src='status'></iframe>
 
 <table><tr align="center">
   <td><button onClick="trigger('disarm')" class='disarm_button'>Disarm</button></td>
@@ -63,7 +63,7 @@
 </tr></table>
 
 <p>Recent touches (#home={{ count_home }}): </p>
-<iframe id='touchz' width='100%' height='90' frameborder='0' src='/touchz'></iframe>
+<iframe id='touchz' width='100%' height='90' frameborder='0' src='touchz'></iframe>
 
 <p>
 <table><tr>
@@ -75,7 +75,7 @@
 </tr></table>
 
 <br/>
-<img id='campic' width='480' height='1' border='0' src='/static/pixel.gif'>
+<img id='campic' width='480' height='1' border='0' src='static/pixel.gif'>
 
 <p>
 <iframe id='status2' width='90%' height='100' scrolling='auto' frameborder='0'></iframe>

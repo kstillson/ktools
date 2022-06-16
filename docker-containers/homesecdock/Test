@@ -13,7 +13,8 @@ def main():
     # Give the server a moment to start up.
     time.sleep(0.8)
     
-    d_lib.web_expect('tardy triggers', ip, '/healthz', port=8080)
+    # d_lib.web_expect('tardy triggers', ip, '/healthz', port=1111)
+    d_lib.web_expect('ok', ip, '/healthz', port=1111)
 
     print('pass')
     
