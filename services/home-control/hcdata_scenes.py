@@ -46,6 +46,19 @@ SCENES = {
   'down-dim'    : [ 'main:dim' ],
   'leaving'     : [ 'away' ],
   'red'         : [ 'accents' ],
+
+ # Shorthand aliases (for cli use)
+  '00'          : [ 'all:off' ],
+  '0'           : [ 'inside:off' ],
+  '1'           : [ 'inside:dim' ],
+  '5'           : [ 'inside:med' ],
+  '9'           : [ 'inside:full' ],
+  '911'         : [ 'panic' ],
+  'b'           : [ 'bedtime' ],
+  'c'           : [ 'comp' ],
+  'k'           : [ 'kitchen' ],
+  'o'           : [ 'outside' ],
+  'O'           : [ 'office' ],
 }
 
 
