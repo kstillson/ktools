@@ -1,9 +1,5 @@
 
 ## ++ktools tech
-   - confirm transition to pcrypt is okay
-   - homesec
-     - test in prod
-     - change clients to use kcore.auth
    - nagdock test fails on jack
    - ~all docker tests fail on blue
    - webdock (holding on homesec transition)

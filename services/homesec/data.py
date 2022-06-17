@@ -152,7 +152,6 @@ TRIGGER_RULES = [
   # Alarm mechanics based on zone of the trigger.
     TriggerRule('*'              , '*'      , 'panic'        , '*'               , 'state-delay-trigger', 'panic, %Tpanic, panic-timeout'),
     TriggerRule('arm-home'       , '*'      , 'inside'       , '*'               , 'pass'               , 'pass %t/%z (inside arm-home)'),
-    TriggerRule('arm-home'       , '*'      , 'alarm'        , '*'               , 'announce'           , 'alarm %t triggered when home'),
     TriggerRule('arm-home'       , '*'      , 'chime'        , '*'               , 'announce'           , '@chime10'),
     TriggerRule('arm-away'       , '*'      , 'outside'      , '*'               , 'pass'               , 'could turn on a light or such..'),
   # Remaining alarm mechanics.
@@ -161,6 +160,7 @@ TRIGGER_RULES = [
     TriggerRule('alarm-triggered', '*'      , '*'            , 'alarm'           , 'state-delay-trigger', 'alarm, %Talarm, alarm-timeout'),
     TriggerRule('alarm'          , '*'      , '*'            , 'alarm-timeout'   , 'state'              , 'arm-auto'),
     TriggerRule('panic'          , '*'      , '*'            , 'panic-timeout'   , 'state'              , 'arm-auto'),
+    TriggerRule('*'              , '*'      , '*'            , 'alarm'           , 'pass'               , 'delayed alarm trigger arrives in state %s'),
     TriggerRule('disarmed'       , '*'      , '*'            , '*'               , 'pass'               , 'pass %t/%z (disarmed)'),
 ]
 
