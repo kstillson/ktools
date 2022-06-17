@@ -12,8 +12,11 @@ UPDATE_DELAY = 8
 
 PORT = 12345
 
+HITS = 0
 
 def default_handler(request):
+  global HITS
+  HITS += 1
   return 'all ok'
 
 
@@ -93,23 +96,27 @@ def main():
     status_expect('current_state', '2', conf)
 
     # now enable the test service and try again.
-    ws = W.WebServer({None: default_handler})
+    ws = W.WebServer({None: default_handler}, use_standard_handlers=False)
     ws.start(port=PORT)
 
     send_cmd('SCHEDULE_FORCED_SVC_CHECK;jack;test-service;$NOW')
     D.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
     time.sleep(UPDATE_DELAY)
 
-    ### TODO: this test appears to fail, next lines culprit:
-    # appears nagios not able to contact the test server...?
-    # short circuit for now  TODO!! TODO !!
-    D.emit('\n\nWARNING- THIS TEST IS SHORT CIRCUITED\n\n')
-    print('pass')
-    return
-    
-    status_expect('current_state', '0')
     D.file_expect('SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
+    if not HITS == 1: D.abort(f'expected 1 hit against test server, but saw {HITS}')
 
+    '''TODO: At this point, we should be able to re-parse the status file and
+    confirm the current state has changed to 0.  However, for reasons I don't
+    understand, the status file doesn't seem to get updated unless we wait a
+    really long time.  The checks about (against LOG_FILE and HITS) basically
+    confirm that the daemon is working...  So I guess I'll leave this final
+    bit of the test disabled for now.  Not happy about this..
+
+    conf = parse_nagios(STATUS_FILE)
+    status_expect('current_state', '0', conf)
+    '''
+    
     print('pass')
     
 

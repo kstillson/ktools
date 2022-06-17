@@ -1,6 +1,5 @@
 
 ## ++ktools tech
-   - nagdock test fails on jack
    - ~all docker tests fail on blue
    - webdock (holding on homesec transition)
    - review non-doc TODO's
