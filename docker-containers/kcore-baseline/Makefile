@@ -12,13 +12,13 @@ COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymaster.crt \
 # For this reason, kcore-baseline ":all" runs docker-update, which will BUILD,
 # test *AND INSTALL* the baseline image.
 
-all: copy docker-update
+all: copy baseline-stamp
 
-
-# the generic docker-build has a dep on the kcore install-stamp, but obviously
-# we need to break that dependency or it'll cause a cycle.  So just put in a
-# rule here that says there's no dep for install-stamp here.  Seems to work.
-../kcore-baseline/install-stamp:
+baseline-stamp:
+	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
+	sudo -E /root/bin/d-build -t    # -E to preserve d-build environment vars
+	sudo -E /root/bin/d-build -s    # -E to preserve d-build environment vars
+	touch baseline-stamp
 
 
 # ---------- local additions
@@ -26,7 +26,7 @@ all: copy docker-update
 copy: $(COPIED_FILES)
 
 clean:
-	rm -rf $(COPIED_FILES)
+	rm -rf $(COPIED_FILES) *-stamp
 
 files/usr/local/bin/kmc: ../../pylib/tools/kmc.py
 	mkdir --mode=755 --parents files/usr/local/bin
