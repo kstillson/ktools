@@ -286,7 +286,7 @@ def parse_args(argv):
   parser.add_argument('--last', action='store_true', help='when converting commands to job_ids, just take the last word in the command')
   parser.add_argument('--localhost', '-l', action='store_false', help='(dont) detect localhost (and run command directly rather than via ssh) in list of hosts for -ssh.')
   parser.add_argument('--max_para', '-m', type=int, default=multiprocessing.cpu_count(), help='max number of things to do concurrently')
-  parser.add_argument('--output', '-o', default=None, help='name of file to send full output log to ("-" to send to stdout, "@" to create separate logfile for each)')
+  parser.add_argument('--output', '-o', default=None, help='name of file to send full output log to (blank to disable, "-" for stdout, "@" to create separate logfile for each)')
   parser.add_argument('--plain', '-p', action='store_true', help='in log output, just include simple stdout, nothing else.')
   parser.add_argument('--quiet', '-q', action='store_true', help='dont print things like overall status')
   parser.add_argument('--sep', default='auto', help='Use this character to separate values from stdin (rather than newline) (e.g. space or comma).  If "auto", attempt autodetect separator if stdin is a single line')

@@ -42,7 +42,7 @@ VERBOSE=0        # print commands as they are run
 # ---------- control constants
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
-RP_FLAGS='--output - --plain --quiet '
+RP_FLAGS="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
 
 # ---------- hard-coded control constants
 # (almost certainly wrong for anyone else but the author...)
@@ -187,10 +187,9 @@ function runner() {
     fi
 }
 
-# Wrapper around /usr/local/bin/run_para which repects RP_FLAGS and TEST
-# (run_para is always VERBOSE).  This method assumes --ssh mode unless
-# $1 is "LOCAL", in which case it uses --cmd mode.  ssv hosts in $1,
-# command to run in $2+.
+# Wrapper around /usr/local/bin/run_para which repects EXCLUDE, RP_FLAGS and
+# TEST.  This method assumes --ssh mode unless $1 is "LOCAL", in which case it
+# uses --cmd mode.  ssv hosts in $1, command to run in $2+.
 function RUN_PARA() {
     if [[ "$1" == "LOCAL" ]]; then
         type="--cmd"
@@ -201,7 +200,7 @@ function RUN_PARA() {
     fi
     hosts="$1"
     shift
-    cmd="/usr/local/bin/run_para $RP_FLAGS --subst $HOST_SUBST --timeout $TIMEOUT  $type"
+    cmd="/usr/local/bin/run_para $RP_FLAGS $type"
     if [[ "$TEST" == 1 ]]; then
         emit "TEST; would run: $cmd '$@'"
         return
@@ -209,6 +208,7 @@ function RUN_PARA() {
     echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | $cmd "$@"
     return $?
 }
+
 
 # Assume a 1 line header and output stdin sorted but preserving the header.
 function sort_skip_header() {
@@ -887,6 +887,7 @@ function main() {
         without | wo) cat | without "$@" ;;                        ## remove args (csv or regexp) from stdin (space, csv, or line separated)
     # general linux maintenance routines - for multiple hosts
         disk-free-all | dfa | linux-free | lf)                     ## root disk free for all linux hosts
+	    RP_FLAGS="--output - $RP_FLAGS"
             RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;
         ping-pis | p) pinger "$(list_pis)" ;;                      ## ping all pis
         ping-pis-continuous | ppc | pp)                            ## ping all pi's continuously until stopped
@@ -901,6 +902,7 @@ function main() {
         update-all | update_all | ua)                              ## run apt-get upgrade on all linux hosts
             updater "$(list_linux | without jack,blue,mc2)" ;;
         uptime | uta | ut)                                         ## uptime for all linux hosts list multiple hosts (or multiple other things)
+	    RP_FLAGS="--output - $RP_FLAGS"
             RUN_PARA "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;
         list-all | la) list_all | without $EXCLUDE ;;              ## list all known local-network hosts (respecting -x) via dhcp server leases
         list-git-dirs | lg) echo $GIT_DIRS ;;                      ## list all known git dirs (hard-coded list)
@@ -909,12 +911,18 @@ function main() {
         list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;   ## list all hosts using rsnapshot (hard-coded list)
         list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
-        listp) RUN_PARA LOCAL "$(cat)" "$@" ;;                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
+        listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
+	    RP_FLAGS="--output - $RP_FLAGS"
+	    RUN_PARA LOCAL "$(cat)" "$@" ;;
         run | run-remote | rr | r)                                 ## run cmd $2+ on listed hosts $1
+	    RP_FLAGS="--output - $RP_FLAGS"
             hostspec=$1; shift; RUN_PARA "$(list_dynamic $hostspec)" "$@" ;;
         run-local | rl)                                            ## eg: q run-local linux scp localfile @:/destdir
+	    RP_FLAGS="--output - $RP_FLAGS"
             hostspec=$1; shift; RUN_PARA LOCAL "$(list_dynamic $hostspec)" "$@" ;;
-        run-pis | rpis | rp) RUN_PARA "$(list_pis)" "$@" ;;               ## run command on all pi's
+        run-pis | rpis | rp)                                       ## run command on all pi's
+	    RP_FLAGS="--output - $RP_FLAGS"
+	    RUN_PARA "$(list_pis)" "$@" ;;
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) dns_update_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
