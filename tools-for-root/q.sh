@@ -51,7 +51,7 @@ if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="keymaster:4444"; else KMHOST="ja
 KM="https://${KMHOST}"
 
 DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"
-GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools /rw/dv/webdock/home/ken/homesec"
+GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools"
 KMD_P="$HOME/dev/ktools/private.d/km.data.pcrypt"
 LIST_LINUX="a1 blue jack mc2 "
 LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"
