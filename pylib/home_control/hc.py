@@ -85,11 +85,11 @@ You would activate this via:  ./hc bedroom_for 120
 Plugin API:
 init(settings: dict[str, str]) -> list[str]
 
-Called once, upon plug-in load.  give the primary settings dict, which the 
+Called once, upon plug-in load.  give the primary settings dict, which the
 plugin may extract already set settings from, or may alter or add additional
 settings, if it needs to.  Returns a list of supported plug-in name strings.
 
-control(plugin_name: string, plugin_params: dict[str, str], 
+control(plugin_name: string, plugin_params: dict[str, str],
         device_name: string, command: string) ->  Tuple[bool, str]
 
 This method actually asks the plug-in to accept and act on a command.
@@ -223,7 +223,7 @@ WILDCARD_DEVICES = None
 
 def find_device_action(target, command):
   if not target: return None
-  
+
   # Lazy init of list of wildcard-based matches
   global WILDCARD_DEVICES
   if WILDCARD_DEVICES is None:
@@ -258,7 +258,7 @@ def control(target, command='on', settings=None, top_level_call=True):
   "target" is a string name of a scene or device registered in the scene or
   device data files.  "command" is a string of a command accepted by whatever
   plug-in eventually handles the request.  "settings" is a dict[str, str], see
-  INITIAL_SETTINGS for available options.  "top_level_call" should always 
+  INITIAL_SETTINGS for available options.  "top_level_call" should always
   be left True for external callers.  It's set to False internally when
   scenes make recursive calls to control(), and allows for skipping expensive
   initialization that would have occurred during the top level call.
@@ -292,7 +292,7 @@ def control(target, command='on', settings=None, top_level_call=True):
   if not scene_list: scene_list = SCENES.get(target)
   if scene_list:
     if SETTINGS['debug']: print(f'DEBUG: scene {target}:{command} -> {scene_list}')
-    
+
     overall_okay = True
     outputs = []
     for i in scene_list:
@@ -305,10 +305,10 @@ def control(target, command='on', settings=None, top_level_call=True):
       if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned ok={ok}, answer={answer}')
       if not ok: overall_okay = False
       outputs.append(answer)
-      
+
     if top_level_call: V.bump('scenes-success' if overall_okay else 'scenes-not-full-success')
     return overall_okay, outputs
-    
+
   # ----- Check if this is a simple device action, and take it if so.
   device_action = find_device_action(target, command)
   if device_action:
@@ -352,12 +352,14 @@ def main(argv=[]):
   for key, value in vars(args).items(): settings[key] = value
 
   # and pass to the library API
-  print(control(args.target, args.command, settings))
+  rslt = control(args.target, args.command, settings)
+  print(rslt)
 
   # if there are any lingering threads, finish them up before exiting.
   if SETTINGS['_threads']: print('waiting for pending threads to finish...')
   for i in SETTINGS['_threads']: i.join()
-  return 0
+
+  return 0 if rslt[0] else 1
 
 
 if __name__ == '__main__':
