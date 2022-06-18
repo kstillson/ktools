@@ -1,7 +1,7 @@
 
 ## ++ktools tech
+   - webdock
    - ~all docker tests fail on blue
-   - webdock (holding on homesec transition)
    - review non-doc TODO's
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep

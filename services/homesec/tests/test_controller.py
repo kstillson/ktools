@@ -82,12 +82,11 @@ def test_typical_sequence(setup_test):
     assert status == 'ok'
     assert tracking['action'] == 'pass'
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
-
     # A duplicate trigger is squelched.
     status, tracking = C.run_trigger(fake_request_dict, 'motion_outside')
     assert status == 'squelched'
 
-    # An default trigger raises the alarm.
+    # A default trigger raises the alarm.
     status, tracking = C.run_trigger(fake_request_dict, 'front_door')
     assert status == 'ok'
     assert tracking['action'] == 'state-delay-trigger'
@@ -99,6 +98,7 @@ def test_typical_sequence(setup_test):
     assert C.get_statusz_state() == 'alarm/away/away'
 
     assert wait_for_state('arm-auto')
+    time.sleep(0.5)  # Give time for state change routines to finish up.
     assert C.get_statusz_state() == 'arm-away(auto)/away/away'
     assert ext_mock.LAST == "status = ext.read_web('http://hs-mud:8080/update?' + statusz_after)"
     assert ext_mock.LAST_ARGS[0] == 'http://hs-mud:8080/update?arm-away(auto)/away/away'
