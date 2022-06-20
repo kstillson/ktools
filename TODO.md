@@ -1,5 +1,6 @@
 
 ## ++ktools tech
+   - homesec: last touches coming up in wrong timezone
    - ~all docker tests fail on blue
    - webdock (holding on homesec transition)
    - review non-doc TODO's
