@@ -11,6 +11,9 @@
    - make e -> make all ?
    - linting?
 
+## pending webdock
+   - fix party (/ulb, tplink->hc)
+
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,
      subtlely document #2, and really hide #3 (dns query only?).  encourage

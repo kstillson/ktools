@@ -13,7 +13,7 @@ WHITELIST = [
     WL('/',         'nobody',      False, False, '/usr/bin/python3 /usr/local/procmon/procmon'),
     WL('/',         'nobody',      False, True,  '/usr/local/bin/dhcp-helper -e eth1 -s 192.168.2.2'),
     WL('/',         'ntp',         False, False, '/usr/sbin/ntpd -p /var/run/ntpd.pid'),
-    WL('/',         'root',        False, False, '(/bin/bash -c *)?(/usr/bin/retry -d [0-9]* -t 4 )?(/usr/bin/python3 )?/usr/local/bin/hc'),
+    WL('/',         'root',        False, False, '(/bin/bash -c *)?.RETRY -- .HC'),
     WL('/',         'root',        False, False, '(/bin/bash -c *)?{ .SSR -o'),
     WL('/',         'root',        False, False, '.*chmod 644 /var/run/dmap'),
     WL('/',         'root',        False, False, '/bin/(ba)?sh -c test -x /usr/sbin/anacron'),
