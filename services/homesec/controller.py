@@ -78,7 +78,7 @@ def set_state(tracking, new_state, skip_actions=False):
   '''Change the current partitions state, and take any implied actions.'''
   C.log('partition %s : state %s -> %s' % (
     tracking['partition'], tracking['state'], new_state))
-  if tracking['state'] == new_state: return
+  if tracking['partition_start_state'] == new_state: return
   leave_actions = model.get_state_rules(tracking['partition'], 'leave', tracking['state'])
   tracking['state'] = new_state
   model.set_partition_state(tracking['partition'], new_state)
@@ -131,6 +131,9 @@ def take_action(tracking, action, params):
   C.log(f'Taking {action=} {params=}')
 
   if action == 'state':
+    if ':' in params:
+      tracking['partition'], params = params.split(':', 1)
+    if not tracking['partition']: tracking['partition'] = 'default'
     set_state(tracking, params)
 
   elif action == 'state-delay-trigger':

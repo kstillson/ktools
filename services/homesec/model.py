@@ -109,8 +109,7 @@ def partition_states():
 def resolve_auto(state):
   if not 'auto' in state: return state
   twvh = touches_with_value('home')
-  tmp = 'arm-away' if twvh == 0 else 'arm-home'
-  return tmp  
+  return 'arm-away' if twvh == 0 else 'arm-home'
 
 
 # ---------- getters with authn internal logic
@@ -135,6 +134,8 @@ def set_partition_state(partition, new_state):
         ps.state = new_state
         ps.last_update = now()
         return True
+      # Don't allow us to get confused about 'resolved' auto states:
+      if 'auto' in ps.state: ps.state = 'arm-auto'
     # Not found, so make a new one.
     pdata.append(data.PartitionState(partition, new_state, now()))
     return False

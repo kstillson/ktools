@@ -71,7 +71,7 @@ def test_lookup_trigger(setup_test):
 def test_lookup_trigger_rules(setup_test):
     # lookup_trigger_rule(state, partition, zone, trigger)
     assert M.lookup_trigger_rule('panic', 'default', 'inside', 'arm-home')[0] == 'announce'
-    assert M.lookup_trigger_rule('panic', 'default', None, 'disarm')[1] == 'disarmed'
+    assert M.lookup_trigger_rule('panic', 'default', None, 'disarm')[1] == '%P:disarmed'
     assert M.lookup_trigger_rule('test-mode', 'default', 'panic', 'panic1')[0] == 'announce'
     assert M.lookup_trigger_rule('arm-home', 'default', 'inside', 'door')[0] == 'pass'
     assert M.lookup_trigger_rule('arm-home', 'default', 'outside', 'door')[0] == 'announce'

@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>homesec</title>
   <meta name="viewport" content="width=device-width">
-  <link href='/homesec/static/style.css' rel='stylesheet' type='text/css' media='screen' />
+  <link href='/static/style.css' rel='stylesheet' type='text/css' media='screen' />
 </head>
 <body>
 
@@ -47,19 +47,27 @@
   }
 </script>
 
-<iframe id='status1' width='100%' height='130' frameborder='0' src='status'></iframe>
+<iframe id='status1' width='100%' height='170' frameborder='0' src='status'></iframe>
 
 <table><tr align="center">
+  <td>default:</td>
   <td><button onClick="trigger('disarm')" class='disarm_button'>Disarm</button></td>
   <td><button onClick="trigger('arm-auto')">Arm-auto</button></td>
   <td><button onClick="trigger('arm-home')">Arm-home</button></td>
-  <td><button onClick="trigger('arm-away')">Arm-away</button></td>
+  <td><button onClick="trigger('arm-away-delay')">Arm-away</button></td>
   <td><button onClick="trigger('panic')" class='panic_button')>PANIC</button></td>
+  </tr><tr align="center" style="background-color:#eeeeee">
+  <td>dodgy:</td>
+  <td><button onClick="trigger('disarm/dodgy')">Disarm</button></td>
+  <td><button onClick="trigger('arm-auto/dodgy')">Arm-auto</button></td>
+  <td><button onClick="trigger('arm-home/dodgy')">Arm-home</button></td>
+  <td><button onClick="trigger('arm-away/dodgy')">Arm-away</button></td>
   </tr><tr align="center" style="background-color:#eeeeee">
   <td>safe:</td>
   <td><button onClick="trigger('disarm/safe')">Disarm</button></td>
+  <td><button onClick="trigger('arm-auto/safe')">Arm-home</button></td>
   <td><button onClick="trigger('arm-home/safe')">Arm-home</button></td>
-  <td><button onClick="trigger('arm-away-now/safe')">Arm-away</button></td>
+  <td><button onClick="trigger('arm-away/safe')">Arm-away</button></td>
 </tr></table>
 
 <p>Recent touches (#home={{ count_home }}): </p>

@@ -13,6 +13,7 @@ def main():
     with open(data.PARTITION_STATE_FILENAME, 'w') as f: pass
     with data.saved_list(data.PARTITION_STATE) as pdata:
         pdata.append(data.PartitionState('default', 'arm-auto', default_time))
+        pdata.append(data.PartitionState('dodgy', 'arm-auto', default_time))
         pdata.append(data.PartitionState('safe', 'arm-away', default_time))
 
     with open(data.TOUCH_DATA_FILENAME, 'w') as f: pass

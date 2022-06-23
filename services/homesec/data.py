@@ -64,7 +64,8 @@ CONSTANTS = {
 # TODO: defer to private.d ...?
 
 USER_LOGINS = {
-  'ken':          '5a687385e35154afffb29f723da3325bf14ab606',
+  'ken':          '992292d7725f416bdcc9882f59bf786b43069112',
+  ##old: 'ken':          '5a687385e35154afffb29f723da3325bf14ab606',
 }
 
 # What to do upon entering or leaving various states.
@@ -97,7 +98,7 @@ STATE_RULES = [
 # friendly names are used for vocal announcements, but also imply the is expected to be triggered regularly (i.e. can by 'tardy')
 TRIGGER_LOOKUPS = [
   #               trigger_regex   ->      zone           partition   squelchable  friendly_name
-    TriggerLookup('back_door',            'perimeter',   'default',  True,        'back door'),
+    TriggerLookup('back_door',            'perimeter',   'dodgy',    True,        'back door'),
     TriggerLookup('front_door',           'chime',       'default',  True,        'front door'),
     TriggerLookup('garage$',              'perimeter',   'default',  True,        'door to garage'),
     TriggerLookup('motion_family_room',   'inside',      'default',  True,        'motion family room'),
@@ -117,45 +118,52 @@ TRIGGER_RULES = [
     TriggerRule('alarm-triggered', '*'      , '*',             'arm-auto'        , 'announce'           , 'cannot arm auto once alarm triggered'),
     TriggerRule('alarm-triggered', '*'      , '*',             'arm-auto-delay'  , 'announce'           , 'cannot arm auto once alarm triggered'),
     TriggerRule('alarm-triggered', '*'      , '*',             'arm-away'        , 'announce'           , 'cannot arm away once alarm triggered'),
-    TriggerRule('alarm-triggered', '*'      , '*',             'arm-away-now'    , 'announce'           , 'cannot arm away once alarm triggered'),
+    TriggerRule('alarm-triggered', '*'      , '*',             'arm-away'        , 'announce'           , 'cannot arm away once alarm triggered'),
     TriggerRule('alarm-triggered', '*'      , '*',             'test-mode'       , 'announce'           , 'cannot enter test mode once alarm triggered'),
     TriggerRule('alarm'          , '*'      , '*',             'arm-home'        , 'announce'           , 'cannot arm home once alarm activated'),
     TriggerRule('alarm'          , '*'      , '*',             'arm-auto'        , 'announce'           , 'cannot arm auto once alarm activated'),
     TriggerRule('alarm'          , '*'      , '*',             'arm-auto-delay'  , 'announce'           , 'cannot arm auto once alarm activated'),
     TriggerRule('alarm'          , '*'      , '*',             'arm-away'        , 'announce'           , 'cannot arm away once alarm activated'),
-    TriggerRule('alarm'          , '*'      , '*',             'arm-away-now'    , 'announce'           , 'cannot arm away once alarm activated'),
+    TriggerRule('alarm'          , '*'      , '*',             'arm-away-delay'  , 'announce'           , 'cannot arm away once alarm activated'),
     TriggerRule('alarm'          , '*'      , '*',             'test-mode'       , 'announce'           , 'cannot enter test mode once alarm activated'),
     TriggerRule('panic'          , '*'      , '*',             'arm-home'        , 'announce'           , 'cannot arm home once panic triggered'),
     TriggerRule('panic'          , '*'      , '*',             'arm-auto'        , 'announce'           , 'cannot arm auto once panic triggered'),
     TriggerRule('panic'          , '*'      , '*',             'arm-auto-delay'  , 'announce'           , 'cannot arm auto once panic triggered'),
     TriggerRule('panic'          , '*'      , '*',             'arm-away'        , 'announce'           , 'cannot arm away once panic triggered'),
-    TriggerRule('panic'          , '*'      , '*',             'arm-away-now'    , 'announce'           , 'cannot arm away once panic triggered'),
+    TriggerRule('panic'          , '*'      , '*',             'arm-away-delay'  , 'announce'           , 'cannot arm away once panic triggered'),
     TriggerRule('panic'          , '*'      , '*',             'test-mode'       , 'announce'           , 'cannot enter test mode once panic triggered'),
+  
   # Triggers that directly set a new state (these come first so its possible to exit test mode)
-    TriggerRule('*'              , '*'      , '*',             'disarm'         ,  'state'              , 'disarmed'),
-    TriggerRule('*'              , '*'      , '*',             'arm-home'        , 'state'              , 'arm-home'),
-    TriggerRule('*'              , '*'      , '*',             'arm-auto'        , 'state'              , 'arm-auto'),
-    TriggerRule('*'              , '*'      , '*',             'arm-auto-delay'  , 'state-delay-trigger', 'arming-auto, %Tarm, arm-auto'),
-    TriggerRule('*'              , '*'      , '*',             'arm-away'        , 'state-delay-trigger', 'arming-away, %Tarm, arm-away-now'),
-    TriggerRule('*'              , '*'      , '*',             'arm-away-now'    , 'state'              , 'arm-away'),
+    TriggerRule('*'              , '*'      , '*',             'disarm'         ,  'state'              , '%P:disarmed'),
+    TriggerRule('*'              , '*'      , '*',             'arm-home'        , 'state'              , '%P:arm-home'),
+    TriggerRule('*'              , '*'      , '*',             'arm-auto'        , 'state'              , '%P:arm-auto'),
+    TriggerRule('*'              , '*'      , '*',             'arm-auto-delay'  , 'state-delay-trigger', '%P:arming-auto, %Tarm, arm-auto'),
+    TriggerRule('*'              , '*'      , '*',             'arm-away'        , 'state'              , '%P:arm-away'),
+    TriggerRule('*'              , '*'      , '*',             'arm-away-delay'  , 'state-delay-trigger', '%P:arming-away, %Tarm, arm-away'),
     TriggerRule('*'              , '*'      , '*',             'silent-panic'    , 'state'              , 'silent-panic'),
     TriggerRule('*'              , '*'      , '*',             'test-mode'       , 'state'              , 'test-mode'),
+  
   # When in test mode, just announce triggers rather than otherwise acting on them.
     TriggerRule('test-mode'      , '*'      , '*',             '*'               , 'announce'           , 'test %f in %p'),
+  
   # Triggers that indirectly set/influence arming state
     TriggerRule('*'              , '*'      , '*',             'touch-home'      , 'touch-home'         , '%P'),
     TriggerRule('*'              , '*'      , '*',             'touch-away'      , 'touch-away'         , '%P'),
     TriggerRule('*'              , '*'      , '*',             'touch-away-delay', 'touch-away-delay'   , '%P, %Tarm'),
+  
   # Triggers that are actually external commands.
     TriggerRule('*'              , '*'      , '*',             'ann'             , 'announce'           , '%P'),
     TriggerRule('*'              , '*'      , '*',             'status'          , 'announce'           , 'status %s'),
     TriggerRule('*'              , '*'      , '*',             'control'         , 'control'            , '%P'),
+  
   # Alarm mechanics based on zone of the trigger.
     TriggerRule('*'              , '*'      , 'panic'        , '*'               , 'state-delay-trigger', 'panic, %Tpanic, panic-timeout'),
     TriggerRule('arm-home'       , '*'      , 'inside'       , '*'               , 'pass'               , 'pass %t/%z (inside arm-home)'),
     TriggerRule('arm-home'       , '*'      , 'chime'        , '*'               , 'announce'           , '@chime10'),
     TriggerRule('arm-away'       , '*'      , 'outside'      , '*'               , 'pass'               , 'could turn on a light or such..'),
+  
   # Remaining alarm mechanics.
+    TriggerRule('arm-home'       , 'dodgy'  , '*'            , '*'               , 'announce'           , '#i,@chime4,%f'),
     TriggerRule('arm-home'       , '*'      , '*'            , '*'               , 'announce'           , '#o,@chime4,%f'),
     TriggerRule('arm-away'       , '*'      , '*'            , '*'               , 'state-delay-trigger', 'alarm-triggered, %Ttrig, alarm'),
     TriggerRule('alarm-triggered', '*'      , '*'            , 'alarm'           , 'state-delay-trigger', 'alarm, %Talarm, alarm-timeout'),
