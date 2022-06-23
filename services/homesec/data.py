@@ -30,6 +30,7 @@ class TriggerLookup:
     trigger_regex: str
     zone: str
     partition: str
+    squelchable: bool = False
     friendly_name: str = ''
 
     def __post_init__(self): self.re = re.compile(self.trigger_regex)
@@ -95,16 +96,16 @@ STATE_RULES = [
 # Used to set zone / partition / friendly names for particular triggers
 # friendly names are used for vocal announcements, but also imply the is expected to be triggered regularly (i.e. can by 'tardy')
 TRIGGER_LOOKUPS = [
-  #               trigger_regex   ->      zone           partition   friendly_name
-    TriggerLookup('back_door',            'perimeter',   'default',  'back door'),
-    TriggerLookup('front_door',           'chime',       'default',  'front door'),
-    TriggerLookup('garage$',              'perimeter',   'default',  'door to garage'),
-    TriggerLookup('motion_family_room',   'inside',      'default',  'motion family room'),
-    TriggerLookup('motion_lounge',        'inside',      'default',  'motion in lounge'),
-    TriggerLookup('motion_outside',       'outside',     'default',  'motion outdoors'),
-    TriggerLookup('panic.*',              'panic',       'default',  'panic button'),
-    TriggerLookup('safe.*',               'safe',        'safe',     None),
-    TriggerLookup('side_door',            'perimeter',   'default',  'side door'),
+  #               trigger_regex   ->      zone           partition   squelchable  friendly_name
+    TriggerLookup('back_door',            'perimeter',   'default',  True,        'back door'),
+    TriggerLookup('front_door',           'chime',       'default',  True,        'front door'),
+    TriggerLookup('garage$',              'perimeter',   'default',  True,        'door to garage'),
+    TriggerLookup('motion_family_room',   'inside',      'default',  True,        'motion family room'),
+    TriggerLookup('motion_lounge',        'inside',      'default',  True,        'motion in lounge'),
+    TriggerLookup('motion_outside',       'outside',     'default',  True,        'motion outdoors'),
+    TriggerLookup('panic.*',              'panic',       'default',  False,       'panic button'),
+    TriggerLookup('safe.*',               'safe',        'safe',     False,       None),
+    TriggerLookup('side_door',            'perimeter',   'default',  True,        'side door'),
 ]
 
 # Routing table for actions to take upon receiving a trigger, based on current state and trigger (and it's zone and/or partition)
