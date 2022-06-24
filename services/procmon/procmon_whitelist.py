@@ -29,6 +29,7 @@ WHITELIST = [
     WL('/',         'root',        False, False, '/usr/bin/dockerd -H'),
     WL('/',         'root',        False, False, '/usr/bin/python3 /root/bin/d-run --cd rclonedock --fg --settings'),
     WL('/',         'root',        False, False, '/usr/bin/python3 /usr/local/bin/sunsetter.py'),
+    WL('/',         'root',        False, False, '/usr/bin/retry -d [0-9]* -t [0-9]* -- /usr/local/bin/hc'),
     WL('/',         'root',        False, False, '/usr/lib/openssh/sftp-server'),
     WL('/',         'root',        False, False, '/usr/sbin/CRON -f'),
     WL('/',         'root',        False, False, '/usr/sbin/sendmail -i -FCronDaemon'),
@@ -77,14 +78,13 @@ WHITELIST = [
     WL('fsdock',    'droot',       False, False, '/usr/sbin/rsyslogd'),
     WL('fsdock',    'droot',       False, False, 'sshd: /usr/sbin/sshd -D'),
     WL('fsdock',    'droot',       False, False, 'sshd: ken \[priv\]'),
-    WL('homesecdock', '200802',    False, False, '/usr/bin/python3 /home/hs/homesec.py'),
     WL('gitdock',   '*',           False, False, 'sshd: [a-z]* ?\[net\]'),
     WL('gitdock',   'droot',       False, False, 'sshd: [a-z0-9-]* \[priv\]'),
     WL('gitdock',   'droot',       False, False, 'sshd: \[accepted\]'),
     WL('gitdock',   'droot',       False, True,  '(sshd: )?/usr/sbin/sshd -D -e'),
     WL('home-control', '200801',   False, False, '/usr/bin/python3 /home/hc/home_control_service.py'),
+    WL('homesecdock', '200802',    False, False, '/usr/bin/python3 /home/hs/homesec.py'),
     WL('keymaster', '200800',      False, False, '/usr/bin/python3 /home/km/km.py'),
-#   WL('kmdock',    '200800',      False, True,  '/usr/bin/python /home/km/km.py'),
     WL('lsyncdock', 'droot',       True,  True,  '/usr/bin/lsyncd -nodaemon /etc/lsyncd/lsyncd.conf.lua'),
     WL('mysqldock', '200999',      False, True,  'mysqld'),
     WL('nagdock',   '200360',      True,  True,  '/usr/sbin/nagios'),
@@ -133,8 +133,9 @@ WHITELIST = [
     WL('webdock',   '200033',      False, False, '/usr/lib/nagios/cgi-bin/status.cgi'),
     WL('webdock',   '200033',      False, True,  '/usr/sbin/httpd'),
 ]
-#    WL('/',         'root',        False, False, '/usr/sbin/thermald --no-daemon --dbus-enable'),
-#    WL('/',         'root',        False, False, 'setup-resolver'),
+#   WL('kmdock',    '200800',      False, True,  '/usr/bin/python /home/km/km.py'),
+#   WL('/',         'root',        False, False, '/usr/sbin/thermald --no-daemon --dbus-enable'),
+#   WL('/',         'root',        False, False, 'setup-resolver'),
 
 #      Container    user           child? rqrd?  regex
 GREYLIST = [
