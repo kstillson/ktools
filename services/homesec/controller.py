@@ -98,10 +98,10 @@ def schedule_trigger(request_dict, delay, then_trigger, then_trigger_param=None)
 
 def squelch(trigger, zone):
   t = model.lookup_trigger(trigger)
-  if not t or not t.squelchable: return False
+  if not t or not t.squelch_time: return False
   last_run = model.last_trigger_touch(trigger)
   time_since = model.now() - last_run
-  if time_since < model.CONSTANTS['SQUELCH_DURATION']:
+  if time_since < t.squelch_time:
     C.log(f'squelched trigger {trigger}/{zone} (last used {time_since} seconds ago)')
     return True
   return False
