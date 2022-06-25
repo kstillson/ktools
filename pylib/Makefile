@@ -1,5 +1,5 @@
 
-INSTALLED_SCRIPTS := hc k_auth kmc pcrypt ratelimiter run_para
+INSTALLED_TOOLS := hc k_auth kmc nag pcrypt ratelimiter run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
 
@@ -86,8 +86,10 @@ install-simple: tools/keymaster.crt
 	rm -rf $(LOCAL_SITE_DIR)/ktools
 	mkdir -p $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
-	cp -puv tools/pcrypt.py ~/.local/bin/pcrypt
 	cp -puv tools/keymaster.crt ~/.local/bin/keymaster.crt
+	cp -puv tools/nag.py ~/.local/bin/nag
+	cp -puv tools/pb-push.sh ~/.local/bin/pb-push
+	cp -puv tools/pcrypt.py ~/.local/bin/pcrypt
 	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
 	cp -puv tools/run_para.py ~/.local/bin/run_para
 	#
@@ -123,10 +125,10 @@ install-system:
 
 # Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
 link:
-	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_SCRIPTS); do ln -fs $$sdir/bin/$$x ~/bin/$$x; done
+	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_TOOLS); do ln -fs $$sdir/bin/$$x ~/bin/$$x; done
 
 unlink:
-	for x in $(INSTALLED_SCRIPTS); do rm -f ~/bin/$$x; done
+	for x in $(INSTALLED_TOOLS); do rm -f ~/bin/$$x; done
 
 install-circuitpy:
 	@if [[ ! -d $(CIRCUITPY_DIR)/lib ]]; then echo "ERROR- cannot find $(CIRCUITPY_DIR)/lib"; exit 1; fi

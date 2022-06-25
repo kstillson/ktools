@@ -1,6 +1,5 @@
 ## ++ktools tech
-   - homesec: last touches coming up in wrong timezone
-   - webdock
+   - webdockletsencrypt updater
    - ~all docker tests fail on blue
    - review non-doc TODO's
    - re-confirm virgin build process

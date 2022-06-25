@@ -1,0 +1,49 @@
+#!/usr/bin/python3
+
+import argparse, base64, os, subprocess, ssl, sys, time
+
+import kcore.docker_lib as D
+
+
+def main():
+    ap = argparse.ArgumentParser(description='webdock test')
+    D.add_testing_args(ap)
+    args = ap.parse_args()
+    name, ip, cow, dv = D.launch_or_find_container(args)
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+    if args.run: time.sleep(2)  #  Give apache a chance to start up.
+
+    # Using popen_expect rather than web_expect because it doesn't follow redirects,
+    # and we want to check the content of the redirects.
+    D.popen_expect(['/usr/bin/curl', 'http://%s:8080/' % ip], 'moved')
+    D.popen_expect(['/usr/bin/curl', '-k', 'https://%s:8443/' % ip], 'launchpad')
+
+    # Check that plain html is redirected to https (even for invalid links).
+    # Note: This actually redirects to home.point0.net by name, which means the
+    # actual content could be coming from prod rather than the test site.
+    # Other tests should generally use https directly to avoid this problem.
+    D.popen_expect(['/usr/bin/curl', 'http://%s:8080/q' % ip],
+                      'document has moved <a href="https://home.point0.net/q">here')
+
+    # Check name-based vhost redirects.
+    D.popen_expect(['/usr/bin/curl', '--header', 'Host: a', 'http://%s:8080/123' % ip],
+                      'document has moved <a href="http://adafru.it/123">here')
+
+    # homesec static and status pages (no login required)
+    D.web_expect('color:', ip, '/homesec/static/style.css', 8443, https=True, verify_ssl=False)
+    D.web_expect(['ok','tardy'], ip, '/homesec/healthz', 8443, https=True, verify_ssl=False)
+
+    # Check internal proxy with basic http auth
+    D.web_expect('', ip, '/procmon', 8443, expect_status=401, https=True, verify_ssl=False)
+
+    # Check cgi script basics
+    D.web_expect('ok', ip, '/cgi-bin/test', 8443, https=True, verify_ssl=False)
+    D.web_expect('wget', ip, '/rc/i/', 8443, https=True, verify_ssl=False)
+    D.web_expect('pax_global_header', ip, '/rc', 8443, https=True, verify_ssl=False)
+
+    print('pass')
+    
+
+if __name__ == "__main__":
+  main()
+

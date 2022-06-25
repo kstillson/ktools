@@ -30,8 +30,9 @@ class TriggerLookup:
     trigger_regex: str
     zone: str
     partition: str
-    squelchable: bool = False
-    friendly_name: str = ''
+    tardy_time: int = None    # raise a /healthz error if trigger is not heard from every tardy_time seconds
+    squelch_time: int = None  # num seconds before which a duplicate trigger is ignored
+    friendly_name: str = ''   # used when speaking or displaying the trigger name
 
     def __post_init__(self): self.re = re.compile(self.trigger_regex)
 
@@ -55,8 +56,6 @@ CONSTANTS = {
   'ALARM_TRIGGERED_DELAY': 25,          # %Ttrig
   'ARM_AWAY_DELAY':        60,          # %Tarm
   'PANIC_DURATION':        1200,        # %Tpanic
-  'SQUELCH_DURATION':      360,
-  'TARDY_SECS':            14 * 60 * 60 * 24,   # 14 days
   'TOUCH_WINDOW_SECS':     20 * 60,     # %Ttouch
 }
 
@@ -94,19 +93,22 @@ STATE_RULES = [
     StateRule('*', 'test-mode',       'enter', 'announce',     '#i,@chime1,entering test mode by %u %f'),
 ]
 
+FOUR_DAYS =  4 * 60 * 60 * 24  #  4 days in seconds.
+TWO_WEEKS = 14 * 60 * 60 * 24  # 14 days in seconds.
+
 # Used to set zone / partition / friendly names for particular triggers
 # friendly names are used for vocal announcements, but also imply the is expected to be triggered regularly (i.e. can by 'tardy')
 TRIGGER_LOOKUPS = [
-  #               trigger_regex   ->      zone           partition   squelchable  friendly_name
-    TriggerLookup('back_door',            'perimeter',   'dodgy',    True,        'back door'),
-    TriggerLookup('front_door',           'chime',       'default',  True,        'front door'),
-    TriggerLookup('garage$',              'perimeter',   'default',  True,        'door to garage'),
-    TriggerLookup('motion_family_room',   'inside',      'default',  True,        'motion family room'),
-    TriggerLookup('motion_lounge',        'inside',      'default',  True,        'motion in lounge'),
-    TriggerLookup('motion_outside',       'outside',     'default',  True,        'motion outdoors'),
-    TriggerLookup('panic.*',              'panic',       'default',  False,       'panic button'),
-    TriggerLookup('safe.*',               'safe',        'safe',     False,       None),
-    TriggerLookup('side_door',            'perimeter',   'default',  True,        'side door'),
+  #               trigger_regex   ->      zone           partition   tardy_time,  squelch_time friendly_name
+    TriggerLookup('back_door',            'perimeter',   'dodgy',    FOUR_DAYS,   360,         'back door'),
+    TriggerLookup('front_door',           'chime',       'default',  TWO_WEEKS,   360,         'front door'),
+    TriggerLookup('garage$',              'perimeter',   'default',  FOUR_DAYS,   360,         'door to garage'),
+    TriggerLookup('motion_family_room',   'inside',      'default',  FOUR_DAYS,   360,         'motion family room'),
+    TriggerLookup('motion_lounge',        'inside',      'default',  FOUR_DAYS,   360,         'motion in lounge'),
+    TriggerLookup('motion_outside',       'outside',     'default',  None     ,   360,         'motion outdoors'),
+    TriggerLookup('panic.*',              'panic',       'default',  None,        None,        'panic button'),
+    TriggerLookup('safe.*',               'safe',        'safe',     None,        None,        None),
+    TriggerLookup('side_door',            'perimeter',   'default',  TWO_WEEKS,   360,         'side door'),
 ]
 
 # Routing table for actions to take upon receiving a trigger, based on current state and trigger (and it's zone and/or partition)

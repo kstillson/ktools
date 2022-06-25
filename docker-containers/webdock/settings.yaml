@@ -1,0 +1,16 @@
+
+ports:
+  - 80:8080
+  - 443:8443
+  - 8443:8443
+
+mount_ro:
+  - var_www: /var/www
+#  - /rw/dv/nagdock/var_log_nagios: /var/log/nagios
+  - /rw/dv/nagdock/var_nagios: /var/nagios
+
+mount_logs:
+  - var_log_apache2: /var/log/apache2
+
+mount_persistent:
+  - /rw/dv/nagdock/var_nagios/rw: /var/nagios/rw

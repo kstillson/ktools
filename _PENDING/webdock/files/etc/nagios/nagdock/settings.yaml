@@ -1,7 +1,0 @@
-
-mount_logs:
-  - var_log_nagios: /var/log/nagios
-
-mount_persistent_test_copy_files:
-  - var_nagios: /var/nagios
-
