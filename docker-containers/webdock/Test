@@ -34,7 +34,7 @@ def main():
     D.web_expect(['ok','tardy'], ip, '/homesec/healthz', 8443, https=True, verify_ssl=False)
 
     # Check internal proxy
-    D.web_expect('queue', ip, '/procmon', 8443, expect_status=200, https=True, verify_ssl=False)
+    D.web_expect('<title>procmon', ip, '/procmon', 8443, expect_status=200, https=True, verify_ssl=False)
 
     # Check cgi script basics
     D.web_expect('ok', ip, '/cgi-bin/test', 8443, https=True, verify_ssl=False)
