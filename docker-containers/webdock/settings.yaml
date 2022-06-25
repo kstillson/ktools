@@ -5,8 +5,8 @@ ports:
   - 8443:8443
 
 mount_ro:
+  - etc_apache2_keys: /etc/apache2/keys
   - var_www: /var/www
-#  - /rw/dv/nagdock/var_log_nagios: /var/log/nagios
   - /rw/dv/nagdock/var_nagios: /var/nagios
 
 mount_logs:
