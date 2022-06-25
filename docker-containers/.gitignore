@@ -11,6 +11,8 @@ keymaster/files/home
 **/files/home/km/server.pem
 **/files/usr/lib/python**
 **/files/usr/local/bin/kmc
+**/files/usr/local/bin/nag
+**/files/usr/local/bin/party-lights
 
 # Ignore backup files (sometimes created by ./Build updates)
 *~

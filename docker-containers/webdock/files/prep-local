@@ -1,0 +1,18 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(apache)"
+GROUP_DONT_DELETE_REGEX="^(apache)"
+SBIN_DONT_DELETE_REGEX="nologin|httpd|ssmtp"
+WORLD_WRITABLE_DIRS_RM=0
+WORLD_WRITABLE_FILES_RM=0
+
+SUID_DONT_DELETE_REGEX="/su"
+SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|chown|ln|od|strings)$"
+
+# ----------
+
+# remove default conf files that interfere with our local ones
+rm /etc/apache2/conf.d/default.conf /etc/apache2/conf.d/info.conf /etc/apache2/conf.d/ssl.conf /etc/apache2/conf.d/userdir.conf
+
+# Ownership fixes
+/bin/chown apache.apache /run/apache2
+/bin/chgrp -R apache /etc/apache2 /usr/lib/cgi-bin /usr/local/bin /var/www

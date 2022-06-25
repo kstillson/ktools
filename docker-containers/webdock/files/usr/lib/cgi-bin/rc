@@ -1,0 +1,7 @@
+#!/bin/bash
+echo 'Content-type: application/zip'
+echo 'Content-Disposition: attachment; filename="rc.tar"'
+echo ''
+/usr/bin/git archive --remote git-ro@git:git/rc.git master
+exit 0
+
