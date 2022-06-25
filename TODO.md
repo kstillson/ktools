@@ -1,4 +1,3 @@
-
 ## ++ktools tech
    - homesec: last touches coming up in wrong timezone
    - webdock
@@ -12,7 +11,7 @@
    - linting?
 
 ## pending webdock
-   - fix party (/ulb, tplink->hc)
+   - fix party (webdock /ulb, tplink->hc)
 
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,
@@ -33,13 +32,7 @@
 ## ---------- MILESTONE: ready for peer review ...?
 
 ## deferred homectrl related
-   - change homesec clients to use k_auth rather than kmc
    - h/control:ext -> hc.py (needs kcore in webdock, which probably means conversion to ktools-based build)
    - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio
    - graphical interface for inputs and outputs
    - homectrl remote update (?)
-
-## Other
-   - keymaster: add last used key date
-   - bashlib ?
-   - search for things that need to be rebound / updated to new ktools interfaces (e.g. art-projects)
