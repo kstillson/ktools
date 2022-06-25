@@ -24,12 +24,14 @@ WEB_HANDLERS = {
   '/panic':   lambda request: panic_handler(request),
   '/pstree':  lambda request: pstree_handler(request),
   '/scan':    lambda request: scan_handler(request),
+  '/zap':     lambda request: zap_handler(request),
 }
 
 # ---------- Global state & types
 
 ARGS = None
 DOCKER_MAP = {}          # Maps container id (str) to container name (str).
+ENABLE_ZAP = True        # Allow web-based queue clearing?
 SCANNER = None           # Singleton of current scanner instance.
 UNEXPECTED_PREV = set()  # set of pids from the previous scan, used for change detection.
 WL = None                # List[WL] (see procmon_whitelist.py)
@@ -362,6 +364,12 @@ def scan_handler(request):
     global SCANNER
     SCANNER = new_scanner
     return root_handler(request)
+
+
+def zap_handler(request):
+  if not ENABLE_ZAP: return W.Response('zap disabled', status_code=403)
+  with open(ARGS.queue, 'w') as f: pass
+  return 'zapped'
 
 
 # ---------- main
