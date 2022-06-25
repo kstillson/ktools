@@ -1,7 +1,6 @@
 
 ## ++ktools tech
-   - webdock
-     - letsencrypt updater
+   - webdockletsencrypt updater
    - ~all docker tests fail on blue
    - review non-doc TODO's
    - re-confirm virgin build process
