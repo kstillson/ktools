@@ -1,3 +1,3 @@
 #!/bin/bash
-/usr/local/bin/party-lights --cgi -1
+/usr/local/bin/party-lights.py --cgi -1
 

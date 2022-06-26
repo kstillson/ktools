@@ -4,7 +4,7 @@ ULB_DIR := files/usr/local/bin
 TOOL_FILES := nag
 TOOL_TARGETS := $(addprefix $(ULB_DIR)/, $(TOOL_FILES))
 
-ETC_FILES := party-lights
+ETC_FILES := party-lights.py tplink.py
 ETC_TARGETS := $(addprefix $(ULB_DIR)/, $(ETC_FILES))
 
 # ---------- local custom logic
@@ -19,7 +19,7 @@ copy: $(TOOL_TARGETS) $(ETC_TARGETS)
 $(TOOL_TARGETS): $(ULB_DIR)/% : ../../pylib/tools/%.py
 	cp $^ $@
 
-$(ETC_TARGETS): $(ULB_DIR)/% : ../../pylib/etc/%.py
+$(ETC_TARGETS): $(ULB_DIR)/% : ../../pylib/etc/%
 	cp $^ $@
 
 

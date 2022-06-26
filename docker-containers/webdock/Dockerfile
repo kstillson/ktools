@@ -1,4 +1,4 @@
-FROM kstillson/kds-baseline:live
+FROM ktools/kcore-baseline:live
 
 # git (and openssh-client) are for cgi-bin/rc
 RUN apk upgrade -U && \
