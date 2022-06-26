@@ -100,7 +100,7 @@ TWO_WEEKS = 14 * 60 * 60 * 24  # 14 days in seconds.
 # friendly names are used for vocal announcements, but also imply the is expected to be triggered regularly (i.e. can by 'tardy')
 TRIGGER_LOOKUPS = [
   #               trigger_regex   ->      zone           partition   tardy_time,  squelch_time friendly_name
-    TriggerLookup('back_door',            'perimeter',   'dodgy',    FOUR_DAYS,   360,         'back door'),
+    TriggerLookup('back_door',            'perimeter',   'default',  FOUR_DAYS,   360,         'back door'),
     TriggerLookup('front_door',           'chime',       'default',  TWO_WEEKS,   360,         'front door'),
     TriggerLookup('garage$',              'perimeter',   'default',  FOUR_DAYS,   360,         'door to garage'),
     TriggerLookup('motion_family_room',   'inside',      'default',  FOUR_DAYS,   360,         'motion family room'),
@@ -165,7 +165,6 @@ TRIGGER_RULES = [
     TriggerRule('arm-away'       , '*'      , 'outside'      , '*'               , 'pass'               , 'could turn on a light or such..'),
   
   # Remaining alarm mechanics.
-    TriggerRule('arm-home'       , 'dodgy'  , '*'            , '*'               , 'announce'           , '#i,@chime4,%f'),
     TriggerRule('arm-home'       , '*'      , '*'            , '*'               , 'announce'           , '#o,@chime4,%f'),
     TriggerRule('arm-away'       , '*'      , '*'            , '*'               , 'state-delay-trigger', 'alarm-triggered, %Ttrig, alarm'),
     TriggerRule('alarm-triggered', '*'      , '*'            , 'alarm'           , 'state-delay-trigger', 'alarm, %Talarm, alarm-timeout'),
