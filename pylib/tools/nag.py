@@ -20,17 +20,23 @@ class StatusEnum(enum.Enum):
   CRITICAL = 2
   UNKNOWN = 3
   ACKED = -2
-
+  FILTERED = -3
 
 Status = namedtuple('Status', 'host, service, status_enum, status_dict')
 
+ARGS = None
 
-def eval_state(sect_dict):
+
+def eval_state(sect_dict, svc):
     s = int(sect_dict.get('current_state', '3'))
     if s == 2 and sect_dict.get('problem_has_been_acknowledged', '?') == '1':
-         s = -2
+        s = -2
     if s == 0 and sect_dict.get('has_been_checked', '?') == '0':
-         s = 3  # pending...
+        s = 3  # pending...
+    if s > 0:
+        for f in ARGS.filter:
+            if f in svc: s = -3
+            if f in sect_dict.get('host_name', '?'): s = -3
     return StatusEnum(s)
 
 
@@ -54,6 +60,7 @@ def count_by_status(by_status):
 
 
 def scan(status_file):
+    '''returns a dict from StatusEnum to lists of names of items with that status.'''
     by_status = {}
     for i in StatusEnum: by_status[i] = []
 
@@ -83,7 +90,7 @@ def scan(status_file):
                 else:
                     # Don't know how to parse this type...
                     continue
-                status_enum = eval_state(sect_dict)
+                status_enum = eval_state(sect_dict, svc)
                 if 'test' in svc:
                     if not ARGS.include_test and not ARGS.fail_sim:
                         continue
@@ -176,18 +183,19 @@ def write_to_cmdfile(out):
 
 def parse_args():
     ap = argparse.ArgumentParser(description='nagios status summarizer')
-    ap.add_argument('--ack', '-A', action='store_true', help='Ack all non-ok services.')
-    ap.add_argument('--all', '-a', action='store_true', help='Include all, not just currently not-ok (in either output report or retry commands)')
+    ap.add_argument('--ack', '-A',      action='store_true', help='Ack all non-ok services.')
+    ap.add_argument('--all', '-a',      action='store_true', help='Include all, not just currently not-ok (in either output report or retry commands)')
     ap.add_argument('--cmd_file', '-o', default='/rw/dv/nagdock/var_nagios/rw/nagios.cmd', help='Location of nagios command input pipe')
-    ap.add_argument('--fail_sim', '-f', action='store_true', help='Simulate failure in the test service')
-    ap.add_argument('--color', action='store_true', help='Output just the color of the overall status block (suitable for a cgi-bin call)')
-    ap.add_argument('--html', action='store_true', help='Output html format (suitable for a cgi-bin call)')
+    ap.add_argument('--fail_sim', '-F', action='store_true', help='Simulate failure in the test service')
+    ap.add_argument('--filter', '-f',   nargs='+', default=[], help='exclude from failures anything with names matching these substrings')
+    ap.add_argument('--color',          action='store_true', help='Output just the color of the overall status block (suitable for a cgi-bin call)')
+    ap.add_argument('--html',           action='store_true', help='Output html format (suitable for a cgi-bin call)')
     ap.add_argument('--include_test', '-T', action='store_true', help='Do not filter services contianing the word "test"')
     ap.add_argument('--retry_all', '-R', action='store_true', help='Equivalent to --retry --all')
-    ap.add_argument('--retry', '-r', action='store_true', help='Queue all non-ok services for a retry')
+    ap.add_argument('--retry', '-r',    action='store_true', help='Queue all non-ok services for a retry')
     ap.add_argument('--status_file', '-i', default='/rw/dv/nagdock/var_nagios/status.dat', help='Location of nagios status file')
-    ap.add_argument('--summary', '-s', action='store_true', help='Just print a two-line overall summary')
-    ap.add_argument('--test', '-t', action='store_true', help='Output command updates to stdout, rather than to cmd_file')
+    ap.add_argument('--summary', '-s',  action='store_true', help='Just print a two-line overall summary')
+    ap.add_argument('--test', '-t',     action='store_true', help='Output command updates to stdout, rather than to cmd_file')
     args = ap.parse_args()
     if args.retry_all:
         args.retry = True

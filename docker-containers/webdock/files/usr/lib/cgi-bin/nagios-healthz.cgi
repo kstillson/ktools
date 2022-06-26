@@ -1,2 +1,2 @@
 #!/bin/bash
-/usr/local/bin/nag --html --status_file /var/nagios/status.dat
+/usr/local/bin/nag --filter tp- --html --status_file /var/nagios/status.dat
