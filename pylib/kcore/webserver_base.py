@@ -83,7 +83,7 @@ class LoggingAdapter:
         self.get_logz_html = get_logz_html
 
 
-class WebServerBase(object):
+class WebServerBase:
     # TODO: doc
 
     # TODO: allow passing port to constructor OR start method.

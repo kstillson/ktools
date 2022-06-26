@@ -40,25 +40,25 @@ import adafruit_requests as requests
 
 
 def test_adafruit_requests_under_circuitpy_sim():
-    
+
     # If you are using a board with pre-defined ESP32 Pins:
     esp32_cs = DigitalInOut(board.ESP_CS)
     esp32_ready = DigitalInOut(board.ESP_BUSY)
     esp32_reset = DigitalInOut(board.ESP_RESET)
-    
+
     # If you have an externally connected ESP32:
     # esp32_cs = DigitalInOut(board.D9)
     # esp32_ready = DigitalInOut(board.D10)
     # esp32_reset = DigitalInOut(board.D5)
-    
+
     # If you have an AirLift Featherwing or ItsyBitsy Airlift:
     # esp32_cs = DigitalInOut(board.D13)
     # esp32_ready = DigitalInOut(board.D11)
     # esp32_reset = DigitalInOut(board.D12)
-    
+
     spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
     esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
-    
+
     print("Connecting to AP...")
     while not esp.is_connected:
         try:
@@ -67,11 +67,11 @@ def test_adafruit_requests_under_circuitpy_sim():
             print("could not connect to AP, retrying: ", e)
             continue
     print("Connected to", str(esp.ssid, "utf-8"), "\tRSSI:", esp.rssi)
-    
+
     # Initialize a requests object with a socket and esp32spi interface
     socket.set_interface(esp)
     requests.set_socket(socket, esp)
-    
+
     TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
     JSON_GET_URL = "https://httpbin.org/get"
     JSON_POST_URL = "https://httpbin.org/post"
@@ -80,23 +80,23 @@ def test_adafruit_requests_under_circuitpy_sim():
     response = requests.get(TEXT_URL)
     assert 'If you can read this, its working :)' in response.text
     response.close()
-    
+
     print("Fetching JSON data from %s" % JSON_GET_URL)
     response = requests.get(JSON_GET_URL)
     assert response.json()['url'] == JSON_GET_URL
     response.close()
-    
+
     data = "31F"
     print("POSTing data to {0}: {1}".format(JSON_POST_URL, data))
     response = requests.post(JSON_POST_URL, data=data)
     json_resp = response.json()
     assert json_resp["data"] == '31F'
     response.close()
-    
+
     json_data = {"Date": "July 25, 2019"}
     print("POSTing data to {0}: {1}".format(JSON_POST_URL, json_data))
     response = requests.post(JSON_POST_URL, json=json_data)
     json_resp = response.json()
     assert json_resp["json"]['Date'] == 'July 25, 2019'
     response.close()
-    
+

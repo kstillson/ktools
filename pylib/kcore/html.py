@@ -61,4 +61,3 @@ def wrap(msg, code, eol=True): return '<%s>%s</%s>%s' % (code, msg, code, '\n' i
 
 # Same as wrap() but skips trailing \n without needing an extra param.
 def wrap_(msg, code): return wrap(msg, code, eol=False)
-

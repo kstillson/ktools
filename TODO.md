@@ -6,10 +6,6 @@
      - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
      - ? chmod 444 /sys/class/dmi/id/product_uuid
    - make e -> make all ?
-   - linting?
-
-## pending webdock
-   - fix party (webdock /ulb, tplink->hc)
 
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,
@@ -30,7 +26,6 @@
 ## ---------- MILESTONE: ready for peer review ...?
 
 ## deferred homectrl related
-   - h/control:ext -> hc.py (needs kcore in webdock, which probably means conversion to ktools-based build)
    - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio
    - graphical interface for inputs and outputs
-   - homectrl remote update (?)
+   - homectrl push update to all

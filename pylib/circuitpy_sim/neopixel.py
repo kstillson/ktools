@@ -50,7 +50,7 @@ class NeoPixel:
         self.data = []
         for i in range(num_pixels): self.data.append((0, 0, 0))
         if not GRAPHICS: return
-        t = threading.Thread(target=self._start_tkinter, daemon=True).start()
+        threading.Thread(target=self._start_tkinter, daemon=True).start()
         # Wait until other thread is ready.
         while not ROOT: time.sleep(0.2)
 
@@ -93,11 +93,10 @@ class NeoPixel:
         self.canvas.itemconfig(self.rects[index], fill=hexcol)
 
     def __setslice__(self, start, stop, val):
-        for i in range(start, stop): 
+        for i in range(start, stop):
             self.__setitem__(i, val)
-            
+
     def fill(self, color):
         for i in range(self.n): self[i] = color
 
     def show(self): pass
-

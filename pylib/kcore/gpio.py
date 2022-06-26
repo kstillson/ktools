@@ -219,7 +219,7 @@ class KButton:
     # require_pressed_ms, so just verify the button is still pressed.
     def _pressed2_circpy(self, bcm_pin):
         if self.value() == self._normally_high:
-            if self._log: C.log('dropped unsustained bcm_pin %s on sample %d' % (self._name, sample))
+            if self._log: C.log('dropped unsustained bcm_pin %s' % (self._name))
             V.bump('dropped-unsustained-bcm_pin-%s' % self._name)
             return False
         return self._pressed3(bcm_pin)
@@ -279,4 +279,3 @@ class KDualLed:
     def red(self): self.set(1, 0)
     def green(self): self.set(0, 1)
     def yellow(self): self.set(1, 1)
-

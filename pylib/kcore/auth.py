@@ -147,7 +147,7 @@ class VerificationParams:
   db_filename: str = DEFAULT_DB_FILENAME
   max_time_delta: int = DEFAULT_MAX_TIME_DELTA
   must_be_later_than_last_check: bool = True
-  
+
 
 # Regarding server_override_hostname: populating this field on the client-side
 # has no effect.  Popuating it on the server-side (-H during registration),
@@ -335,7 +335,7 @@ def generate_token_given_shared_secret(
     shared_secret_str = str(temp)
   else:
     shared_secret_str = str(shared_secret)
-    
+
   hostname = use_hostname or socket.gethostname()
   time_now = override_time or now()
   plaintext_context = '%s:%s:%s:%s' % (TOKEN_VERSION, hostname, username, time_now)
@@ -392,7 +392,7 @@ def verify_token_given_shared_secret(
      Returns VerificationResults.
   '''
   if isinstance(shared_secret, str): shared_secret = SharedSecret.from_string(shared_secret)
-    
+
   if DEBUG: print(f'DEBUG: starting verification token={token} command={command} shared_secret={shared_secret} client_addr={client_addr}', file=sys.stderr)
   try:
     token_version, token_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
@@ -401,7 +401,7 @@ def verify_token_given_shared_secret(
     return VerificationResults(False, 'token fails to parse', None, None, None)
 
   if token_version != TOKEN_VERSION:
-    return VerificationResults(False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', shared_secret_expected_hostname, username, sent_time)
+    return VerificationResults(False, f'Wrong token/protocol version.   Saw "{token_version}", expected "{TOKEN_VERSION}".', shared_secret.hostname, username, sent_time)
 
   expected_hostname = shared_secret.server_override_hostname or shared_secret.hostname
   if client_addr and expected_hostname != '*' and not compare_hosts(expected_hostname, client_addr):

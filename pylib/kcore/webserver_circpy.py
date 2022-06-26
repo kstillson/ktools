@@ -183,4 +183,3 @@ def connect_wifi(dhcp_hostname, ssid, wifi_password, print_addrs=True):
         print("MAC: ", [hex(i) for i in wifi.radio.mac_address])
         print("IP: ", wifi.radio.ipv4_address)
     return (wifi.radio.mac_address, wifi.radio.ipv4_address)
-

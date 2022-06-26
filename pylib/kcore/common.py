@@ -216,17 +216,17 @@ def log(msg, level=INFO):
     level_name = getLevelName(level)
     time = FORCE_TIME or timestr()
     msg2 = '%s: %s: %s: %s' % (LOG_TITLE, time, level_name, msg)
-    
+
     # Add to internal in-memory queue
     global LOG_QUEUE, LOG_QUEUE_LEN_MAX
     if LOG_QUEUE_LEN_MAX and len(LOG_QUEUE) >= LOG_QUEUE_LEN_MAX: del LOG_QUEUE[LOG_QUEUE_LEN_MAX - 1]
     LOG_QUEUE.insert(0, msg2)
-    
+
     # Send to other destinations.
     if level >= FILTER_LEVEL_LOGFILE and LOG_FILENAME:
         msg = '%s:%s:%s: %s' % (level_name, LOG_TITLE, time, msg)
         if LOG_FILENAME == '-': print(msg)
-        else: 
+        else:
             with open(LOG_FILENAME, 'a') as f: f.write(msg + '\n')
     if level >= FILTER_LEVEL_STDOUT: print(msg2)
     if level >= FILTER_LEVEL_STDERR: stderr(msg2)
@@ -257,8 +257,8 @@ def set_queue_len(new_len):
 def timestr():
     now = time.localtime()
     return '%d-%d-%d %d:%d:%d' % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
-    
-    
+
+
 # ---------- So callers don't need to import logging...
 
 
@@ -295,7 +295,7 @@ class FakeResponse:
        not supported: connection, cookies, encoding, is_redirect,
                       iter_content, iter_lines, json, links, next, history,
                       raise_for_status, request, raw '''
-    
+
     def __init__(self):
         self.elapsed = None
         self.exception = None
@@ -354,18 +354,18 @@ def quote_plus(url):
     elif PY_VER == 2: return urllib.quote_plus(url)
     else: return urllib.parse.quote_plus(url)
 
-    
+
 def unquote_plus(url):
     if CIRCUITPYTHON: return poor_mans_unquote_plus(url)
     elif PY_VER == 2: return urllib.unquote_plus(url)
     else: return urllib.parse.unquote_plus(url)
 
-    
+
 def urlencode(query):
     if CIRCUITPYTHON: return poor_mans_urlencode(query)
     elif PY_VER == 2: return urllib.urlencode(query)
     else: return urllib.parse.urlencode(query)
-    
+
 
 UNQUOTE_REPLACEMENTS = {
     '%20': ' ',    '%22': '"',    '%28': '(',    '%29': ')',

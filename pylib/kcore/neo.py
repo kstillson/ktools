@@ -5,12 +5,12 @@ This module supports 4 modes of operation:
  - Running on a Circuit Python board using the Adafruit Neopixel library.
  - Running using ../circuitpy_sim, which uses tkinter to draw simulated
    graphical LEDs on a Linux workstation
- - Running with simulation=True passed to the constructor, which is 
+ - Running with simulation=True passed to the constructor, which is
    "headless" (i.e. no LED or graphical output).  You can set() and get()
    colors for testing, but that's about it.
 
 Installing dependencies:
-  - Raspberry PI: 
+  - Raspberry PI:
       (https://learn.adafruit.com/neopixels-on-raspberry-pi/python-usage)
     # sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
     # (not needed?) sudo python3 -m pip install --force-reinstall adafruit-blinka
@@ -79,12 +79,12 @@ def rgb_to_color(rgb):
 
 # ---------- Neopixel abstraction
 
-class Neo(object):
+class Neo:
     '''Object oriented abstraction for Adafruit Neopixels.
 
        n is the number of chained neopixels.
 
-       RPi in non-simulation mode:  
+       RPi in non-simulation mode:
         - MUST BE RUN BY ROOT
         - Allowed pins: GPIO10(doesn't work?), GPIO12, GPIO18, or GPIO21
         - will autoselect D18 (Adafruit's default) if not otherwise specified.
@@ -93,7 +93,7 @@ class Neo(object):
        (i.e. if you ask for red and get green, set this).  include_w is for RGBW leds.'''
 
     # ---------- general API
-    
+
     def __init__(self, n=1, pin=None, brightness=1.0,
                  auto_write=True, simulation=False,
                  reverse_rg=False, include_w=False):
@@ -104,7 +104,7 @@ class Neo(object):
         if simulation:
             self._strip = None
             return
-       
+
         import neopixel
         if include_w:
             order = neopixel.RGBW if reverse_rg else neopixel.GRBW
@@ -115,11 +115,11 @@ class Neo(object):
             pin = board.D18
         self._strip = neopixel.NeoPixel(pin, n, brightness=brightness, auto_write=auto_write, pixel_order=order)
 
-        
+
     def get(self, index):
         if index >= self._n or index < 0: raise IndexError
         return self._vals[index]
-        
+
     def set(self, index, value):
         if index < 0: index += len(self)
         if index >= self._n or index < 0: raise IndexError
@@ -141,10 +141,10 @@ class Neo(object):
     def show(self):
         if self._strip: self._strip.show()
 
-        
+
     # ----- helpers to set multiple LEDs
-    
-    def black(self): 
+
+    def black(self):
         self.fill(0)
         if not self._auto_write: self.show()
 
@@ -157,20 +157,19 @@ class Neo(object):
             wheel_pos = int(255.0 * i / self._n)
             self.set(i, wheel(wheel_pos))
         if not self._auto_write: self.show()
-        
+
     def wipe(self):
         self.black()
 
-    
+
     # ---------- internals
-    
+
     def __getitem__(self, index): return self._vals[index]
 
     # basically just a wrapper around set() that supports slices.
     def __setitem__(self, index, val):
         if isinstance(index, slice):
-            for index, val_i in enumerate(range(index.start, index.stop + 1, index.step or 1)):
-                v = val[index] if isinstance(val, list) else val
+            for index_i, val_i in enumerate(range(index.start, index.stop + 1, index.step or 1)):
+                v = val[index_i] if isinstance(val, list) else val
                 self.set(val_i, v)
         else: self.set(index, val)
-

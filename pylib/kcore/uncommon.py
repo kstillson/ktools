@@ -287,5 +287,3 @@ def resolve_special_arg(args, argname, required=True):
 
     if required and not value: raise ValueError(f'Unable to get required value for {argname}.')
     return value
-
-

@@ -190,11 +190,11 @@ def take_action(tracking, action, params):
   elif action == 'announce':
     ext.announce(params)
     msg = params
-    if (params.startswith('#a')): level = 'alert'
-    elif (params.startswith('!!')):
+    if params.startswith('#a'): level = 'alert'
+    elif params.startswith('!!'):
       level = 'alert'
       msg = params[2:]
-    elif (params.startswith('#i')): level = 'info'
+    elif params.startswith('#i'): level = 'info'
     else: level = 'other'
     if level != 'other':
       ext.push_notification(msg, level)
@@ -206,7 +206,7 @@ def take_action(tracking, action, params):
   elif action == 'control2':
     unit, state, delay, unit2, state2 = params.split(', ')
     err = ext.control(unit, state)
-    schedule_trigger(tracking, delay, 'control/%s' % (unit2, state2))
+    schedule_trigger(tracking, delay, 'control/%s:%s' % (unit2, state2))
     return err
 
   elif action == 'silent-panic':

@@ -42,11 +42,10 @@ def stamp(stamp_name):  # Sets current epoch seconds.
     global VARZ
     VARZ[stamp_name] = int(time.time())
 
-    
+
 # ---------- management
 
 def reset(counter_name=None):
     global VARZ
     if counter_name: VARZ[counter_name] = None
     else: VARZ = {}
-
