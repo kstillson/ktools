@@ -44,5 +44,6 @@ def test_basic_opration(tmp_path):
     secret = kmc.query_km('testkey',
                           km_host_port=f'localhost:{random_high_port}',
                           km_cert='tests/server-cn=localhost.pem',
-                          retry_limit=1, retry_delay=0)
+                          retry_limit=1, retry_delay=0,
+                          override_hostname='test')
     assert secret == 'mysecret'

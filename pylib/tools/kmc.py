@@ -37,7 +37,8 @@ def find_cert(filename):
 
 def query_km(keyname, username='', password='',
              km_host_port='keys:4444', km_cert='keymaster.crt',
-             timeout=5, retry_limit=None, retry_delay=15):
+             timeout=5, retry_limit=None, retry_delay=15,
+             override_hostname=None):
   '''query the keymaster for a key
 
   Set km_cert to None to disable TLS (i.e. use http). Not recommended for
@@ -53,8 +54,6 @@ def query_km(keyname, username='', password='',
   "ERROR" upon failure.
 
   '''
-  hostname = socket.gethostname()
-
   if km_cert:
     verify = find_cert(km_cert)
     if not verify: C.log_error('unable to find certificate %s' % km_cert)
@@ -67,8 +66,9 @@ def query_km(keyname, username='', password='',
 
     # token generation must occur within retry loop, as it's time dependent.
     authn_token = kcore.auth.generate_token(
-      command=keyname, username=username, user_password=password)
-    if DEBUG: print(f'DEBUG: query_km token regeneration: keyname={keyname} hostname={hostname} username={username} password={password} PUID={os.environ.get("PUID")} authn_token={authn_token}', file=sys.stderr)
+      command=keyname, username=username, user_password=password,
+      override_hostname=override_hostname)
+    if DEBUG: print(f'DEBUG: query_km token regeneration: keyname={keyname} username={username} password={password} {override_hostname=} PUID={os.environ.get("PUID")} authn_token={authn_token}', file=sys.stderr)
 
     protocol = 'http' if km_cert is None else 'https'
     url = '%s://%s/%s?a=%s' % (protocol, km_host_port, keyname, authn_token)
@@ -101,6 +101,7 @@ def parse_args(argv):
   group1 = ap.add_argument_group('advanced', 'advanced settings for key retrival')
   group1.add_argument('--km-host-port', default='keys:4444', help='hostname:port for keymaster to contact')
   group1.add_argument('--km_cert', default='keymaster.crt', help='filename of cert to use for km server TLS checks, or "" to use unverified TLS, or "-" to use HTTP without TLS.')
+  group1.add_argument('--override-hostname', '-O', default=None, help='intended for testing; generate authN token based on this hostname rather than the real one.')
   group1.add_argument('--timeout', default=5, type=int, help='seconds for external connect timeouts')
   group1.add_argument('--retry-limit', default=None, type=int, help='how many times to retry.  Leave unset for "infinite"')
   group1.add_argument('--retry-delay', default=5, type=int, help='seconds to wait between retries')
@@ -128,7 +129,8 @@ def main(argv=[]):
 
   secret = query_km(keyname=args.keyname, username=args.username, password=args.password,
                     km_host_port=args.km_host_port, km_cert=args.km_cert,
-                    timeout=args.timeout, retry_limit=args.retry_limit, retry_delay=args.retry_delay)
+                    timeout=args.timeout, retry_limit=args.retry_limit, retry_delay=args.retry_delay,
+                    override_hostname=args.override_hostname)
   if not secret: return 1
   print(secret)
   return 0

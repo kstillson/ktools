@@ -126,18 +126,20 @@ class SharedSecret:
   secret: str
   server_override_hostname: str = None   # see below.
 
-  def lookup_key(self): return f'{self.hostname}:{self.username}'
+  def lookup_key(self):
+    return f'{self.server_override_hostname or self.hostname}:{self.username}'
 
   @staticmethod
   def from_string(src_str):
     return eval(src_str, {}, {'SharedSecret': SharedSecret})
 
   @staticmethod
-  def generate(username, user_password):
-    hostname = socket.gethostname()
+  def generate(username, user_password, client_override_hostname=None):
+    hostname = client_override_hostname or socket.gethostname()
     data_to_hash = '%s:%s:%s:%s' % (hostname, get_machine_private_data(), username, user_password)
-    if DEBUG: print(f'DEBUG: generating SharedSecret from plaintext: {data_to_hash}', file=sys.stderr)
-    item = SharedSecret(hostname=hostname, username=username, secret=hasher(data_to_hash), version_tag=TOKEN_VERSION)
+    debug_msg(f'DEBUG: generating SharedSecret from plaintext: {data_to_hash}')
+    item = SharedSecret(version_tag=TOKEN_VERSION, hostname=hostname, username=username,
+                        secret=hasher(data_to_hash))
     return item
 
 
@@ -206,6 +208,10 @@ def compare_hosts(host1, host2):
     if not host2[0].isdigit(): host2 = socket.gethostbyname(host2)
   except Exception: return False
   return host1 == host2
+
+
+def debug_msg(msg):
+  if DEBUG: print('DEBUG: ' + msg, file=sys.stderr)
 
 
 def hasher(plaintext):
@@ -290,7 +296,7 @@ def get_machine_private_data():
 
 # ---------- client-side authN logic
 
-def generate_shared_secret(username='', user_password=''):
+def generate_shared_secret(username='', user_password='', client_override_hostname=None):
   '''Generate the shared secret used to register a client.
 
      Should be run on the client machine because machine-specific data is
@@ -301,22 +307,26 @@ def generate_shared_secret(username='', user_password=''):
      does not need to save this shared secret; it will be automatically
      re-generated when generate_token() is called.
   '''
-  return SharedSecret.generate(username, user_password)
+  return SharedSecret.generate(username, user_password, client_override_hostname)
 
 
-def generate_token(command, username='', user_password='', override_time=None):
+def generate_token(command, username='', user_password='',
+                   override_hostname=None, override_time=None):
   '''Generate a token that authenticates "command".
 
      The generated token can be verifyd using verify_token() [below].
      Before verification will work, the client generating a token must register
      a shared secret with the server.  i.e. call generate_shared_secret() on
      the client, and then register() on the server.
+
+     Overriding hostname and/or time is intended for testing.  Using it in
+     practice should just generate non-verifyable tokens.
   '''
-  regenerated_registration = generate_shared_secret(username, user_password)
+  regenerated_registration = generate_shared_secret(username, user_password, client_override_hostname=override_hostname)
 
   return generate_token_given_shared_secret(
     command=command, shared_secret=regenerated_registration,
-    username=username, override_time=override_time)
+    username=username, use_hostname=override_hostname, override_time=override_time)
 
 
 def generate_token_given_shared_secret(
@@ -340,7 +350,7 @@ def generate_token_given_shared_secret(
   time_now = override_time or now()
   plaintext_context = '%s:%s:%s:%s' % (TOKEN_VERSION, hostname, username, time_now)
   data_to_hash = '%s:%s:%s' % (plaintext_context, command, shared_secret_str)
-  if DEBUG: print('DEBUG: hash data: "%s"' % data_to_hash, file=sys.stderr)
+  debug_msg('hash data: "%s"' % data_to_hash)
   return '%s:%s' % (plaintext_context, hasher(data_to_hash))
 
 
@@ -371,12 +381,12 @@ def verify_token(token, command, client_addr, db_passwd,
   if not REGISTRATION_DB:
     cnt = load_registration_db(db_passwd, db_filename)
     if cnt <= 0:
-      if DEBUG: print(f'DEBUG: load reg db {db_filename} failed. passwd={db_passwd}, cnt={cnt}', file=sys.stderr)
+      debug_msg(f'load reg db {db_filename} failed. passwd={db_passwd}, cnt={cnt}')
       return VerificationResults(False, f'unable to open/decrypt registration database {db_filename}', None, None, None)
 
   if not token: return VerificationResults(False, f'no authN token provided', None, None, None)
   token_version, token_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
-  shared_secret = get_shared_secret_from_db(token_hostname, username)
+  shared_secret = get_shared_secret_from_db(token_hostname, client_addr, username)
   if not shared_secret:
     return VerificationResults(False, f'could not find client registration for {token_hostname}:{username}', None, None, None)
 
@@ -393,7 +403,7 @@ def verify_token_given_shared_secret(
   '''
   if isinstance(shared_secret, str): shared_secret = SharedSecret.from_string(shared_secret)
 
-  if DEBUG: print(f'DEBUG: starting verification token={token} command={command} shared_secret={shared_secret} client_addr={client_addr}', file=sys.stderr)
+  debug_msg(f'starting verification token={token} command={command} shared_secret={shared_secret} client_addr={client_addr}')
   try:
     token_version, token_hostname, username, sent_time_str, sent_auth = token.split(':', 4)
     sent_time = int(sent_time_str)
@@ -424,7 +434,7 @@ def verify_token_given_shared_secret(
   expect_token = generate_token_given_shared_secret(
     command=command, shared_secret=shared_secret,
     use_hostname=shared_secret.hostname, username=username, override_time=sent_time)
-  if DEBUG: print(f'DEBUG: expect_token={expect_token} expected_hostname={expected_hostname}', file=sys.stderr)
+  debug_msg(f'expect_token={expect_token} expected_hostname={expected_hostname}')
   if token != expect_token: return VerificationResults(False, f'Token fails to verify  Saw "{token}", expected "{expect_token}".', expected_hostname, username, sent_time)
 
   return VerificationResults(True, 'ok', expected_hostname, username, sent_time)
@@ -437,34 +447,44 @@ def load_registration_db(db_passwd, db_filename=DEFAULT_DB_FILENAME):
   global REGISTRATION_DB
   REGISTRATION_DB.clear()
   if not os.path.isfile(db_filename):
-    if DEBUG: print(f'DEBUG: reg file {db_filename} does not exist; starting fresh.', file=sys.stderr)
+    debug_msg(f'reg file {db_filename} does not exist; starting fresh.')
     return 0
   try:
     with open(db_filename) as f: encrypted = f.read()
     decrypted = UC.decrypt(encrypted, db_passwd)
     if decrypted.startswith('ERROR'):
-      if DEBUG: print(f'DEBUG: error during decryption: {decrypted}', file=sys.stderr)
+      debug_msg(f'error during decryption: {decrypted}')
       return -1
     REGISTRATION_DB.from_string(decrypted, SharedSecret)
-    if DEBUG: print(f'DEBUG: loaded ok.  {len(REGISTRATION_DB)} entries.', file=sys.stderr)
+    debug_msg(f'loaded ok.  {len(REGISTRATION_DB)} entries.')
     return len(REGISTRATION_DB)
   except Exception as e:
-    if DEBUG: print(f'DEBUG: exception during decrypt: {str(e)}', file=sys.stderr)
+    debug_msg(f'exception during decrypt: {str(e)}')
     return -1
 
 
-def get_shared_secret_from_db(hostname=None, username=''):
+def get_shared_secret_from_db(token_hostname, client_addr=None, username=''):
   '''Must call load_registration_db first.'''
-  if not hostname: hostname = socket.gethostname()
-  lookup_key = f'{hostname}:{username}'
-  return REGISTRATION_DB.get(lookup_key)
+  lookup = REGISTRATION_DB.get(f'{token_hostname}:{username}')
+  if lookup:
+    debug_msg(f'returning token hostname match: {token_hostname}')
+    return lookup
+  lookup = REGISTRATION_DB.get(f'{client_addr}:{username}')
+  if lookup:
+    debug_msg(f'returning client address hostname match: {client_addr}')
+    return lookup
+  lookup = REGISTRATION_DB.get(f'*:{username}')
+  if lookup:
+    debug_msg(f'returning wildcard hostname match')
+    return lookup
+  debug_msg(f'no matching hostname in secrets DB.')
 
 
 def register(shared_secret, db_passwd, db_filename=DEFAULT_DB_FILENAME,
-             override_hostname=None):
+             server_override_hostname=None):
   if isinstance(shared_secret, str): shared_secret = SharedSecret.from_string(shared_secret)
   if shared_secret.version_tag != TOKEN_VERSION: return False
-  if override_hostname: shared_secret.server_override_hostname = override_hostname
+  if server_override_hostname: shared_secret.server_override_hostname = server_override_hostname
 
   global REGISTRATION_DB
   if REGISTRATION_DB is None:
@@ -535,15 +555,14 @@ def main(argv=[]):
   if args.generate:
     if not args.password: sys.exit('WARNING: password not specified.  Registering a host without a password will allow anyone with access to the host to authenticate as the host.  If this is really what you want, specify "-" as the password.')
     password = '' if args.password == '-' else args.password
-    if args.username and not password: sys.exit('specifying a username without a password is not useful.')
-    print(str(generate_shared_secret(args.username, password)))
+    print(str(generate_shared_secret(args.username, password, args.hostname)))
     return 0
 
   elif args.register:
-    if not args.db_passwd: sys.exit('must provide --db-passwd to --register.')
+    if not args.db_passwd: sys.exit('must provide --db-passwd in order to --register.')
     shared_secret = SharedSecret.from_string(args.register)
     ok = register(shared_secret, args.db_passwd, args.db_filename,
-                  override_hostname=args.override_hostname)
+                  server_override_hostname=args.override_hostname)
     if ok:
       print('Done.  Registration file now has %d entries.' % len(REGISTRATION_DB))
       return 0
