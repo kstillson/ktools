@@ -3,8 +3,8 @@ TEST_LOG ?= test.log
 
 # ----------
 
-# TODO: not obvious what a good install target dir would be.
-# /usr/local/keymaster..?  probably should revisit this rather than silently
+# TODO(defer): not obvious what a good install target dir would be.
+# /usr/local/homesec..?  probably should revisit this rather than silently
 # doing nothing...
 
 

@@ -1,13 +1,10 @@
 #!/usr/bin/python3
 '''Home Service (hs) - web-service for hc (home control) automation system.
 
-TODO: more doc
+TODO(doc)...
 
 GUI (root.html): /
 send on-demand control:   /control/{target}[/{command}]
-
-
-TODO: add robots.txt (perhaps default handler...?)
 
 SECURITY NOTE: As currently written, this web-server has no authentication
 mechanism.  The thought is that when running on a local network, an attacker
@@ -66,6 +63,11 @@ def hs_c_handler(request):
     return f'{"ok" if ok else "ERROR"}: {rslt}'
 
 
+def hs_robots_handler(request):
+    # We have state-changing GET requests; disallow robots from exploring our links.
+    return 'User-agent: *\nDisallow: /\n'
+
+
 def hs_root_handler(request):
     with open('root.html') as f: return f.read()
 
@@ -95,6 +97,7 @@ def main(argv=[]):
       '/': hs_root_handler,
       '/control/.*': hs_control_handler,
       '/c.*': hs_c_handler,
+      '/robots.txt': hs_robots_handler,      
   }
   ws = W.WebServer(handlers)
   ws.start(port=args.port, background=False)  # Doesn't return.
