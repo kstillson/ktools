@@ -1,6 +1,6 @@
 '''simple web server
 
-TODO: doc
+TODO(doc)
 
 '''
 
@@ -77,7 +77,7 @@ class WebServer(WebServerBase):
               server_class=DEFAULT_SERVER_CLASS):
         self.httpd = server_class((listen, port), Worker)
 
-        if tls_key_password: raise RuntimeError('TODO: support tls_key_password')
+        if tls_key_password: raise RuntimeError('TODO(defer): support tls_key_password')
         if tls_key_file:
             self.httpd.socket = ssl.wrap_socket(self.httpd.socket, certfile=tls_cert_file, keyfile=tls_key_file, server_side=True)
 

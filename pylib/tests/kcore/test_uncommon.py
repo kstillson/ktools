@@ -133,11 +133,7 @@ def test_symmetric_encryption():
     assert UC.decrypt(encrypted, password, 'wrong-salt').startswith('ERROR')
 
 
-''' TODO: DISABLED.
-    calling gpg via subprocess requires /usr/bin/gpg-agent, which I've disabled
-    on my system, which causes this test to fail.  Disabling for now.
-    This test does pass if gpg-agent is enabled.
-
+# TODO: kill any gpg-agent instance started by this test.
 def test_gpg_symmetric():
     # not supported in python2
     if sys.version_info[0] == 2: return
@@ -152,7 +148,6 @@ def test_gpg_symmetric():
     err = UC.gpg_symmetric(crypted, 'bad-password')
     assert err.startswith('ERROR:')
 
-'''
 
 @dataclass
 class FakeArgs:

@@ -3,8 +3,7 @@ Simple web-server for Circuit Python.
 adapted from https://github.com/deckerego/ampule; thanks deckerego!
 MIT license
 
-
-TODO: add POST submission parsing.
+TODO(doc): 
 
 Example usage in non-blocking mode:
 
@@ -22,6 +21,10 @@ while True:
     # That was non-blocking, we can do something else between incoming requests...
     print(f'{time.time()} - main loop; status={status}')
     time.sleep(0.5)  # Don't overwhelm serial monitor by looping too fast.
+
+
+TODO: add POST submission parsing.
+
 '''
 
 import io, os, re, sys
@@ -33,7 +36,7 @@ PY_VER = sys.version_info[0]
 # ----------
 # Are we running CircuitPython? If not, inject path to the simulator.
 import os, sys
-CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')  # TODO: any better way?
+CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
 if not CIRCUITPYTHON:
     simpath = os.path.join(os.path.dirname(__file__), '..', 'circuitpy_sim')
     if not simpath in sys.path: sys.path.insert(0, simpath)

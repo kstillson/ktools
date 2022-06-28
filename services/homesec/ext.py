@@ -11,6 +11,8 @@ DEBUG = False
 # --------------------
 # Silent alarm message data
 
+# TODO: move to addrs into private.d
+
 SILENT_TO = ['rts@point0.net', 'mbs@point0.net']
 SILENT_SUBJ = 'URGENT- KEN STILLSON HAS ACTIVATED HOME SECURITY PANIC SYSTEM'
 SILENT_MSG = ('This message is generated when I trigger a silent alarm.\n\n'
@@ -19,7 +21,7 @@ SILENT_MSG = ('This message is generated when I trigger a silent alarm.\n\n'
               'call or text me; if I had wanted an obvious response, \n'
               'I would have triggered a noisy panic.\n\n')
 
-if True:  ##@@ TODO:   if DEBUG:
+if DEBUG:
   SILENT_TO = ['ken@kenstillson.com', 'tech@point0.net']
   SILENT_SUBJ = SILENT_SUBJ.replace('URGENT', 'THIS IS A TEST - PLEASE IGNORE')
 

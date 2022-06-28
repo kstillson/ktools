@@ -82,7 +82,7 @@ function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@";
 
 # ---------- ssh agent
 
-# TODO: can this be simplified?  externalized?
+# TODO(defer): can this be simplified?  externalized?
 
 # return success (0) if agent is running and registered with this shell.
 function test_ssh_agent() {
@@ -250,7 +250,7 @@ function git_check_all() {
 # $1 is a git controlled directory.  Will check-in any local changes, then
 # pull updates from all remotes, then push updates to all remotes.
 # assumes "need_ssh_agent" was already called.
-# TODO: assumes remote branch is named "master"
+# TODO(defer): assumes remote branch is named "master"
 function git_sync() {
     dir="$1"
     if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; return 1; fi

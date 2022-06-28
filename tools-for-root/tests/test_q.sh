@@ -4,7 +4,7 @@
 # a few of the self-introspection capabilities of q.sh, basically showing
 # that it's able to run and the self-inspection basically works.
 #
-# TODO: a proper test suite for q.sh would take a while, but be valuable.
+# TODO(defer): a proper test suite for q.sh would take a while, but be valuable.
 
 TARGET="./q.sh"
 function die() { echo "ERROR: $@" >&2; exit -1; }

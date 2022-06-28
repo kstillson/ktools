@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TODO: rewrite in python3
+# TODO(defer): rewrite in python3
 
 # Send message provided on command-line to push-bullet, with rate-limiting.
 # Note: 
@@ -16,7 +16,7 @@ DEFAULT_RATE_LIMIT=${DEFAULT_RATE_LIMIT:-2,240}  # Allow 2 pushes every 4 minute
 LOG=${PB_LOG:-/var/log/apache2/pb-push.log}
 RL_FILE=${RL_FILE:-/tmp/pb.rl}
 
-# TODO: somewhat Ken specific.
+# TODO(defer): somewhat Ken specific.
 # Default LOG location is in the apache log dir.  But if that doesn't
 # exist, it indicates this script is being called from outside docker,
 # so instead use the full host path to the same file.

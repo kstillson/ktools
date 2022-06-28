@@ -1,6 +1,6 @@
 '''GPIO abstraction for Raspberry PI's (not Circuit Python)
 
-TODO: more doc
+TODO(doc)
 
 This module supports 3 modes of operation:
  - Running on a Raspberry PI via the RPi.GPIO library.
@@ -18,7 +18,7 @@ In simulation mode, bcm_pin's should be an int.
 For CircuitPython, they must be an instance from the board.* module
 For RPi, they can be either of those.
 
-TODO: add support for:
+TODO(defer): add support for:
  - Running using ../circuitpy_sim, which uses tkinter to draw simulated
    graphical buttons on a Linux workstation
 
@@ -189,7 +189,6 @@ class KButton:
                 if self._log: C.log('KButton debounce ignored: ' + self._name)
                 return False
         if CIRCUITPYTHON:
-            # TODO: multiple samples...?
             evt = TQ.Event(self._require_pressed_ms, self._pressed2_circpy, [bcm_pin])
             self._event_queue.add_event(evt)
             return True

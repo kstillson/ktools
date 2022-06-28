@@ -15,7 +15,7 @@ Installing dependencies:
     # sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
     # (not needed?) sudo python3 -m pip install --force-reinstall adafruit-blinka
 
-  - TODO: other modes...
+  - TODO(doc): other modes...
 
 Various pieces copied from Adafruit's libraries.  Thanks Adafruit!
 '''

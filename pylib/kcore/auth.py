@@ -55,7 +55,7 @@ Note that we didn't have to store the generated secret on the client,
 and the password was never given to the server.
 
 
-TODO: separate out a auth_base that depends only on hashlib, so it can work
+TODO(defer): separate out a auth_base that depends only on hashlib, so it can work
 with Circuit Python. (https://docs.circuitpython.org/en/latest/docs/library/hashlib.html)
 
                   --------------------------------

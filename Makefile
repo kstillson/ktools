@@ -36,7 +36,6 @@ $(SUBDIRS):
 
 # ---------- special additions to common targets
 
-# TODO: sudo for subparts where :everything leaves root owned files...?
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
 	rm -rf home-control/__pycache__ common/prep-stamp

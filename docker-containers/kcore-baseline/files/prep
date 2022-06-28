@@ -72,6 +72,10 @@ if [[ "${WORLD_WRITABLE_FILES_RM}" == "1" ]]; then
   find / -xdev -type f -perm /0002 -exec chmod o-w {} +
 fi
 
+# Make sure passwd and group have global read perms
+# (sometimes git loses these when copying over)
+chmod 644 /etc/passwd /etc/group
+
 # Remove unnecessary user accounts.
 if [[ -n "${ACCOUNTS_DONT_DELETE_REGEX}" ]]; then
   cp -f /etc/passwd /tmp/tmp

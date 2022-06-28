@@ -60,7 +60,7 @@ mode, for example in cases where curious or malicious network users might
 cause a denial-of-service by panicing the server, use the --dont-panic flag to
 turn it off.
 
-TODO: under some circumstances (e.g. cert verification failure),
+TODO(defer): under some circumstances (e.g. cert verification failure),
 requests.get() can retry multiple times in quick succession.  Currently that
 will cause the server to panic and lock-down.  Should we make a
 LAST_RECEIVED_TIMES ratchet failure non-panicing?  Problem is that this makes

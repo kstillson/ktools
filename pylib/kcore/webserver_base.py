@@ -1,7 +1,7 @@
 '''
-TODO: doc
+TODO(doc)
 
-TODO: add support for basic auth (with db file compatible with htpasswd...?)
+TODO(defer): add support for basic auth (with db file compatible with htpasswd...?)
 
 '''
 
@@ -84,7 +84,7 @@ class LoggingAdapter:
 
 
 class WebServerBase:
-    # TODO: doc
+    # TODO(doc)
 
     # TODO: allow passing port to constructor OR start method.
 

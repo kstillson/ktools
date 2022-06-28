@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 '''km_helper: add or remove keys from an encrypted keymanager secrets file.
 
-TODO
+TODO(doc)
 
 '''
 

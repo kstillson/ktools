@@ -66,7 +66,6 @@ def check_logging(func_to_run, expect_error_count, logfile_name, expect_logfile,
         assert varz.VARZ['log-error-or-higher'] == expect_error_count
     else:
         assert 'log-error-or-higher' not in varz.VARZ
-    # TODO: mock syslog and check it.
 
 
 def test_logging(tmp_path):
@@ -142,7 +141,7 @@ def test_log_queue():
     
 # ---------- web get
 
-# NB: relies on the author's personal web-server.  TODO: find something better.
+# NB: relies on the author's personal web-server.
 def test_web_get():
     # Test standard response fields (check my wrapping didn't break anything).
     url = 'http://a1.point0.net/test.html'
