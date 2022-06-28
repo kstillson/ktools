@@ -1,30 +1,15 @@
 ## ++ktools tech
-   - keymaster container test broken (not overriding client hostname?)
-   
    - review non-doc TODO's
      - pylib/kcore/webserver_base.py:    # TODO: allow passing port to constructor OR start method.
      - pylib/tests/kcore/test_webserver.py:# TODO: test shutdown
-     - pylib/setup.cfg:url = TODO...
      - pylib/home_control/plugin_web.py:  # TODO: support backgrounded request for non-debug mode.
      - pylib/circuitpy_sim/Makefile:# TODO: need to include subdirs (e.g. adafruit_esp32spi) and their contents.
      - services/homesec/Makefile:# TODO: not obvious what a good install target dir would be.
      - services/homesec/data.py:# TODO: defer to private.d ...?
      - services/home-control/home_control_service.py:TODO: add robots.txt (perhaps default handler...?)
      - services/keymaster/Makefile:# TODO: not obvious what a good install target dir would be.
-     - tools-for-root/q.sh:    # TODO: move to standard location (with autodetect for ro root)
-     - tools-for-root/q.sh:  ...  spaces in stdin cause problems (TODO).
      
      - docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
-     - docker-containers/dnsdock/files/etc/dnsmasq/dnsmasq.hosts:# TODO - provide examples
-     - docker-containers/dnsdock/files/etc/dnsmasq/dnsmasq.macs:# TODO - private examples
-     - docker-containers/syslogdock/Test:# TODO!: fails on blue: 2022-05-03 13:02:16,168 INFO spawnerr: unknown error making dispatchers for 'syslog-ng': EACCES
-     - docker-containers/kcore-baseline/Test:    # TODO: can't find a way to run this in an automated way that looks sufficiently
-     - docker-containers/kcore-baseline/Test:    # TODO: launch a local server and test kmc against it.
-     - docker-containers/sshdock/Test:## TODO: generalize?  make dep on default account from init script?
-     - docker-containers/rclonedock/files/etc/init:	# (TODO: surely there's a better test than this...)
-     - docker-containers/rclonedock/Test:# TODO!: dep on /rw/mnt/rsnap/echo-back/test-out
-     - docker-containers/rsnapdock/readme-acls.txt:TODO: user must manually generate and populate these:
-     - docker-containers/rsnapdock/Test:# TODO!: test fails on blue with something about hostkey validation...  investigate
      - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
      - docker-infrastructure/Makefile:# TODO: add some tests
      - docker-infrastructure/d-cowscan.py:# TODO: move ignore list to private.d
@@ -52,6 +37,9 @@
      kwizmet ?
 
 ## ---------- MILESTONE: ready for peer review ...?
+
+## other ideas & improvements
+   - iptables abstraction (easier to read/write/analyze) + assoc. tools
 
 ## deferred homectrl related
    - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio

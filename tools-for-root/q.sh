@@ -364,7 +364,7 @@ function iptables_query() {
 
 # Save current iptables rules to disk for auto-restore upon boot.
 function iptables_save() {
-    # TODO: move to standard location (with autodetect for ro root)
+    # TODO(defer): move to standard location (with autodetect for ro root)
     runner "/bin/mv -f ~/iptables.rules ~/iptables.rules.mbk"
     runner "/usr/sbin/iptables-save > ~/iptables.rules"
     emitc green "saved"
@@ -911,7 +911,7 @@ function main() {
         list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;   ## list all hosts using rsnapshot (hard-coded list)
         list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
-        listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems (TODO).
+        listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems; TODO(defer)
 	    RP_FLAGS="--output - $RP_FLAGS"
 	    RUN_PARA LOCAL "$(cat)" "$@" ;;
         run | run-remote | rr | r)                                 ## run cmd $2+ on listed hosts $1

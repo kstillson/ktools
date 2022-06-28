@@ -18,7 +18,7 @@ def main():
     time.sleep(0.8)
     
     # Try retrieving the test key before decrypting the database; should fail.
-    d_lib.web_expect('not ready', ip, '/test', port=4444, https=True, verify_ssl=False)
+    d_lib.web_expect('not ready', ip, '/testkey', port=4444, https=True, verify_ssl=False)
 
     # Decrypt the database with the test password, should say we're ok.
     d_lib.web_expect('ok', ip, '/load', post_params={'password': 'test123'}, port=4444, https=True, verify_ssl=False)
@@ -27,7 +27,7 @@ def main():
     os.environ['PUID'] = 'test'
     kmc.DEBUG = True
     hostport = '%s:%d' % (ip, 4444)
-    answer = kmc.query_km('testkey', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
+    answer = kmc.query_km('testkey', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0, override_hostname='test')
     if answer != 'mysecret': d_lib.abort('expected "mysecret", but saw "%s"' % answer)
 
     # Check the service health.
@@ -37,7 +37,7 @@ def main():
     d_lib.web_expect('zapped', ip, '/qqq', port=4444, https=True, verify_ssl=False)
 
     # And now a health check should indicate "not ready".
-    d_lib.web_expect('not ready', ip, '/test', port=4444, https=True, verify_ssl=False)
+    d_lib.web_expect('not ready', ip, '/testkey', port=4444, https=True, verify_ssl=False)
 
     # Now lets re-start the database and try for a bad key, which should fail
     # and leave the system locked due to a source IP check failure.

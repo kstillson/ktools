@@ -91,9 +91,8 @@ case $MODE in
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 
 	# Sanity check: check financial worksheet edited within last 30 days
-	# (TODO: surely there's a better test than this...)
 	DEST="/root/gdrive-efs/gdrive/active/Fin/Money planning.xlsx"
-	if test $(find "$DEST" -mtime +30); then echo "Echo-back gdrive test file is too old ($DEST)"; exit -4; fi
+	if test $(find "$DEST" -mtime +30); then echo "gdrive local-copy of test file is too old ($DEST)"; exit -4; fi
 	;;
 
     interactive)
