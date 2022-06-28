@@ -1,4 +1,5 @@
 
+# Ken note-to-self (i.e. this is specific to the author's primary server config)
 # For this container to work, the following extended ACLs are needed:
 
 setfacl -m g:dwatch:rX \

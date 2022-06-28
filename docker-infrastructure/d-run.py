@@ -79,11 +79,11 @@ def add_mounts(cmnd, mapper, readonly, name, mount_list):
         for k, v in i.items():
             if '/' not in k:
                 k = os.path.join('/rw/dv/%s' % name, k)
-            if mapper: k = mapper(k, name)
-            ro = ',readonly' if readonly else ''
             if not os.path.exists(k):
                 err(f'Creating non-existent mountpoint source: {k}')
                 Path(k).mkdir(parents=True, exist_ok=True)
+            if mapper: k = mapper(k, name)
+            ro = ',readonly' if readonly else ''
             cmnd.extend(['--mount', f'type=bind,source={k},destination={v}{ro}'])
     return cmnd
 
@@ -100,7 +100,7 @@ def clone_dir(src, dest):
     if not os.path.exists(src):
         err(f'Creating non-existent mountpoint source: {src}')
         Path(src).mkdir(parents=True)
-    os.mkdir(dest)
+    Path(dest).mkdir(parents=True, exist_ok=True)
     stat = os.stat(src)
     os.chown(dest, stat.st_uid, stat.st_gid)
     os.chmod(dest, stat.st_mode)

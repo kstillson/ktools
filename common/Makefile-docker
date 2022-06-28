@@ -1,11 +1,37 @@
 
-SHELL :=/bin/bash
+SHELL := /bin/bash
 
 # Note: several targets depend on docker-infrastructure being INSTALLED
 # before these targets can be BUILT.
 
 # Furthermore, docker containers other than kds-baseline depend on
 # kds-baseline being INSTALLED (i.e. marked live) before they can be BUILT.
+
+# ---------- control constants
+
+DOCKER_VOLS ?= /rw/dv
+
+# ---------- determine docker uid namespace mapping offsets
+
+DOCKER_MAP_UID ?= $(shell grep dmap: /etc/subuid | cut -d: -f2)
+ifeq ($(DOCKER_MAP_UID),)
+  DOCKER_MAP_UID := 0
+endif
+
+DOCKER_MAP_GID ?= $(shell grep dmap: /etc/subgid | cut -d: -f2)
+ifeq ($(DOCKER_MAP_GID),)
+  DOCKER_MAP_GID := 0
+endif
+
+ifneq ($(UID_SEARCH),)
+  UID_INSIDE ?= $(shell grep $(UID_SEARCH) files/etc/passwd | cut -d: -f3)
+  UID_OUTSIDE ?= $(shell echo "$(UID_INSIDE) + $(DOCKER_MAP_UID)" | bc)
+endif
+ifneq ($(GID_SEARCH),)
+  GID_INSIDE ?= $(shell grep $(GID_SEARCH) files/etc/group | cut -d: -f3)
+  GID_OUTSIDE ?= $(shell echo "$(GID_INSIDE) + $(DOCKER_MAP_GID)" | bc)
+endif
+
 
 # ----------
 

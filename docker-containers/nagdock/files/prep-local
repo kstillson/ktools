@@ -8,7 +8,7 @@ SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|chown|ln|od|strings)$"
 WORLD_WRITABLE_DIRS_RM=0
 
 # Fix ownerships.
-/bin/chgrp -R nagios /etc/nagios
+/bin/chown -R root:nagios /etc/nagios
 
 # Fix email from address
 /bin/sed -i -e 's/Linux User/Nagios/' /etc/passwd
