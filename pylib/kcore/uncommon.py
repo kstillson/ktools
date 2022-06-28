@@ -7,7 +7,7 @@ for Circuit Python.
 
 '''
 
-import grp, os, pwd, subprocess, sys
+import grp, os, pwd, signal, subprocess, sys
 from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
@@ -115,6 +115,11 @@ def load_file_as_module(filename, desired_module_name=None):
   new_module = importlib.util.module_from_spec(spec)
   loader.exec_module(new_module)
   return new_module
+
+
+def pgrep(srch):
+    '''Returns a set of pids whos command matches srch.'''
+    return set(popener(['pgrep', srch]).split('\n'))
 
 
 @dataclass
@@ -226,6 +231,9 @@ def decrypt(encrypted, password, salt=None):
 
 def gpg_symmetric(plaintext, password, decrypt=True):
     if PY_VER == 2: return 'ERROR: not supported for python2'  # need pass_fds
+
+    gpg_pids_initial = pgrep('gpg-agent')
+
     readfd, writefd = os.pipe()
     password += '\n'
     os.write(writefd, bytes(password + '\n', 'utf-8'))
@@ -236,6 +244,13 @@ def gpg_symmetric(plaintext, password, decrypt=True):
         cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         pass_fds=[readfd, writefd])
     out, err = p.communicate(bytes(plaintext, 'utf-8'))
+
+    # Kill any gpg-agent processes which were launched by us.
+    gpg_pids_final = pgrep('gpg-agent')
+
+    for pid in gpg_pids_final - gpg_pids_initial:
+        os.kill(int(pid), signal.SIGTERM)
+
     return out.decode() if p.returncode == 0 else 'ERROR: ' + err.decode()
 
 

@@ -1,11 +1,9 @@
 ## ++ktools tech
    - review non-doc TODO's
-     - pylib/kcore/webserver_base.py:    # TODO: allow passing port to constructor OR start method.
      - pylib/tests/kcore/test_webserver.py:# TODO: test shutdown
      - pylib/home_control/plugin_web.py:  # TODO: support backgrounded request for non-debug mode.
      - pylib/circuitpy_sim/Makefile:# TODO: need to include subdirs (e.g. adafruit_esp32spi) and their contents.
      - services/homesec/data.py:# TODO: defer to private.d ...?
-     - services/home-control/home_control_service.py:TODO: add robots.txt (perhaps default handler...?)
      - services/keymaster/Makefile:# TODO: not obvious what a good install target dir would be.
      
      - docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...

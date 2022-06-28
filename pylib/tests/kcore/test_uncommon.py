@@ -133,7 +133,6 @@ def test_symmetric_encryption():
     assert UC.decrypt(encrypted, password, 'wrong-salt').startswith('ERROR')
 
 
-# TODO: kill any gpg-agent instance started by this test.
 def test_gpg_symmetric():
     # not supported in python2
     if sys.version_info[0] == 2: return

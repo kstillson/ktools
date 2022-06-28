@@ -24,11 +24,6 @@ import argparse, os, signal, sys
 
 import kcore.uncommon as UC
 
-# ---------- helpers
-
-def pgrep(srch='gpg-agent'):
-    return set(UC.popener(['pgrep'], srch).split('\n'))
-
 
 # ---------- main
 
@@ -42,7 +37,7 @@ def parse_args(argv):
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
 
-  gpg_pids_initial = pgrep()
+  gpg_pids_initial = UC.pgrep('gpg-agent')
 
   pswd = UC.resolve_special_arg(args, 'password')
   with open(args.filename) as f: blob = f.read()
@@ -54,7 +49,7 @@ def main(argv=[]):
   outname = args.filename.replace('.gpg', '') if decrypt else args.filename + '.gpg'
   with open(outname, 'w') as f: f.write(blob2)
 
-  gpg_pids_final = pgrep()
+  gpg_pids_final = UC.pgrep('gpg-agent')
   for pid in gpg_pids_final - gpg_pids_initial:
       os.kill(int(pid), signal.SIGTERM)
 
