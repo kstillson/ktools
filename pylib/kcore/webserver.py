@@ -72,10 +72,14 @@ class WebServer(WebServerBase):
         super(WebServer, self).__init__(logging_adapter=logging_adapter, *args, **kwargs)
 
 
-    def start(self, port=80, listen='0.0.0.0', background=True,
+    def start(self, port=None, listen='0.0.0.0', background=True,
               tls_cert_file=None, tls_key_file=None, tls_key_password=None,
               server_class=DEFAULT_SERVER_CLASS):
-        self.httpd = server_class((listen, port), Worker)
+
+        if port: self.port = port         # .start() overrides the constructor.
+        if not self.port: self.port = 80
+
+        self.httpd = server_class((listen, self.port), Worker)
 
         if tls_key_password: raise RuntimeError('TODO(defer): support tls_key_password')
         if tls_key_file:

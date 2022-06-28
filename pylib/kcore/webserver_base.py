@@ -86,8 +86,11 @@ class LoggingAdapter:
 class WebServerBase:
     # TODO(doc)
 
-    # TODO: allow passing port to constructor OR start method.
-
+    # Note: port to listen on can be specified either in this constructor or in
+    # the .start() method [see child classes for implementations].  If specified
+    # in both, the .start value takes presidence.  If not specified in either,
+    # a default of port 80 is assumed..
+    
     # Note: caller-provided handlers always take presidence over the built-in
     # "standard" handlers, unless a handler with a route_regex of None is
     # added, in which case it automatically becomes the "fallback" or "defaul"
@@ -96,7 +99,7 @@ class WebServerBase:
     # off via use_standard_handlers=False in the constructor, or add a handler
     # with the route ".*".
 
-    def __init__(self, handlers={}, context={},
+    def __init__(self, handlers={}, port=None, context={},
                  wrap_handlers=True, use_standard_handlers=True,
                  varz=True, varz_path_trim=14,
                  logging_adapter=None, logging_filters=['favicon.ico'],
@@ -108,6 +111,7 @@ class WebServerBase:
         self.flagz_args = flagz_args
         self.logger = logging_adapter
         self.logging_filters = logging_filters
+        self.port = port
         self.varz = varz
         self.varz_path_trim = varz_path_trim
         self.wrap_handlers = wrap_handlers
