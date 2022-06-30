@@ -3,7 +3,6 @@
      - docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
      - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
      - docker-infrastructure/Makefile:# TODO: add some tests
-     - docker-infrastructure/d-cowscan.py:# TODO: move ignore list to private.d
 
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
