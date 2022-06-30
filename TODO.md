@@ -1,7 +1,5 @@
 ## ++ktools tech
    - review non-doc TODO's
-     - pylib/tests/kcore/test_webserver.py:# TODO: test shutdown
-     - pylib/home_control/plugin_web.py:  # TODO: support backgrounded request for non-debug mode.
      - pylib/circuitpy_sim/Makefile:# TODO: need to include subdirs (e.g. adafruit_esp32spi) and their contents.
      - services/homesec/data.py:# TODO: defer to private.d ...?
      - services/keymaster/Makefile:# TODO: not obvious what a good install target dir would be.

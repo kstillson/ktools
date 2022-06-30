@@ -6,11 +6,12 @@ port connections.
 
 import context_kcore     # fix path to includes work as expected in tests
 
-import random, subprocess
+import pytest, random, subprocess, threading, time
 import kcore.common as C
 import kcore.webserver as W
 
 # ---------- helpers
+
 
 ROUTES = {
     '/hi':       lambda _: 'hello world',
@@ -18,6 +19,7 @@ ROUTES = {
     '/get':     lambda request: request.get_params.get('g'),
     '/post':    lambda request: request.post_params.get('p'),
     '/post2':   lambda request: str(request.post_params),
+    '/quit':    lambda request: request.server.shutdown(), # q(request),
     r'/match/(\w+)': lambda request: request.route_match_groups[0],
 }
 
@@ -26,7 +28,7 @@ def random_high_port(): return random.randrange(10000, 19999)
 def start(ctx={}, start_kwargs={}):
     global PORT
     PORT = random_high_port()
-    C.init_log('test_k_webserver', logfile=None)
+    C.init_log('test_k_webserver', logfile=None) # filter_level_stderr=C.DEBUG)
     ws = W.WebServer(ROUTES, context=ctx)
     ws.start(port=PORT, **start_kwargs)
     return ws
@@ -39,7 +41,7 @@ def url(path, tls=False):
 
 def test_basics():
     ws = start({'c': 'hello'})
-    
+
     assert C.read_web(url('hi')) == 'hello world'
 
     resp = C.web_get_e(url('get?a=b&g=h&x=y'))
@@ -54,12 +56,28 @@ def test_basics():
     # Lets try POST queries constructed by curl rather than web_get
     assert subprocess.check_output(['curl', '-sS', '-d', 'x=y', url('post2')]) == b"{'x': 'y'}"
     assert subprocess.check_output(['curl', '-sS', '--form', 'a=b', url('post2')]) == b"{'a': ['b']}"
-    
+
     assert C.web_get_e(url('context')).text == 'hello'
 
     assert C.web_get_e(url('match/v1')).text == 'v1'
 
-# TODO: test shutdown
+
+def send_quit_request_url(): C.web_get(url('quit'))
+
+
+@pytest.mark.timeout(3)
+def test_shutdown_from_handler():
+    threading.Timer(1.0, send_quit_request_url).start()
+    ws = start({}, {'background': False})
+    # Should cleanly return from start function once quit goes through.
+
+
+@pytest.mark.timeout(3)
+def test_shutdown_from_main_thread():
+    ws = start({}, {'background': True})
+    time.sleep(1)
+    ws.httpd.shutdown()
+    ws.web_thread.join()
 
 
 def test_tls():

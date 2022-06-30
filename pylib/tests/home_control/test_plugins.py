@@ -17,7 +17,7 @@ def init():
     hc.reset()  # clear out any other test's initialization...
     hc.control('doesnt', 'matter', TEST_SETTINGS)
 
-    
+
 # ---------- general purpose helpers
 
 def flatten(lol):   # lol = list of lists  ;-)
@@ -40,13 +40,13 @@ def check(control_output, expect_in_output, key=None, expected_value=None):
     assert expect_in_output in output
     if key: checkval(key, expected_value)
 
-    
+
 def check_each(outputs, expect_in_outputs, key=None, expected_value=None):
     flattened_outputs = flatten(outputs)
     for out in flattened_outputs: assert expect_in_outputs in out
     if key: checkval(key, expected_value)
 
-    
+
 # ---------- the tests
 
 def test_delay_plugin(init):

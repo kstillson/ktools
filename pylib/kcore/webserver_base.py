@@ -21,7 +21,8 @@ if not CIRCUITPYTHON:   # urllib not currently available in circuitpy
 # A populated instance of this class is passed to handlers.
 class Request:
     def __init__(self, method, full_path,
-                 body=None, context={}, headers={}, post_params={}, remote_address=None, route_match_groups={}):
+                 body=None, context={}, headers={}, post_params={},
+                 remote_address=None, route_match_groups={}, server=None):
         self.body = body
         self.context = context        # See WebServerBase constructor.
         self.full_path = full_path
@@ -32,6 +33,7 @@ class Request:
         self.post_params = post_params
         self.remote_address = remote_address
         self.route_match_groups = route_match_groups
+        self.server = server
 
     def __str__(self): return self.path
 
@@ -268,4 +270,4 @@ def parse_get_params(full_path):
 def BaseHTTPRequestHandler_to_Request(b, method, post_params={}):
     return Request(method, b.path, headers=b.headers,
                    remote_address=b.client_address[0],
-                   post_params=post_params)
+                   post_params=post_params, server=b.server)

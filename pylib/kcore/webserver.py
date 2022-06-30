@@ -86,11 +86,11 @@ class WebServer(WebServerBase):
             self.httpd.socket = ssl.wrap_socket(self.httpd.socket, certfile=tls_cert_file, keyfile=tls_key_file, server_side=True)
 
         self.httpd._k_webserver = self  # Make my instance visible to handlers.
-        self.logger.log_general('starting webserver on port %d' % port)
+        self.logger.log_general('starting webserver on port %d' % self.port)
         if background:
-            web_thread = threading.Thread(target=self.httpd.serve_forever)
-            web_thread.daemon = True
-            web_thread.start()
-            return web_thread
+            self.web_thread = threading.Thread(target=self.httpd.serve_forever)
+            self.web_thread.daemon = True
+            self.web_thread.start()
+            return self.web_thread
         else:
             self.httpd.serve_forever()

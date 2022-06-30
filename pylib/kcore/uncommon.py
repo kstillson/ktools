@@ -119,7 +119,9 @@ def load_file_as_module(filename, desired_module_name=None):
 
 def pgrep(srch):
     '''Returns a set of pids whos command matches srch.'''
-    return set(popener(['pgrep', srch]).split('\n'))
+    pids = popener(['pgrep', srch])
+    if not pids or pids.startswith('ERROR'): return set()
+    return set(pids.split('\n'))
 
 
 @dataclass
