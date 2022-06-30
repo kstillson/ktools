@@ -1,7 +1,5 @@
 ## ++ktools tech
    - review non-doc TODO's
-     - services/keymaster/Makefile:# TODO: not obvious what a good install target dir would be.
-     
      - docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
      - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
      - docker-infrastructure/Makefile:# TODO: add some tests

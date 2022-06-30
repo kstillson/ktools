@@ -8,13 +8,11 @@ all: common_all
 
 PLAIN_TARGETS := $(wildcard *.py *.html *.md)
 
-SUBDIRS_TO_COPY := private.d static templates
-
 USER := $(shell whoami)
 ifeq ($(USER),root)
-	INSTALL_DIR := /usr/local/ktools/homesec
+	INSTALL_DIR := /usr/local/ktools/home-control
 else
-	INSTALL_DIR := $$HOME/homesec
+	INSTALL_DIR := $$HOME/home-control
 endif
 include ../../common/Makefile-unstaged
 
@@ -28,11 +26,14 @@ install-stamp: $(PLAIN_TARGETS)
 	if [[ "$$ROOT_RO" == 1 ]]; then mount -o remount,rw /; fi
 	mkdir --mode 755 -p $(INSTALL_DIR)
 	$(MAKE) common_install
-	cp -pr $(SUBDIRS_TO_COPY) $(INSTALL_DIR)
 	if [[ "$$ROOT_RO" == 1 ]]; then mount -o remount,ro /; fi
 
-$(TEST_LOG): $(wildcard *.py tests/*.py)
-	script -e -c "pytest-3 tests" $(TEST_LOG)
+# There's testing of the underlying library at the pytools level.  The 
+# added-on service is very thin; not much to test, and the hcdata_* files
+# are site-specific.  Not sure there's much to test at this layer.
+test:
+
+update: all install
 
 
 # ---------- pass-throughs
@@ -40,10 +41,6 @@ $(TEST_LOG): $(wildcard *.py tests/*.py)
 clean: common_clean
 
 comp: common_comp
-
-test: common_test
-
-update: common_update
 
 uninstall: common_uninstall
 	rm -rf $(INSTALL_DIR)

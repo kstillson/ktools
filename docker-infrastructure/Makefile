@@ -8,11 +8,12 @@
 
 PY_TARGETS := d-cowscan d-run
 SH_TARGETS := d d-build d-map
+INSTALL_DIR ?= /root/bin               # only useful by and for root.
 include ../common/Makefile-unstaged
 
 # ---------- testing
 
-# TODO: add some tests
+# TODO(defer): add some tests
 $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
 	touch $(TEST_LOG)
 	# script -e -c "pytest-3 test_*.py" $(TEST_LOG)

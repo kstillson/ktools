@@ -1,30 +1,40 @@
 
-TEST_LOG ?= test.log
+# Supported meta-targets:  all, clean, test, install, update
+
+# Set default target before anything else in included...
+all: common_all
 
 # ----------
 
-# TODO: not obvious what a good install target dir would be.
-# /usr/local/keymaster..?  probably should revisit this rather than silently
-# doing nothing...
+PLAIN_TARGETS := $(wildcard *.py)
 
+USER := $(shell whoami)
+ifeq ($(USER),root)
+	INSTALL_DIR := /usr/local/ktools/keymaster
+else
+	INSTALL_DIR := $$HOME/keymaster
+endif
+include ../../common/Makefile-unstaged
 
-all:
+SHELL := /bin/bash
 
-comp: 
+# ---------- custom targets
 
-clean: 
-	rm -rf $(TEST_LOG) __pycache__ */__pycache__ .pytest_cache
-
-install: 
-
-test: $(TEST_LOG)
-
-uninstall: 
-
-update: all test install
-
-# ----- :test
-
-$(TEST_LOG): $(wildcard *.py */*.py */*/*.py)
+$(TEST_LOG): $(wildcard *.py tests/*.py)
 	script -e -c "pytest-3 tests" $(TEST_LOG)
 
+
+# ---------- pass-throughs
+
+clean: common_clean
+
+comp: common_comp
+
+install: common_install
+
+test: common_test
+
+update: common_update
+
+uninstall: common_uninstall
+	rm -rf $(INSTALL_DIR)

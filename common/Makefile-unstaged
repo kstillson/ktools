@@ -24,7 +24,7 @@ CUSTOM_TARGETS ?=
 # Control variables: optionally specified by the calling Makefile or
 # in the environment, to override the defaults.
 TEST_LOG ?= test.log
-INSTALL_DIR ?= /root/bin
+INSTALL_DIR ?= $$HOME/bin
 GIT_BRANCH ?= master
 
 # ----------------------------------------

@@ -1,5 +1,14 @@
 # ktools
 
+TODO(doc): philosophy- minimal, minimal deps, do-one-thing-well(each),
+           readable, reusable as parts,
+	   layers: pylib -> services -> docker
+
+TODO(doc): make- :all does nothing (except docker); :everything does everything;
+           :test is important, :install is complicated (i.e. subdir dependent)
+
+- - -
+
 ## About The Project
 
 This is a collection of services, tools, and libraries, intended for
@@ -313,4 +322,5 @@ Why TPLink?  Besides having reasonable reliability and cost, TPLink modules
 have a local server that allows manipulation and querying via local network
 HTTP.  i.e. you can control them from your own systems without needing to
 depend on cloud integration.
+
 

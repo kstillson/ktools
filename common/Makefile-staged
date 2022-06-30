@@ -25,7 +25,7 @@ CUSTOM_TARGETS ?=
 # in the environment, to override the defaults.
 STAGING_DIR ?= staging
 TEST_LOG ?= $(STAGING_DIR)/test.log
-INSTALL_DIR ?= /root/bin
+INSTALL_DIR ?= $$HOME/bin
 GIT_BRANCH ?= master
 
 # ----------------------------------------
