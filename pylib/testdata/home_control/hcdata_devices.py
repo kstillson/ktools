@@ -9,7 +9,10 @@ DEVICES = {
     'deviceX'     : 'INVALID:what:ever',
 
     # for test_web_plugin.py
-    'web1'        : 'WEB:localhost:62312/%c',
+    # Note that the command (%c) is being used both as the port number and
+    # the path.  This is so that the test can pick a random high port and
+    # communicate to this directive what port to use through %c.
+    'web1'        : 'WEB:localhost:%c/%c',
 }
 
 

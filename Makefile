@@ -61,9 +61,13 @@ e:	everything   # simple alias for "everything"
 
 prep:	common/prep-stamp
 
-common/prep-stamp:	private.d/keymaster.pem private.d/wifi_secrets.py
+common/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
 	@pgrep docker > /dev/null || echo "WARNING- docker daemon not detected.  docker-containers/** can't build or run without it.  You probably want to do something like:  sudo apt-get install docker.io"
 	touch common/prep-stamp
+
+
+private.d/kcore_auth_db.data.pcrypt:
+	# TODO
 
 private.d/keymaster.pem:   private.d/cert-settings
 	@if [[ -f private.d/keymaster.key ]]; then echo "dont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.  Please manually remove 'private.d/key*' if it really is time to generate a new key"; exit 2; fi
@@ -84,6 +88,10 @@ private.d/cert-settings:
 private.d/wifi_secrets.py:
 	cp -n common/wifi_secrets.template private.d/wifi_secrets.py
 	editor private.d/wifi_secrets.py
+
+services/homesec/private.d/data.py:
+	mkdir -p $(shell dirname $@)
+	touch $@
 
 
 # ------------------------------------------------------------
