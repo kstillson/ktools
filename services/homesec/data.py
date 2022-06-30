@@ -1,3 +1,8 @@
+'''Data contents and low-level processing for the homesec system.
+
+TODO(doc); make sure to explain private.d override system
+
+'''
 
 import datetime, os, re, typing
 from contextlib import contextmanager
@@ -9,8 +14,9 @@ import kcore.uncommon as UC
 
 # ---------- helpers
 
-def nice_time(epoch_seconds):
+def nice_time(epoch_seconds=None):
   '''Convert epoch seconds into user-readable date string.'''
+  if not epoch_seconds: return str(datetime.datetime.now())
   return str(datetime.datetime.fromtimestamp(epoch_seconds))
 
 
@@ -60,12 +66,12 @@ CONSTANTS = {
 }
 
 
-# TODO: defer to private.d ...?
+# Maps from username (as a string) to a hashed password string created by
+# model.hash_user_password().  To avoid creating a well-known default login,
+# this dict is provided empty.  You'll want to populate yours in private.d/data.py.
 
-USER_LOGINS = {
-  'ken':          '992292d7725f416bdcc9882f59bf786b43069112',
-  ##old: 'ken':          '5a687385e35154afffb29f723da3325bf14ab606',
-}
+USER_LOGINS = {}
+
 
 # What to do upon entering or leaving various states.
 STATE_RULES = [
@@ -134,7 +140,7 @@ TRIGGER_RULES = [
     TriggerRule('panic'          , '*'      , '*',             'arm-away'        , 'announce'           , 'cannot arm away once panic triggered'),
     TriggerRule('panic'          , '*'      , '*',             'arm-away-delay'  , 'announce'           , 'cannot arm away once panic triggered'),
     TriggerRule('panic'          , '*'      , '*',             'test-mode'       , 'announce'           , 'cannot enter test mode once panic triggered'),
-  
+
   # Triggers that directly set a new state (these come first so its possible to exit test mode)
     TriggerRule('*'              , '*'      , '*',             'disarm'         ,  'state'              , '%P:disarmed'),
     TriggerRule('*'              , '*'      , '*',             'arm-home'        , 'state'              , '%P:arm-home'),
@@ -144,26 +150,26 @@ TRIGGER_RULES = [
     TriggerRule('*'              , '*'      , '*',             'arm-away-delay'  , 'state-delay-trigger', '%P:arming-away, %Tarm, arm-away'),
     TriggerRule('*'              , '*'      , '*',             'silent-panic'    , 'state'              , 'silent-panic'),
     TriggerRule('*'              , '*'      , '*',             'test-mode'       , 'state'              , 'test-mode'),
-  
+
   # When in test mode, just announce triggers rather than otherwise acting on them.
     TriggerRule('test-mode'      , '*'      , '*',             '*'               , 'announce'           , 'test %f in %p'),
-  
+
   # Triggers that indirectly set/influence arming state
     TriggerRule('*'              , '*'      , '*',             'touch-home'      , 'touch-home'         , '%P'),
     TriggerRule('*'              , '*'      , '*',             'touch-away'      , 'touch-away'         , '%P'),
     TriggerRule('*'              , '*'      , '*',             'touch-away-delay', 'touch-away-delay'   , '%P, %Tarm'),
-  
+
   # Triggers that are actually external commands.
     TriggerRule('*'              , '*'      , '*',             'ann'             , 'announce'           , '%P'),
     TriggerRule('*'              , '*'      , '*',             'status'          , 'announce'           , 'status %s'),
     TriggerRule('*'              , '*'      , '*',             'control'         , 'control'            , '%P'),
-  
+
   # Alarm mechanics based on zone of the trigger.
     TriggerRule('*'              , '*'      , 'panic'        , '*'               , 'state-delay-trigger', 'panic, %Tpanic, panic-timeout'),
     TriggerRule('arm-home'       , '*'      , 'inside'       , '*'               , 'pass'               , 'pass %t/%z (inside arm-home)'),
     TriggerRule('arm-home'       , '*'      , 'chime'        , '*'               , 'announce'           , '@chime10'),
     TriggerRule('arm-away'       , '*'      , 'outside'      , '*'               , 'pass'               , 'could turn on a light or such..'),
-  
+
   # Remaining alarm mechanics.
     TriggerRule('arm-home'       , '*'      , '*'            , '*'               , 'announce'           , '#o,@chime4,%f'),
     TriggerRule('arm-away'       , '*'      , '*'            , '*'               , 'state-delay-trigger', 'alarm-triggered, %Ttrig, alarm'),
@@ -263,3 +269,8 @@ def saved_list(cached_list_data):
 
 def get_partition_state_data(): return get_list(PARTITION_STATE)
 def get_touch_data(): return get_list(TOUCH_DATA)
+
+
+# ---------- private.d overrides
+
+UC.load_file_into_module('private.d/data.py')

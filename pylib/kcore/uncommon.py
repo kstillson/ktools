@@ -7,7 +7,7 @@ for Circuit Python.
 
 '''
 
-import grp, os, pwd, signal, subprocess, sys
+import inspect, grp, os, pwd, signal, subprocess, sys
 from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
@@ -108,13 +108,41 @@ def exec_wrapper(cmd, locals=globals(), strip=True):
 
 
 def load_file_as_module(filename, desired_module_name=None):
-  if not desired_module_name: desired_module_name = filename.replace('.py', '')
-  import importlib.machinery, importlib.util
-  loader = importlib.machinery.SourceFileLoader(desired_module_name, filename)
-  spec = importlib.util.spec_from_loader(desired_module_name, loader)
-  new_module = importlib.util.module_from_spec(spec)
-  loader.exec_module(new_module)
-  return new_module
+    '''Load a Python file into a new module and return the new module.
+
+       Conceptually similar to the "import" command in Python, this allows
+       you to specify the filename to load as a string.  Useful for loading
+       file-lists from globs, plugins, etc.'''
+
+    if not desired_module_name: desired_module_name = filename.replace('.py', '')
+    import importlib.machinery, importlib.util
+    loader = importlib.machinery.SourceFileLoader(desired_module_name, filename)
+    spec = importlib.util.spec_from_loader(desired_module_name, loader)
+    new_module = importlib.util.module_from_spec(spec)
+    loader.exec_module(new_module)
+    return new_module
+
+
+def load_file_into_module(source_filename, target_module=None):
+    '''Load a Python file into a specified module.
+
+     Similar to load_file_as_module(), but rather than returning a new module,
+     overrides data in a specified target_module with anything loaded from the
+     source file.  If the target_module isn't specified, then the calling
+     module's globals are targeted. '''
+
+    if not os.path.isfile(source_filename): return False
+
+    if not target_module:
+        caller = inspect.stack()[1]
+        target_module = inspect.getmodule(caller[0])
+    target_dict = target_module.__dict__
+
+    mod = load_file_as_module(source_filename)
+    for k, v in mod.__dict__.items():
+        if k.startswith('__'): continue
+        target_dict[k] = v
+    return True
 
 
 def pgrep(srch):

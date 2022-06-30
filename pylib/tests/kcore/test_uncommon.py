@@ -67,6 +67,11 @@ def test_load_file_as_module():
     assert m.data == 'hithere'
 
 
+def test_load_file_into_module():
+    m = UC.load_file_into_module('testdata/bad-filename.py')
+    assert data == 'hithere'
+
+
 def test_popen():
     assert UC.popen('echo 1+2 | bc', shell=True).out == '3'
 

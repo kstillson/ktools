@@ -1,7 +1,5 @@
 ## ++ktools tech
    - review non-doc TODO's
-     - pylib/circuitpy_sim/Makefile:# TODO: need to include subdirs (e.g. adafruit_esp32spi) and their contents.
-     - services/homesec/data.py:# TODO: defer to private.d ...?
      - services/keymaster/Makefile:# TODO: not obvious what a good install target dir would be.
      
      - docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
