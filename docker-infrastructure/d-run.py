@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 '''
-TODO: doc
+TODO(doc)
 
 Supported features in the settings file:
 

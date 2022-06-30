@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-'''TODO: doc
+'''TODO(doc)
 '''
 
 import argparse, os, sys

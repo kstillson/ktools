@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 '''
-TODO: doc
+TODO(doc)
 
 # See https://pypi.python.org/pypi/psutil/1.2.1 for psutil API.
 

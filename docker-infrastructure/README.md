@@ -102,7 +102,7 @@ Here are the contents expected for each container source directory:
   - settings.yaml: This file provides the instructions to the `d-run` tool
     on how to construct the docker command-line arguments to launch a
     container.
-    - TODO: more doc
+    - TODO(doc)
 
   - Test: This is an executable file (generally Python), which performs a
     series of functionality tests on a container.
@@ -209,7 +209,7 @@ container.
 `d ua`
 Same as above, but upgrade all containers.
 
-TODO: add self-help logic like q's, and document here.
+TODO(doc): add self-help logic like q's, and document here.
 
 ### "d-cowscan"
 

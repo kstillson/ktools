@@ -1,8 +1,20 @@
 ## ++ktools tech
    - review non-doc TODO's
-     - docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
-     - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
-     - docker-infrastructure/Makefile:# TODO: add some tests
+      Makefile: # TODO
+      tools-for-root/q.sh:# TODO: The TEST, and VERBOSE options not uniformly implimented.
+      services/homesec/ext.py:# TODO: move to addrs into private.d
+      README.md:TODO: all the below stuff will eventually be fixed..
+      pylib/README.md:TODO: is it possible undo the split and have something like a #ifdef to stop
+      pylib/setup.cfg:url = TODO...
+
+      docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
+      docker-containers/nagdock/files/usr/lib/nagios/plugins/check_disk_smb:    # TODO : why is the kB the standard unit for args ?
+      docker-containers/nagdock/Test:    '''TODO: At this point, we should be able to re-parse the status file and
+      docker-containers/eximdock/Test:# TODO: dependent on Ken-specific config
+      docker-containers/eximdock/Test:## TODO: test appeared to pass evne when msg send clearly failed (panic log
+      docker-containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf:# See general-wisdom/monitoring.md (TODO: link) for an explanation of the
+      docker-containers/rclonedock/Test:# TODO!: dep on /rw/mnt/rsnap/echo-back/test-out
+      docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
 
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep

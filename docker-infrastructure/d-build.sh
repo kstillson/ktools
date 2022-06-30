@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TODO: doc
+# TODO(doc)
 
 
 # ---------- control constants

@@ -131,9 +131,7 @@ be imported as Python libraries.
 provides kcore/auth based authentication, retries, etc.
 
 
-### pb-push.py
-
-TODO: not done yet
+### pb-push.sh
 
 Provides a simple interface for sending push notifications via the "Push
 Bullet" service.  Integrates with kmc to retrieve access tokens.

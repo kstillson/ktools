@@ -1,6 +1,6 @@
 '''Common Python helpers: mostly logging and a web fetcher.
 
-TODO: doc
+TODO(doc)
 
 '''
 
