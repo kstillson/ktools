@@ -10,7 +10,7 @@ all currently-failing hosts and services.  --retry-all triggers a complete resca
 --ack will queue Nagios commands to acknowledge all current failures.
 '''
 
-import argparse, enum, subprocess
+import argparse, enum, os, subprocess, time
 from collections import namedtuple
 
 
@@ -64,6 +64,14 @@ def scan(status_file):
     by_status = {}
     for i in StatusEnum: by_status[i] = []
 
+    # Occasionally we catch nagios mid-run and the status file doesn't exist for a moment.
+    # Re-try a few times with short delays and if still can't find it, it an error.
+    retries = 0
+    while not os.path.isfile(status_file):
+      retries += 1
+      if retries > 4: raise RuntimeException(f'unable to open Nagios status file {status_file}.')
+      time.sleep(0.5)
+    
     section = '?'
     with open(status_file) as fil:
         for line in fil.readlines():
