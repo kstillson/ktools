@@ -2,13 +2,16 @@
 
 # $1 is primary mode:
 #   gdrive: syncs google-drive contents to /root/gdrive-efs (mounted via efs)
+#   full-photos: syncs (almost) all of google-photos to /root/photos-archive
+#                (will create many duplicates due to albums, favorites, etc)
 #   interactive: interactive shell ready for "rclone mount" commands
-#   photos: syncs google-photos to /root/photos-backup
+#   photos: syncs this year's "by-month" google-photos to /root/photos-backup
 #   test: copies a single file back and forth from wasabi.
 #   wasabi: syncs /root/src to wasabi
 
 BASENAME=rclonedock
 LOG=/var/log/${BASENAME}.log
+RCLONE=/root/bin/rclone
 
 # ----------
 # Parse flags
@@ -86,7 +89,7 @@ echo "$(date): starting rclone $MODE run"
 case $MODE in
     gdrive)
 	mount_efs
-	rclone sync ${STATS} --modify-window 10s gdrive-ro:/ /root/gdrive-efs/gdrive
+	${RCLONE} sync ${STATS} --modify-window 10s gdrive-ro:/ /root/gdrive-efs/gdrive
 	STATUS=$?
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 
@@ -104,7 +107,7 @@ case $MODE in
     photos)
 	year=$(date +%Y)
 	echo "$(date): starting Google photos sync for $year"
-	rclone copy ${STATS} google-photos:/media/by-month/$year /root/photos-backup/media/by-month/$year
+	${RCLONE} copy ${STATS} google-photos:/media/by-month/$year /root/photos-backup/media/by-month/$year
 	STATUS=$?
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 
@@ -120,7 +123,7 @@ case $MODE in
 
     full-photos)
 	echo "$(date): starting full Google photos archive sync"
-	rclone copy --exclude "**all/**" --exclude "**by-day/**" --exclude "**by-year/**" ${STATS} google-photos:/ /root/photos-archive
+	${RCLONE} copy --exclude "**all/**" --exclude "**by-day/**" --exclude "**by-year/**" ${STATS} google-photos:/ /root/photos-archive
 	STATUS=$?
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
         ;;
@@ -130,12 +133,12 @@ case $MODE in
 	SRC="/root/echo-back/test-out"
 	DEST="/root/echo-back/test-in"
 	echo "copying cookie out"
-	rclone -v copy ${SRC} wasabi-s3:kstillson-s3
+	${RCLONE} -v copy ${SRC} wasabi-s3:kstillson-s3
 	STATUS=$?
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 	echo "copying cookie back"
 	rm -rf /root/echo-back/test-in
-	rclone -v copy wasabi-s3:kstillson-s3/test-out ${DEST}
+	${RCLONE} -v copy wasabi-s3:kstillson-s3/test-out ${DEST}
 	/usr/bin/diff -q ${SRC} ${DEST} || { echo "ERROR- test cookie copy-back doesnt match."; exit -1; }
 	echo "pass"
 	;;
@@ -144,7 +147,7 @@ case $MODE in
 	# check that source is mounted ok (dont want to zap dest because of a src mounting error).
 	if [[ ! -d /root/src/rw ]]; then echo "rclone $MODE cannot find source canary file; aborting."; exit -2; fi
 	# copy rsnap daily.0 to remote archive
-	rclone sync ${STATS} --links --one-file-system --modify-window 10s --exclude '**/bp/**' --exclude '**/mov/**' /root/src wasabi-s3:kstillson-s3
+	${RCLONE} sync ${STATS} --links --one-file-system --modify-window 10s --exclude '**/bp/**' --exclude '**/mov/**' /root/src wasabi-s3:kstillson-s3
 	STATUS=$?
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 
@@ -152,7 +155,7 @@ case $MODE in
 	DEST="/root/echo-back/cron-jack"
 	echo "$(date): starting echo back to ${DEST}"
 	rm -rf ${DEST}
-	rclone copy wasabi-s3:kstillson-s3/rw/rw/log/cron-jack.log ${DEST}
+	${RCLONE} copy wasabi-s3:kstillson-s3/rw/rw/log/cron-jack.log ${DEST}
 	/usr/bin/diff -q /root/src/rw/rw/log/cron-jack.log $DEST || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
         ;;
 

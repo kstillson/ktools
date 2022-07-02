@@ -1,0 +1,3 @@
+
+# Don't check downloaded binary into git repo
+files/root/bin/rclone
