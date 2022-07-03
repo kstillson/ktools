@@ -8,19 +8,6 @@ kcore_pylib consists of 4 packages:
 kcore is a set of reasonably-low-level reasonably-common operations or
 simplicaitions, as described below.
 
-Several of the modules are split into between a primary and a _base file.  The
-primary file imports the _base into its own namespace, so you shouldn't
-generally need to import the _base file separately.  Why the split?  Because
-the primary version makes use of feature(s) not available in Circuit Python.
-If you check out ../circuitpy_lib, you'll see that there are "_circpy"
-specific versions of these modules that re-use the pylib/kcore _base code.
-
-TODO: is it possible undo the split and have something like a #ifdef to stop
-Python from parsing the circpy-unfriendly bits..?  dunno...
-
-Note: originally most of this code was intended to work seemlessly with both
-python2 and python3
-
 
 ### auth.py
 
@@ -201,3 +188,10 @@ board once you're getting reasonably close.
 NOTE: circuitpy_sim is still in a very early / alpha-type state.  Any
 suggestions or additions would be most welcome.
 
+
+## Other notes
+
+- Originally most of this code was intended to work seemlessly with both
+  python2 and python3.  I've since given up on supporting python2, but if you
+  find bits-and-pieces of anacronistic Python syntax, it's probably vestages
+  of my py2 support that haven't been cleaned out yet...

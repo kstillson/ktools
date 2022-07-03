@@ -1,9 +1,5 @@
 ## ++ktools tech
    - review non-doc TODO's
-      README.md:TODO: all the below stuff will eventually be fixed..
-      pylib/README.md:TODO: is it possible undo the split and have something like a #ifdef to stop
-      pylib/setup.cfg:url = TODO...
-
       docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
       docker-containers/nagdock/files/usr/lib/nagios/plugins/check_disk_smb:    # TODO : why is the kB the standard unit for args ?
       docker-containers/nagdock/Test:    '''TODO: At this point, we should be able to re-parse the status file and
@@ -34,6 +30,7 @@
    - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
      A: kwisdom/kwizdom?  (nb with k*: confusion w/ kuberneties)
      kwizmet ?
+     - pylib/setup.cfg:url = TODO...
 
 ## ---------- MILESTONE: ready for peer review ...?
 

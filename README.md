@@ -160,39 +160,6 @@ remain small and reasonably easy to understand.
     "kcore-baseline" as their image starting point.
 
 
-### Makefile Errata
-
-TODO: all the below stuff will eventually be fixed..
-
-- At the moment, the various different subdirectory's Makefile's aren't as
-  uniform as they should be in terms of which targets do what.  For example,
-  some "install" targets automatically use sudo because they need root privs
-  to do their work.  Some automatically detect the current user-id, and
-  perform a system-wide installation for root and a personal installation
-  otherwise, and some detect the user-id, but if run as non-root will mention
-  that a system-wide installation is needed for other parts of the overall
-  system to work, and will interactively ask if they should sudo and repeat
-  the install system-wide.  (It's unusual and unexpected for a Makefile to
-  interact with the user directly.)
-
-- In addition, a few of the "update" targets automatically restart a service
-  or container as part of the process, but not all of them.  This needs to
-  be made uniform and predictable.  Perhaps an environment variable to
-  toggle the behavior...?
-
-- Several of the Makefile's have other custom targets, especially the one for
-  "pylib", which has various options such as "install-wheel" (to use the pip3
-  based "wheel" based installation process), or "install-simple" to install
-  via simple copies (using "best guess" to figure out target directories), and
-  also has an "install-system" to do a wheel-based install, but into the
-  system-wide /usr/local rather than the personal ~/.local directory.
-
-
-If you're not interested in digging into the Makefile's to understand all
-these details, you can always use the top-level "make everything" target.  It
-does everything, and all in the correct order, and don't require you to
-understand any of these subtleties.
-
 - - -
 
 # Contents
