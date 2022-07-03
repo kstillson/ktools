@@ -4,28 +4,26 @@ import smtplib
 from email.mime.text import MIMEText
 
 import kcore.common as C
+import kcore.uncommon as UC
 
 DEBUG = False
 
 
-# --------------------
-# Silent alarm message data
+# ---------- Silent panic message data
 
-# TODO: move to addrs into private.d
+# SITE-SPECIFIC: you should override these values by creating private.d/ext.py
+# and putting your site-specific values in there.  See the call to
+# UC.load_file_into_module at the bottom for the code that loads this.
 
-SILENT_TO = ['rts@point0.net', 'mbs@point0.net']
-SILENT_SUBJ = 'URGENT- KEN STILLSON HAS ACTIVATED HOME SECURITY PANIC SYSTEM'
-SILENT_MSG = ('This message is generated when I trigger a silent alarm.\n\n'
-              'PLEASE CALL 911 AND DIRECT THEM TO 11921 Triple Crown Rd, Reston.\n\n'
-              'Use of the silent alarm indicates it is probably unwise to \n'
-              'call or text me; if I had wanted an obvious response, \n'
-              'I would have triggered a noisy panic.\n\n')
+SILENT_PANIC_TO = []
+SILENT_PANIC_SUBJ = 'URGENT- SILENT PANIC ACTIVATED FOR HOME SECURITY SYSTEM'
+SILENT_PANIC_MSG = ('Email message contents...')
 
-if DEBUG:
-  SILENT_TO = ['ken@kenstillson.com', 'tech@point0.net']
-  SILENT_SUBJ = SILENT_SUBJ.replace('URGENT', 'THIS IS A TEST - PLEASE IGNORE')
+DEBUG_SILENT_PANIC_TO = []
+DEBUG_SILENT_PANIC_SUBJ = 'THIS IS A TEST - PLEASE IGNORE'
+DEBUG_SILENT_PANIC_MSG = SILENT_PANIC_MSG
 
-# --------------------
+# ----------
 
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
   log_msg = f'announce [{speak=}/{push_level=}/{syslog_level=}]: {msg}'
@@ -86,5 +84,12 @@ def send_email(from_addr, to, subj, contents):
 def silent_panic():
   if DEBUG: return C.log_debug(f'ext would run silent panic routine')
   C.log_crit('SILENT PANIC ACTIVATED!')
-  send_emails('ken@kenstillson.com', SILENT_TO, SILENT_SUBJ, SILENT_MSG)
+  send_emails('ken@kenstillson.com',
+              DEBUG_SILENT_PANIC_TO if DEBUG else SILENT_PANIC_TO,
+              DEBUG_SILENT_PANIC_SUBJ if DEBUG else SILENT_PANIC_SUBJ,
+              DEBUG_SILENT_PANIC_MSG if DEBUG else SILENT_PANIC_MSG)
 
+
+# ---------- private.d overrides
+
+UC.load_file_into_module('private.d/ext.py')

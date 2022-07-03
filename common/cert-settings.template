@@ -1,4 +1,6 @@
 
+# SITE-SPECIFIC
+
 # One of the services we're going to build is a server called "keymaster".  It
 # shares secrets with other services, and secure communications with keymaster
 # is critial.  To enable that, we're going to create a public/private key pair

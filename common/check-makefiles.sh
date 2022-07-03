@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: dont think this works anymore; outputs too much; needs fixing...
+
 # Check to see if any files that look like source code files are present
 # but missing from a Makefile target specification.
 

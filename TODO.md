@@ -1,7 +1,5 @@
 ## ++ktools tech
    - review non-doc TODO's
-      tools-for-root/q.sh:# TODO: The TEST, and VERBOSE options not uniformly implimented.
-      services/homesec/ext.py:# TODO: move to addrs into private.d
       README.md:TODO: all the below stuff will eventually be fixed..
       pylib/README.md:TODO: is it possible undo the split and have something like a #ifdef to stop
       pylib/setup.cfg:url = TODO...

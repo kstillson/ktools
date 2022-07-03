@@ -27,7 +27,6 @@ set -e
 # that the bash-tricks collection and the overall structure/approach might
 # be of interest, and can be adapted to your own environment.
 
-# TODO: The TEST, and VERBOSE options not uniformly implimented.
 
 # ---------- flag defaults
 
@@ -304,22 +303,25 @@ function git_pull_all() {
 function git_update_pis() {
     set +e
     t=$(gettemp git-updates.out)
+    RP_FLAGS="$RP_FLAGS --output $t"
     hosts=$(list_pis | without hs-front,pi1,lightning)
     echo "pulling git updates..."
-    echo $hosts | /usr/local/bin/run_para --output $t --plain --timeout $TIMEOUT --ssh "/bin/su pi -c 'cd /home/pi/dev; git pull'"
+    RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
     echo "restarting services..."
-    echo $hosts | /usr/local/bin/run_para --plain --timeout $TIMEOUT --ssh systemctl daemon-reload
-    echo $hosts | /usr/local/bin/run_para --output $t --plain --timeout $TIMEOUT --ssh /home/pi/dev/Restart
+    RUN_PARA "$hosts" "systemctl daemon-reload"
+    RUN_PARA "$hosts" "/home/pi/dev/Restart"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some restart failures"; return 1; fi
     emitc green "all done\n"
 }
 
 function iptables_list_tables() {
+    # iptables-save only writes to stdout, not persistent; no need to wrap in runner().
     iptables-save | egrep '^\*' | tr -d '*' | sort
 }
 
 function iptables_list_chains() {
+    # iptables-save only writes to stdout, not persistent; no need to wrap in runner().
     iptables-save | awk -F' ' '/^\*/ { tab=substr($1,2) } /^:/ { print tab $1 }' | sort
 }
 
@@ -409,8 +411,10 @@ function updater() {
     OUT1="all-update.out"
     OUT2="all-upgrade.out"
     need_ssh_agent
-    echo "$hosts" | /usr/local/bin/run_para --output $OUT1 --timeout 240 --ssh 'apt-get update'
-    echo "$hosts" | /usr/local/bin/run_para --output $OUT2 --timeout 999 --ssh 'apt-get -y upgrade'
+    RP_FLAGS="--output $OUT1 --timeout 240"
+    RUN_PARA "$hosts" "apt-get update"
+    RP_FLAGS="--output $OUT2 --timeout 999"
+    RUN_PARA "$hosts" "apt-get upgrade"
     emit "output sent to $OUT1 and $OUT2 (consider rm $OUT1 $OUT2 )"
 }
 

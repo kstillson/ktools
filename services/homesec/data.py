@@ -66,9 +66,9 @@ CONSTANTS = {
 }
 
 
-# Maps from username (as a string) to a hashed password string created by
-# model.hash_user_password().  To avoid creating a well-known default login,
-# this dict is provided empty.  You'll want to populate yours in private.d/data.py.
+# SITE-SPECIFIC: you should override these values by creating private.d/data.py
+# and putting your site-specific values in there.  See the call to
+# UC.load_file_into_module at the bottom for the code that loads this.
 
 USER_LOGINS = {}
 
