@@ -1,11 +1,9 @@
 ## ++ktools tech
    - review non-doc TODO's
       docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
-      docker-containers/nagdock/files/usr/lib/nagios/plugins/check_disk_smb:    # TODO : why is the kB the standard unit for args ?
       docker-containers/nagdock/Test:    '''TODO: At this point, we should be able to re-parse the status file and
       docker-containers/eximdock/Test:# TODO: dependent on Ken-specific config
       docker-containers/eximdock/Test:## TODO: test appeared to pass evne when msg send clearly failed (panic log
-      docker-containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf:# See general-wisdom/monitoring.md (TODO: link) for an explanation of the
       docker-containers/rclonedock/Test:# TODO!: dep on /rw/mnt/rsnap/echo-back/test-out
       docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
 
