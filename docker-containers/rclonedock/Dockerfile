@@ -5,7 +5,7 @@ FROM ktools/kcore-baseline:live
 
 
 RUN apk upgrade -U && \
-    apk add --no-cache curl encfs fuse rclone util-linux && \
+    apk add --no-cache curl encfs fuse util-linux && \
     rm -rf /var/cache/apk/*
 
 COPY files /

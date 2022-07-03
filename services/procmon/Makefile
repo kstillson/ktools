@@ -26,13 +26,20 @@ $(TEST_LOG): $(wildcard *.py tests/*.py)
 	echo "passed" > $(TEST_LOG)
 
 
+install: install-stamp
+
+install-stamp: $(PLAIN_TARGETS)
+	if [[ "$$ROOT_RO" == 1 ]]; then mount -o remount,rw /; fi
+	mkdir --mode 755 -p $(INSTALL_DIR)
+	$(MAKE) common_install
+	if [[ "$$ROOT_RO" == 1 ]]; then mount -o remount,ro /; fi
+
+
 # ---------- pass-throughs
 
 clean: common_clean
 
 comp: common_comp
-
-install: common_install
 
 test: common_test
 
