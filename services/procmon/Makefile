@@ -12,7 +12,7 @@ USER := $(shell whoami)
 ifeq ($(USER),root)
 	INSTALL_DIR := /usr/local/ktools/procmon
 else
-	INSTALL_DIR := $$HOME/procmon
+	INSTALL_DIR := $$HOME/ktools/procmon
 endif
 include ../../common/Makefile-unstaged
 

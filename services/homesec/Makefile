@@ -14,7 +14,7 @@ USER := $(shell whoami)
 ifeq ($(USER),root)
 	INSTALL_DIR := /usr/local/ktools/homesec
 else
-	INSTALL_DIR := $$HOME/homesec
+	INSTALL_DIR := $$HOME/ktools/homesec
 endif
 include ../../common/Makefile-unstaged
 

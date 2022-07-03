@@ -12,7 +12,7 @@ USER := $(shell whoami)
 ifeq ($(USER),root)
 	INSTALL_DIR := /usr/local/ktools/keymaster
 else
-	INSTALL_DIR := $$HOME/keymaster
+	INSTALL_DIR := $$HOME/ktools/keymaster
 endif
 include ../../common/Makefile-unstaged
 

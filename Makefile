@@ -67,7 +67,7 @@ common/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem p
 
 
 private.d/kcore_auth_db.data.pcrypt:
-	# TODO
+	touch $@
 
 private.d/keymaster.pem:   private.d/cert-settings
 	@if [[ -f private.d/keymaster.key ]]; then echo "dont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.  Please manually remove 'private.d/key*' if it really is time to generate a new key"; exit 2; fi

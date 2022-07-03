@@ -1,6 +1,5 @@
 ## ++ktools tech
    - review non-doc TODO's
-      Makefile: # TODO
       tools-for-root/q.sh:# TODO: The TEST, and VERBOSE options not uniformly implimented.
       services/homesec/ext.py:# TODO: move to addrs into private.d
       README.md:TODO: all the below stuff will eventually be fixed..

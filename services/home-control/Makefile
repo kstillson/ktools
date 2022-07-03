@@ -12,7 +12,7 @@ USER := $(shell whoami)
 ifeq ($(USER),root)
 	INSTALL_DIR := /usr/local/ktools/home-control
 else
-	INSTALL_DIR := $$HOME/home-control
+	INSTALL_DIR := $$HOME/ktools/home-control
 endif
 include ../../common/Makefile-unstaged
 
