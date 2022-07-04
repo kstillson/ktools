@@ -1,6 +1,5 @@
 ## ++ktools tech
    - review non-doc TODO's
-      docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
       docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
       (just one of many instances of needing to seed /rw/dv...; will come up in virgin-build testing...)
 
