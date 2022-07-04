@@ -49,7 +49,7 @@ clean:
 # kcore-baseline before other containers, as they're build on-top of the
 # "live" kcore image.
 
-everything:
+everything: prep
 	@printf "\n\n** building, testing, and installing all non-Docker-based libraries tools.\n\n"
 	$(MAKE) update   # all -> test -> install
 	@printf "\n\n** about to sudo to install pylib tools for root to use; needed for docker building and testing.\n\n"
