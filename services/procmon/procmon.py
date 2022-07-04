@@ -386,7 +386,7 @@ def parse_args(argv):
   parser.add_argument('--port',    '-p', type=int, default=8080, help='web port to listen on.  0 to disable.')
   parser.add_argument('--queue',   '-q', default='/var/procmon/queue', help='where to put the queue of current unexpected items from the most recent scan')
   parser.add_argument('--test',    '-t', action='store_true', help='run single scan and output only to stdout')
-  parser.add_argument('--whitelist', '-w', default='procmon_whitelist.py', help='name of file contianing whitelist data')
+  parser.add_argument('--whitelist', '-w', default='procmon_whitelist', help='name of file contianing whitelist data')
   return parser.parse_args(argv)
 
 
@@ -397,7 +397,7 @@ def main(argv=[]):
              filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER)
 
   global WL
-  WL = _load_file_as_module(ARGS.whitelist, 'procmon_whitelist')
+  WL = _load_file_as_module(ARGS.whitelist)
   for entry in WL.WHITELIST: entry.pattern = re.compile(entry.regex)
   for entry in WL.GREYLIST: entry.pattern = re.compile(entry.regex)
 

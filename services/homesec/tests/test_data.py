@@ -25,7 +25,7 @@ def test_post_init(setup_test):
 
 
 def test_touch_data_getter(setup_test):
-    D.TOUCH_DATA.filename = 'testdata/test-touch.data'
+    D.TOUCH_DATA.filename = 'tests/test-touch.data'
     D.TOUCH_DATA.cache = None
     td = D.get_touch_data()
     assert td[0].trigger == 'ken'
