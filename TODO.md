@@ -1,13 +1,11 @@
-## ++ktools tech
-   - review non-doc TODO's
-      docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
-      docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
-      (just one of many instances of needing to seed /rw/dv...; will come up in virgin-build testing...)
-
-   - re-confirm virgin build process
-     - (pi2) :everything didn't run :prep
-     - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
-     - ? chmod 444 /sys/class/dmi/id/product_uuid
+## ++ktools virgin build process
+   - top level "make test" fails under -C services, because pylib not yet installed.
+   - pylib :install doesn't auto-run :all if the wheel isn't built; just gives an error
+   - under qmeu, puid read for /sys/class/dmi/id/product_uuid can fail.
+     - chmod 444 ?
+   - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
+   - :prep needs to set up /rw/dv/...
+     - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
 
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,
