@@ -3,5 +3,8 @@ ACCOUNTS_DONT_DELETE_REGEX="^(root|watch|nobody)"
 GROUP_DONT_DELETE_REGEX="^(root|watch|nobody)"
 SUID_DONT_DELETE_REGEX="fusermount"
 
-chgrp -R watch /home/watch
+# ---------- fix ownership / permissions
+
+chgrp -R watch /home
+chmod -R g+rX /home
 
