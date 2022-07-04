@@ -8,14 +8,13 @@ all: common_all
 
 SHELL := /bin/bash
 
-PY_TARGETS := procmon procmon_whitelist
-PLAIN_TARGETS := procmon_wl_type.py   # PLAIN to preserve .py suffix (needed for importing)
+PY_TARGETS := filewatch filewatch_config
 
 USER := $(shell whoami)
 ifeq ($(USER),root)
-	INSTALL_DIR := /usr/local/ktools/procmon
+	INSTALL_DIR := /usr/local/ktools/filewatch
 else
-	INSTALL_DIR := $$HOME/ktools/procmon
+	INSTALL_DIR := $$HOME/ktools/filewatch
 endif
 include ../../common/Makefile-unstaged
 
@@ -24,7 +23,7 @@ SHELL := /bin/bash
 # ---------- custom targets
 
 $(TEST_LOG): $(wildcard *.py tests/*.py)
-	set -o pipefail && ./tests/procmon_test.sh |& tee $(TEST_LOG)
+	set -o pipefail && ./tests/filewatch_test.sh |& tee $(TEST_LOG)
 
 
 # Can't have install depend on $(INSTALL_TARGETS) the way it should, because

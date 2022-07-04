@@ -1,47 +1,19 @@
 #!/usr/bin/python3
 
+'''TODO(doc)
+'''
+
 import argparse, os, glob, subprocess, sys, time
 import kcore.common as C
 import kcore.html as H
 import kcore.webserver as W
+import kcore.uncommon as UC
 import kcore.varz as V
 
 
 # ---------- control constants
 
-DAY = 24 * 60 * 60
-
-CAM_AGE = 2 * DAY
-RSNAP_LOG_AGE = 2 * DAY                     # Should propogate to rsnapshot within 2 days.
-SYS_LOG_AGE = 2 * 60 * 60                   # Normal logs updated within a few hours
-SYS_LOG_AGE_SLOW = 24 * 60 * 60
-
-CONFIG = {
-  # rsnapshot based
-  '/root/rsnap/daily.0/a1/var/log/syslog':                       RSNAP_LOG_AGE,
-  '/root/rsnap/daily.0/home/home/ken/share/tmp/touch':           RSNAP_LOG_AGE,
-  '/root/rsnap/daily.0/home/home/blue-backup/backup/var/log/auth.log': 4 * DAY,
-  '/root/rsnap/echo-back/vault-touch':                           32 * DAY,
-  # syslog based
-  '/root/syslog/daemon.log':                     SYS_LOG_AGE,
-  '/root/dv/eximdock/var_log/exim/mainlog':      3 * DAY,
-  ## '/root/dv/mysqldock/var_log_mysql/mysql.log':  SYS_LOG_AGE_SLOW,
-  '/root/dv/nagdock/var_log_nagios/nagios.log':  SYS_LOG_AGE,
-  '/root/dv/rsnapdock/var_log/rsnapshot.log':    RSNAP_LOG_AGE,
-  '/root/dv/webdock/var_log_apache2/access.log': SYS_LOG_AGE,
-  # cron exceptions
-  '/root/syslog/cron-jack2.log':                 2 * DAY,
-  '/root/syslog/cron-glowbox1.log':              None,  # Disable globbed file.
-  # globs
-  '/root/syslog/cron*':                          SYS_LOG_AGE,
-  # specials
-  '/root/exim':                                  'DIR-EMPTY',
-  '/root/dnsmasq/dnsmasq.leases':                'NOT-FOUND:.9.',
-  '/root/rcam/homesec1/{NEWEST}':                CAM_AGE,
-  '/root/rcam/homesec2/{NEWEST}':                CAM_AGE,
-  '/root/rcam/hs-front/{NEWEST}':                CAM_AGE,
-}
-
+CONFIG = {}     # Loaded by main() from config file.
 
 WEB_HANDLERS = {
   '/healthz':   lambda request: healthz_handler(request),
@@ -162,10 +134,16 @@ def default_handler(request):
 
 def main():
   parser = argparse.ArgumentParser(description='File age checker')
-  parser.add_argument('--port', '-p', type=int, default=8080, help='Port on which to start server.')
-  parser.add_argument('--test', '-t', action='store_true', help='Run a single scan and output to stdout, then quit.')
+  parser.add_argument('--config', '-c', default='filewatch_config', help='Name of file with CONFIG dictionary.')
+  parser.add_argument('--port', '-p',   type=int, default=8080, help='Port on which to start server.')
+  parser.add_argument('--test', '-t',   action='store_true', help='Run a single scan and output to stdout, then quit.')
   args = parser.parse_args()
 
+  # load configuration from file.
+  global CONFIG
+  tmp = UC.load_file_as_module(args.config)
+  CONFIG = tmp.CONFIG  
+  
   if args.test:
     summary, details = Scanner().run_scan()
     print(f'Overall status: {summary}')

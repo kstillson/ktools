@@ -28,12 +28,12 @@ def setup_test():
     # Copy over test data
     tmpdir = tempfile.mkdtemp()
     dest = tmpdir + '/test-partition-state.data'
-    shutil.copyfile('testdata/test-partition-state.data', dest)
+    shutil.copyfile('tests/test-partition-state.data', dest)
     C.model.data.PARTITION_STATE.filename = dest
     C.model.data.PARTITION_STATE.cache = None
 
     dest = tmpdir + '/test-touch.data'
-    shutil.copyfile('testdata/test-touch.data', dest)
+    shutil.copyfile('tests/test-touch.data', dest)
     C.model.data.TOUCH_DATA.filename = dest
     C.model.data.TOUCH_DATA.cache = None
 

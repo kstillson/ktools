@@ -11,4 +11,5 @@ COPY files /
 RUN /prep
 
 USER watch
+WORKDIR /home/watch
 ENTRYPOINT ["/home/watch/filewatch"]
