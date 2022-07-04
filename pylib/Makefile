@@ -25,7 +25,7 @@ comp:
 
 install:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
-	if [[ "$$UID" != "0" ]]; then read -p "working on pylib installation. root is going to need these tools to build and test docker images.  Install pylib for root? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo --preserve-env=BUILD_SIMPLE $(MAKE) install; fi; fi
+	@if [[ "$$UID" != "0" ]]; then printf "\n\nIf you are going to be building or testing Docker images,\nroot will need access to these tools as well.\nRecommended that you run 'sudo make install' or 'sudo make install-simple'\n\n"; fi
 
 test: $(TEST_LOG)
 

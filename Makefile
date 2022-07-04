@@ -50,9 +50,16 @@ clean:
 # "live" kcore image.
 
 everything:
+	@printf "\n\n** building, testing, and installing all non-Docker-based libraries tools.\n\n"
 	$(MAKE) update   # all -> test -> install
+	@printf "\n\n** about to sudo to install pylib tools for root to use; needed for docker building and testing.\n\n"
+	sudo --preserve-env=BUILD_SIMPLE $(MAKE) -C pylib install
+	@printf "\n\n** building, testing, and installing Docker baseline image.\n\n"
 	$(MAKE) --no-print-directory -C docker-containers/kcore-baseline update
-	$(MAKE) --no-print-directory -C docker-containers update
+	@printf "\n\n** building Docker images\n\n"
+	$(MAKE) --no-print-directory -C docker-containers all
+	@printf "\n\n** testing Docker images\n\n"
+	$(MAKE) --no-print-directory -C docker-containers test
 
 e:	everything   # simple alias for "everything"
 
@@ -70,7 +77,7 @@ private.d/kcore_auth_db.data.pcrypt:
 	touch $@
 
 private.d/keymaster.pem:   private.d/cert-settings
-	@if [[ -f private.d/keymaster.key ]]; then echo "dont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.  Please manually remove 'private.d/key*' if it really is time to generate a new key"; exit 2; fi
+	@if [[ -f private.d/keymaster.key ]]; then printf "\ndont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.\nPlease manually remove 'private.d/key*' if it really is time to generate a new key,\nor run 'touch private.d/keymaster.pem' to keep your current keys and move on.\n\n"; exit 2; fi
 	source private.d/cert-settings && \
 	  openssl req -x509 -newkey rsa:4096 -days $$DAYS \
 	    -keyout private.d/keymaster.key -out private.d/keymaster.crt -nodes \
