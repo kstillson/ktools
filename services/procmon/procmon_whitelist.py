@@ -10,7 +10,7 @@ WHITELIST = [
     WL('/',         'ken',         False, False, '/usr/sbin/sendmail'),
     WL('/',         'messagebus',  False, True,  '/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation'),
     WL('/',         'nobody',      False, False, '(/bin/bash -c *)?/bin/ping -c1 -q -w4 hs-front'),
-    WL('/',         'nobody',      False, False, '/usr/bin/python3 /usr/local/procmon/procmon'),
+    WL('/',         'nobody',      False, False, '/usr/bin/python3 /usr/local/ktools/procmon/procmon'),
     WL('/',         'nobody',      False, True,  '/usr/local/bin/dhcp-helper -e eth1 -s 192.168.2.2'),
     WL('/',         'ntp',         False, False, '/usr/sbin/ntpd -p /var/run/ntpd.pid'),
     WL('/',         'root',        False, False, '(/bin/bash -c *)?.RETRY -- .HC'),
