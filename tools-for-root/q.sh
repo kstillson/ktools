@@ -414,7 +414,7 @@ function updater() {
     RP_FLAGS="--output $OUT1 --timeout 240"
     RUN_PARA "$hosts" "apt-get update"
     RP_FLAGS="--output $OUT2 --timeout 999"
-    RUN_PARA "$hosts" "apt-get upgrade"
+    RUN_PARA "$hosts" "apt-get upgrade --yes"
     emit "output sent to $OUT1 and $OUT2 (consider rm $OUT1 $OUT2 )"
 }
 

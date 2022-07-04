@@ -1,17 +1,12 @@
 ## ++ktools tech
    - review non-doc TODO's
       docker-containers/filewatchdock/Makefile:# TODO: move to a separate service...
-      docker-containers/nagdock/Test:    '''TODO: At this point, we should be able to re-parse the status file and
-      docker-containers/eximdock/Test:# TODO: dependent on Ken-specific config
-      docker-containers/eximdock/Test:## TODO: test appeared to pass evne when msg send clearly failed (panic log
-      docker-containers/rclonedock/Test:# TODO!: dep on /rw/mnt/rsnap/echo-back/test-out
       docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
 
    - re-confirm virgin build process
      - (pi2) :everything didn't run :prep
      - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
      - ? chmod 444 /sys/class/dmi/id/product_uuid
-   - make e -> make all ?
 
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,

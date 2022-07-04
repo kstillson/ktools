@@ -1,6 +1,18 @@
 #!/usr/bin/python3
 
-# TODO!: dep on /rw/mnt/rsnap/echo-back/test-out
+# SITE-SPECIFIC: The details of this test are site-specific.
+#
+# - Various paths to your local Docker volumes and your remote storage
+#   will have to be updated to match your specifics.  Seek the following:
+#   - variables in this file: TEST_FILE_IN, TEST_FILE_OUT
+#   - paths in settings-test.yaml
+#   - paths in files/etc/init, in the section for "test)"
+#
+# - In addition, you'll need a files/root/.config/rclone/private.d/rclone.conf
+#   whose decryption key (if used) can be obtained by files/etc/auth, and
+#   where the name of the repository matches between the rclone config and
+#   the "test)" section of files/etc/init.
+
 
 import argparse, os, subprocess, sys, time
 

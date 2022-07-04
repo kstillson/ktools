@@ -4,4 +4,5 @@
 # see exim4_passwd_client(5) for more documentation
 #
 # Example:
-### target.mail.server.example:login:password
+### *.google.com:myaccount@gmail.com:my-application-specific-password
+### *.gmail.com:myaccount@gmail.com:my-application-specific-password

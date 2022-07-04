@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 
-# TODO: dependent on Ken-specific config
+# SITE-SPECIFIC: The details of how this test sends its email: send_email(),
+# and the credentials used for the sending: files/etc/exim/passwd.client
+# (generally overriden via files/etc/exim/private.d/passwd.client) are
+# site-specific, and you'll need to modify them to suit your speciifcs before
+# this test will pass.
 
 import argparse, socket, sys, time
 
@@ -40,16 +44,13 @@ def main():
     D.file_expect('error', prefix + 'var_log/exim/mainlog', invert=True)
     D.file_expect('denied', prefix + 'var_log/exim/mainlog', invert=True)
     D.file_expect('Frozen', prefix + 'var_log/exim/mainlog', invert=True)
-    D.file_expect(None, prefix + 'var_log/exim/paniclog', missing_ok=True)
-    D.file_expect(None, prefix + 'var_log/exim/rejectlog', missing_ok=True)
+    D.file_expect(' ', prefix + 'var_log/exim/paniclog', invert=True, missing_ok=True)
+    D.file_expect(' ', prefix + 'var_log/exim/rejectlog', invert=True, missing_ok=True)
     D.file_expect(cookie, prefix + 'var_mail/outbound-archive')
 
     print('pass')
     
 
-## TODO: test appeared to pass evne when msg send clearly failed (panic log
-## was non-empty and talked about msg being frozen)
-    
 if __name__ == "__main__":
   main()
 

@@ -106,12 +106,12 @@ def main():
     D.file_expect('SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
     if not HITS == 1: D.abort(f'expected 1 hit against test server, but saw {HITS}')
 
-    '''TODO: At this point, we should be able to re-parse the status file and
-    confirm the current state has changed to 0.  However, for reasons I don't
-    understand, the status file doesn't seem to get updated unless we wait a
-    really long time.  The checks about (against LOG_FILE and HITS) basically
-    confirm that the daemon is working...  So I guess I'll leave this final
-    bit of the test disabled for now.  Not happy about this..
+    '''TODO(defer): At this point, we should be able to re-parse the status file
+    and confirm the current state has changed to 0.  However, for reasons I
+    don't understand, the status file doesn't seem to get updated unless we
+    wait a really long time.  The checks about (against LOG_FILE and HITS)
+    basically confirm that the daemon is working...  So I guess I'll leave
+    this final bit of the test disabled for now.  Not happy about this..
 
     conf = parse_nagios(STATUS_FILE)
     status_expect('current_state', '0', conf)
