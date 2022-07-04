@@ -38,7 +38,7 @@ $(SUBDIRS):
 
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
-	rm -rf home-control/__pycache__ common/prep-stamp
+	rm -rf home-control/__pycache__ common/prep-stamp .pytest_cache
 	@echo "NOT cleaning private.d/ as can contain valuable data modified outside of make.  remove manually if you're sure."
 
 

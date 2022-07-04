@@ -26,6 +26,7 @@ $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
 comp: common_comp
 
 clean: common_clean
+	rm -rf private.d/__pycache__*
 
 install:
 	@echo "about to sudo for docker-infrastructure:install -- these tools can only be used by root, so it is assumed you want to install them where root can use them."
