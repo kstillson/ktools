@@ -55,7 +55,7 @@ $(KTOOLS_TARGETS): $(KTOOLS_DIR)/% : ../../pylib/tools/%
 
 # ---------- pass-throughs
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 comp:  # n/a
 clean: docker-clean
 install: docker-install

@@ -38,7 +38,7 @@ $(SUBDIRS):
 
 clean:
 	$(MAKE) --no-print-directory -C docker-containers clean
-	rm -rf home-control/__pycache__ common/prep-stamp .pytest_cache
+	rm -rf home-control/__pycache__ etc/prep-stamp .pytest_cache
 	@echo "NOT cleaning private.d/ as can contain valuable data modified outside of make.  remove manually if you're sure."
 
 
@@ -66,11 +66,11 @@ e:	everything   # simple alias for "everything"
 
 # ---------- 1-time preparation sequence
 
-prep:	common/prep-stamp
+prep:	etc/prep-stamp
 
-common/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
+etc/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
 	@pgrep docker > /dev/null || printf "\n\n $(shell tput setaf 3) WARNING $(shell tput sgr0)- docker daemon not detected.  docker-containers/** can't build or run without it.\nYou probably want to do something like:\n  sudo apt-get install docker.io"
-	touch common/prep-stamp
+	touch etc/prep-stamp
 
 
 private.d/kcore_auth_db.data.pcrypt:
@@ -89,11 +89,11 @@ private.d/keymaster.pem:   private.d/cert-settings
 
 private.d/cert-settings:
 	mkdir -p private.d
-	cp -n common/cert-settings.template private.d/cert-settings
+	cp -n etc/cert-settings.template private.d/cert-settings
 	editor private.d/cert-settings
 
 private.d/wifi_secrets.py:
-	cp -n common/wifi_secrets.template private.d/wifi_secrets.py
+	cp -n etc/wifi_secrets.template private.d/wifi_secrets.py
 	editor private.d/wifi_secrets.py
 
 services/homesec/private.d/data.py:

@@ -22,7 +22,7 @@ $(HW_TARGETS): $(HW_DIR)/% : ../../services/filewatch/%.py
 
 # ---------- pass-throughs
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 
 all: docker-all
 comp:  # n/a

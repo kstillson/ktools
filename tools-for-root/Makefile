@@ -4,7 +4,7 @@
 PY_TARGETS := iptables_log_sum
 SH_TARGETS := q
 INSTALL_DIR := /root/bin
-include ../common/Makefile-unstaged
+include ../etc/Makefile-unstaged
 
 # ---------- custom logic
 
