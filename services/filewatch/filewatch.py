@@ -134,7 +134,7 @@ def default_handler(request):
 
 def main():
   parser = argparse.ArgumentParser(description='File age checker')
-  parser.add_argument('--config', '-c', default='filewatch_config.py', help='Name of file with CONFIG dictionary.')
+  parser.add_argument('--config', '-c', default='filewatch_config', help='Name of file with CONFIG dictionary.')
   parser.add_argument('--port', '-p',   type=int, default=8080, help='Port on which to start server.')
   parser.add_argument('--test', '-t',   action='store_true', help='Run a single scan and output to stdout, then quit.')
   args = parser.parse_args()
