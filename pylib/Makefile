@@ -25,7 +25,7 @@ comp:
 
 install:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
-	@if [[ "$$UID" != "0" ]]; then printf "\n\nIf you are going to be building or testing Docker images,\nroot will need access to these tools as well.\nRecommended that you run 'sudo make install' or 'sudo make install-simple'\n\n"; fi
+	@if [[ "$$UID" != "0" ]]; then printf "\n\n $(shell tput setaf 3) NOTICE $(shell tput sgr0) If you are going to be building or testing Docker images,\nroot will need access to these tools as well.\nRecommended that you run 'sudo make install' or 'sudo make install-simple'\n\n"; fi
 
 test: $(TEST_LOG)
 

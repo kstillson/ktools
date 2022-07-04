@@ -69,7 +69,7 @@ e:	everything   # simple alias for "everything"
 prep:	common/prep-stamp
 
 common/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
-	@pgrep docker > /dev/null || printf "\n\nWARNING- docker daemon not detected.  docker-containers/** can't build or run without it.\nYou probably want to do something like:\n  sudo apt-get install docker.io"
+	@pgrep docker > /dev/null || printf "\n\n $(shell tput setaf 3) WARNING $(shell tput sgr0)- docker daemon not detected.  docker-containers/** can't build or run without it.\nYou probably want to do something like:\n  sudo apt-get install docker.io"
 	touch common/prep-stamp
 
 
@@ -77,7 +77,7 @@ private.d/kcore_auth_db.data.pcrypt:
 	touch $@
 
 private.d/keymaster.pem:   private.d/cert-settings
-	@if [[ -f private.d/keymaster.key ]]; then printf "\ndont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.\nPlease manually remove 'private.d/key*' if it really is time to generate a new key,\nor run 'touch private.d/keymaster.pem' to keep your current keys and move on.\n\n"; exit 2; fi
+	@if [[ -f private.d/keymaster.key ]]; then printf "\n $(shell tput setaf 1) ERROR $(shell tput sgr0) dont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.\nPlease manually remove 'private.d/key*' if it really is time to generate a new key,\nor run 'touch private.d/keymaster.pem' to keep your current keys and move on.\n\n"; exit 2; fi
 	source private.d/cert-settings && \
 	  openssl req -x509 -newkey rsa:4096 -days $$DAYS \
 	    -keyout private.d/keymaster.key -out private.d/keymaster.crt -nodes \
