@@ -6,7 +6,11 @@ TEST_LOG ?= test.log
 LAST_WHEEL = $(shell ls -t1 dist/*.whl | tail -1)
 LOCAL_SITE_DIR ?= $(shell python3 -m site --user-site)
 
-CIRCUITPY_DIR = /media/$$USER/CIRCUITPY
+CIRCUITPY_DIR ?= /media/$$USER/CIRCUITPY
+
+SITE_PACKAGES_DIR := $(shell python3 -m site --user-site)
+INSTALL_BASE := $(shell echo $${VIRTUAL_ENV:-$(SITE_PACKAGES_DIR)})
+
 
 # ---------- standard targets
 
@@ -15,13 +19,11 @@ all:
 
 clean:
 	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
-	@echo "note: not cleaning the venv directory.  use make target 'vclean' or remove manually if needed."
+	@printf "\n note: not cleaning the venv directory.  use make target 'vclean' or remove manually if needed.\n\n"
 
 comp:
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in kcore/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in circuitpy_sim/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in home_control/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in tools/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$${t/tools/ktools} | sed -e "/identical/s@.*@ok: $$t@"; done
+	@../etc/comp.sh "$(INSTALL_BASE)" "" circuitpy_sim/*.py home_control/*.py kcore/*.py
+	@cd tools && ../../etc/comp.sh "$(INSTALL_BASE)/ktools" "" *.py
 
 install:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
@@ -34,9 +36,7 @@ uninstall:
 	if [[ "$$UID" != "0" ]]; then read -p "uninstall from root? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) uninstall-simple; fi; fi
 
 update:
-	$(MAKE) all
-	$(MAKE) test
-	$(MAKE) install
+	$(MAKE) all test install
 
 
 # ---------- custom sub-rules for the standard targets

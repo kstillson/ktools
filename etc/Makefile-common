@@ -44,6 +44,8 @@ INSTALL_PLAIN_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PLAIN_TARGETS))
 
 INSTALL_MP := $(shell findmnt -n -o TARGET --target $(INSTALL_DIR))
 
+COMP := $(wildcard ../etc/comp.sh* ../../etc/comp.sh* ../../../etc/comp.sh*)
+
 # ----------------------------------------
 # Default target
 
@@ -88,13 +90,11 @@ common_test: $(TEST_LOG)
 # custom targets
 
 common_update: $(SOURCES)
-	$(MAKE) all
-	$(MAKE) test
-	$(MAKE) install
+	$(MAKE) all test install
 
 common_comp: FORCE
-	@for t in $(PLAIN_TARGETS) $(CUSTOM_TARGETS); do diff -sq "$$t" "$(INSTALL_DIR)/$$t" | sed -e "/identical/s/.*/ok: $$t/"; done
-	@for t in $(SH_SOURCES); do t2=`echo $$t | sed -e 's/\.sh//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
-	@for t in $(PY_SOURCES); do t2=`echo $$t | sed -e 's/\.py//'`; diff -sq "$$t" "$(INSTALL_DIR)/$$t2" | sed -e "/identical/s/.*/ok: $$t/"; done
+	@$(COMP) "$(INSTALL_DIR)" "" $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
+	@$(COMP) "$(INSTALL_DIR)" "s/\.py//" $(PY_TARGETS) 
+	@$(COMP) "$(INSTALL_DIR)" "s/\.sh//" $(SH_TARGETS) 
 
 FORCE: ;
