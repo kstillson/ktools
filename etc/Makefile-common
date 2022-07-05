@@ -44,7 +44,8 @@ INSTALL_PLAIN_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PLAIN_TARGETS))
 
 INSTALL_MP := $(shell findmnt -n -o TARGET --target $(INSTALL_DIR))
 
-COMP := $(wildcard ../etc/comp.sh* ../../etc/comp.sh* ../../../etc/comp.sh*)
+COMP := $(wildcard ../etc/comp.p? ../../etc/comp.p? ../../../etc/comp.p?)
+PYLIB_DIR := $(wildcard ../pyli? ../../pyli? ../../../pyli?)
 
 # ----------------------------------------
 # Default target
@@ -92,9 +93,13 @@ common_test: $(TEST_LOG)
 common_update: $(SOURCES)
 	$(MAKE) all test install
 
+COMP_FLAGS :=
 common_comp: FORCE
-	@$(COMP) "$(INSTALL_DIR)" "" $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
-	@$(COMP) "$(INSTALL_DIR)" "s/\.py//" $(PY_TARGETS) 
-	@$(COMP) "$(INSTALL_DIR)" "s/\.sh//" $(SH_TARGETS) 
+	@$(COMP) $(COMP_FLAGS) -b "$(INSTALL_DIR)" $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
+	@$(COMP) $(COMP_FLAGS) -b "$(INSTALL_DIR)" -L ".py/" $(PY_SOURCES)
+	@$(COMP) $(COMP_FLAGS) -b "$(INSTALL_DIR)" -L ".sh/" $(SH_SOURCES)
+
+check_kcore_installed:
+	@python3 -c 'import kcore.common' || { printf "\n $(shell tput setaf 1) pylib/kcore missing $(shell tput sgr0) the pylib/kcore package must be installed before further packages can be built/tested.\n" && read -p 'install for you now? (y/n) ' ok && if [[ "$$ok" == "y" ]]; then $(MAKE) -C $(PYLIB_DIR) install; else exit 2; fi; }
 
 FORCE: ;
