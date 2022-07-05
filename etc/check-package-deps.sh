@@ -11,8 +11,7 @@ function tester() {
     pkg="$2"
     prompt="$3"
     $cmd >&/dev/null && return 0
-    fix="sudo apt-get install -y $pkg"
-    echo "$fix" >> $OUT
+    echo "$pkg" >> $OUT
     printf "$(tput setaf 3)PROBLEM: $(tput sgr0)${prompt} ${pkg}\n"
     return 1
 }
@@ -21,7 +20,7 @@ function tester() {
 
 prompt="required package appears to be missing: "
 tester "python3 --version"              "python3"                 "$prompt"
-tester "pytest-3 --version"             "pytest3-pytest"          "$prompt"
+tester "pytest-3 --version"             "python3-pytest"          "$prompt"
 tester "python3 -m pytest_timeout"      "python3-pytest-timeout"  "$prompt"
 echo "import psutil" | tester "python3" "python3-psutil"          "$prompt"
 
@@ -40,16 +39,14 @@ tester "docker --help" "docker.io" "$prompt"
 
 if [[ ! -s $OUT ]]; then echo "$0: all ok"; exit 0; fi
 
-printf "\nYou probably want to run the following commands:\n\n"
-cat $OUT
-
-echo ""
+cmd="sudo apt-get install $(tr '\n' ' ' < $OUT)"
+printf "\nYou probably want to run the following command:\n\n   ${cmd}\n\n"
 read -p 'Shall I do this for you now (y/n)? ' ok
 if [[ "$ok" == "y" ]]; then
-    . $OUT
+    $cmd
     rm $OUT
-    printf "\nok, hopefully that's fixed. try running your previous command again."
-    exit 2
+    printf "\n\n$(tput setaf 2)OK $(tput sgr0), hopefully deps are good now; let's try continuing...\n\n"
+    exit 0
 fi    
 
 rm $OUT

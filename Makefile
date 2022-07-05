@@ -73,7 +73,6 @@ etc/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem priv
 	@pgrep docker > /dev/null || printf "\n\n $(shell tput setaf 3) WARNING $(shell tput sgr0)- docker daemon not detected.  docker-containers/** can't build or run without it.\nYou probably want to do something like:\n  sudo apt-get install docker.io"
 	touch etc/prep-stamp
 
-
 private.d/kcore_auth_db.data.pcrypt:
 	touch $@
 
