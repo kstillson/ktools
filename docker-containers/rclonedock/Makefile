@@ -18,7 +18,7 @@ files/root/bin/rclone:
 
 # ---------- pass-throughs
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 
 comp:  # n/a
 clean: docker-clean

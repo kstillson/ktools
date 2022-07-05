@@ -9,7 +9,7 @@ all:	vol_dirs docker-all
 UID_SEARCH ?= nagios   # causes $(UID_OUTSIDE) to be set.
 GID_SEARCH ?= nagios   # causes $(GID_OUTSIDE) to be set.
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 
 VOLS ?= $(DOCKER_VOLS)/nagdock
 VN := $(VOLS)/var_nagios

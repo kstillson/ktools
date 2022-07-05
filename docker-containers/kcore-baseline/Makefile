@@ -23,7 +23,7 @@ baseline-stamp:
 
 # ---------- local additions
 
-copy: $(COPIED_FILES)
+copy: $(PLIB) $(COPIED_FILES)
 
 clean:
 	rm -rf $(COPIED_FILES) *-stamp
@@ -38,6 +38,9 @@ files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
 	cp $^ $@
 	chmod 644 $@
 
+$(PLIB):
+	mkdir -p $@
+
 $(PLIB)/kcore: ../../pylib/kcore
 	cp -rpuv $^ $@
 	chmod -R go+rX $@
@@ -45,7 +48,7 @@ $(PLIB)/kcore: ../../pylib/kcore
 
 # ---------- pass-throughs
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 
 comp:  # n/a
 clean: docker-clean

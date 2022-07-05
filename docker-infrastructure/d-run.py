@@ -32,6 +32,8 @@ mount_test_only                    ignored                           list of bin
 import argparse, os, shutil, socket, subprocess, sys, yaml
 from pathlib import Path
 
+import kcore.auth
+
 
 DEFAULT_TAG = 'live'
 FALLBACK_IP = '192.168.2.99'   # Try this is all other methods fail.
@@ -182,10 +184,9 @@ def get_ip_to_use(args, settings):
 
 
 def get_puid(name):
-    env_puid = os.environ.get('PUID')
-    if env_puid: return env_puid
-    with open('/sys/class/dmi/id/product_uuid') as f: system_puid=f.read().strip()
-    return 'v2p:dpu:%s:%s' % (system_puid, name)
+    '''Decorate the machine's PUID with a container-name specific one.'''
+    system_puid = kcore.auth.get_machine_private_data()
+    return f'v2p:dpu:{system_puid}:{name}'
 
 
 # Try to find the location of the specified docker container dir.

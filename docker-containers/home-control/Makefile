@@ -37,7 +37,7 @@ $(KCORE_TARGETS): $(KCORE_DIR)/% : ../../pylib/kcore/%
 
 # ---------- pass-throughs
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 comp:  # n/a
 clean: docker-clean
 install: docker-install

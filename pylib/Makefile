@@ -1,12 +1,20 @@
 
+# TODO: move home_control into wheel.
+
 INSTALLED_TOOLS := hc k_auth kmc nag pcrypt ratelimiter run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
 
-LAST_WHEEL = $(shell ls -t1 dist/*.whl | tail -1)
 LOCAL_SITE_DIR ?= $(shell python3 -m site --user-site)
+INSTALL_BASE := $(shell echo $${VIRTUAL_ENV:-$(LOCAL_SITE_DIR)})
 
-CIRCUITPY_DIR = /media/$$USER/CIRCUITPY
+CIRCUITPY_DIR ?= /media/$$USER/CIRCUITPY
+
+COMP = ../etc/comp.py
+
+# Must be kept up-to-date with version number from ./setup.cfg
+WHEEL := dist/kcore_pylib-0.9-py3-none-any.whl
+
 
 # ---------- standard targets
 
@@ -15,28 +23,22 @@ all:
 
 clean:
 	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
-	@echo "note: not cleaning the venv directory.  use make target 'vclean' or remove manually if needed."
+	@printf "\n note: not cleaning the venv directory.  use make target 'vclean' or remove manually if needed.\n\n"
 
 comp:
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in kcore/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in circuitpy_sim/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in home_control/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$$t | sed -e "/identical/s@.*@ok: $$t@"; done
-	@sdir=$${VIRTUAL_ENV:-~/.local} && for t in tools/*.py; do diff -sq $$t $$sdir/lib/python*/site-packages/$${t/tools/ktools} | sed -e "/identical/s@.*@ok: $$t@"; done
+	@$(COMP) -b "$(INSTALL_BASE)" -L 'tools/ktools' circuitpy_sim/*.py home_control/*.py kcore/*.py tools/*.py
 
 install:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
-	@if [[ "$$UID" != "0" ]]; then printf "\n\nIf you are going to be building or testing Docker images,\nroot will need access to these tools as well.\nRecommended that you run 'sudo make install' or 'sudo make install-simple'\n\n"; fi
+	@if [[ "$$UID" != "0" ]]; then printf "\n\n $(shell tput setaf 3) NOTICE $(shell tput sgr0) If you are going to be building or testing Docker images,\nroot will need access to these tools as well.\nRecommended that you run 'sudo make install' or 'sudo make install-simple'\n\n"; fi
 
 test: $(TEST_LOG)
 
 uninstall:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) uninstall-simple; else $(MAKE) uninstall-wheel; fi
-	if [[ "$$UID" != "0" ]]; then read -p "uninstall from root? y/n: " yn; if [[ "$${yn}" == "y" ]]; then sudo $(MAKE) uninstall-simple; fi; fi
 
 update:
-	$(MAKE) all
-	$(MAKE) test
-	$(MAKE) install
+	$(MAKE) all test install
 
 
 # ---------- custom sub-rules for the standard targets
@@ -45,21 +47,20 @@ update:
 
 all-simple: tools/keymaster.crt
 
-all-wheel: tools/keymaster.crt dist/build-touch
+all-wheel: tools/keymaster.crt $(WHEEL)
 
 tools/keymaster.crt: ../private.d/keymaster.crt
 	cp -bpuv $^ $@
 
-dist/build-touch: $(wildcard */*.py) venv/bin/activate
+$(WHEEL): venv/bin/activate $(wildcard */*.py)
 	source venv/bin/activate && python3 -m build
-	touch dist/build-touch
 
 # ----- :install
 
-install-wheel:
-	@if [[ -v VIRTUAL_ENV ]]; then echo "NOTICE- installing into virtual environtment ${VIRTUAL_ENV}.  If that's not what you want, type command 'deactivate' and run the install again."; fi
-	@if [[ "$UID" == "0" ]]; then echo "NOTICE- installing into root's .local directory.  Use target 'install-system' to install into /usr/local for all users."; fi
-	pip3 install -U --user $(LAST_WHEEL)
+install-wheel: $(WHEEL)
+	@if [[ -v VIRTUAL_ENV ]]; then printf "\n $(shell tput setaf 3) NOTICE- $(shell tput sgr0) installing into virtual environtment ${VIRTUAL_ENV}.  If that's not what you want, type command 'deactivate' and run the install again.\n\n"; fi
+	@if [[ "$UID" == "0" ]]; then printf "\n $(shell tput setaf 3) NOTICE- $(shell tput sgr0) installing into root's .local directory.  Use target 'install-system' to install into /usr/local for all users."; fi
+	pip3 install -U $(shell if [[ ! -v VIRTUAL_ENV ]]; then echo "--user "; fi) $(WHEEL)
 
 # Skip the whole packaging and wheel generation; just copy updated source files
 # directly info to ~/.local.  This has some hard-coded path assumptions, and
@@ -97,6 +98,7 @@ install-simple: tools/keymaster.crt
 
 
 # ----- :test
+
 $(TEST_LOG): $(wildcard */*.py */*/*.py)
 	script -e -c "pytest-3 tests" $(TEST_LOG)
 
@@ -106,7 +108,6 @@ uninstall-wheel:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "uninstalling from virtual environtment ${VIRTUAL_ENV}."; fi
 	pip3 uninstall kcore_pylib
 
-
 uninstall-simple:
 	$(MAKE) unlink
 	rm -rf $(LOCAL_SITE_DIR)/kcore
@@ -114,18 +115,15 @@ uninstall-simple:
 	rm -rf $(LOCAL_SITE_DIR)/home_control
 
 
-# ---------- custom targets
+# ---------- specialized installation targets
 
-install-system:
+install-system: $(WHEEL)
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
-	@if [[ "$$UID" != "0" ]]; then echo "ERROR- gotta be root for this (uid=$$UID).  Use regular 'install' target for individual user installs."; exit 1; fi
-	mkdir -m 755 -p /usr/local/home_control; install home_control/* /usr/local/home_control
-	rm -f /usr/local/bin/hc; ln -s /usr/local/home_control/hc.py /usr/local/bin/hc
-	umask 022; pip3 install --system --upgrade $(LAST_WHEEL)
+	umask 022; pip3 install --system --upgrade $(WHEEL)
 
 # Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
 link:
-	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_TOOLS); do ln -fs $$sdir/bin/$$x ~/bin/$$x; done
+	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_TOOLS); do ln -fs $$sdir/bin/$$x $$HOME/bin/$$x; done
 
 unlink:
 	for x in $(INSTALLED_TOOLS); do rm -f ~/bin/$$x; done
@@ -149,6 +147,7 @@ venv/bin/activate:
 	source venv/bin/activate && python3 -m pip install -U build --no-warn-script-location
 	@echo "venv ready; to enter, use command:    source venv/bin/activate"
 
-vclean:	clean
+vclean:
+	$(MAKE) clean |& fgrep -v 'not cleaning'
 	rm -rf venv
 

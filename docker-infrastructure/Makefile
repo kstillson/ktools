@@ -12,7 +12,7 @@ PY_TARGETS := d-cowscan d-run
 SH_TARGETS := d d-build d-map
 # only useful by and for root:
 INSTALL_DIR ?= /root/bin
-include ../common/Makefile-unstaged
+include ../etc/Makefile-common
 
 # ---------- testing
 
@@ -23,12 +23,14 @@ $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
 
 # ---------- pass-throughs
 
-comp: common_comp
+comp:
+	@echo "about to sudo for docker-infrastructure:comp -- these had to be installed by root, and generally permissions now need root to read(/compare) them."
+	sudo $(MAKE) common_comp
 
 clean: common_clean
 	rm -rf private.d/__pycache__*
 
-install:
+install: check_kcore_installed
 	@echo "about to sudo for docker-infrastructure:install -- these tools can only be used by root, so it is assumed you want to install them where root can use them."
 	sudo $(MAKE) common_install
 

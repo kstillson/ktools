@@ -9,12 +9,8 @@ all: common_all
 PLAIN_TARGETS := $(wildcard *.py)
 
 USER := $(shell whoami)
-ifeq ($(USER),root)
-	INSTALL_DIR := /usr/local/ktools/keymaster
-else
-	INSTALL_DIR := $$HOME/ktools/keymaster
-endif
-include ../../common/Makefile-unstaged
+INSTALL_DIR := $$HOME/ktools/keymaster
+include ../../etc/Makefile-common
 
 SHELL := /bin/bash
 
@@ -30,9 +26,9 @@ clean: common_clean
 
 comp: common_comp
 
-install: common_install
+install: check_kcore_installed common_install
 
-test: common_test
+test: check_kcore_installed common_test
 
 update: common_update
 

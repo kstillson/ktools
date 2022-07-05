@@ -10,7 +10,7 @@ all:	vol_dirs docker-all
 UID_SEARCH ?= exim   # causes $(UID_OUTSIDE) to be set.
 GID_SEARCH ?= exim   # causes $(GID_OUTSIDE) to be set.
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 
 VOLS ?= ${DOCKER_VOLS}/eximdock
 VOL_DIRS := ${VOLS}/var_log/exim ${VOLS}/var_mail ${VOLS}/var_spool/exim/db ${VOLS}/var_spool/exim/input ${VOLS}/var_spool/exim/msglog

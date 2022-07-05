@@ -25,7 +25,7 @@ $(ETC_TARGETS): $(ULB_DIR)/% : ../../pylib/etc/%
 
 # ---------- pass-throughs
 
-include ../../common/Makefile-docker
+include ../../etc/Makefile-docker
 
 comp:  # n/a
 install: docker-install
