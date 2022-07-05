@@ -14,7 +14,7 @@ ifeq ($(USER),root)
 else
 	INSTALL_DIR := $$HOME/ktools/home-control
 endif
-include ../../etc/Makefile-unstaged
+include ../../etc/Makefile-common
 
 SHELL := /bin/bash
 

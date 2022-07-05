@@ -12,7 +12,7 @@ PY_TARGETS := d-cowscan d-run
 SH_TARGETS := d d-build d-map
 # only useful by and for root:
 INSTALL_DIR ?= /root/bin
-include ../etc/Makefile-unstaged
+include ../etc/Makefile-common
 
 # ---------- testing
 
