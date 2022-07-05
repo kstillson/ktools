@@ -8,6 +8,14 @@ include ../etc/Makefile-common
 
 # ---------- custom logic
 
+clean:
+	@echo "about to sudo for tools-for-root:clean -- these had to be installed by root, so can only be removed by root."
+	sudo $(MAKE) common_clean
+
+comp:
+	@echo "about to sudo for tools-for-root:install -- these had to be installed by root, and generally permissions now require root to compare them."
+	sudo $(MAKE) common_comp
+
 install:
 	@echo "about to sudo for tools-for-root:install -- these tools can only be used by root, so it is assumed you want to install them where root can use them."
 	sudo $(MAKE) common_install
@@ -30,10 +38,6 @@ $(TEST_LOG): $(wildcard *.py) $(wildcard *.sh) $(STAGING_DIR)
 # ---------- pass-throughs
 
 all: common_all
-
-clean: common_clean
-
-comp: common_comp
 
 test: common_test
 

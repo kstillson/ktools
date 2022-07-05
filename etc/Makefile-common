@@ -81,7 +81,7 @@ common_clean:
 common_install: $(INSTALL_DIR) $(INSTALL_TARGETS)
 
 common_uninstall:
-	rm $(INSTALL_TARGETS)
+	rm -f $(INSTALL_TARGETS)
 
 # Calling Makefile needs to provide a recipe for $(TEST_LOG)
 common_test: $(TEST_LOG)

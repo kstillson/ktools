@@ -23,7 +23,9 @@ $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
 
 # ---------- pass-throughs
 
-comp: common_comp
+comp:
+	@echo "about to sudo for docker-infrastructure:comp -- these had to be installed by root, and generally permissions now need root to read(/compare) them."
+	sudo $(MAKE) common_comp
 
 clean: common_clean
 	rm -rf private.d/__pycache__*
