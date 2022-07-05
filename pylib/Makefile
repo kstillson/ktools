@@ -118,13 +118,11 @@ uninstall-simple:
 
 install-system: $(WHEEL)
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
-	mkdir -m 755 -p /usr/local/home_control; install home_control/* /usr/local/home_control
-	rm -f /usr/local/bin/hc; ln -s /usr/local/home_control/hc.py /usr/local/bin/hc
 	umask 022; pip3 install --system --upgrade $(WHEEL)
 
 # Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
 link:
-	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_TOOLS); do ln -fs $$sdir/bin/$$x ~/bin/$$x; done
+	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_TOOLS); do ln -fs $$sdir/bin/$$x $$HOME/bin/$$x; done
 
 unlink:
 	for x in $(INSTALLED_TOOLS); do rm -f ~/bin/$$x; done
