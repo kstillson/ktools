@@ -23,7 +23,7 @@ baseline-stamp:
 
 # ---------- local additions
 
-copy: $(COPIED_FILES)
+copy: $(PLIB) $(COPIED_FILES)
 
 clean:
 	rm -rf $(COPIED_FILES) *-stamp
@@ -37,6 +37,9 @@ files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
 	mkdir --mode=755 --parents files/usr/local/bin
 	cp $^ $@
 	chmod 644 $@
+
+$(PLIB):
+	mkdir -p $@
 
 $(PLIB)/kcore: ../../pylib/kcore
 	cp -rpuv $^ $@

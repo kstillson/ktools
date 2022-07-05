@@ -1,8 +1,7 @@
 ## ++ktools virgin build process
-   - under qmeu, puid read for /sys/class/dmi/id/product_uuid can fail.
-     - chmod 444 ?
    - :prep needs to set up /rw/dv/...
      - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
+   - docker needs to set up things like docker2 network...
 
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,
