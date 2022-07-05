@@ -10,6 +10,8 @@ INSTALL_BASE := $(shell echo $${VIRTUAL_ENV:-$(LOCAL_SITE_DIR)})
 
 CIRCUITPY_DIR ?= /media/$$USER/CIRCUITPY
 
+COMP = ../etc/comp.py
+
 # Must be kept up-to-date with version number from ./setup.cfg
 WHEEL := dist/kcore_pylib-0.9-py3-none-any.whl
 
