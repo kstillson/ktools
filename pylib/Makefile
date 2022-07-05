@@ -145,6 +145,7 @@ venv/bin/activate:
 	source venv/bin/activate && python3 -m pip install -U build --no-warn-script-location
 	@echo "venv ready; to enter, use command:    source venv/bin/activate"
 
-vclean:	clean
+vclean:
+	$(MAKE) clean |& fgrep -v 'not cleaning'
 	rm -rf venv
 

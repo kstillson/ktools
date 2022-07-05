@@ -1,9 +1,6 @@
 ## ++ktools virgin build process
-   - top level "make test" fails under -C services, because pylib not yet installed.
-   - pylib :install doesn't auto-run :all if the wheel isn't built; just gives an error
    - under qmeu, puid read for /sys/class/dmi/id/product_uuid can fail.
      - chmod 444 ?
-   - (pi2) wrong perms for some py sys libs; fix umask on initial sudo'd pip?
    - :prep needs to set up /rw/dv/...
      - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
 
