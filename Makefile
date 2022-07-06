@@ -23,6 +23,7 @@ include etc/Makefile-colors
 # ---------- standard targets
 
 all:	prep
+	@if [[ "$BUILD_DOCKER_CONTAINERS" != "1" ]]; then printf "\n  $(YELLOW)NOTE: $(RESET) docker-containers/... not included in the build.\n         If you think you want it, check README.md and then set 'BUILD_DOCKER_CONTAINERS=1'.\n\n"; fi
 
 # This also includes "all"; both rules will run.
 $(TOP_TARGETS): $(SUBDIRS)
