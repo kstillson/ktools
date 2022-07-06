@@ -1,10 +1,8 @@
 #!/bin/bash
 
-#- make python3-pytest python3-pytest-timeout python3-psutil
-#- if not $BUILD_SIMPLE:   python3-venv  python3-pip
-#- if building docker containers:   docker.io
-
 OUT=$(mktemp)
+
+# ---------- helpers
 
 function tester() {
     cmd="$1"
@@ -16,24 +14,31 @@ function tester() {
     return 1
 }
 
+function run_default_tests() {
+    prompt="required package appears to be missing: "
+    tester "python3 --version"              "python3"                 "$prompt"
+    tester "pytest-3 --version"             "python3-pytest"          "$prompt"
+    tester "python3 -m pytest_timeout"      "python3-pytest-timeout"  "$prompt"
+    echo "import psutil" | tester "python3" "python3-psutil"          "$prompt"
+
+    if [[ "$BUILD_SIMPLE" != "1" ]]; then
+	echo ""
+	prompt='Python wheel related package missing.  Either install or set $BUILD_SIMPLE=1: '
+	echo "import ensurepip" | tester "python3"         "python3-venv" "$prompt"
+                                  tester "pip3 --version"  "python3-pip"  "$prompt"
+    fi
+}
+
+
 # ---------- run tests
 
-prompt="required package appears to be missing: "
-tester "python3 --version"              "python3"                 "$prompt"
-tester "pytest-3 --version"             "python3-pytest"          "$prompt"
-tester "python3 -m pytest_timeout"      "python3-pytest-timeout"  "$prompt"
-echo "import psutil" | tester "python3" "python3-psutil"          "$prompt"
+if [[ $# -gt 1 ]]; then
+    tester "$1" "$2" "$3"
 
-if [[ "$BUILD_SIMPLE" != "1" ]]; then
-    echo ""
-    prompt='Python wheel related package missing.  Either install or set $BUILD_SIMPLE=1: '
-    echo "import ensurepip" | tester "python3"         "python3-venv" "$prompt"
-                              tester "pip3 --version"  "python3-pip"  "$prompt"
+else
+    run_default_tests
+
 fi
-
-echo ""
-prompt="Docker is needed if you are going to build/use containers: "
-tester "docker --help" "docker.io" "$prompt"
 
 # ---------- summary and follow-up
 

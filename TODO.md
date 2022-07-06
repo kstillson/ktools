@@ -1,7 +1,3 @@
-## ++ktools virgin build process
-   - :prep needs to set up /rw/dv/...
-     - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
-   - docker needs to set up things like docker2 network...
 
 ## treasure hunt
    - A's idea about several analytics collectors- prominantly document #1,
@@ -19,10 +15,12 @@
      A: kwisdom/kwizdom?  (nb with k*: confusion w/ kuberneties)
      kwizmet ?
      - pylib/setup.cfg:url = TODO...
-
+     - update pylib/setup.cfg:url
+     
 ## ---------- MILESTONE: ready for peer review ...?
 
 ## other ideas & improvements
+   - Makefile: add BUILD_SUDO_OK, etc/check-sudo-ok
    - iptables abstraction (easier to read/write/analyze) + assoc. tools
 
 ## deferred homectrl related
@@ -30,16 +28,8 @@
    - graphical interface for inputs and outputs
    - homectrl push update to all
 
-## docker container generalization
-   - docker-container tests fail when run off of jack
-     - filewatch: move to services and add testing mode
-     - gitdock: need hostkeys
-     - homesecdock: needs testing version of kcore_auth_db.data.pcryp
-     - keymaster: needs testing version of kcore_auth_db.data.pcryp
-     - nagdock: test is specialized to jack
-     - rclonedock: causes km lockdown with real key retrieval attempt
-     - rsnapdock: all sorts of problems
-     - squiddock: created dir perms (?)
-     - sshdock: old testing binding
-     - syslogdock: created dir perms (?)
-     - webdock: unknown perms prob
+## docker improvements
+   - :prep needs to set up /rw/dv/...
+     - docker-containers/gitdock/Makefile:# TODO!: need to provide code to generate host-keys and put them in place, and
+   - need a :prep that sets up things like network docker2
+   - most docker-container tests fail when run off of jack

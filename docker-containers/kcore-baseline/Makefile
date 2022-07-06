@@ -21,12 +21,22 @@ baseline-stamp:
 	touch baseline-stamp
 
 
-# ---------- local additions
+# for check_kcore_installed
+include ../../etc/Makefile-common
 
-copy: $(PLIB) $(COPIED_FILES)
+# ---------- local customizations
 
 clean:
 	rm -rf $(COPIED_FILES) *-stamp
+
+test:
+	sudo $(MAKE) check_kcore_installed
+	sudo $(MAKE) docker-test
+
+
+# ---------- local additions
+
+copy: $(PLIB) $(COPIED_FILES)
 
 files/usr/local/bin/kmc: ../../pylib/tools/kmc.py
 	mkdir --mode=755 --parents files/usr/local/bin
@@ -53,7 +63,6 @@ include ../../etc/Makefile-docker
 comp:  # n/a
 clean: docker-clean
 install: docker-install
-test: docker-test
 uninstall: docker-uninstall
 update: docker-update
 

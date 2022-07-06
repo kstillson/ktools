@@ -24,7 +24,7 @@ install-stamp: $(PLAIN_TARGETS)
 	$(MAKE) common_install
 	cp -pr $(SUBDIRS_TO_COPY) $(INSTALL_DIR)
 
-$(TEST_LOG): check_kcore_installed $(wildcard *.py tests/*.py)
+$(TEST_LOG): $(wildcard *.py tests/*.py)
 	script -e -c "pytest-3 tests" $(TEST_LOG)
 
 
@@ -34,7 +34,7 @@ clean: common_clean
 
 comp: common_comp
 
-test: common_test
+test: check_kcore_installed common_test
 
 update: common_update
 

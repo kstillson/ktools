@@ -1,6 +1,4 @@
 
-# TODO: move home_control into wheel.
-
 INSTALLED_TOOLS := hc k_auth kmc nag pcrypt ratelimiter run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
@@ -15,6 +13,7 @@ COMP = ../etc/comp.py
 # Must be kept up-to-date with version number from ./setup.cfg
 WHEEL := dist/kcore_pylib-0.9-py3-none-any.whl
 
+include ../etc/Makefile-colors
 
 # ---------- standard targets
 
@@ -23,14 +22,13 @@ all:
 
 clean:
 	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
-	@printf "\n note: not cleaning the venv directory.  use make target 'vclean' or remove manually if needed.\n\n"
+	@printf "\n NOT cleaning the $(YELLOW)venv directory$(RESET).  use make target 'vclean' or remove manually if needed.\n\n"
 
 comp:
 	@$(COMP) -b "$(INSTALL_BASE)" -L 'tools/ktools' circuitpy_sim/*.py home_control/*.py kcore/*.py tools/*.py
 
 install:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
-	@if [[ "$$UID" != "0" ]]; then printf "\n\n $(shell tput setaf 3) NOTICE $(shell tput sgr0) If you are going to be building or testing Docker images,\nroot will need access to these tools as well.\nRecommended that you run 'sudo make install' or 'sudo make install-simple'\n\n"; fi
 
 test: $(TEST_LOG)
 
