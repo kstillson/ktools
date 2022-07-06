@@ -42,9 +42,8 @@ purge:
 prep:  prep-stamp
 
 prep-stamp:
+	../etc/check-package-deps.sh docker
 	sudo docker network rm docker2 >&/dev/null || true
 	sudo docker network create -d bridge --gateway 192.168.3.1 --subnet 192.168.3.0/24 --opt com.docker.network.bridge.name=docker2 docker2
-	../etc/check-package-deps.sh "docker --help" "docker.io" "Docker is needed if you are going to build/use containers: "
-	../etc/check-package-deps.sh "unzip -v" "unzip" "required package missing: "
 	touch prep-stamp
 
