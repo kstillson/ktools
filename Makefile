@@ -1,33 +1,33 @@
 
+# TODO(doc)
+
+# control variables:
+#
+# BUILD_SIMPLE
+# BUILD_SUDO_OK
+# BUILD_DOCKER_CONTAINERS
+# SUBDIRS
+
 # Handy Makefile reference: https://makefiletutorial.com/
 
 TOP_TARGETS = all clean comp install test uninstall update
+SUBDIRS ?= pylib tools-for-root services docker-infrastructure
 
-# specify SUBDIRS as an environment variable for partial work.
-# remember that order matters.
-#
-# Note: docker-containers is excluded from the list of subdirs because
-# (a) building docker images requires root privs, and folks would rightly be
-#     concerned about a "make all" asking for sudo rights
-# (b) building docker images requires the docker-infrastructure/ targets
-#     to be INSTALLED before docker-containers can be BUILT.
-# (c) buidling and installing docker images needs to be carefully ordered,
-#     as some depend on others, and the dependent ones cannot be BUILT
-#     until the dependency is INSTALLED (i.e. tagged as :live).
-#
-# All of this is why the :everything target (shortcut :e) is provided;
-# it will build, test, and install everything, all in the right order.
-#
-SUBDIRS ?= pylib tools-for-root services docker-infrastructure 
+ifeq ($(BUILD_DOCKER_CONTAINERS), 1)
+  SUBDIRS := $(SUBDIRS) docker-containers
+endif
+
 SHELL := /bin/bash
+include etc/Makefile-colors
 
 # ---------- standard targets
 
-all:	prep common_all
+all:	prep
+	@if [[ "$$BUILD_DOCKER_CONTAINERS" != "1" ]]; then printf "\n  $(YELLOW)NOTE: $(RESET) docker-containers/... not included in the build.\n         If you think you want it, check README.md and then set 'BUILD_DOCKER_CONTAINERS=1'.\n\n"; fi
 
-common_all:   # Nothing to do in top-level dir; allow to flow into subdirs.
-
+# This also includes "all"; both rules will run.
 $(TOP_TARGETS): $(SUBDIRS)
+
 $(SUBDIRS):
 	$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
 
@@ -37,31 +37,8 @@ $(SUBDIRS):
 # ---------- special additions to common targets
 
 clean:
-	$(MAKE) --no-print-directory -C docker-containers clean
 	rm -rf home-control/__pycache__ etc/prep-stamp .pytest_cache
-	@echo "NOT cleaning private.d/ as can contain valuable data modified outside of make.  remove manually if you're sure."
-
-
-# ---------- everything
-
-# Need to build and install pylib first, as it's used in Docker container
-# build and testing.  Then need to build and "install" (i.e. mark "live")
-# kcore-baseline before other containers, as they're build on-top of the
-# "live" kcore image.
-
-everything: prep
-	@printf "\n\n** building, testing, and installing all non-Docker-based libraries tools.\n\n"
-	$(MAKE) update   # all -> test -> install
-	@printf "\n\n** about to sudo to install pylib tools for root to use; needed for docker building and testing.\n\n"
-	sudo --preserve-env=BUILD_SIMPLE $(MAKE) -C pylib install
-	@printf "\n\n** building, testing, and installing Docker baseline image.\n\n"
-	$(MAKE) --no-print-directory -C docker-containers/kcore-baseline update
-	@printf "\n\n** building Docker images\n\n"
-	$(MAKE) --no-print-directory -C docker-containers all
-	@printf "\n\n** testing Docker images\n\n"
-	$(MAKE) --no-print-directory -C docker-containers test
-
-e:	everything   # simple alias for "everything"
+	@printf "\n  NOT cleaning $(YELLOW)private.d/$(RESET) as can contain valuable data modified outside of make.  remove manually if you're sure.\n\n"
 
 
 # ---------- 1-time preparation sequence
@@ -70,14 +47,13 @@ prep:	etc/prep-stamp
 
 etc/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
 	etc/check-package-deps.sh
-	@pgrep docker > /dev/null || printf "\n\n $(shell tput setaf 3) WARNING $(shell tput sgr0)- docker daemon not detected.  docker-containers/** can't build or run without it.\nYou probably want to do something like:\n  sudo apt-get install docker.io"
 	touch etc/prep-stamp
 
 private.d/kcore_auth_db.data.pcrypt:
 	touch $@
 
 private.d/keymaster.pem:   private.d/cert-settings
-	@if [[ -f private.d/keymaster.key ]]; then printf "\n $(shell tput setaf 1) ERROR $(shell tput sgr0) dont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.\nPlease manually remove 'private.d/key*' if it really is time to generate a new key,\nor run 'touch private.d/keymaster.pem' to keep your current keys and move on.\n\n"; exit 2; fi
+	@if [[ -f private.d/keymaster.key ]]; then printf "\n$(RED)ERROR $(RESET) dont want to overwrite private.d/keymaster.key, although private.d/cert-settings apears to be more recent.\nPlease manually remove 'private.d/key*' if it really is time to generate a new key,\nor run 'touch private.d/keymaster.pem' to keep your current keys and move on.\n\n"; exit 2; fi
 	source private.d/cert-settings && \
 	  openssl req -x509 -newkey rsa:4096 -days $$DAYS \
 	    -keyout private.d/keymaster.key -out private.d/keymaster.crt -nodes \

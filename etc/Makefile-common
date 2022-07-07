@@ -1,4 +1,3 @@
-
 # This file is designed to be included by Makefiles in the subdirectories.
 #
 # Supported meta-targets:  common_all, common_clean, common_test, common_install, common_uninstall, common_update
@@ -10,27 +9,35 @@
 # comp: compares files in the source directory to the install directory
 # update: all, test, install, then git commit, remote pull, and remote push.
 
-# ----------------------------------------
 
-# Input variables: at least one of these must be set, if you want the Makefile to do anything.
-# PY and SH targets should be specified without their extensions.  They'll be copied to the
-# staging directory with the extensions removed.  Plain targets are just copied to staging.
-# Custom targets need their own rules specified in the calling Makefile.
+# ---------- primary input variables
+
+# Input variables: at least one of these must be set, if you want the Makefile
+# to do anything.  PY and SH targets should be specified without their
+# extensions.  They'll be copied to the installtion directory with the
+# extensions removed.  Plain targets are just copied to staging.  Custom
+# targets need their own rules specified in the calling Makefile.
+#
 PY_TARGETS ?=
 SH_TARGETS ?=
 PLAIN_TARGETS ?=
 CUSTOM_TARGETS ?=
 
-# Control variables: optionally specified by the calling Makefile or
-# in the environment, to override the defaults.
+
+# ---------- control variables
+# (optionally overriden by the calling Makefile or from the environment.)
+
 TEST_LOG ?= test.log
 INSTALL_DIR ?= $$HOME/bin
 GIT_BRANCH ?= master
 
-# ----------------------------------------
-# Internal variables created from the inputs.
+# ---------- general internal settings
 
 SHELL := /bin/bash
+
+
+# ----------------------------------------
+# Internal variables created from the inputs.
 
 # Output variables: overall targets, plain, and in staging and target dirs.
 PY_SOURCES := $(patsubst %,%.py,$(PY_TARGETS))
@@ -42,21 +49,23 @@ INSTALL_PY_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PY_TARGETS))
 INSTALL_SH_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(SH_TARGETS))
 INSTALL_PLAIN_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PLAIN_TARGETS))
 
-INSTALL_MP := $(shell findmnt -n -o TARGET --target $(INSTALL_DIR))
-
-COMP := $(wildcard ../etc/comp.p? ../../etc/comp.p? ../../../etc/comp.p?)
+ETC_DIR := $(wildcard ../et? ../../et? ../../../et?)
+COMP := $(ETC_DIR)/comp.py
+SUDOOK := $(ETC)/check-sudo-ok
 PYLIB_DIR := $(wildcard ../pyli? ../../pyli? ../../../pyli?)
 
-# ----------------------------------------
-# Default target
+include $(ETC_DIR)/Makefile-colors
+
+
+# ---------- default target
 
 # This is generally a no-op; the targets are the source files, so they
 # should already be there...
 
 common_all: $(SOURCES)	 # nothing to do...
 
-# ----------------------------------------
-# Patterns for renaming and copying to install_dir
+
+# ---------- basic copy patterns
 
 $(INSTALL_DIR):
 	mkdir -p $(INSTALL_DIR)
@@ -71,8 +80,7 @@ $(INSTALL_PLAIN_TARGETS): $(INSTALL_DIR)/%: %
 	install $^ $@
 
 
-# ----------------------------------------
-# standard targets
+# ---------- standard targets
 
 common_clean:
 	rm -rf $(TEST_LOG) __pycache__ .pytest_cache *.pyc tests/__pycache__ tests/*.pyc || { if [[ "$$UID" != "0" ]]; then echo "some cleaning failed; files probably created by root during sudo of previous make.  retrying clean with sudo."; sudo $(MAKE) common_clean; fi; }
@@ -87,19 +95,17 @@ common_uninstall:
 common_test: $(TEST_LOG)
 
 
-# ----------------------------------------
-# custom targets
+# ---------- custom targets
 
 common_update: $(SOURCES)
 	$(MAKE) all test install
 
-COMP_FLAGS :=
 common_comp: FORCE
-	@$(COMP) $(COMP_FLAGS) -b "$(INSTALL_DIR)" $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
-	@$(COMP) $(COMP_FLAGS) -b "$(INSTALL_DIR)" -L ".py/" $(PY_SOURCES)
-	@$(COMP) $(COMP_FLAGS) -b "$(INSTALL_DIR)" -L ".sh/" $(SH_SOURCES)
+	@$(COMP) -b "$(INSTALL_DIR)" $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
+	@$(COMP) -b "$(INSTALL_DIR)" -L ".py/" $(PY_SOURCES)
+	@$(COMP) -b "$(INSTALL_DIR)" -L ".sh/" $(SH_SOURCES)
 
 check_kcore_installed:
-	@python3 -c 'import kcore.common' || { printf "\n $(shell tput setaf 1) pylib/kcore missing $(shell tput sgr0) the pylib/kcore package must be installed before further packages can be built/tested.\n" && read -p 'install for you now? (y/n) ' ok && if [[ "$$ok" == "y" ]]; then $(MAKE) -C $(PYLIB_DIR) install; else exit 2; fi; }
+	@python3 -c 'import kcore.common' || { printf "\n$(RED)pylib/kcore missing $(RESET) the pylib/kcore package must be installed for user '$$USER' before further packages can be built/tested.\n" && read -p 'install for you now? (y/n) ' ok && if [[ "$$ok" == "y" ]]; then $(MAKE) -C $(PYLIB_DIR) install; else exit 2; fi; }
 
 FORCE: ;
