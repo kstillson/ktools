@@ -4,19 +4,24 @@ dep_set="${1:-default}"
 
 OUT=$(mktemp)
 
+# Term colorization
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+RESET=$(tput sgr0)
+
 # ---------- dep checking infrastructure
 
 function tester() {
-    cmd="$1"
+    test_cmd="$1"
     pkg="$2"
     prompt="$3"
-    $cmd >&/dev/null
+    $test_cmd >&/dev/null
     if [[ $? == 0 ]]; then
 	echo "${pkg}: installed ok"
 	return 0
     fi
     echo "$pkg" >> $OUT
-    printf "$(tput setaf 3)PROBLEM: $(tput sgr0)${prompt} ${pkg}\n"
+    printf "${YELLOW}PROBLEM: ${RESET}${prompt} ${pkg}\n"
     return 1
 }
 
@@ -45,15 +50,13 @@ function docker_dep_checks() {
 
 # -------------------- MAIN
 
-# ---------- run tests
-
 case "$dep_set" in
      default) default_dep_checks ;;
      docker)  docker_dep_checks ;;
      *) echo "unknown dependency set requested: $dep_set"; exit -3 ;;
 esac
 
-# ---------- summary and follow-up
+# ----- summary and follow-up
 
 if [[ ! -s $OUT ]]; then
     echo "$0: all ok"
@@ -66,7 +69,7 @@ read -p 'Shall I do this for you now (y/n)? ' ok
 if [[ "$ok" == "y" ]]; then
     $cmd
     rm $OUT
-    printf "\n\n$(tput setaf 2)OK $(tput sgr0), hopefully deps are good now; let's try continuing...\n\n"
+    printf "\n\n${GREEN}OK ${RESET}, hopefully deps are good now; let's try continuing...\n\n"
     exit 0
 fi
 

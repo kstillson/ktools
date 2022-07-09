@@ -1,0 +1,12 @@
+digraph G {
+  subgraph cluster_0 {
+    style=filled; color=lightgrey; ranksep=0.05;
+    node [style=filled, fillcolor=white, color=darkgrey, shape=rectangle];
+    edge [color=darkgrey, penwidth=1];
+
+    docker_containers -> { services, kcore, tools };
+    tools -> { kcore, general_wisdom };
+    services -> { kcore, general_wisdom };
+    kcore -> general_wisdom;
+  }
+}
