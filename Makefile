@@ -45,9 +45,12 @@ clean:
 
 prep:	etc/prep-stamp
 
-etc/prep-stamp:	private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
+etc/prep-stamp:	private.d private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
 	etc/check-package-deps.sh
 	touch etc/prep-stamp
+
+private.d:
+	mkdir -p $@
 
 private.d/kcore_auth_db.data.pcrypt:
 	touch $@
