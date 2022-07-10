@@ -1,7 +1,7 @@
 # Monitoring
 
-TODO: reliability vs. security monitoring (see also ID)
-
+TODO(doc): reliability vs. security monitoring (see also ID)
+TODO(doc): walkthrough of syslog config
 
 ## Philosophy
 
