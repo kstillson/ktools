@@ -1,5 +1,12 @@
 
-# See ./Readme-makefiles.md
+# Control variables inherited from the environment:
+#
+# BUILD_DOCKER_CONTAINERS
+# BUILD_SIMPLE
+# NO_TRACKING
+# SUBDIRS
+#
+# See ./Readme-makefiles.md for details
 
 TOP_TARGETS = all clean comp install test uninstall update
 SUBDIRS ?= pylib tools-for-root services docker-infrastructure

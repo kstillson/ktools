@@ -1,7 +1,5 @@
 
-There's no Makefile here because Docker containers need to be built and tested
-by root, and since I don't want to require the entire tree to be built by
-root, I don't want the standard recursive Makefile to decent into this part.
+TODO(doc)
 
 standard make command		Docker equivalent
 -------- ---- -------		------ ----------
