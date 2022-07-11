@@ -365,8 +365,9 @@ function iptables_query() {
 }
 
 # Save current iptables rules to disk for auto-restore upon boot.
+  # TODO(defer): move to standard location (with autodetect for ro root)
+  # TODO(defer): check if fail2ban is running, and if so, turn it off before saving and then back on again afterwards.
 function iptables_save() {
-    # TODO(defer): move to standard location (with autodetect for ro root)
     runner "/bin/mv -f ~/iptables.rules ~/iptables.rules.mbk"
     runner "/usr/sbin/iptables-save > ~/iptables.rules"
     emitc green "saved"
