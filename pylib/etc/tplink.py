@@ -11,6 +11,10 @@ the moment, I'm being lazy and providing this old interface for party_lights to
 continue to call, rather than re-implementing the ability to send these lower
 level commands in home_control.  So that's why this old thing is still around.
 
+NOTE- the find_hostname() function contains an assumption that all Tp-Link
+device hostnames begin with the prefix "tp-".  If that's not how your DNS
+system works, you'll want to remove that assumption.
+
 '''
 
 # $1 is a key from SCENE_LOOKUP or hostname

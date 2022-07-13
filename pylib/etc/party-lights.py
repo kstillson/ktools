@@ -1,5 +1,17 @@
 #!/usr/bin/python3
 
+'''Trivial slow color animation sequence for TP-Link smart bulbs.
+
+This code sends color setting commands to 4 TP-Link color changing bulbs I've
+got around my living room.  The idea is that the bulbs change between randomly
+selected (although always high-saturation) colors at randomly selected
+(although generally too-slow-to-see-unless-you-watch-carefully) intervals.
+
+It's a decent example of what you can do with ./tplink.py, and who-knows,
+might provide some inspiration for some other fun lightshows...
+
+'''
+
 import argparse, atexit, os, random, signal, subprocess, sys, threading, time
 import tplink
 
