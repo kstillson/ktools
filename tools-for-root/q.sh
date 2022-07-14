@@ -2,15 +2,14 @@
 set -e
 
 # q - quick Linux commands and reference.
-# (c) Ken Stillson, 2021.  Released under the MIT license.
+# (c) Ken Stillson <ktools@point0.net>, 2021.  Released under the MIT license.
 
-# Whenever I find I'm running a non-trivial Linux command more than once,
-# or need to look up how a Linux utility works, I tend to add a subcommand
-# for it to this script.  This both provides a quick and easy way of
-# running it next time, and provides a central location where I can find
-# such tools.  I used to create .bashrc aliases, but when bashrc gets too
-# complex, it becomes dangerous to modify and slows down every shell
-# launch.  This is better.
+# Whenever I find I'm running a non-trivial Linux command a bunch, or need to
+# look up how a Linux utility works, I tend to add a subcommand for it to this
+# script.  This both provides a quick and easy way of running it next time,
+# and provides a central location where I can find such tools.  I used to
+# create .bashrc aliases, but when bashrc gets too complex, it becomes
+# dangerous to modify and slows down every shell launch.  This is better.
 #
 # Over time, I started to add things like colorization and other neat bash
 # tricks (like some commands adjusting operation depending on whether the
@@ -22,7 +21,7 @@ set -e
 # searches for commands with a keyword, e.g. "q h syslog" lists all commands
 # that have anything to do with syslog.
 #
-# Many of the details in here are specific to my home configuration and
+# Some of the details in here are specific to my home configuration and
 # won't be directly useful.  But I'm releasing the script anyway, in hopes
 # that the bash-tricks collection and the overall structure/approach might
 # be of interest, and can be adapted to your own environment.
@@ -32,16 +31,18 @@ set -e
 
 DEBUG=0          # don't delete tempfiles
 EXCLUDE="blue"   # csv list of hosts to exclude
-HOST_SUBST="@"   # replace this substring with hostnames in commands
+HOST_SUBST="@"   # replace this substring with hostnames in some commands
 PARA=1           # run commands for multiple hosts in parallel
-TEST=0           # for commands that would make changes, print them rather than running
-TIMEOUT=90       # ssh connect timeout
+TEST=0           # for commands that would make changes, print them rather than running them
+TIMEOUT=90       # default ssh connect timeout
 VERBOSE=0        # print commands as they are run
 
 # ---------- control constants
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
+# default flags to run_para command (see ../pylib_tools):
 RP_FLAGS="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
+
 
 # ---------- hard-coded control constants
 # (almost certainly wrong for anyone else but the author...)
@@ -49,14 +50,14 @@ RP_FLAGS="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
 if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="keymaster:4444"; else KMHOST="jack:4444"; fi
 KM="https://${KMHOST}"
 
-DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"
-GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools"
-KMD_P="$HOME/dev/ktools/private.d/km.data.pcrypt"
-LIST_LINUX="a1 blue jack mc2 "
-LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"
-LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"
-PROCQ="/var/procmon/queue"
-RSNAP_CONF="/root/docker-dev/rsnapdock/files/etc/rsnapshot.conf"
+DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"   # Where dnsmasq config files are stored.
+GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools"  # List of git dirs this script manages.
+KMD_P="$HOME/dev/ktools/private.d/km.data.pcrypt"  # Location of encrypted keymaster secrets file
+LIST_LINUX="a1 blue jack mc2 "  # list of non-RPi linux hosts
+LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"  # list of RPi linux hosts
+LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"  # Location of dnsmasq leases (output/generated) file.
+PROCQ="/var/procmon/queue"  # Location of ../services/procmon output file
+RSNAP_CONF="/root/docker-dev/rsnapdock/files/etc/rsnapshot.conf"  # Location of rsnapshot config input file
 
 # ---------- colorizers
 
@@ -123,7 +124,7 @@ function need_ssh_agent() { A0>/dev/null || A; }
 
 
 # ----------------------------------------
-# general purpose
+# general purpose helpers
 
 # Return (i.e. output) a tempfile name with $1 embedded (for easier debugging)
 function gettemp() {
@@ -169,7 +170,7 @@ function expect() {
 }
 
 
-# Run "$@" respecting TEST and VERBOSE flags, print exit code if not 0.
+# Run "$@" respecting TEST and VERBOSE flags, print exit status if not 0.
 function runner() {
     # nb: use "$@" rather than copying to local var to preseve args with spaces in them.  "$@" is magic..
     if [[ "$TEST" == 1 ]]; then
@@ -570,7 +571,7 @@ function procmon_update() {
     echoc green "procmon restarted; ready for git commit in /root/dev/ktools/services/procmon"
 }
 
-# push an update of the tools_pylib wheel distribute to select RPI's
+# push an update of the pylib wheel distribute to select RPI's
 function push_wheel() {
     DESTS="$@"
     if [[ "$DESTS" == "" ]]; then DESTS="ap2 hs-mud hs-family hs-lounge pi1 pibr pout trellis1"; fi
@@ -658,6 +659,7 @@ function keymaster_status() {
 }
 
 # Decrypt, edit, and re-encrypt the KM database, then rebuild and restart KM.
+# TODO: gpg_s -> pcrypt
 function keymaster_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     read -s -p "km password: " passwd
@@ -690,42 +692,12 @@ function keymaster_zap() {
     emitc red "zap failed: $stat"
 }
 
-# Run $1 as if it was typed into a keypad.
+# Run $1 as if it was typed into a homesec keypad.
 function run_keypad_command {
     runner "curl -sS -d 'cmd=$1' -X POST http://hs-mud:1235/ | sed -e 's/<[^>]*>//g'"
     echo ""
 }
 
-# Add a user to the home security system's Django instance.
-function homesec_add_user {
-    user="$1"
-    passwd="$2"
-    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
-    if [[ "$user" == "" ]]; then emit "need to provide user"; return 1; fi
-    if [[ "$passwd" == "" ]]; then emit "need to provide password"; return 1; fi
-    docker exec -i -u 0 webdock bash <<EOF1
-cd /home/ken/homesec/scripts/
-./manage.py shell <<EOF2
-from django.contrib.auth.models import User
-user=User.objects.create_user('$user', password='$passwd')
-user.save()
-EOF2
-EOF1
-}
-
-# Remove a user from the home security system's Django instance.
-function homesec_del_user {
-    user="$1"
-    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
-    if [[ "$user" == "" ]]; then emit "need to provide user"; return 1; fi
-    docker exec -i -u 0 webdock bash <<EOF1
-cd /home/ken/homesec/scripts/
-./manage.py shell <<EOF2
-from django.contrib.auth.models import User
-User.objects.get(username="$user").delete()
-EOF2
-EOF1
-}
 
 # ----------------------------------------
 # host lists
@@ -814,7 +786,11 @@ function without() {
 
 # Scan my own source code, find the main switch statement, extract and format showing the commands this script supports.
 function myhelp_real() {
-    awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | sed -e 's/\t/        /' | egrep '(^ *#)|(^ *--)|(^        [a-z])' | sed -e '/case /d' -e '/esac/d' -e 's/^    //' -e 's/##/~/' -e 's/).*;;//' | column -t -s~
+    awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | \
+	sed -e 's/\t/        /' | \
+	egrep '(^ *#)|(^ *--)|(^        [a-z])' | \
+	sed -e '/case /d' -e '/esac/d' -e 's/^    //' -e 's/##/~/' -e 's/).*;;//' | \
+	column -t -s~
 }
 
 # Wrapper around myhelp_real, optionally searching for $@ and auto-paging if on an interactive terminal.
@@ -947,8 +923,6 @@ function main() {
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo $1 to gitdock
         git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homesec
-        homesec-add-user | hau) homesec_add_user "$1" "$2" ;;             ## add a user $1 to homesec via djangi cgi
-        homesec-del-user | hdu) homesec_del_user "$1" ;;                  ## remove user $1 freom homesec via djangi cgi
         lease-orphans | lsmaco | lo | unknown-macs | um) leases_list_orphans ;;   ## list dhcp leases not known to dnsmasq config
         lease-query | lsmacs | lq) egrep --color=auto "$1" $LEASES ;;     ## search for $1 in dhcp leases file
         lease-query-red | lqr | 9) fgrep --color=auto -F ".9." $LEASES || echoc green "ok\n" ;;  ## list red network leases

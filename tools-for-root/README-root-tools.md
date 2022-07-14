@@ -1,6 +1,5 @@
-TODO(doc)
 
-## tools for root: stand-alone Linux command-line tools
+# tools for root: stand-alone Linux command-line tools
 
   * q: a collection of Linux shortcuts, tools, and bash tricks.  Hopefully it
     will eventually be detangeled so the parts that are hopelessly bound with
@@ -12,9 +11,3 @@ TODO(doc)
 
   * iptables_log_sum: summarize rejected packets from iptables logs.
 
-And a number of user-oriented tools...
-
-  * ratelimiter: incorporate easy rate-limits into shell scripts
-
-  * run_para: run commands in parallel, showing their real-time output in a
-    dashboard and (optionally) keeping an organized output transcript.

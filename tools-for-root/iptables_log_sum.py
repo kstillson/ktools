@@ -7,7 +7,8 @@ provides a count of the unique 5-tuples for each logged rule type.
 
 This is useful for evaluating which packets are the "worst offeners"
 (i.e. many instances) and which ones are really odd (perhaps needing
-security attention).
+specific security attention).
+
 '''
 
 import argparse, os, sys
