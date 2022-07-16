@@ -1,4 +1,3 @@
-
 # pylib/etc
 
 This is a collection of very small and simple Python tools that I consider too
@@ -8,4 +7,3 @@ of use to anyone else.
 
 In general I don't even bother to implement tests for these, although if anyone
 out there feels they deserve them, please feel free to push `um my way.
-

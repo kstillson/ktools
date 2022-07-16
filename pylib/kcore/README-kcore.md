@@ -1,15 +1,13 @@
-# kcore python library
 
-kcore_pylib consists of 4 packages:
+TODO(doc)
 
-- - - 
-## kcore
+# pylib/kcore Python library
 
 kcore is a set of reasonably-low-level reasonably-common operations or
 simplicaitions, as described below.
 
 
-### auth.py
+## auth.py
 
 auth is a module designed to generate and validate authentication tokens,
 primarily for the keymaster project (see ../services/keymaster).  The main
@@ -17,7 +15,7 @@ feature is that tokens mix-in machine-specific details, so that tokens
 are hardware-locked to a specific machine.
 
 
-### common.py
+## common.py
 
 common provides some simple data manipulators, and abstractions that mostly
 try to hide python2 vs. python3 differences.
@@ -36,7 +34,7 @@ identical to the python3 interface, i.e. it partially emulates the "requests"
 module.
 
 
-### docker_lib.py
+## docker_lib.py
 
 A bunch of Docker related library routines, primarily used by
 ../docker-infrastructure.
@@ -52,7 +50,7 @@ A very simple set of functions that take various forms of plain text and lists
 and output HTML.
 
 
-### uncommon.py
+## uncommon.py
 
 More (Circuit Python unfriendly) library routines, but ones of a more esoteric
 nature, so removed from common.py to declutter it somewhat.
@@ -69,7 +67,7 @@ Provides features like:
   - safely drop root priv's
 
 
-### varz.py
+## varz.py
 
 Provides a simple singlton database of key/value pairs which is integrated
 with the /varz default handler from webserver.py
@@ -87,7 +85,7 @@ Security note: varz has no authentication requirements for either the web or
 local API, so never expose secret data!
 
 
-### webserver.py (and webserver_base.py)
+## webserver.py (and webserver_base.py)
 
 Attempts to do most of the annoying boiler-plate stuff, so you can establish a
 web-server with full custom handlers with just a few lines of code.
@@ -105,60 +103,6 @@ bits on-top: networking, threading, TLS, and logging.
 
 
 - - - 
-## ktools
-
-The tools subdirectory provides several command-line utilities that can also
-be imported as Python libraries.
-
-
-### kmc.py: key-manager client
-
-../services/keymanager provides a service for web-based secrets retrieval
-(passwords, keys, etc).  "kmc" is the client interface for that service.  It
-provides kcore/auth based authentication, retries, etc.
-
-
-### pb-push.sh
-
-Provides a simple interface for sending push notifications via the "Push
-Bullet" service.  Integrates with kmc to retrieve access tokens.
-
-
-### ratelimiter.py
-
-Provides a tool that's easy to integrate with shell-scripts that can cause
-actions to be limited to x-per-y-time.  You can have the action fail (i.e. be
-skipped) if the rate-limit would be violated, or have the script hold a
-command until the limit would be respected.
-
-Note: needs an external file to store desired limits and recent-usage data.
-
-
-### run_para.py
-
-Runs (command-line) commands in parallel.  Keeps the stdout and stderr of each
-job separated, and shows the real-time output of jobs in a dashboard.
-
-See the module doc for various examples of what this is useful for.
-
-
-- - - 
-## home_control: a smart-home control system
-
-Similar to the tools/ directory, this provides a command-line interface that's
-also usable as a Python library module.
-
-hc.py sends commands, like "turn on" to "targets."  Targets can be individual
-devices (like a lamp), or "scenes" with many devices all doing different
-things.
-
-Scenes can include other scenes, which makes it reasonably easy to build
-complex arrangements out of simpler building blocks.  Scene commands are (by
-default) sent in parallel, making them very fast.
-
-Commands are actually transmitted to smart-home devices through "plugins."
-Currently plugins are available for TP-Link (bulbs, plugs, and switches), and
-devices which accept fixed web-based GET commands.
 
 
 - - - 

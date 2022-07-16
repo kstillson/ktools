@@ -25,3 +25,23 @@ have a local server that allows manipulation and querying via local network
 HTTP.  i.e. you can control them from your own systems without needing to
 depend on cloud integration.
 
+============================================================
+
+
+- - - 
+## home_control: a smart-home control system
+
+Similar to the tools/ directory, this provides a command-line interface that's
+also usable as a Python library module.
+
+hc.py sends commands, like "turn on" to "targets."  Targets can be individual
+devices (like a lamp), or "scenes" with many devices all doing different
+things.
+
+Scenes can include other scenes, which makes it reasonably easy to build
+complex arrangements out of simpler building blocks.  Scene commands are (by
+default) sent in parallel, making them very fast.
+
+Commands are actually transmitted to smart-home devices through "plugins."
+Currently plugins are available for TP-Link (bulbs, plugs, and switches), and
+devices which accept fixed web-based GET commands.

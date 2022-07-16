@@ -1,3 +1,4 @@
+'''This is part of circuitpy_sim.  See README-circuitpy.md for details.'''
 
 import time, socket, sys, uuid
 import kcore.common as C
