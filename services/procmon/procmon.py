@@ -1,8 +1,85 @@
 #!/usr/bin/python3
-'''
-TODO(doc)
+'''Linux process list scanner: identify unexpected processes.
 
-# See https://pypi.python.org/pypi/psutil/1.2.1 for psutil API.
+It's not easy to generate an allowed-process list for computers that humans
+use, but for servers running workloads that you control, the list of things
+you expect them to do is often tractible and changes reasonably slowly.
+
+At regular intervals (every few minutes by default), procmon will scan all the
+processes running on a system, and compare each to a configured white-list.
+Any 'unexpected' processes will raise an alert.  In addition, white-list
+entries can be listed as 'required,' meaning that an alert is raised if that
+process is *not* seen.
+
+White-list (WL) entries are identified by the combination of which docker
+container they are in ('/' for not in a container, '*' for any container), the
+user who owns the process ('*' for any user), and a regular expression for the
+command-line of the process.  WL entries can also be tagged as
+"allow_children," which will automatically accept all child processes from the
+given one.  This can be helpful for services you trust that can launch many
+different subprocesses, and where you can't be bothered to catelog them all.
+
+procmon does not push alerts, rather, it is expectes some other monitoring
+system (e.g. nagios) will check the /healthz path on procmon's web-server.  If
+no alert is pending, this handler outputs "all ok", otherwise a short
+human-readable description of the alert condition is output.
+
+Assuming the user does not set --queue="", alerts are 'sticky,' meaning that
+even when the condition that raised an alert goes away, the alert remains.
+This is so that alerts are not missed for processes that are noticed by
+procmon but then exists.  Sticky alerts are stored in the file specified by
+the --queue flag (by default /var/procmon/queue), and the queue is cleared
+simply by emptying or deleting this file.
+
+WARNING: procmon supports a "/zap" handler that will clear the queue via a
+http GET request, with no particular authentication requirements.  If you're
+not in a trusted environment, you'll want to make sure that's disabled.
+
+procmon is one of the few services I run outsied a Docker container.  It needs
+to be running on the real host in order to have visibility into all the
+system's processes.  This outside-a-container position makes procmon a good
+place to check a number of other security-like conditions, so a bunch of other
+checks are added-on.
+
+Specifically- procmon can run d-cowscan (see ../../docker-infrastructure),
+which identifies unexpected copy-on-write filesystem changes inside
+containers.  Additionally, procmon can check to see if the root filesystem is
+mounted read-only; I generally keep mine locked-down, and it's handy for
+procmon to let me know if I (accidentally) or someone else (deliberately?!)
+unlocks it.  These additional checks can easily be turned off in the flags.
+
+Note that d-cowscan and d-map (which is used to map between human-readable
+container names and the Docker-assigned container id numbers) both need to be
+run as root.  Other than that, procmon needs no privlidges other than the
+ability to write to its queue and logfiles, so I generally run it as an
+unprivlidged user, and then have procmon run d-map and d-cowscan via sudo.
+This does mean you'll need corresponding /etc/sudoers entries for whatever
+user you run procmon as.
+
+Note that a procmon scan is moderately expensive in terms of CPU time- there's
+lots of list scanning and regular expression lookups going on.  Therefore,
+procmon will generally perform its scan at regular intervals (see --delay),
+and cache the results.  When procmon is queried (via its web interface), it
+returns the results from the most recent scan.  However, there is also a /scan
+handler to perform an on-demand scan.  This is useful if you think you've
+cleared something up, and want to check that procmon is 'all ok' now.
+However, this opens up a possible denial-of-service route by overwhelming
+procmon with /scan requests.  If you're not in a trusted environment, you'll
+want to disable that handler.
+
+Finally, it is worth noting that procmon true security value is somewhat
+limited by the fact that it only scans every few minutes: it can easily miss
+short lived processes.  This makes it much more useful when attackers don't
+know that it's there, and so will be less careful about leaving around
+exploritory processes, open shells, etc.
+
+It would be possible to intercept every process launch (for example by
+integrating with auditd), but that would be much more invasive and higher-risk
+if something were to go wrong.  procmon isn't perfect, but it's pretty good,
+at least if attackers don't know about it.
+
+# Note to self: procmon uses psutil to scan the proc tree; good reference:
+# https://pypi.python.org/pypi/psutil/1.2.1
 
 '''
 
@@ -31,7 +108,6 @@ WEB_HANDLERS = {
 
 ARGS = None
 DOCKER_MAP = {}          # Maps container id (str) to container name (str).
-ENABLE_ZAP = True        # Allow web-based queue clearing?
 SCANNER = None           # Singleton of current scanner instance.
 UNEXPECTED_PREV = set()  # set of pids from the previous scan, used for change detection.
 WL = None                # List[WL] (see procmon_whitelist.py)
@@ -351,7 +427,7 @@ def healthz_handler(request):
 
 
 def panic_handler(request):
-    return popen(['/usr/bin/sudo', '/usr/local/bin/panic'])
+  return popen(['/usr/bin/sudo', '/usr/local/bin/panic'])
 
 
 def pstree_handler(request):
@@ -359,15 +435,16 @@ def pstree_handler(request):
 
 
 def scan_handler(request):
-    new_scanner = Scanner()
-    new_scanner.scan()
-    global SCANNER
-    SCANNER = new_scanner
-    return root_handler(request)
+  if ARGS.no_scan_handler: return W.Response('manual scan disabled', status_code=403)
+  new_scanner = Scanner()
+  new_scanner.scan()
+  global SCANNER
+  SCANNER = new_scanner
+  return root_handler(request)
 
 
 def zap_handler(request):
-  if not ENABLE_ZAP: return W.Response('zap disabled', status_code=403)
+  if ARGS.no_zap_handler: return W.Response('zap disabled', status_code=403)
   with open(ARGS.queue, 'w') as f: pass
   return 'zapped'
 
@@ -376,16 +453,18 @@ def zap_handler(request):
 
 def parse_args(argv):
   parser = argparse.ArgumentParser(description='process scanner.')
-  parser.add_argument('--debug',   '-D', action='store_true', help='output debugging data to stdout (works best with -t)')
-  parser.add_argument('--delay',   '-d', type=int, default=120, help='delay between automatic rescans (seconds)')
-  parser.add_argument('--logfile', '-l', default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
-  parser.add_argument('--nocow',         action='store_true', help='skip COW scan (used for testing)')
-  parser.add_argument('--nodmap',        action='store_true', help='skip getting the map from container ids to names.  Mainly for testing (avoids a sudo call), as makes whitelist entries based on container names useless.')
-  parser.add_argument('--noro',          action='store_true', help='skip root-read-only check (used for testing)')
-  parser.add_argument('--output',  '-o', default='/var/procmon/output', help='filename for statistics from last scan')
-  parser.add_argument('--port',    '-p', type=int, default=8080, help='web port to listen on.  0 to disable.')
-  parser.add_argument('--queue',   '-q', default='/var/procmon/queue', help='where to put the queue of current unexpected items from the most recent scan')
-  parser.add_argument('--test',    '-t', action='store_true', help='run single scan and output only to stdout')
+  parser.add_argument('--debug',   '-D',   action='store_true', help='output debugging data to stdout (works best with -t)')
+  parser.add_argument('--delay',   '-d',   type=int, default=120, help='delay between automatic rescans (seconds)')
+  parser.add_argument('--logfile', '-l',   default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
+  parser.add_argument('--nocow',           action='store_true', help='skip COW scan (used for testing)')
+  parser.add_argument('--nodmap',          action='store_true', help='skip getting the map from container ids to names.  Mainly for testing (avoids a sudo call), as makes whitelist entries based on container names useless.')
+  parser.add_argument('--noro',            action='store_true', help='skip root-read-only check (used for testing)')
+  parser.add_argument('--no-scan-handler', action='store_true', help='do not allow use of demand /scan')
+  parser.add_argument('--no-zap-handler',  action='store_true', help='do not allow clearing the alert queue via /zap')
+  parser.add_argument('--output',  '-o',   default='/var/procmon/output', help='filename for statistics from last scan')
+  parser.add_argument('--port',    '-p',   type=int, default=8080, help='web port to listen on.  0 to disable.')
+  parser.add_argument('--queue',   '-q',   default='/var/procmon/queue', help='where to put the queue of current unexpected items from the most recent scan')
+  parser.add_argument('--test',    '-t',   action='store_true', help='run single scan and output only to stdout')
   parser.add_argument('--whitelist', '-w', default='procmon_whitelist', help='name of file contianing whitelist data')
   return parser.parse_args(argv)
 
