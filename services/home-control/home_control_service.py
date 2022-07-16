@@ -1,10 +1,26 @@
 #!/usr/bin/python3
-'''Home Service (hs) - web-service for hc (home control) automation system.
+'''web-interface for the hc (home control) automation system.
 
-TODO(doc)...
+The home_control.hc library (see ../../pylib/home_control) provieds Python
+library and command-line interfaces for controlling various smart-home devices
+and scenes (i.e. collections of devices and commands for them).  This module
+provides a trivial web-interface around that functionality.
 
-GUI (root.html): /
-send on-demand control:   /control/{target}[/{command}]
+The root handler ("/") will serve up the file root.html .  Most of the details
+in this file are specific to the details of the author's particular smart-home
+setup, as are the contents of ./hcdata_devices.py and ./hcdata_scenes.py.
+These files are provided as reference / examples, so you can see how the
+devices are defined, arranged into scenes, and then both devices and scenes
+are exposed through the HTML presentation.
+
+This module also provides a "/control" handler, which is used by the
+javascript of the root.html file for it's operations, but the idea is that
+this handler is available to other systems around your network that want to
+control smart-home devices (assuming you want to centralize control, rather
+than building hc.py into everything that wants to control things).  The
+handler takes the simple form "/control/{target}[/{command}]".  Target can be
+a device name or a scene name.  If a command isn't provided, "on" is assumed.
+
 
 SECURITY NOTE: As currently written, this web-server has no authentication
 mechanism.  The thought is that when running on a local network, an attacker

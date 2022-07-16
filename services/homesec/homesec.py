@@ -1,5 +1,40 @@
 #!/usr/bin/python3
-'''TODO(doc)
+'''home security system
+
+For the academically inclined, homesec is a simple FSM (finite state machine)
+implemented using the MVC (model-view-controller) paradygm.  Translation follows...
+
+homesec supports a number of "partitions."  You can think of these as somewhat
+independent security system instances, each with their own "state" (armed,
+disarmed, etc).  For example, I have a "default" partition which consists of
+the doors, windows, motion sensors, around the house, and a "safe" partition,
+which involves a sensor that detects when the vault that stores my valuables
+is open.  I might want to relax the "default" partition because myself and
+guests are over and would be setting off sensors all over the place, but leave
+the "safe" partition armed, because no-one is expected to be digging around in
+the vault at that time.
+
+The states can be anything, but I've provided what I believe are a useful set
+of them.  The standard states a user might set are:
+  disarmed, arm-away, arm-home, arm-auto, and panic
+
+There are also a bunch of internal states:
+  alarm-triggered, alarm, and test-mode
+
+The partitions transition between states when homesec receives "triggers,"
+which are just web-requests to the /trigger handler.  There is a data table
+called the TRIGGER_RULES, which basically says "if you're in state X and
+receieve trigger Y, then take action Z."  There's a bunch of actions that are
+supported, like transitioning a partition to a different state, or sending a
+request to a voice synthesizer to make an announcement, etc.
+
+There is also a STATE_RULES table, which gives actions to take whenever
+particular states are entered or exited.  So for example, when the "alarm"
+state is entered, it sends requests to the smart-home system to turn on lights
+and sirens, and then the "alarm" stte is left, it turns them off again.
+
+TODO(doc) @@
+
 '''
 
 import argparse, os, sys
