@@ -1,6 +1,56 @@
 #!/usr/bin/python3
 
-'''TODO(doc)
+'''Service to watch files/directories for problems.
+
+The primary idea of filewatch is to scan log files that are expected to change
+frequently for a lack of change.  i.e. to enable an alert when the last
+modiciation time for a monitored file is too old.
+
+It's also grown a few extra types of monitoring, for example, it can enable an
+alert is a file (like an error log) that's expected to be empty is not empty,
+or if a file contains a particular string (indicating an alarming condition).
+
+filewatch does not push alert messages, instead, it is expected to be
+monitored via it's web interface.  The "/healthz" handler will return the
+simple string "all ok" if all is well, and some other short human-readable
+error message if one or more alert conditions exist.  It's intended that the
+/healthz handler will be monitored by something like Nagios.
+
+The default handler (i.e. any web request path except /healthz) returns a
+human-readable html table showing detailed scan results.
+
+The config file (see --config flag) is just a Python file with a dict named
+CONFIG, which maps file patterns to maximum allowed ages in seconds.  The file
+patterns may contain glob expressions, or may be of the form
+/dir/.../{NEWEST}, which will be replaced by the most recently modified file
+in specified directory.  Note that direct file-name matches override glob
+expressions when multiple rules match.
+
+I've included one of my actual configurations as an example.
+
+Note #1- my syslog-ng configuration (see
+../../docker-containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf) is
+designed to take messages from cron daemons and put them into separate files
+named by the host they came from, i.e. /root/syslog/cron-{hostname}.log.  In
+this way, I can have a glob rule for /root/syslog/cron* that will alert if any
+host's cron logfile becomes too old.  As a neat advantage, I don't need to
+register a new host to be monitored; whenever a new host starts sending its
+logs to the centralized syslog-ng instance, it automatically gets it's own new
+cron logfile, and the filewatch glob automatically picks it up on the next
+run.
+
+Note #2- filewatch scans are done "on-demand," i.e. every time the /healthz
+handler is called, a new scan is run.  The simple scans from a single filename
+to a max-age are quite inexpensive, but 'NOT-FOUND' scans (which launch grep
+as a subprocess) can be much more expensive, especially if scanning large
+files.  This basically assumes that filewatch is being run in a non-hostile
+environment; there is no protection against receiving too many requests and
+potentially DoS'ing filewatch itself or consuming lots of system resources.
+See ../procmon for a slightly better written service that scans at an
+internally set rate and caches the results, and just serves back the most
+recent cached results when queried.  Perhaps filewatch should be re-written to
+work that way...
+
 '''
 
 import argparse, os, glob, subprocess, sys, time
