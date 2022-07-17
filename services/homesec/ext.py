@@ -1,4 +1,6 @@
 
+# see homesec.py for doc
+
 import subprocess, syslog
 import smtplib
 from email.mime.text import MIMEText

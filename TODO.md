@@ -11,6 +11,7 @@
    - overall spellcheck and markdown linting
 
 ## General
+   - add pi1:speak to etc
    - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
      A: kwisdom/kwizdom?  (nb with k*: confusion w/ kuberneties)
      kwizmet ?

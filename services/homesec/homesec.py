@@ -31,9 +31,108 @@ request to a voice synthesizer to make an announcement, etc.
 There is also a STATE_RULES table, which gives actions to take whenever
 particular states are entered or exited.  So for example, when the "alarm"
 state is entered, it sends requests to the smart-home system to turn on lights
-and sirens, and then the "alarm" stte is left, it turns them off again.
+and sirens, and then the "alarm" state is left, turns them off again.
 
-TODO(doc) @@
+One other important table is TRIGGER_LOOKUPS.  Not every trigger has a lookup,
+but the ones that do can set a bunch of useful parameters:
+ - zone: triggers can be grouped into arbitrary zones, such as "inside" or "outside",
+   and then TRIGGER_RULES can be based on the zone rather than the individual trigger.
+   This is basically just to simplify the TRIGGER_RULES.
+ - partition: some sensors are associated with a particular partition.  For example,
+   the opening sensor on my vault is assocated with the 'safe' partition, whereas all
+   others a 'default'.
+ - tardy_time: intended to provide a "is the battery dead?" warning for sensors that
+   are reliably activated regualrly (e.g. indoor motion sensors).  If the trigger has
+   not been seen within this many seconds, the trigger is considered 'tardy,' and
+   the /healthz handler will start to report an error.
+ - squelch_time: for triggers that stutter (e.g. flaky switches that send several
+   signals in a row when activated), or cases like doors that, once opened may be
+   used several times during the next few minutes, and you don't really need to be
+   separately told about each opening.  A trigger with a squelch time will ignore
+   repeated/duplicate trigger for this many seconds after one that is processed.
+ - friendly_name: this becomes available as a parameter to trigger and state
+   rules, and is useful when generate speech synthesis which contains a reference
+   to which trigger fired, and a more human-friendly name is desired.
+
+About arm-auto: This is a state that dynamically selects between arm-home and
+arm-away based on how many people are home.  For example, when I leave, I push
+a "Ken is leaving" button, which sends /trigger/touch-away-delay/ken.  After a
+few seconds, this marks "ken" as "away".  When I return, I enter my code into
+a keypad, which results in sending /trigger/touch-home/ken.  Now I'm home.  My
+house-mate also has their own 'leaving' button and 'returning' keypad code.
+If anyone is marked as 'home', then 'arm-auto' resolves to 'arm-home'.  
+If no-one is marked as 'home', then 'arm-auto' resolves to 'arm-away'.
+
+Authentication is requred for web handlers that can change system state, for
+example /trigger's.  homesec supports two different authN mechanisms: 
+ - For humans, http basic auth is supported, using username/password combinations
+   in the USER_LOGINS dict.
+ - For automated systems (e.g. sensors), the kcore.auth system is used.
+   This does require a little bit of work to create and register the shared secrets;
+   see ../../pylib/kcore/auth.py for details.
+
+homesec.py: This file contains the system 'main', but doesn't actually do much
+  except initialize things and pass control to the web-server.
+
+view.py: The view contains the external user interface, which in this case means
+  the handlers for the web-server and the authentication logic.  Like all
+  kcore.webserver handlers, these take in kcore.webserver.Request objects and 
+  return HTML.  There's also a trivial template system in the render() function.
+
+controller.py: This is where all the 'business logic' happens.  There are a
+  bunch of supporting functions, but the main two are run_trigger(), which is
+  run by view.trigger_view() when a trigger is received, adds all sorts of
+  tracking metadata, figures out which action is going to be taken, and then
+  calls the other major function: take_action().
+
+  It's worth noting that run_trigger() receives the kcore.webserver.Request
+  object from the view (converted into dict form), copies it to a new dict
+  named "tracking", and adds all its metadata to that.  "tracking" is then
+  extensively passed around within the controller.  So this dict contains all
+  the data the webserver provided (e.g. the key 'user', if the connection
+  was authenticated), and adds all the controller-specific fields you see in
+  run_trigger().
+
+model.py: The model is basically an abstraction layer that translates between
+  the things that the view and the controller need to know/do with data, and
+  the details of the data storage mechanism (which is in data.py).  In other
+  words, the methods in model.py are in the "universe of discourse" of the
+  view and controller, so it has requests like get_all_touches() or
+  get_friendly_touches().  data.py is structured in a way that makes sense to
+  efficiently store/retrieve the data, and model.py translates between these.
+
+data.py: This is where the data actually lives.  For the most-part, the data
+  is just Python dict's or lists, generally of @dataclass's (which are also
+  defined in data.py).  Originally I had all this stuff in a mysql database,
+  but I eventually decided it's just easier to have it as nice simple
+  hard-coded Python data-structures.  It does mean you have to restart the
+  system if you change things, but I'm as happy to consider that a security
+  feature as a bother.  There is also some data that needs to change
+  dynamically and persist between restarts(/crashes).  Specifically: the
+  current state of each partition, and the last-touch data (which stores the
+  last time each trigger was seen, to support squlech and tardy calculations,
+  and the marks for which users are 'home' and 'away' for 'auto-arm' mode).
+  This 'dynamic' data is stored in a simple serialized format that is easily
+  human readable/editable, and stored in simple text files.  Again, this is
+  just so much easier to deal with than setting up and maintaining a database,
+  and then trying to deal with migrations and separate access control for it..
+
+ext.py: There are several cases where the controller needs to take actions
+  that involve reaching outside the homesec system: sending speech synthesis 
+  "announcement" requests, sending push notifications, sending emails, 
+  controlling lights / sirens, etc.  All of that is gathered here.  
+  NOTE: many of the details in the provided file are specific to the author's
+  home system.  Use this as a reference/example, but you'll doubtless need to
+  make changes to inegrate with your own systems.
+
+private.d/: Various details of both data.py and ext.py are site specific and
+  private (for example, while I'm willing to provide lots of examples, I'm not
+  willing to show you my USER_LOGINS dict, even if the passwords are hashed.)
+  So both use kcore.uncommon.load_file_into_module(), which allows you to
+  create files with the same names (e.g. private.d/data.py), and anything you
+  put in there will override what's in ./data.py.  The top-level .gitignore
+  file makes sure that nothing in a private.d/ subdirectory makes its way into
+  git.
 
 '''
 
@@ -73,6 +172,7 @@ def parse_args(argv):
   ap.add_argument('--port', '-p', type=int, default=8080, help='port to listen on')
   ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
   return ap.parse_args(argv)
+
 
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])

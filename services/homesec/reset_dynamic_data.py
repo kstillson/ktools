@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+'''CAUTION: wipes out your homesec persisted data and replaces it with defaults.
+
+And the defaults used are almost certainly specific to the author's system;
+you'll want to substitute your own values.  Use this as a reference/example only.
+
+'''
+
 import datetime, os
 import data
 

@@ -1,4 +1,6 @@
 
+# see homesec.py for doc
+
 import datetime, hashlib, os, time
 
 import data

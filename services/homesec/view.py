@@ -1,4 +1,6 @@
 
+# see homesec.py for doc
+
 import base64, datetime, functools, os, time
 import controller, model
 import kcore.auth as A

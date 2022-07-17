@@ -1,6 +1,7 @@
+
 '''Data contents and low-level processing for the homesec system.
 
-TODO(doc); make sure to explain private.d override system
+see homesec.py for doc.
 
 '''
 
