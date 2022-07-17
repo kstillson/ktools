@@ -1,4 +1,36 @@
 
+'''Example SCENES dictionary.  You'll want to support your own.
+
+A scene is simply a fake device name that is replaced by a list of real
+devices, or other scenes.
+
+For example, with the data below, if the call hc.control('all', 'on') was
+sent, it would be translated into an 'on' command for both 'inside' and
+'outside'.  Both 'inside' and 'outside' are themselves scenes, so this
+expansion continues recursively until all scenes are resolved into real
+devices.
+
+By default, whatever command is given to the scene will be passed down to each
+of its expanded contents.  However, the RHS elements can specify override
+commands for their devices.  For example, with the data below, if the device
+'away' receives any command, the scene 'main' is turned 'off' and the scene
+'office' is set to 'dim:40' after a 2 second delay.  Because both elements of
+'away' override their commands on the RHS, the command that was originally
+sent to 'away' is actually irrelevant.
+
+In addition, the LHS can be command-specific.  This is useful for several
+different cases.  In the data below, you can see that 'red:on' is translated
+to 'accents:red', whereas the undecorated scene-name 'red' is translated to
+just 'accents'.  Why?  The command 'red:off' is fine to translate to
+'accents:off', but if 'red:on' were left alone, it would translate to
+'accents:on' (rather than 'accents:red'), and the accent lights would just go
+on to whatever color was last used, which might not be red.  Similarly, you
+can see that the scene 'party:on' passes the 'on' command to some of its
+expansion scenes & devices, but in other cases overrides 'on', translating it to
+things like specific dimming levels.
+
+'''
+
 SCENES = {
  # Areas based groups and meta-groups
   'all'         : [ 'inside', 'outside' ],
@@ -62,6 +94,7 @@ SCENES = {
 }
 
 
+# When this file is loaded by hc.py, it runs init() to return added data.
 def init(devices, scenes):
   scenes.update(SCENES)
   return devices, scenes

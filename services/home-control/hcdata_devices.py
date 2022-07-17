@@ -1,4 +1,41 @@
 
+'''Example DEVICES dictionary.  You'll want to supply your own.
+
+In its simplest form, the DEVICES dict maps from device names (which can be
+arbitrary strings, although often match up to physical device DNS names) to
+name of the plugin responsible for processing commands for each device.  But
+it's usually a little more complicated than that..
+
+Each Python file that provides a plugin implementation can register multiple
+plugin names for itself; all registered names get routed to that same plugin.
+The plugin is told which plugin name led to a particular invocation, so the
+plugin can provide diferent flavors of operation based on plugin name.  For
+example, in the configuration below, the TpLink plugin supports smart plugs,
+smart bulbs, and smart switches (the default).  Device names that start with
+'BULB-tp-*' are routed to the TpLink plugin under the plugin name
+'TPLINK-BULB', whereas devices that just start with "tp-*" are sent to the
+plugin name 'TPLINK' and will be processed as commands for switches.
+
+In addition, plugin calls can provide parameters-- whatever is to the right of
+the first ":" after tha plugin name, on the RHS of the dict.  The special
+characters '%d' will be replaced by the name of the device which triggered the
+plugin invocation, and '%c' will be replaced by the command the user wanted to
+execute on the device.  So, for example, if a user called
+hc.control('PLUG-tp-plug1', 'on'), then the framework would eventually call
+plugin_tplink.control(plugin_name='TPLINK-PLUG', plugin_params='PLUG-tp-plug1:on',
+                      device_name='PLUG-tp-plug1', device_command='on')
+
+To make things even more flexible (yes, flexible, no, not confusing.. ;-) the
+LHS of the dict can also have the form 'device:command'.  In other words, you
+have multiple entries for the same device that use different plugin params (or
+even different plugins entirely, if you want), based on the command.  As you
+can see below, this is most useful when you want to translate different
+commands into different web get-requests, and don't want to hard-code the
+translation table into the plugin.
+
+'''
+
+
 DEVICES = {
 
 # ---------- tplink generics
@@ -61,6 +98,7 @@ DEVICES = {
 }
 
 
+# When this file is loaded by hc.py, it runs init() to return added data.
 def init(devices, scenes):
     devices.update(DEVICES)
     return devices, scenes
