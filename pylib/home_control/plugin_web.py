@@ -1,5 +1,16 @@
-'''
-TODO(doc)
+'''home-control plugin to make web GET requests.
+
+The plugin_params should be in the form "host[:port]/path", i.e. it should not
+include the "http[s]://" prefix.  Whether TLS is used or not is determined by
+the name of the plugin that's referenced.  For example, the following entries
+in DEVICES:
+  'insecure-get':   'WEB:server:8080/path',
+  'secure-get':     'HTTPS:server2/other-path',
+
+In debug mode, the GET request is performed synchronously and the correct
+success or failure details are returned.  When not in debug mode, the GET
+request is performed in a background thread, and the resulting status is lost;
+the plugin returns a presumption of success.
 
 '''
 

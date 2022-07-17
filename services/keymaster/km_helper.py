@@ -1,7 +1,24 @@
 #!/usr/bin/python3
 '''km_helper: add or remove keys from an encrypted keymanager secrets file.
 
-TODO(doc)
+Truthfull, I don't use this anymore.  As you can probably tell from my other
+files, I'm fussy about how data is aligned, and this tool isn't clever enough
+to follow my convensions.  So what I do is use ../../pylib/tools/pcrypt.py to
+manually decrypt km.data.pcrypt, and modify the plaintext directly.  It has a
+very simple and human-friendly format, and will happily tolerate the addition
+of white-space to make things align in a pleasant way.  Then run pcrypt again
+to return the secrets file to a safe encrypted state (and don't forget to 
+delete the temporary plaintext version!).
+
+But if you're the sort who likes to have a CLI for everything, or if there's
+some reason you need to automate the maintenance of your secrets data, this
+script might come in handy.
+
+Hopefully the arguments are reasonably straight forward: you tell the script
+the --datafile you want to modify (generally km.data.pcrypt), provied the
+--password it's encrypted with, the --keyname you want to add, the --secret
+hidden behind that key's name, the --acl that limites who can access it, and
+optionally a --comment to associate with the entry.
 
 '''
 

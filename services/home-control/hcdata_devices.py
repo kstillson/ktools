@@ -22,7 +22,7 @@ characters '%d' will be replaced by the name of the device which triggered the
 plugin invocation, and '%c' will be replaced by the command the user wanted to
 execute on the device.  So, for example, if a user called
 hc.control('PLUG-tp-plug1', 'on'), then the framework would eventually call
-plugin_tplink.control(plugin_name='TPLINK-PLUG', plugin_params='PLUG-tp-plug1:on',
+plugin_tplink.control(plugin_name='TPLINK-PLUG', plugin_params='%d:%c',
                       device_name='PLUG-tp-plug1', device_command='on')
 
 To make things even more flexible (yes, flexible, no, not confusing.. ;-) the

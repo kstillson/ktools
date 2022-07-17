@@ -1,5 +1,13 @@
-'''
-TODO(doc)
+'''Trivial plugin that runs another plugin after a specified delay.
+
+plugin_params should be in the form:
+"{time_to_wait_in_seconds}:{device-after-delay}:{control-after-delay}"
+
+Note that if we are not in debug mode, the logic to delay-and-then-command is
+deferred to a background thread, and the control() call returns an immediate
+assumption of success.  There is no way to discover the actual success of the
+delayed control() call; it is lost other than any logging performed by
+whatever plugin eventually processes the command.
 
 '''
 
