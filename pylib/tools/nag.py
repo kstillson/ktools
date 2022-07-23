@@ -55,7 +55,7 @@ def eval_overall_status(by_status):
 def count_by_status(by_status):
     out = ''
     for status in StatusEnum:
-        out += '%s=%d  ' % (status.name[0], len(by_status[status]))
+        out += f'{status.name[0]}={len(by_status[status])}'
     return out
 
 
@@ -126,7 +126,7 @@ def gen_force_all_services_for_hosts(hosts_list):
     out = ''
     now = get_now()
     for host in hosts_list:
-        out += '[%s] SCHEDULE_FORCED_HOST_SVC_CHECKS;%s;%s\n' % (now, host, now)
+        out += f'[{now}] SCHEDULE_FORCED_HOST_SVC_CHECKS;{host};{now}\n'
     return out
 
 
@@ -145,7 +145,7 @@ def generate_html(by_status, the_list, counts_by_status):
     out += counts_by_status
     out += '\n<p><div style="width:100px;height:100px;background-color:%s"></div>\n<p>\n' % color
     for i in the_list:
-        out += 'host:%s service:%s status:%s<br/>\n' % (i.host, i.service, i.status_enum.name)
+        out += f'host:{i.host} service:{i.service} status:{i.status_enum.name}<br/>\n'
     return cgi_wrap_html(out)
 
 
@@ -157,17 +157,17 @@ def generate_color(by_status):
 def gen_ack_for_one_service(host, service):
     now = get_now()
     if not service:
-      return '[%s] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;1;Admin;via nag cmd\n' % (now, host)
+      return f'[{now}] ACKNOWLEDGE_HOST_PROBLEM;{host};1;1;1;1;Admin;via nag cmd\n'
     else:
-      return '[%s] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;Admin;via nag cmd\n' % (now, host, service)
+      return f'[{now}] ACKNOWLEDGE_SVC_PROBLEM;{host};{service};1;1;1;Admin;via nag cmd\n'
 
 
 def gen_force_for_one_service(host, service):
     now = get_now()
     if not service:
-      return '[%s] SCHEDULE_FORCED_HOST_CHECK;%s;%s\n' % (now, host, now)
+      return f'[{now}] SCHEDULE_FORCED_HOST_CHECK;{host};{now}\n'
     else:
-      return '[%s] SCHEDULE_FORCED_SVC_CHECK;%s;%s;%s\n' % (now, host, service, now)
+      return f'[{now}] SCHEDULE_FORCED_SVC_CHECK;{host};{service};{now}\n'
 
 
 def run_list(the_list, ack=False):   # If !ack, then do retry.
@@ -178,7 +178,7 @@ def run_list(the_list, ack=False):   # If !ack, then do retry.
         else:
             out += gen_force_for_one_service(i.host, i.service)
         write_to_cmdfile(out)
-    return 'wrote %d re-try command(s).' % len(the_list)
+    return f'wrote {len(the_list)} {"ack" if ack else "retry"} command(s).'
 
 
 def write_to_cmdfile(out):
