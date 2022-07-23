@@ -10,6 +10,10 @@ SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|chown|ln|od|strings)$"
 
 # ----------
 
+# Some files stored in private.d subdirs to keep them out of git;
+# move them into their real positions.
+mv -f /etc/apache2/private.d/* /etc/apache2 || true
+
 # remove default conf files that interfere with our local ones
 rm /etc/apache2/conf.d/default.conf /etc/apache2/conf.d/info.conf /etc/apache2/conf.d/ssl.conf /etc/apache2/conf.d/userdir.conf
 
