@@ -4,6 +4,9 @@ extra_docker: "--userns=host"
 
 extra_init: "wasabi"
 
+mount_persistent:
+  - /rw/mnt/rsnap/echo-back: /root/echo-back
+
 mount_logs:
   - var_log: /var/log
 

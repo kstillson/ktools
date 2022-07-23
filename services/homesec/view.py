@@ -85,7 +85,7 @@ def render(template_filename, repl):
 
 @authn_required
 def easy_view(request):
-  return render('easy_view.html',
+  return render('easy.html',
     {'status': model.partition_state_resolve_auto('default')})
 
 
