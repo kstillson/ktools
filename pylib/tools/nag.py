@@ -55,7 +55,7 @@ def eval_overall_status(by_status):
 def count_by_status(by_status):
     out = ''
     for status in StatusEnum:
-        out += f'{status.name[0]}={len(by_status[status])}'
+        out += f'{status.name[0]}={len(by_status[status])}  '
     return out
 
 
