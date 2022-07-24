@@ -1,37 +1,42 @@
 
-TODO(doc)
-
 # pylib/kcore Python library
 
 kcore is a set of reasonably-low-level reasonably-common operations or
-simplicaitions, as described below.
+simplicaitions:
 
 
 ## auth.py
 
-auth is a module designed to generate and validate authentication tokens,
-primarily for the keymaster project (see ../services/keymaster).  The main
-feature is that tokens mix-in machine-specific details, so that tokens
-are hardware-locked to a specific machine.
+auth is a module designed to generate and validate authentication tokens.
+Internally, this is used for things the Keymaster project
+(../../services/keymaster), and the homesec system (../../services/homesec)-
+for security sensors to securely trigger alarm events.
+
+The main feature is that tokens mix-in machine hardware-specific details, so
+that tokens are hardware-locked to a specific machine.  This means the client
+need not store a possible-to-steal secret that represents its identity, making
+client backups easier and safer.
 
 
 ## common.py
 
-common provides some simple data manipulators, and abstractions that mostly
-try to hide python2 vs. python3 differences.
+A grab-bag of functionality used by almost everything else in this system.
+common is written to be compatible with Python 2, Python 3, and Circuit Python,
+and provides the same functionality regardless of the platform.
 
-common really has two parts: a logging system and a web client.
+Some highlights:
 
-The logging system is similar in concept to built-in Python logging, but also
-allows automatically routing messages to stdout, stderr, and/or syslog, based
-on message priority levels, and also integrates support for the /logz
-web-handler, a default handler provided with webserver.py (see below).
+- A multi-level logging system (similar to Python logging, but with a few
+  additional features such as web-based log retrieval and syslog integration,
+  and availablity under Circuit Python).
 
-When using python3, the web client is really a very thin wrapper around the
-"requests" module, perhaps providing a slightly simpler interface.  When using
-python2, the primary purpose of this module is to create an interface that is
-identical to the python3 interface, i.e. it partially emulates the "requests"
-module.
+- A web url retriever that for Python 3 is basically a thin wrapper around the
+  "requests" module, but which provides an identical API for Python 2 and
+  Circuit Python that basically emulates the full "requests" module.
+
+- Simple i/o abstractions that include exception handling.
+
+- A simple console text colorizer.
 
 
 ## docker_lib.py
@@ -39,32 +44,53 @@ module.
 A bunch of Docker related library routines, primarily used by
 ../docker-infrastructure.
 
-Can do things like locate the copy-on-write directory for a container,
+It can do things like locate the copy-on-write directory for a container,
 determine if the latest built image is tagged "live", and provides a bunch of
 abstractions that help with automated Docker image unit testing.
+
+
+### gpio.py
+
+Provides abstractions for buttons and LEDS that can use the same API on
+Raspberry PIs, Circuit Python, and full Python in a simulation mode.
 
 
 ### html.py
 
 A very simple set of functions that take various forms of plain text and lists
-and output HTML.
+and generate HTML.
+
+
+# neo.py
+
+Provides abstractions for Adafruit Neopixels that provide an identical API
+that works on Raspberry PIs, Circuit Python microcontrollers, full C Python
+(using a graphical simulation), and a headless simulation mode.
+
+
+## timequeue.py
+
+A simple mechanism for running a queue of events after a time delay, again
+with multi-platform support.
 
 
 ## uncommon.py
 
-More (Circuit Python unfriendly) library routines, but ones of a more esoteric
-nature, so removed from common.py to declutter it somewhat.
+Another grab-bag of Python library routines, but this is the collection that
+doesn't work under Circuit Python, or are a bit to specialized to be "common".
 
-Provides features like:
+Highlights:
 
   - a specialized dict-class derivative, that enables serialization when the
     value-side of the dict is a @dataclass.
 
   - ability to easily run some Python commands and capture their stdout/stderr.
 
-  - easily pass data through GPG for symmetric (password) en-de/crypt.
+  - easily pass data through symmetric (password) en-de/crypt.
 
   - safely drop root priv's
+
+  - a simplified popen interface
 
 
 ## varz.py
@@ -101,39 +127,9 @@ handler finding and management, default handlers, and the like.
 webserver.py basically layers the fully-featured (and thus circpy-unfriendly)
 bits on-top: networking, threading, TLS, and logging.
 
-
 - - - 
 
-
-- - - 
-## circuitpy_sim
-
-This is a library directory that provides a few modules that minic the Circuit
-Python API, but use normal Python for their implementation.
-
-Most of these are reasonably simple pass-throughs.  For example,
-adafruit_requests.py just passes its functions through to normal "requests".
-
-The one that's a bit special is neopixel.py.  It provides a mock of the
-Circuit Python API that draws simulated Neopixels using the Python tkinter
-graphics library.
-
-What it all for?  If the circuitpy_sim directory is inserted into Python's
-import path (see circuitpy_sim/README.md for specifics), you can run Circuit
-Python code on your normal Linux computer.  This allows much quicker and
-easier code iteration cycles than having to constantly upload code to a
-Circuit Python board, and also allows use of standard Python debugging tools
-(e.g. pdb) on your Circuit Python code.
-
-In this way, you can unittest, manually test, and debug Circuit Python code on
-a much more capable platform, and only upload it to a real Circuit Python
-board once you're getting reasonably close.
-
-NOTE: circuitpy_sim is still in a very early / alpha-type state.  Any
-suggestions or additions would be most welcome.
-
-
-## Other notes
+# Other notes
 
 - Originally most of this code was intended to work seemlessly with both
   python2 and python3.  I've since given up on supporting python2, but if you

@@ -1,5 +1,33 @@
 
-TODO(doc)
+# Services
+
+These all provide their services with reasonably simple web-server front-ends
+(i.e. accepts GET requests, not fancy POST or XML formatted web-services),
+generally intended to be access both directly by human users and by automated
+systems (either for direct use or at least for monitoring).
+
+All of these services (except procmon) are intended to be wrapped into Docker
+micro-service containers, see the directories with the matching name under
+../../docker-containers.  These should all run fine outside a container, but
+see ../general-wisdom for why that's not advised.
+
+Below is a quick overview, but all of these have much more details in the
+individual source directories.
+
+
+## filewatch: a status file monitoring system
+
+Filewatch is intended to do things like watch a list of .log files that are
+expected to change regularly, and raise an alarm if their last-change
+time-stamps become unacceptably old.  It has a few other features too.
+
+
+## home-control: web front-end for smart-home controller
+
+This is really just a trivial web-service wrapper around the
+pylib/home-control system, and the example configuration files from the
+original author's smart-home setup, so you can build your configuration based
+on a realistic example.
 
 
 ## homesec: a highly customizable home security system framework
@@ -19,13 +47,12 @@ moved to the "disarmed" state within that period, it moves to the "alarm"
 state, which turns on more lights, pushes more phone messages, and perhaps
 turns on some annoying sirens.
 
-Triggers are HTTP get requests, with an in-hand application layer
+Triggers are http GET requests, with an in-band application layer
 authentication system (based on shared secrets), and designed to be simple
 enough so it can run on very small devices, like the Raspberry Pi Zero-w's,
-which are what generate most of the author's door, window, and motion sensor
-signals.
+which are what generate most of the original author's door, window, and motion
+sensor signals.
 
-- - -
 
 ## keymaster: solving the digital secret bootstrapping problem
 
@@ -36,10 +63,10 @@ needs authentication.  How do these systems get the secrets they'll need,
 whether these are shared secrets, private keys, or whatever else?
 
 Keymaster ("KM") is a secrets server.  The secrets are stored in an encrypted
-GPG text file.  When the server starts up, it does not have the key to unlock
-this data.  An authorized user must access the web-page and provide the GPG
-passphrase.  KM then de-crypts the secrets into local memory.  Clients can then
-request secrets, but only according to strict rules.  For example, the
+text file.  When the server starts up, it does not have the key to unlock this
+data.  An authorized user must access the web-page and provide the encryption
+passphrase.  KM then de-crypts the secrets into local memory.  Clients can
+then request secrets, but only according to strict rules.  For example, the
 requestor's source IP address and which key they want must match expectations
 exactly.  Even a single unexpected request causes the KM to throw away all its
 decrpyted data and raise an alarm, both signaling that something is very wrong
@@ -53,3 +80,13 @@ secrets won't actually reach their serving state until KM is unlocked.
 Unlocking KM is the only manual action a human needs to take upon a
 network-wide cold-start -- once it's done, all the waiting services get their
 bootstrap secrets and move to their serving states.
+
+
+## procmon: Linux process white-list security monitor
+
+Regularly scans the list of running processes on a server, and compares it
+against a configured allow-list.
+
+Procmon has to be run outside containers, so it can see the whole-system
+process list.  Given this privlidged perch on the real host, it also has a few
+other security-monitoring type checks it can perform.

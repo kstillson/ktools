@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# TODO(defer): rewrite in python3
+# Send a message provided on command-line to push-bullet, with rate-limiting.
+# Reference doc:  https://docs.pushbullet.com/#create-push
 
-# Send message provided on command-line to push-bullet, with rate-limiting.
-# Note: 
-# https://docs.pushbullet.com/#create-push
+# TODO(defer): rewrite in python3 and using kcore
 
 # Ken-specific: "Tasker" app on Android phone uses contents to change
 # audible alert done.  Include "#a" to escalate to alert tone, or
