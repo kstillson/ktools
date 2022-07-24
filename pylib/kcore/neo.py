@@ -1,23 +1,37 @@
-'''Neopixel wrapper that supports simulation.
+'''Neopixel abstraction / wrapper.
 
-This module supports 4 modes of operation:
- - Running on a Raspberry PI via the Adafruit blinka library.
- - Running on a Circuit Python board using the Adafruit Neopixel library.
- - Running using ../circuitpy_sim, which uses tkinter to draw simulated
-   graphical LEDs on a Linux workstation
+The idea of this module is to provide basic Neopixel operations that provides
+the exact same API on 4 rather different platforms:
+
+ - Raspberry PI
+
+ - A Circuit Python board
+
+ - Under normal full Python ("CPyhon"), using ../circuitpy_sim, which uses
+   tkinter to draw simulated graphical LEDs
+
  - Running with simulation=True passed to the constructor, which is
    "headless" (i.e. no LED or graphical output).  You can set() and get()
-   colors for testing, but that's about it.
+   colors, but that's about it.  It's mostly for testing.
 
-Installing dependencies:
-  - Raspberry PI:
-      (https://learn.adafruit.com/neopixels-on-raspberry-pi/python-usage)
-    # sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
-    # (not needed?) sudo python3 -m pip install --force-reinstall adafruit-blinka
+                                --------------
 
-  - TODO(doc): other modes...
+To run on a Raspberry PI, this module uses the Adafruit "blinka" library as
+a backend.  To get that installed:
+   sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
+
+To get this working on a real Circuit Python board, you'll need the Adafruit
+NeoPixel library, see https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
+
+To get circuitpy_sim working, you need the circuitpy_sim directory in the Python
+path, so something like this:
+    import os, sys
+    CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
+    if not CIRCUITPYTHON: sys.path.insert(0, 'circuitpy_sim')
+
 
 Various pieces copied from Adafruit's libraries.  Thanks Adafruit!
+
 '''
 
 # ---------- color def constants

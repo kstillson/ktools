@@ -1,5 +1,66 @@
-'''
-TODO(doc)
+'''Common abstractions and business logic for a web-server.
+
+This class is imported into the namespaces of its subclasses (webserver.py and
+webserver_circpy.py), so you probably shouldn't be importing this directly
+yourself.  Import the subclass you actually want to use, and refer to the
+contents here through that.
+
+Because this class is intended to serve both standard full Python ('CPython")
+and Circuit Python, it contains no details on networking or threading.  That
+platform-dependent logic has to be added in by the appropriate subclass.  This
+class has entirely in-memory abstractions for Requests and Responses, and just
+deals with manipulating those.
+
+
+Contents of this class:
+
+- Request abstraction: basically just a @dataclass that contains everything 
+  web-handlers need to know about an incoming request.  Not actually annotated as
+  a @dataclass, because Circuit Python doesn't support them.
+
+- Response abstraction: basically just a @dataclass that contains all the
+  details a web-handler might want to hand back to the framework when
+  constructing a response.
+
+- LoggingAdapter: basically just a mapping from various conditions that a
+  web-server might have to deal with (incoming request, exceptions, etc), to
+  the log methods to call when those conditions happen.  Allows setting different
+  destinations or log levels for different events.  You usually don't need to fuss
+  with this, unless you don't like the default choices and want to override them.
+
+- WebServerBase: Primary business logic class.  The main thing this class does
+  is deal with registering, selecting, and running handlers.  It also provides
+  default implementations for the standard handlers.
+
+Supported standard handlers:
+
+- /favicon.ico: most browsers continuously send implicit requests for this.
+  Rather than filling the logs with endless 401's if you don't have an icon,
+  this method just silently responds with an empty icon, which browsers ignore.
+
+- /flagz: it is often useful to be able to query the current value of
+  command-line flags that were given to a particular server.  If you want to
+  enable this, then set the flagz_args parameter to your WebServer constructor
+  to either an argparse instance or a dict of flag values, and this handler
+  will display them.
+
+- /healthz: by default just returns the fixed text 'ok', which can be
+  monitored by an external system (e.g. Nagios) to confirm that the web=server
+  is up.  You can also override this handler to provide a more sophistated
+  indication of the health of your service.
+
+- /logz: integrated with the kcore.common logging system, provieds a web
+  interface to review the most recent log messages.  WARNING- by default this
+  method does not have any access control, so DO NOT PUT SENSITIVE INFORMATION
+  INTO YOUR LOGS (which is good practice anyway).
+
+- /varz: integrated with the kcore.varz system, will show the current value of
+  all 'varz' that have been set.  The web-server keeps some internal stats
+  using varz, but this will be much more valuable if you "import kcore.varz"
+  into your code, and set various counters and status-indicators to reflect
+  the internal state of your service.  Great for debugging.  WARNING- again,
+  no access control by default, so DO NOT PUT SENSITIVE INFORMATION IN VARZ.
+
 
 TODO(defer): add support for basic auth (with db file compatible with htpasswd...?)
 
@@ -86,8 +147,6 @@ class LoggingAdapter:
 
 
 class WebServerBase:
-    # TODO(doc)
-
     # Note: port to listen on can be specified either in this constructor or in
     # the .start() method [see child classes for implementations].  If specified
     # in both, the .start value takes presidence.  If not specified in either,

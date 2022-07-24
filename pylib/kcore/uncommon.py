@@ -1,9 +1,16 @@
 '''Collection of less-common core routines.
 
-There are excluded from common.py either because they're slightly obscure, and
-we'd like to keep common.py reasonably compact, OR because the logic here
-won't work under Circuit Python, and we'd like to keep common.py fully working
-for Circuit Python.
+There are excluded from common.py either because they're slightly obscure, or
+to keep common.py reasonably compact, or because the logic here won't work
+under Circuit Python, and I'd like to keep common.py fully working for CircuitPy.
+
+Highlights:
+  - Serialize/de-serialize helpers for dicts with RHS that are @dataclass's
+  - A context manager (used with a "with" statement) for grabbing stdout/stderr
+  - Helper to load files as modules (like "import" but with dynamically named files)
+  - A simplified and a very-simplied front-end to subprocess.popen
+  - Very easy to use encrypt/decrypt for symmetric encryption w/ a provided key/salt.
+  - Helper to pull argument values from no-echo-tty, environ, or keymaster
 
 '''
 
@@ -44,8 +51,7 @@ class DictOfDataclasses(dict):
 
 class ListOfDataclasses(list):
     '''Intended for use with lists of dataclass instances.
-       Adds methods to support human-readable serialization and deserialzation.
-    '''
+       Adds methods to support human-readable serialization and deserialzation.'''
     def to_string(self):
         return '\n'.join([str(x) for x in self])
 
@@ -70,8 +76,7 @@ class Capture():
       # (write stuff to stdout and/or stderr...)
       caught_stdout = cap.out
       caught_stderr = cap.err
-      # (do stuff with caught_stdout, caught_stderr...)
-    '''
+      # (do stuff with caught_stdout, caught_stderr...)'''
     def __init__(self, strip=True):
         self._strip = strip
     def __enter__(self):

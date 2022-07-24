@@ -1,3 +1,4 @@
+'''Reference for the several different names given to Raspberry PI pins.'''
 
 from dataclasses import dataclass
 

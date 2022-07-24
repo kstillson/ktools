@@ -1,6 +1,10 @@
-'''Common Python helpers: mostly logging and a web fetcher.
+'''Common Python helpers: mostly logging and a web fetcher.  CircuitPy friendly.
 
-TODO(doc)
+Highlights:
+  - Colorizer for console message
+  - Simple file in&out w/ exception handling
+  - Multi-level logger w/ file/syslog/web output and Circuit Python friendly
+  - web getter with exception handling; unifies py2, py3, circuit-py
 
 '''
 

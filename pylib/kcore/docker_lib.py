@@ -1,7 +1,14 @@
-'''
-Docker related support library
+'''Docker related support library.
 
-TODO(doc)
+This module primarily provides logic that was too hard to code in shell which is
+needed by ../../docker-infrastructure/*.  
+
+Some highlights:
+  - Return the directory with copy-on-write contents for an up container
+  - Determine if the #latest image for a container is tagged #live
+  - Launch a container in test mode (using d-run), or find one that's already up
+  - Translate a container name to it's container id
+  - A series of 'expect' style assertions for container testing, used for testing.
 
 '''
 

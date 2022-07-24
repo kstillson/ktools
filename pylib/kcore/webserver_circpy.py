@@ -1,29 +1,40 @@
-'''
-Simple web-server for Circuit Python.
-adapted from https://github.com/deckerego/ampule; thanks deckerego!
+'''Simple web-server for Circuit Python.
+
+Adapted from https://github.com/deckerego/ampule; thanks deckerego!
 MIT license
 
-TODO(doc)
+A great Google engineering best-practice I picked up while working there is
+that just about *everything* should be a web server, and it's great to have
+some standard handlers that just about everything supports, to help with
+automated health checking and process management.  This module aims to provide
+easy-to-use web server support on Circuit Python, with an API very similar to
+that available with the normal full-Python version.
 
-Example usage in non-blocking mode:
+Circuit Python must use non-blocking mode, because it doesn't support multiple
+threads.  Here's an example:
 
-import time
-import kcore.webserver_circpy as W
+  import time
+  import kcore.webserver_circpy as W
 
-def default_handler(request):
-    name = request.get_params['name'] or 'world'
-    return f'Hello {name}!'
+  def default_handler(request):
+    return f"Hello {request.get_params['name'] or 'world'}!"
 
-W.connect_wifi('dhcp-hostname', 'ssid', 'wifi-password')
-svr = W.WebServer({'.*': default_handler}, port=80)
-while True:
+  W.connect_wifi('desired-dhcp-hostname', 'ssid', 'wifi-password')
+  svr = W.WebServer({None: default_handler}, port=80)
+  while True:
     status = svr.listen()
     # That was non-blocking, we can do something else between incoming requests...
     print(f'{time.time()} - main loop; status={status}')
     time.sleep(0.5)  # Don't overwhelm serial monitor by looping too fast.
 
 
-TODO(defer): add POST submission parsing.
+This module is built on-top of webserver_base.py, so that much of the
+handler-based business-logic can be shared with the full Python version in
+webserver.py.
+
+TODO(defer): add POST submission parsing.  Currently this module inherets it's
+GET parameter parsing from webserver_base.py, but I haven't yet attempted to
+port webserverp.y:parse_port to Circuit Python.
 
 '''
 

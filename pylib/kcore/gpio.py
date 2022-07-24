@@ -1,19 +1,25 @@
-'''GPIO abstraction for Raspberry PI's (not Circuit Python)
+'''GPIO abstraction for buttons and LEDs.
 
-TODO(doc)
+Button abstraction includes debouncing, minimum press length (to avoid static
+transients causing triggers), normally high or low, and a user-provided callback
+function that's called upon successful triggering.
+
+LED abstraction is simplier: on/off/toggle/query, and a quick API for tri-color
+(red/green/yellow) dual leds, which I happen to have a few of.
 
 This module supports 3 modes of operation:
  - Running on a Raspberry PI via the RPi.GPIO library.
    (sudo apt-get install python3-rpi.gpio)
  - Running on a Circuit Python board using the digitalio library.
  - Running with simulation=True passed to init(), which is
-   "headless" (an all in-memory simulation).
+   "headless" (an in-memory simulation), that works on any platform.
 
 It tries to provide the same API for each mode, *HOWEVER* Circuit Python
 doesn't have threading, so instead it uses an event queuing model and
 cooperative multi-tasking, and the caller must regularly (ideally multiple
 times a second) call the check() method to run any pending actions.
 
+One exception to the unified API:
 In simulation mode, bcm_pin's should be an int.
 For CircuitPython, they must be an instance from the board.* module
 For RPi, they can be either of those.

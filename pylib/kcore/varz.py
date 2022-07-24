@@ -9,7 +9,7 @@ This allows both humans and automated systems to easily check on how things
 are going with a service, and inspect program state without a debugger or
 digging into logs.
 
-Avoid putting sensitive data into varz.  It's not access controlled.
+Avoid putting sensitive data into varz, as it's not access controlled.
 '''
 
 import time

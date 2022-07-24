@@ -1,6 +1,39 @@
-'''simple web server
+'''A simplified web server, with a bunch of added features.
 
-TODO(doc)
+A great Google engineering best-practice I picked up while working there is
+that just about *everything* should be a web server, and it's great to have
+some standard handlers that just about everything supports, to help with
+automated health checking and process management.  The goal here is that you
+should be able to add a basic web-server with built-in standard handlers to
+your program with ~2 lines of code:
+
+  import webserver
+  webserver.Webserver(port=8080).start()
+
+And if you want to add your own custom handlers, it's just about as easy:
+
+  import webserver
+  def h_root(request): return "<p>Here is some html for the root page.</p>"
+  def h_default(request): return webserver.Response('dunno how to do that', 401)
+  webserver.WebServer(port=8080, handlers={'/': h_root, None: h_default }).start()
+
+(Note that handlers can return plain text, HTML, or a Response object.  Nice, huh?)
+
+I really wanted a web-server with (basically) the same API for Python 2,
+Python 3, and Circuit Python.  However the latter doesn't support threads and
+has only quite low-level networking.  So, the functionality is split like this:
+
+- webserver_base.py has most of the business logic for things like finding and
+  running handlers, but knows nothing about networking or threads.  It has an
+  abstraction for Requests and Responses, and it works by manipulating these
+  abstractions.  It just has no idea how they get sent or received.
+
+- This file (webserver.py) adds on standard Python ("CPython") networking
+  (including support for TLS; i.e. certficiate protected https), and threading.
+
+- webserver_circpy.py is also built on webserver_base.py, and links in the
+  low-level networking support for Circuit Python, and a non-blocking "listen"
+  interface, which can be used for cooperative multitasking.
 
 '''
 
