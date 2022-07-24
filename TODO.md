@@ -5,18 +5,16 @@
      code reviews, and make ppl think about foss security.
 
 ## ++ktools prose
-   - review all doc TODO's
    - makefiles- lots of explanations and intros
    - general wisdom: lots of writing
    - overall spellcheck and markdown linting
 
 ## General
    - add pi1:speak to etc
+   - add tasker to etc
    - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
      A: kwisdom/kwizdom?  (nb with k*: confusion w/ kuberneties)
      kwizmet ?
-     - pylib/setup.cfg:url = TODO...
-     - update pylib/setup.cfg:url
 
 ## ---------- MILESTONE: ready for peer review ...?
 

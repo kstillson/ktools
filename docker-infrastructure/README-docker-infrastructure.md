@@ -1,4 +1,4 @@
-# Docker
+# Docker Infrastructure
 
 ## Motivation
 
@@ -7,7 +7,7 @@ I convert almost every service into a Docker container.  Why?
 
   1. Security
   
-     + uid-mapping: the entire concept of system uid root ceases to exist
+     + uid-mapping: the entire concept of system uid 0 ceases to exist
        in the containers.  See [uid mapping](Readme-uid-mapping.md).
      
      + attack surface area reduction: trimming the available tools inside
@@ -40,7 +40,7 @@ I convert almost every service into a Docker container.  Why?
        automatically update, build, test, and deploy many containers and
        only need to get involved should a test fail.
 
----
+- - -
 
 ## Docker source tricks and techniques
 
@@ -71,17 +71,15 @@ Here are the contents expected for each container source directory:
     actually get containers to auto-start, you'll need something to run the
     command `d start-all` at the appropriate time in boot.
 
-  - Build: This just adds a little bash boilerplate around the command
-    `docker build`.  Specifically, it generally permits the build to use a
-    less restrictive network, and makes sure the appropriate labels are
-    applied to the built image.
+  - Build: This is a deprecated way of building my Docker images.  Basically
+    it was just a little bash boilerplate around the command `docker build`.
+    It's been replaced by "d-build.sh"
 
   - Dockerfile: This is a standard Dockerfile.
 
-  - .dockerignore: This isn't really required, but its purpose is to make
-    sure that infrastructure files, like the ones listed here, don't
-    accidentally make their way into the images if you end up using remote
-    image uploading.
+  - .dockerignore: This isn't really required, but its purpose is to make sure
+    that infrastructure files, like the ones listed here, don't accidentally
+    make their way into the images.
 
   - files/: Dockerfile's generally copy various files from their source
     directories into their images.  Traditionally these files are left in
@@ -101,8 +99,7 @@ Here are the contents expected for each container source directory:
 
   - settings.yaml: This file provides the instructions to the `d-run` tool
     on how to construct the docker command-line arguments to launch a
-    container.
-    - TODO(doc)
+    container.  See [Readme-settings.yaml.md](Readme-settings.yaml.md).
 
   - Test: This is an executable file (generally Python), which performs a
     series of functionality tests on a container.
@@ -122,37 +119,54 @@ Here are the contents expected for each container source directory:
     were made.
 
     The normal command sequence to test changes in a source-dir is:
-    `./Build`
-    `./Test -r`   ("-r" to run a separate test instance of the container)
-
-    If all tests pass, the script should output "pass" and exit status 0.
-    If that happens, you're good to run:  `./Build --setlive` to tag the
-    latest image build as "live" (i.e. in production).
+      `make
+       make test
+       make install`
 
     If a test fails, it should output a human-readable explanation of what
     went wrong, and exit with non-0 status.
 
-    [kcore.docker_lib] provides a whole bunch of useful helper tools to make
-    testing easier.  See the provided `Test` files for examples.
+- - -
+
+## The Tools
 
 
-### Testing
+### d-build.sh
+
+This is a simple bash wrapper around the various steps of building, testing,
+promoting (i.e. adding a #live tag) container images.  Switch into a directory
+that follows the various naming conventions outlines in this doc, and "d-build
+-a" will run the whole process on auto-pilot.
 
 
-### Baseline Image
+### d-cowscan.py
 
+As mentioned in the Motivation section above, one of the neat things about
+the Docker copy-on-write filesystem is that it's easy to identify
+unexpected changes in files inside containers.  d-cowscan automates this.
+It will scan all "up" containers, subtract out the specified list of files
+that are expected to change, and output any remaining unexpected changes.
 
-### Security Additions
+If this program outputs anything other than "all ok", you can take it as a
+security alert that unexpected files are present.
+
+Optionally, the script can also remove changed files while leaving the
+container runnning, although generally restarting the container would be a
+safer way to re-establish a known-good state.
 
 
 ### d-map
 
+A bunch of the tools in this system need to map between the container ID's
+(which is what you see in the "ps" command) and the container name's, which
+are generally the basename of the directory containing the Dockerfile that
+build the image.
 
----
+This trivial script outputs the mapping for the currently running containers.
+It takes no params and is designed to be simple enough that it can safely be
+run under sudo by any uid that needs a current mapping (e.g. see
+../services/procmon).
 
-## The Tools
-
-A set of tools for docker container updates, monitoring and control.
 
 ### "d-run"
 
@@ -168,27 +182,28 @@ For example, settings.yaml lists directories to bind-mount, but can use
 different directories or add various additional features depending on
 whether you're launching the real production image, or a test image.
 
-See the code for a reference of settings.yaml values and the list of all
-the supported d-run command flags.
-
 Some common examples:
 
-`d-run`
-start up the production version of the container whose settings.yaml file
-is in the current directory, using all defaults.
+- `d-run`
+  start up the production version of the container whose settings.yaml file
+  is in the current directory, using all defaults.
 
-`d-run -D`
-start up the latest build of the image (tagged "latest") in development
-mode.  This runs in the foreground, disables logging, uses the alternate
-("testing") bind mounts, the development network, etc.
+- `d-run -D`
+  start up the latest build of the image (tagged "latest") in development
+  mode.  This runs in the foreground, disables logging, uses the alternate
+  ("testing") bind mounts, the development network, etc.
 
-`d-run -D -S`
-same as above, but don't launch the standard entry point for the container,
-instead drop to an interactive command-line shell inside the container once
-its started.
+- `d-run -D -S`
+  same as above, but don't launch the standard entry point for the container,
+  instead drop to an interactive command-line shell inside the container once
+  its started.
+
+There are a lot of other things this script can do.  Check out the
+command-line flags (i.e. `d-run -h`) for a list.  You can use the `--test`
+flag to see what the script would do without actually doing it.
 
 
-### "d"
+### "d.sh"
 
 "d" is a shell script designed to provide a very terse way of running
 docker commands on both single containers and bunches of them.  Some examples:
@@ -208,30 +223,4 @@ container.
 
 `d ua`
 Same as above, but upgrade all containers.
-
-TODO(doc): add self-help logic like q's, and document here.
-
-### "d-cowscan"
-
-As mentioned in the Motivation section above, one of the neat things about
-the Docker copy-on-write filesystem is that it's easy to identify
-unexpected changes in files inside containers.  d-cowscan automates this.
-It will scan all "up" containers, subtract out the specified list of files
-that are expected to change, and output any remaining unexpected changes.
-
-If this program outputs anything other than "all ok", you can take it as a
-security alert that unexpected files are present.
-
-Optionally, the script can also remove changed files while leaving the
-container runnning, although generally restarting the container would be a
-safer way to re-establish a known-good state.
-
-
-### "d_lib.py"
-
-d_lib is a Python library that provides logic to shell-based docker tools
-that would be difficult to provide in shell.  As such, it provides some
-logic used by the tools above, and also a set of abstractions used by
-testing modules; see the [Testing][] section for details.
-
 

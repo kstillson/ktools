@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 '''
 TODO(doc)
+
+TODO(defer): move the IGNORE_LIST to a config file.
 '''
 
 import argparse, datetime, glob, os, socket
