@@ -2,8 +2,8 @@
 
 ## Threat-based Backup Strategy
 
-Your backup plans should be organized around the set of threats you need to
-defend from.  Here's the threats that drive my requirements:
+Your backup plans should be organized around the set of threats you intend to
+defend from.  Here's what drive my requirements:
 
   - Hardware failure: mass storage devices fail.  **always.** and often
     with little warning.  To defend from this, you want an *automated*
@@ -79,11 +79,11 @@ defend from.  Here's the threats that drive my requirements:
         primary data and all the backups are electrically connected at the
         same time.  At least one copy is always disconnected in the safe.
   
-  - Backup theft: With so many copies of your files floating around in so
-    many places, you have to assume they could fall into the wrong hands.
-    Encryption is your friend here.  See my notes on data encryption in the
-    "general wisdom" section (TODO: link), but in summary: at least encrypt
-    the data both in transit and on the backup medium.  But a better
+  - Backup theft: With so many copies of your files floating around in so many
+    places, you have to assume they could fall into the wrong hands.
+    Encryption is your friend here.  See my notes on
+    [data encryption](security- encryption.md), but in summary: at least
+    encrypt the data both in transit and on the backup medium.  But a better
     solution is to have the primary data encrypted to begin with.  Then you
     don't need to do anything special for backups or restorations.
   
@@ -117,56 +117,57 @@ defend from.  Here's the threats that drive my requirements:
 
 ## My solution
 
-TODO
-
 ### step 1: Cloud pull
 
 "rclone" is an excellent tool for synchronizing cloud and local data.  As with
 most things, I run rclone inside a docker container -- although I don't run it
-as a continuous service, rather starting it up on-demand via cron.
+as a continuous service, rather starting it up on a schedule via cron.
 
 When pulling data from the cloud, I tend to store it into various places in my
 primary server's /home directory.  This is so my cloud data will automatically
-benefit from my versioned local backups (see below).  For some data, like my
-Google Photos, I don't consider them sensitive, so they're pulled directly
-into local files.  For more sensitive content such as Google Drive files, I
-use encfs to synchronize against a transparently-encrypted folder (TODO: link).
-This means the data is "encrypted at rest" in my local /home folder, so it
-also gets the versioned backup, all safely encrypted.
+benefit from my versioned local backups.  For some data, like my Google
+Photos, I don't consider them sensitive, so they're pulled directly into local
+files.  For more sensitive content such as Google Drive files, I use encfs to
+synchronize against a
+[transparently-encrypted folder](security- encryption.md).  This means
+the data is "encrypted at rest" in my local /home folder, so it also gets the
+versioned backup, all safely encrypted.
 
 Rclone needs my cloud credentials to perform the sync.  To keep those safe, I
 use rclone's built-in capability to encrypt its configuration.  This means
 rclone needs the configuration password to run, and of course the container
 needs the encfs password to mount the encrypted folder.  Both of these are
-pulled at run-time from keymaster (TODO: link) so no secrets need to be stored
-in the docker source-code or crontab files, which makes them safe and easy to
-back up.
+pulled at run-time from [keymaster](../services/keymaster) so no secrets need
+to be stored in the docker source-code or crontab files, which makes them safe
+and easy to back up.
 
-As mentioned in monitoring (TODO: link), it's very important to have automated
-tests that confirm that automated processes have worked.  I do this in two
-ways: first, after running rclone, I check that file update times are as
-expected.  For example, when syncing Google Photos, I found the number of
-downloaded image files that have been created during the last 30 days.  I
-always take at least one photo per month, so if the script doesn't see any, it
-raises an alert- specifically causing the rclone docker container to exit with
-a non-zero status, which should cause cron to send me an email.  However,
-historically I've found cron sending emails isn't always reliable, so in
-addition, I use filewatch (TODO: link) to make sure that several downloaded
-files that I know change regularly are not unacceptably old.  Actually, I tend
-to check that their rsnapshot (see below) versioned backups are
-acceptably new- thus testing both the rclone and rsnapshot.
+As mentioned in [monitoring](monitoring.md), it's very important to have
+automated tests that confirm that both automated and manual processes have
+worked on schedule.  I do this in two ways: first, after running rclone, I
+check that file update times are as expected.  For example, when syncing
+Google Photos, I found the number of downloaded image files that have been
+created during the last 30 days.  I always take at least one photo per month,
+so if the script doesn't see any, it raises an alert- specifically causing the
+rclone docker container to exit with a non-zero status, which should cause
+cron to send me an email.  However, historically I've found cron sending
+emails isn't always reliable, so in addition, I use
+[filewatch](../services/filewatch) to make sure that several downloaded files
+that I know change regularly are not unacceptably old.  Actually, I tend to
+check that their rsnapshot versioned backups are acceptably new- thus testing
+both the rclone and rsnapshot.
 
-See the /etc/init file in the rclone container (TODO: link) for the place
-where most of the magic happens.
+See the [/etc/init file](../docker-containers/rclonedock/files/etc/init) in
+the rclone container for the place where most of the magic happens.
 
 
 ### step 2: rsnapshot versioned local backups
 
 #### rsnapshot in general
 
-rsnapshot (TODO: link) is a wonderful tool for keeping versioned local
-backups.  It does away with the concepts of incremental and differential
-backups, and instead makes clever use of Linux file-system hard-links.
+[rsnapshot](../docker-containers/rsnapdock) is a wonderful tool for keeping
+versioned local backups.  It does away with the concepts of incremental and
+differential backups, and instead makes clever use of Linux file-system
+hard-links.
 
 A hard-link is just two-or-more directory entries that point to the same
 storage space (inode) on disk.  The file-system keeps a reference counter so it
@@ -210,8 +211,9 @@ only uid rsnap running /usr/bin/rsync gets the ability to bypass normal ACLs,
 and only for read access.
 
 Note that if the rsync binary gets updated, it tends to lose that "setcap"
-marking.  Hence, after upgrades are run, I use "q's" "enable_rsnap" to make
-sure the setcap is re-established.  (TODO: link)
+marking.  Hence, after upgrades are run, I use "q's"
+["enable_rsnap"](../tools-for-root/q.sh) to make sure the setcap is
+re-established.
 
 
 #### My rsnapshot configuration: monitoring
@@ -221,15 +223,15 @@ monitoring, you'll likely miss it.
 
 Fortunately, Linux is full of files that change on a predictable schedule
 (like log files that change nearly continuously), so it's easy to check that
-files in the rsnapshot repository have the expected ages.  I use filewatch for
-this.  (TODO: link)
-
+files in the rsnapshot repository have the expected ages.  I use
+[filewatch](../services/filewatch) for this.
 
 In addition, I wrap my on-demand launch of rsnapshot in a script that also
-runs a little script I wrote called "rsnap-diff" (TODO: link).  What this does
-is generate a daily report of the files that have changed between today's and
-yesterday's daily snapshots, after applying some filtering to remove things
-that are changed all-the-time by normal automated processes.
+runs a little script I wrote called
+[rsnap-diff](../tools-for-root/etc/rsnap-diff).  What this does is generate a
+daily report of the files that have changed between today's and yesterday's
+daily snapshots, after applying some filtering to remove things that are
+changed all-the-time by normal automated processes.
 
 I find it incredibly useful to review this -- obviously I can see the things I
 deliberately changed the previous day, but I can also see the side-effects of
@@ -241,14 +243,13 @@ Critically, if some sort of corruption starts to change data throughout my
 system- for example, some malware starts encrypting things- it'll show up
 here.  This allows me to pause automated snapshoting, to make sure the
 automated system doesn't merry go on replacing useful snapshots with corrupted
-ones - and figure out how to fix things before they get worse.
+ones, and figure out how to fix things before they get worse.
 
 Obviously one has to have a moderate amount of Linux experience to understand
 what the various changing files are, and what they mean.  But given this,
-rsnap-diff gives incredible insight into what's going -- and recall that
-because all the backed up systems are having their data pulled to the central
-backup server, this insight isn't just for one server, it's for all of them.
-
+rsnap-diff gives great insight into what's going -- and recall that because
+all the backed up systems are having their data pulled to the central backup
+server, this insight isn't just for one server, it's for all of them.
 
 
 ### step 3: Rclone push to remote
@@ -261,7 +262,7 @@ Rclone to the rescue again.  But this time, rather than pulling from the
 cloud, I'm pushing to it.  There are various commercial providers that offer
 Amazon-S3 compatible services, but at reduced cost (and with cost based only
 on storage used, rather than complicated and difficult-to-predict things like
-i/o counts).  I use one called "Wasabi". (TODO: link)
+i/o counts).  I use one called ["Wasabi"](https://wasabi.com/)
 
 In this case, rclone pushes my most recent snapshot from rsnapshot (above).  I
 do this because rsnapshot has already conveniently assembled data from all my
@@ -300,8 +301,8 @@ physically offline, even when it's alternate is being updated.
 The backup is triggered by running a script, which updates a log-file that is
 used for nothing else.  In this way, the last-change time-stamp of the
 log-file shows the last time the manual process was run.  This makes it
-trivial for filewatch (TODO: link) to alert if the manual process is not
-executed within the expected time-frame.
+trivial for [filewatch](../services/filewatch) to alert if the manual process
+is not executed within the expected time-frame.
 
 
 ### Step 5: Manual backup #2
@@ -322,4 +323,3 @@ As usual, keymaster holds the decrypt and encrypt keys so the process can be
 automated once the external drive is physically connected, and a single-use
 logfile allows filewatch to alert if the manual process isn't done on
 schedule.
-

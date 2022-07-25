@@ -1,9 +1,12 @@
 
 TODO
 
-# Development
+# General Development Hints
 
-  - server layering and purposes: docker, disposable host containers, etc.
+
+
+
+  - server layering and purposes: docker, etc.
 
   - everything is a web server
     - z handlers
