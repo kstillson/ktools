@@ -1,11 +1,5 @@
 
-## treasure hunt
-   - A's idea about several analytics collectors- prominently document #1,
-     subtlety document #2, and really hide #3 (dns query only?).  encourage
-     code reviews, and make ppl think about foss security.
-
 ## ++ktools prose
-   - makefiles- lots of explanations and intros
    - general wisdom: lots of writing
    - overall spellcheck and markdown linting
 

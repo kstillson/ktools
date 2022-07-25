@@ -1,12 +1,11 @@
 
-# Control variables inherited from the environment:
-#
-# BUILD_DOCKER_CONTAINERS
-# BUILD_SIMPLE
-# NO_TRACKING
-# SUBDIRS
-#
 # See ./Readme-makefiles.md for details
+
+# Control variables inherited from the environment:
+#   BUILD_DOCKER_CONTAINERS
+#   BUILD_SIMPLE
+#   NO_TRACKING
+#   SUBDIRS
 
 TOP_TARGETS = all clean comp install test uninstall update
 SUBDIRS ?= pylib tools-for-root services docker-infrastructure
@@ -20,6 +19,10 @@ include etc/Makefile-colors
 
 # ---------- standard targets
 
+# Because it's first, this is the default target.
+# Note that the $(TOP_TARGETS) rule below this one also inclueds "all".
+# Both rules will run..  So we do the local :prep receipe first, and then echo "all" into the subdirs.
+#
 all:	prep
 	@if [[ "$$BUILD_DOCKER_CONTAINERS" != "1" ]]; then printf "\n  $(YELLOW)NOTE: $(RESET) docker-containers/... not included in the build.\n         If you think you want it, check README.md and then set 'BUILD_DOCKER_CONTAINERS=1'.\n\n"; fi
 

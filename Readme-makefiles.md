@@ -2,8 +2,8 @@
 # Makefile's
 
 The project uses GNU Linux Makefile's.  A bit old fashioned, I know.  And the
-code is generally in Python or bash, i.e. there is no compilation phase, which might
-make "Make" seem like an odd choice.  However, I like the way Makefile's
+code is generally in Python or bash, i.e. there is no compilation phase, which
+might make "Make" seem like an odd choice.  However, I like the way Makefile's
 document dependencies and how pieces are combined, tested, and deployed.
 
 Even when an overall process becomes complicated, well-written Makefile's
@@ -117,7 +117,6 @@ The following targets are accepted both at the top-level and in the individual s
 - - -
 
 ## Build stamps
-
 
 "make" does comparisons between file modification time-stamps to determine
 which operations need to re-done.  if x depends on y, and y depends on z, and
