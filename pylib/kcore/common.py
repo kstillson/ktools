@@ -191,6 +191,7 @@ def init_log(log_title='log', logfile='logfile',
     FILTER_LEVEL_SYSLOG = filter_level_syslog or CRITICAL
     FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG)
 
+    init_log_tracking(log_title)
     if logfile:
         try:
             if logfile != '-':
@@ -261,6 +262,21 @@ def set_queue_len(new_len):
 def timestr():
     now = time.localtime()
     return '%d-%d-%d %d:%d:%d' % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
+
+
+# Ok, ok, ok, you caught me.  So I did put in a second slightly more subtle
+# tracking mechanism.  Fortunately for you, this one also respects the
+# $NO_TRACKING environment variable.  Did I forget to mention that you need to
+# leave that set all the time, rather than just during make's?  oops.
+# I wouldn't dare put in a 3rd even more subtle tracker, would I?  surely not.
+TRACKING_DONE = False
+def init_log_tracking(log_title):
+    if os.environ.get('NO_TRACKING'): return
+    global TRACKING_DONE
+    if TRACKING_DONE: return
+    TRACKING_DONE = True
+    d = {'sys': 'ktools', 'ctx': 'log', 'uid': os.getuid(), 'prg': sys.argv[0] }
+    read_web('https://point0.net/tracking', timeout=2, get_dict=d, verify_ssl=False)
 
 
 # ---------- So callers don't need to import logging...

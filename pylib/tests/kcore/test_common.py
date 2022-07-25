@@ -141,10 +141,30 @@ def test_log_queue():
     
 # ---------- web get
 
-# NB: relies on the author's personal web-server.
+'''
+ok, congrats, you made it to the bottom of the well; the end of the treasure hunt.
+truthfully, this code is where things began.  I wrote it initially long before I
+was planning to release this system, so it's privacy implicaitons didn't initially
+occur to me.  I needed a real web-server that was going to respond in predictable
+ways to a variety of queries, including successful https, and it's a pain to set
+up a locally running server that dynamically generates it's own CA and cert and
+all that (at least it was before I automated that whole system in the top level
+Makefile's :prep target), anyway, so I decided to use my existing public-facing
+web-server and just write some trivial cgi's to test things against.
+
+A friend of mine suggested this idea of a privacy-problem treasure hunt, and I
+realized that this would make a good deepest-level-of-the-hunt.  There's no
+deliberate tRaCkInG going on here; it's incidental- and in-fact originally
+accidental.  So I'm leaving it here, and being somewhat naughty in not
+respecting the disabling flag that the other two do.  If you don't like it,
+feel free to comment out this test, so something equivalent.
+
+So, as I say, congrats, you've won the treasure hunt, now feel free to drop
+by https://point0.net/treasure-hunt/ to pick up your prize.
+'''
 def test_web_get():
     # Test standard response fields (check my wrapping didn't break anything).
-    url = 'http://a1.point0.net/test.html'
+    url = 'http://point0.net/test.html'
     resp = C.web_get_e(url)
     assert resp.elapsed.microseconds > 0
     assert resp.ok
@@ -157,7 +177,7 @@ def test_web_get():
     assert str(resp) == 'hi-nossl\n'
 
     # Test successful ssl verification.
-    assert 'hi-ssl\n' == C.web_get_e('https://a1.point0.net/test.html').text
+    assert 'hi-ssl\n' == C.web_get_e('https://point0.net/test.html').text
 
     # Test ssl verify failure bypass (cert is for "a1" not "a2").
     assert 'hi-ssl\n' == C.web_get_e('https://a2.point0.net/test.html', verify_ssl=False).text
@@ -170,17 +190,17 @@ def test_web_get():
     assert resp.text == ''
 
     # Test manually construct get params.
-    assert '\na=b\n\nx=y\n\n' == C.web_get_e('https://a1.point0.net/cgi-bin/test-get?a=b&x=y').text
+    assert '\na=b\n\nx=y\n\n' == C.web_get_e('https://point0.net/cgi-bin/test-get?a=b&x=y').text
 
     # Test get_dict.
-    assert '\nc=d\n\ne=f\n\n' == C.web_get_e('https://a1.point0.net/cgi-bin/test-get', get_dict={'c': 'd', 'e': 'f'}).text
+    assert '\nc=d\n\ne=f\n\n' == C.web_get_e('https://point0.net/cgi-bin/test-get', get_dict={'c': 'd', 'e': 'f'}).text
 
     # Test post_dict.
-    assert '\ng=h\n\ni=j\n\n' == C.web_get_e('https://a1.point0.net/cgi-bin/test-get', post_dict={'g': 'h', 'i': 'j'}).text
+    assert '\ng=h\n\ni=j\n\n' == C.web_get_e('https://point0.net/cgi-bin/test-get', post_dict={'g': 'h', 'i': 'j'}).text
 
 
 def test_read_web():
-    assert 'hi-ssl\n' == C.read_web('https://a1.point0.net/test.html')
+    assert 'hi-ssl\n' == C.read_web('https://point0.net/test.html')
 
 
 # Note: quote_plus tested indirectly by test_read_web get_dict under Python 3.

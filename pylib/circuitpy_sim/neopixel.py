@@ -1,3 +1,4 @@
+'''This is part of circuitpy_sim.  See README-circuitpy.md for details.'''
 
 import threading, time, sys
 import kcore.common as C
@@ -76,9 +77,7 @@ class NeoPixel:
 
     def __len__(self): return self.n
 
-'''This is part of circuitpy_sim.  See README-circuitpy.md for details.'''
-
-def __setitem__(self, index, val_orig):
+    def __setitem__(self, index, val_orig):
         val = val_orig
         if isinstance(index, slice):
             seq_index = 0
