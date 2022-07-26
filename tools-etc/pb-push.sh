@@ -1,13 +1,16 @@
 #!/bin/bash
 
-# Send a message provided on command-line to push-bullet, with rate-limiting.
+# Provides a simple interface for sending push notifications via the "Push
+# Bullet" service.  Integrates with kmc to retrieve the needed access token.
+# (You'll need to get your own access token to make use of this.)
+
 # Reference doc:  https://docs.pushbullet.com/#create-push
 
 # TODO(defer): rewrite in python3 and using kcore
 
-# Ken-specific: "Tasker" app on Android phone uses contents to change
-# audible alert done.  Include "#a" to escalate to alert tone, or
-# #i to de-escalate to information-only notification tone.
+# Ken-specific note: "Tasker" app on Android phone uses contents to change
+# audible alert done.  Include "#a" to escalate to alert tone, or #i to
+# de-escalate to information-only notification tone.
 
 MSG="$@"
 

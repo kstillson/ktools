@@ -1,0 +1,1104 @@
+<TaskerData sr="" dvi="1" tv="6.0.10">
+	<dmetric>1080.0,2028.0</dmetric>
+	<Profile sr="prof41" ve="2">
+		<cdate>1656190860161</cdate>
+		<clp>true</clp>
+		<edate>1656220534530</edate>
+		<flags>8</flags>
+		<id>41</id>
+		<mid0>12</mid0>
+		<nme>Timed Nag</nme>
+		<Time sr="con0">
+			<cname>15 Mins</cname>
+			<fh>7</fh>
+			<fm>30</fm>
+			<rep>2</rep>
+			<repval>15</repval>
+			<th>22</th>
+			<tm>45</tm>
+		</Time>
+	</Profile>
+	<Project sr="proj0" ve="2">
+		<cdate>1656176468526</cdate>
+		<name>Nagger</name>
+		<pids>41</pids>
+		<scenes>Nag Scene</scenes>
+		<tids>48,43,56,15,39,12,31,13,42,49,14,44,40,25,24,47,22,33,32</tids>
+	</Project>
+	<Scene sr="sceneNag Scene">
+		<cdate>1656176525397</cdate>
+		<edate>1656511473422</edate>
+		<heightLand>-1</heightLand>
+		<heightPort>600</heightPort>
+		<nme>Nag Scene</nme>
+		<widthLand>-1</widthLand>
+		<widthPort>640</widthPort>
+		<RectElement sr="elements0">
+			<flags>6</flags>
+			<geom>0,0,636,599,-1,-1,-1,-1</geom>
+			<Str sr="arg0" ve="3">Background</Str>
+			<Int sr="arg1" val="0"/>
+			<Str sr="arg2" ve="3">#77333333</Str>
+			<Str sr="arg3" ve="3"/>
+			<Int sr="arg4" val="3"/>
+			<Str sr="arg5" ve="3">#FF000000</Str>
+			<Int sr="arg6" val="0"/>
+			<Int sr="arg7" val="0"/>
+		</RectElement>
+		<TextElement sr="elements1" ve="3">
+			<flags>4</flags>
+			<geom>10,10,600,400,-1,-1,-1,-1</geom>
+			<Str sr="arg0" ve="3">nag output</Str>
+			<Str sr="arg1" ve="3">.</Str>
+			<Int sr="arg2" val="12"/>
+			<Int sr="arg3" val="100"/>
+			<Str sr="arg4" ve="3">#FFFFFFFF</Str>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="5"/>
+			<Int sr="arg7" val="2"/>
+			<Int sr="arg8" val="2"/>
+			<RectElement sr="background">
+				<flags>4</flags>
+				<geom>-1,-1,-1,-1,-1,-1,-1,-1</geom>
+				<Str sr="arg0" ve="3"/>
+				<Int sr="arg1" val="0"/>
+				<Str sr="arg2" ve="3">#FF000000</Str>
+				<Str sr="arg3" ve="3"/>
+				<Int sr="arg4" val="2"/>
+				<Str sr="arg5" ve="3">#FF000000</Str>
+				<Int sr="arg6" val="2"/>
+				<Int sr="arg7" val="0"/>
+			</RectElement>
+		</TextElement>
+		<ButtonElement sr="elements2" ve="3">
+			<clickTask>15</clickTask>
+			<flags>4</flags>
+			<geom>225,424,200,170,-1,-1,-1,-1</geom>
+			<Str sr="arg0" ve="3">Button-exit</Str>
+			<Str sr="arg1" ve="3">close</Str>
+			<Int sr="arg2" val="14"/>
+			<Int sr="arg3" val="100"/>
+			<Str sr="arg4" ve="3">#FFE3E5ED</Str>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="0"/>
+			<Img sr="arg7" ve="2"/>
+		</ButtonElement>
+		<OvalElement sr="elements3">
+			<clickTask>25</clickTask>
+			<flags>4</flags>
+			<geom>531,474,74,74,-1,-1,-1,-1</geom>
+			<longclickTask>56</longclickTask>
+			<Str sr="arg0" ve="3">Nag Status Circle</Str>
+			<Int sr="arg1" val="0"/>
+			<Str sr="arg2" ve="3">#FF000000</Str>
+			<Str sr="arg3" ve="3"/>
+			<Int sr="arg4" val="0"/>
+			<Str sr="arg5" ve="3">#FF000000</Str>
+		</OvalElement>
+		<TextElement sr="elements4" ve="3">
+			<clickTask>39</clickTask>
+			<flags>4</flags>
+			<geom>432,449,108,125,-1,-1,-1,-1</geom>
+			<Str sr="arg0" ve="3">Text count</Str>
+			<Str sr="arg1" ve="3">-</Str>
+			<Int sr="arg2" val="10"/>
+			<Int sr="arg3" val="100"/>
+			<Str sr="arg4" ve="3">#FFFFFFFF</Str>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="3"/>
+			<Int sr="arg7" val="0"/>
+			<Int sr="arg8" val="0"/>
+		</TextElement>
+		<ButtonElement sr="elements5" ve="3">
+			<clickTask>44</clickTask>
+			<flags>4</flags>
+			<geom>8,424,210,170,-1,-1,-1,-1</geom>
+			<Str sr="arg0" ve="3">Button Rescan</Str>
+			<Str sr="arg1" ve="3">rescan</Str>
+			<Int sr="arg2" val="14"/>
+			<Int sr="arg3" val="100"/>
+			<Str sr="arg4" ve="3">#FFffffff</Str>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="0"/>
+			<Img sr="arg7" ve="2"/>
+		</ButtonElement>
+		<PropertiesElement sr="props">
+			<Int sr="arg0" val="1"/>
+			<Int sr="arg1" val="0"/>
+			<Str sr="arg2" ve="3">#996D1695</Str>
+			<Int sr="arg3" val="0"/>
+			<Str sr="arg4" ve="3">N-out</Str>
+			<Str sr="arg5" ve="3"/>
+			<Img sr="arg6" ve="2"/>
+			<Str sr="arg7" ve="3"/>
+		</PropertiesElement>
+	</Scene>
+	<Task sr="task12">
+		<cdate>1656176713982</cdate>
+		<edate>1658542848131</edate>
+		<id>12</id>
+		<nme>Nag Run</nme>
+		<pri>6</pri>
+		<rty>1</rty>
+		<stayawake>true</stayawake>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Paused</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="1"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagEnabled</lhs>
+					<op>0</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">running...</Str>
+			<Str sr="arg4" ve="3"/>
+		</Action>
+		<Action sr="act10" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Happy</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%mt_match_found</lhs>
+					<op>2</op>
+					<rhs>true</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act11" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Unhappy</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%mt_match_found</lhs>
+					<op>2</op>
+					<rhs>false</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act12" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Update Count</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>55</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Nag Status Circle</Str>
+			<Str sr="arg2" ve="3">#FFC9BEBE</Str>
+			<Str sr="arg3" ve="3">#FFC9BEBE</Str>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>339</code>
+			<se>false</se>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES>&lt;StringArray sr=""&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;%http_cookies
+Cookies
+The cookies the server sent in the response in the Cookie:COOKIE_VALUE format. You can use this directly in the 'Headers' field of the HTTP Request action&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;%http_data
+Data
+Data that the server responded from the HTTP request.&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;%http_file_output
+File Output
+Will always contain the file's full path even if you specified a directory as the File to save.&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES3&gt;%http_response_code
+Response Code
+The HTTP Code the server responded&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES3&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES4&gt;%http_headers()
+Response Headers
+The HTTP Headers the server sent in the response. Each header is in the 'key:value' format&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES4&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES5&gt;%http_response_length
+Response Length
+The size of the response in bytes&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES5&gt;&lt;/StringArray&gt;</net.dinglisch.android.tasker.RELEVANT_VARIABLES>
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>[Ljava.lang.String;</net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>
+				</Vals>
+			</Bundle>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg10" val="0"/>
+			<Int sr="arg11" val="0"/>
+			<Int sr="arg12" val="1"/>
+			<Str sr="arg2" ve="3">https://home.point0.net/cgi-bin/nagios-healthz.cgi</Str>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Str sr="arg5" ve="3"/>
+			<Str sr="arg6" ve="3"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="5"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%NagQueryStatus</Str>
+			<Str sr="arg1" ve="3">%http_response_code</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%NagQueryResp</Str>
+			<Str sr="arg1" ve="3">%http_data</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+		<Action sr="act6" ve="7">
+			<code>598</code>
+			<Str sr="arg0" ve="3">%NagQueryResp</Str>
+			<Str sr="arg1" ve="3">&lt;[^&gt;]*&gt;</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="1"/>
+			<Int sr="arg4" val="0"/>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="1"/>
+			<Str sr="arg7" ve="3"/>
+		</Action>
+		<Action sr="act7" ve="7">
+			<code>598</code>
+			<Str sr="arg0" ve="3">%NagQueryResp</Str>
+			<Str sr="arg1" ve="3">\n\n*</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="1"/>
+			<Int sr="arg4" val="0"/>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="1"/>
+			<Str sr="arg7" ve="3"> | </Str>
+		</Action>
+		<Action sr="act8" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Fail</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="1"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%http_response_code</lhs>
+					<op>1</op>
+					<rhs>200</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act9" ve="7">
+			<code>396</code>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES>&lt;StringArray sr=""&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;%mt_match_found
+Is Match
+true if there was a match, false otherwise&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;%mt_match
+Match
+Can also be accessed as an array&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;&lt;/StringArray&gt;</net.dinglisch.android.tasker.RELEVANT_VARIABLES>
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>[Ljava.lang.String;</net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>
+				</Vals>
+			</Bundle>
+			<Int sr="arg1" val="0"/>
+			<Str sr="arg2" ve="3">%http_data</Str>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3">W=0  C=0  U=0</Str>
+		</Action>
+	</Task>
+	<Task sr="task13">
+		<cdate>1656176767689</cdate>
+		<edate>1656195366939</edate>
+		<id>13</id>
+		<nme>Nag Show</nme>
+		<pri>7</pri>
+		<Action sr="act0" ve="7">
+			<code>47</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Int sr="arg1" val="3"/>
+			<Int sr="arg10" val="1"/>
+			<Int sr="arg2" val="100"/>
+			<Int sr="arg3" val="100"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="1"/>
+			<Int sr="arg6" val="1"/>
+			<Int sr="arg7" val="1"/>
+			<Int sr="arg8" val="1"/>
+			<Int sr="arg9" val="1"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_profile_enter_light</nme>
+		</Img>
+	</Task>
+	<Task sr="task14">
+		<cdate>1656186155557</cdate>
+		<edate>1656186923670</edate>
+		<id>14</id>
+		<nme>Nag Hide</nme>
+		<Action sr="act0" ve="7">
+			<code>48</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Int sr="arg1" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task15">
+		<cdate>1656186195587</cdate>
+		<edate>1656186195587</edate>
+		<id>15</id>
+		<pri>9</pri>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Hide</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task22">
+		<cdate>1656257506077</cdate>
+		<edate>1656258218158</edate>
+		<id>22</id>
+		<nme>Nag Count Reset</nme>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%NagCount</Str>
+			<Str sr="arg1" ve="3">0</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%NagCountBad</Str>
+			<Str sr="arg1" ve="3">0</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Update Count</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task24">
+		<cdate>1656186825608</cdate>
+		<edate>1656190799284</edate>
+		<id>24</id>
+		<nme>Nag Show And Go</nme>
+		<pri>7</pri>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Show</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Run</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>hl_aaa_ext_link</nme>
+		</Img>
+	</Task>
+	<Task sr="task25">
+		<cdate>1656187055382</cdate>
+		<edate>1656187055382</edate>
+		<id>25</id>
+		<pri>9</pri>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Toggle Pause</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task31">
+		<cdate>1656187217010</cdate>
+		<edate>1657396077813</edate>
+		<id>31</id>
+		<nme>Nag Happy</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>55</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Nag Status Circle</Str>
+			<Str sr="arg2" ve="3">#FF36C038</Str>
+			<Str sr="arg3" ve="3">#FF36C038</Str>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">%TIME : all ok</Str>
+			<Str sr="arg4" ve="3"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>192</code>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Teapot</Str>
+			<Int sr="arg2" val="5"/>
+			<ConditionList sr="if">
+				<bool0>And</bool0>
+				<Condition sr="c0" ve="3">
+					<lhs>%TIME</lhs>
+					<op>2</op>
+					<rhs>*00</rhs>
+				</Condition>
+				<Condition sr="c1" ve="3">
+					<lhs>%NagChime</lhs>
+					<op>7</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>192</code>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Champagne Pop</Str>
+			<Int sr="arg2" val="5"/>
+			<ConditionList sr="if">
+				<bool0>And</bool0>
+				<Condition sr="c0" ve="3">
+					<lhs>%TIME</lhs>
+					<op>2</op>
+					<rhs>*30</rhs>
+				</Condition>
+				<Condition sr="c1" ve="3">
+					<lhs>%NagChime</lhs>
+					<op>7</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>152</code>
+			<Str sr="arg0" ve="3">Nag Show</Str>
+			<Img sr="arg1" ve="2">
+				<nme>cust_profile_enter_light</nme>
+			</Img>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%NagCount</Str>
+			<Str sr="arg1" ve="3">%NagCount + 1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="1"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+	</Task>
+	<Task sr="task32">
+		<cdate>1656187327586</cdate>
+		<edate>1656200247385</edate>
+		<id>32</id>
+		<nme>Nag Unhappy</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>55</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Nag Status Circle</Str>
+			<Str sr="arg2" ve="3">#FFE42C2C</Str>
+			<Str sr="arg3" ve="3">#FFE42C2C</Str>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">%TIME. %NagQueryResp</Str>
+			<Str sr="arg4" ve="3"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>192</code>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Shaula</Str>
+			<Int sr="arg2" val="5"/>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>523</code>
+			<Str sr="arg0" ve="3">Nagger</Str>
+			<Str sr="arg1" ve="3">%NagQueryResp</Str>
+			<Str sr="arg10" ve="3"/>
+			<Str sr="arg11" ve="3">User Notifications</Str>
+			<Img sr="arg2" ve="2">
+				<nme>hd_aaa_ext_rain</nme>
+			</Img>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="0"/>
+			<Int sr="arg7" val="0"/>
+			<Int sr="arg8" val="0"/>
+			<Str sr="arg9" ve="3"/>
+			<ListElementItem sr="item0">
+				<label>Open</label>
+				<Action sr="action" ve="7">
+					<code>130</code>
+					<Str sr="arg0" ve="3">Nag Clear And Show</Str>
+					<Int sr="arg1">
+						<var>%priority</var>
+					</Int>
+					<Int sr="arg10" val="1"/>
+					<Str sr="arg2" ve="3"/>
+					<Str sr="arg3" ve="3"/>
+					<Str sr="arg4" ve="3"/>
+					<Int sr="arg5" val="0"/>
+					<Int sr="arg6" val="0"/>
+					<Str sr="arg7" ve="3"/>
+					<Int sr="arg8" val="0"/>
+					<Int sr="arg9" val="0"/>
+				</Action>
+				<Img sr="icon" ve="2">
+					<nme>hl_aaa_ext_show</nme>
+				</Img>
+			</ListElementItem>
+			<ListElementItem sr="item1">
+				<label>Close</label>
+				<Action sr="action" ve="7">
+					<code>130</code>
+					<Str sr="arg0" ve="3">Nag Clear</Str>
+					<Int sr="arg1">
+						<var>%priority</var>
+					</Int>
+					<Int sr="arg10" val="1"/>
+					<Str sr="arg2" ve="3"/>
+					<Str sr="arg3" ve="3"/>
+					<Str sr="arg4" ve="3"/>
+					<Int sr="arg5" val="0"/>
+					<Int sr="arg6" val="0"/>
+					<Str sr="arg7" ve="3"/>
+					<Int sr="arg8" val="0"/>
+					<Int sr="arg9" val="0"/>
+				</Action>
+				<Img sr="icon" ve="2">
+					<nme>hl_ab_content_remove</nme>
+				</Img>
+			</ListElementItem>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>152</code>
+			<Str sr="arg0" ve="3">Nag Show</Str>
+			<Img sr="arg1" ve="2">
+				<nme>cust_profile_exit_light</nme>
+			</Img>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%NagCountBad</Str>
+			<Str sr="arg1" ve="3">%NagCountBad + 1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="1"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+	</Task>
+	<Task sr="task33">
+		<cdate>1656188206767</cdate>
+		<edate>1656436665348</edate>
+		<id>33</id>
+		<nme>Nag Fail</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>55</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Nag Status Circle</Str>
+			<Str sr="arg2" ve="3">#FF5A73C3</Str>
+			<Str sr="arg3" ve="3">#FF5A73C3</Str>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">%NagQueryStatus : %NagQueryResp</Str>
+			<Str sr="arg4" ve="3"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>192</code>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Adara</Str>
+			<Int sr="arg2" val="5"/>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>523</code>
+			<Str sr="arg0" ve="3">Nagger</Str>
+			<Str sr="arg1" ve="3">Fail: %NagQueryStatus : %NagQueryResp</Str>
+			<Str sr="arg10" ve="3"/>
+			<Str sr="arg11" ve="3">User Notifications</Str>
+			<Img sr="arg2" ve="2">
+				<nme>hd_aaa_ext_rain</nme>
+			</Img>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="0"/>
+			<Int sr="arg7" val="0"/>
+			<Int sr="arg8" val="0"/>
+			<Str sr="arg9" ve="3"/>
+			<ListElementItem sr="item0">
+				<label>Open</label>
+				<Action sr="action" ve="7">
+					<code>130</code>
+					<Str sr="arg0" ve="3">Nag Clear And Show</Str>
+					<Int sr="arg1" val="5"/>
+					<Int sr="arg10" val="1"/>
+					<Str sr="arg2" ve="3"/>
+					<Str sr="arg3" ve="3"/>
+					<Str sr="arg4" ve="3"/>
+					<Int sr="arg5" val="0"/>
+					<Int sr="arg6" val="0"/>
+					<Str sr="arg7" ve="3"/>
+					<Int sr="arg8" val="0"/>
+					<Int sr="arg9" val="0"/>
+				</Action>
+				<Img sr="icon" ve="2">
+					<nme>hl_aaa_ext_show</nme>
+				</Img>
+			</ListElementItem>
+			<ListElementItem sr="item1">
+				<label>Close</label>
+				<Action sr="action" ve="7">
+					<code>130</code>
+					<Str sr="arg0" ve="3">Nag Clear</Str>
+					<Int sr="arg1">
+						<var>%priority</var>
+					</Int>
+					<Int sr="arg10" val="1"/>
+					<Str sr="arg2" ve="3"/>
+					<Str sr="arg3" ve="3"/>
+					<Str sr="arg4" ve="3"/>
+					<Int sr="arg5" val="0"/>
+					<Int sr="arg6" val="0"/>
+					<Str sr="arg7" ve="3"/>
+					<Int sr="arg8" val="0"/>
+					<Int sr="arg9" val="0"/>
+				</Action>
+				<Img sr="icon" ve="2">
+					<nme>hl_ab_content_remove</nme>
+				</Img>
+			</ListElementItem>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>152</code>
+			<Str sr="arg0" ve="3">Nag Show</Str>
+			<Img sr="arg1" ve="2">
+				<nme>cust_scrubber_normal</nme>
+			</Img>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%NagCountBad</Str>
+			<Str sr="arg1" ve="3">%NagCountBad + 1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="1"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+	</Task>
+	<Task sr="task39">
+		<cdate>1656257571010</cdate>
+		<edate>1656257571010</edate>
+		<id>39</id>
+		<pri>9</pri>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Count Reset</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task40">
+		<cdate>1656258169921</cdate>
+		<edate>1656258198126</edate>
+		<id>40</id>
+		<nme>Nag Update Count</nme>
+		<Action sr="act0" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Text count</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">%NagCount
+%NagCountBad</Str>
+			<Str sr="arg4" ve="3"/>
+		</Action>
+	</Task>
+	<Task sr="task42">
+		<cdate>1656194297415</cdate>
+		<edate>1656194384806</edate>
+		<id>42</id>
+		<nme>Nag Clear And Show</nme>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Clear</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Show</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task43">
+		<cdate>1656194352153</cdate>
+		<edate>1656194361834</edate>
+		<id>43</id>
+		<nme>Nag Clear</nme>
+		<Action sr="act0" ve="7">
+			<code>779</code>
+			<Str sr="arg0" ve="3">Nagger</Str>
+			<Int sr="arg1" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task44">
+		<cdate>1656197080029</cdate>
+		<edate>1656197080029</edate>
+		<id>44</id>
+		<pri>9</pri>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Run</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task47">
+		<cdate>1656434065822</cdate>
+		<edate>1656434572558</edate>
+		<id>47</id>
+		<nme>Nag Paused</nme>
+		<Action sr="act0" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">paused...</Str>
+			<Str sr="arg4" ve="3"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>55</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Nag Status Circle</Str>
+			<Str sr="arg2" ve="3">#FFA129B1</Str>
+			<Str sr="arg3" ve="3">#FFA129B1</Str>
+		</Action>
+	</Task>
+	<Task sr="task48">
+		<cdate>1656434284844</cdate>
+		<edate>1656436828456</edate>
+		<id>48</id>
+		<nme>Nag Toggle Pause</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>888</code>
+			<Str sr="arg0" ve="3">%NagEnabled</Str>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="2"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">paused...</Str>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagEnabled</lhs>
+					<op>0</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>55</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Nag Status Circle</Str>
+			<Str sr="arg2" ve="3">#FFA129B1</Str>
+			<Str sr="arg3" ve="3">#FFA129B1</Str>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagEnabled</lhs>
+					<op>0</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>152</code>
+			<Str sr="arg0" ve="3">Nag Show</Str>
+			<Img sr="arg1" ve="2">
+				<nme>cust_scrubber_normal</nme>
+			</Img>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagEnabled</lhs>
+					<op>0</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">resumed....</Str>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagEnabled</lhs>
+					<op>1</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>55</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">Nag Status Circle</Str>
+			<Str sr="arg2" ve="3">#FFC1BABA</Str>
+			<Str sr="arg3" ve="3">#FFC1BABA</Str>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagEnabled</lhs>
+					<op>1</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act6" ve="7">
+			<code>152</code>
+			<Str sr="arg0" ve="3">Nag Show</Str>
+			<Img sr="arg1" ve="2">
+				<nme>cust_animal_panda</nme>
+			</Img>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagEnabled</lhs>
+					<op>1</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+	</Task>
+	<Task sr="task49">
+		<cdate>1656434284844</cdate>
+		<edate>1656511435965</edate>
+		<id>49</id>
+		<nme>Nag Toggle Chime</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>888</code>
+			<Str sr="arg0" ve="3">%NagChime</Str>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="2"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">chimes off </Str>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagChime</lhs>
+					<op>0</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>51</code>
+			<Str sr="arg0" ve="3">Nag Scene</Str>
+			<Str sr="arg1" ve="3">nag output</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3">chimes on</Str>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%NagChime</lhs>
+					<op>1</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+	</Task>
+	<Task sr="task56">
+		<cdate>1656511451469</cdate>
+		<edate>1656511451469</edate>
+		<id>56</id>
+		<pri>9</pri>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Nag Toggle Chime</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+</TaskerData>

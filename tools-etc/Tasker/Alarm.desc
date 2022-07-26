@@ -1,0 +1,399 @@
+Profiles
+        Profile: Shaker Scrn On
+        Settings: Cooldown: 5 Restore: yes
+        Event: Shake [ Axis:Up-Down Sensitivity:Very Low Duration:Very Long ]
+        State: Display State [ Is:On ]
+        State: Not Call [ Type:Incoming Number:* ]
+       
+       
+       
+        Enter Task: Shake Lock
+        Stay Awake
+       
+        A1: If [ %FaceDown ~ 1 ]
+       
+            A2: Perform Task [
+                 Name: Shaken alert
+                 Priority: 5 ]
+       
+        A3: Else
+       
+            A4: Return [
+                 Value: 0
+                 Stop: On ]
+                If  [ %EnableShakelock ~ 0 ]
+       
+            A5: Return [
+                 Value: 0
+                 Stop: On ]
+                If  [ %DisableShakelock ~ 1 ]
+       
+            A6: Return [
+                 Value: 0
+                 Stop: On ]
+                If  [ %WIN ~ Navigat ]
+       
+            A7: Perform Task [
+                 Name: Lock Now
+                 Priority: 6 ]
+       
+            A8: Play Ringtone [
+                 Type: Notification
+                 Sound: Hojus
+                 Stream: 5 ]
+       
+        A9: End If
+       
+       
+   
+        Profile: Shaker Scrn Off
+        Settings: Cooldown: 5 Priority: 6 Restore: yes
+        Event: Shake [ Axis:Left-Right Sensitivity:Low Duration:Long ]
+        State: Display State [ Is:Off ]
+       
+       
+       
+        Enter Task: Shaker When Off
+        Stay Awake
+       
+        A1: [X] Play Ringtone [
+             Type: Notification
+             Sound: Capella
+             Stream: 5 ]
+       
+        A2: *Unknown Plugin* [
+             Configuration: Screen & Keyboard Lights On
+             5 Seconds
+             Timeout (Seconds): 0 ]
+       
+        A3: [X] Variable Set [
+             Name: %Armed
+             To: 0
+             Max Rounding Digits: 0 ]
+       
+        A4: [X] Show Scene [
+             Name: Panic Pop
+             Display As: Activity, No Status
+             Horizontal Position: 100
+             Vertical Position: 100
+             Animation: None
+             Show Exit Button: On
+             Show Over Keyguard: On
+             Continue Task Immediately: On
+             Allow Outside Boundaries: On ]
+       
+       
+   
+        Profile: Face Down
+        Settings: Restore: yes
+        State: Orientation [ Is:Face Down ]
+        State: Display State [ Is:On ]
+       
+       
+       
+        Enter Task: Anon
+       
+        A1: Variable Set [
+             Name: %FaceDown
+             To: 1
+             Max Rounding Digits: 0 ]
+       
+       
+       
+        Exit Task: Anon
+       
+        A1: Variable Set [
+             Name: %FaceDown
+             To: 0
+             Max Rounding Digits: 0 ]
+       
+       
+   
+        Profile: On Face Down
+        Settings: Restore: yes
+        Event: Variable Set [ Variable:%FaceDown Value:1 User Variables Only:Off ]
+       
+       
+       
+        Enter Task: Anon
+       
+        A1: Play Ringtone [
+             Type: Notification
+             Sound: Alya
+             Stream: 5 ]
+       
+       
+   
+        Profile: Disable Shakelock On Alarm
+        Settings: Restore: yes
+        Event: Alarm Clock [ Label:* ]
+       
+       
+       
+        Enter Task: Disable Shakelock On
+       
+        A1: Variable Set [
+             Name: %DisableShakelock
+             To: 1
+             Max Rounding Digits: 0 ]
+       
+       
+   
+        Profile: Undisable Shakelock After Alarm
+        Settings: Restore: yes
+        Event: Alarm Done
+       
+       
+       
+        Enter Task: Undisable Shakelock
+       
+        A1: Variable Set [
+             Name: %DisableShakelock
+             To: 0
+             Max Rounding Digits: 0 ]
+       
+       
+   
+    Tasks
+        Task: Shake Lock
+        Stay Awake
+       
+        A1: If [ %FaceDown ~ 1 ]
+       
+            A2: Perform Task [
+                 Name: Shaken alert
+                 Priority: 5 ]
+       
+        A3: Else
+       
+            A4: Return [
+                 Value: 0
+                 Stop: On ]
+                If  [ %EnableShakelock ~ 0 ]
+       
+            A5: Return [
+                 Value: 0
+                 Stop: On ]
+                If  [ %DisableShakelock ~ 1 ]
+       
+            A6: Return [
+                 Value: 0
+                 Stop: On ]
+                If  [ %WIN ~ Navigat ]
+       
+            A7: Perform Task [
+                 Name: Lock Now
+                 Priority: 6 ]
+       
+            A8: Play Ringtone [
+                 Type: Notification
+                 Sound: Hojus
+                 Stream: 5 ]
+       
+        A9: End If
+       
+       
+   
+        Task: Tog Shakelock
+       
+        A1: Set Tasker Icon [ ]
+       
+        A2: If [ %EnableShakelock ~ 1 ]
+       
+            A3: Variable Set [
+                 Name: %EnableShakelock
+                 To: 0
+                 Max Rounding Digits: 0 ]
+       
+            A4: Set Widget Icon [
+                 Name: Tog Shakelock
+                 Icon: hd_device_access_screen_rotation ]
+       
+        A5: Else
+       
+            A6: Variable Set [
+                 Name: %EnableShakelock
+                 To: 1
+                 Max Rounding Digits: 0 ]
+       
+            A7: Set Widget Icon [
+                 Name: Tog Shakelock
+                 Icon: hl_device_access_screen_rotation ]
+       
+        A8: End If
+       
+       
+   
+        Task: Dest: Test
+       
+        A1: Variable Set [
+             Name: %Dest
+             To: 6502651369
+             Max Rounding Digits: 3 ]
+       
+       
+   
+        Task: Get Updated Loc
+       
+        A1: Get Location v2 [
+             Timeout (Seconds): 15 ]
+       
+        A2: Variable Set [
+             Name: %LocationUrl
+             To: %gl_map_url
+             Max Rounding Digits: 3 ]
+       
+        A3: Variable Set [
+             Name: %LocationTime
+             To: %gl_time_seconds - %TIMES
+             Do Maths: On
+             Max Rounding Digits: 1 ]
+       
+        A4: Variable Set [
+             Name: %LocationAccuracy
+             To: %gl_coordinates_accuracy
+             Max Rounding Digits: 3 ]
+       
+       
+   
+        Task: Sorry False Alarm
+        Stay Awake
+       
+        A1: Send SMS [
+             Number: %Dest
+             Message: apologies, false alarm. Please disregard previous text message concern panic mode.
+             Continue Task After Error:On ]
+       
+       
+   
+        Task: Dest: Real
+       
+        A1: Variable Set [
+             Name: %Dest
+             To: 123456789,2345678901
+             Max Rounding Digits: 3 ]
+       
+       
+   
+        Task: Undisable Shakelock
+       
+        A1: Variable Set [
+             Name: %DisableShakelock
+             To: 0
+             Max Rounding Digits: 0 ]
+       
+       
+   
+        Task: Disable Shakelock On
+       
+        A1: Variable Set [
+             Name: %DisableShakelock
+             To: 1
+             Max Rounding Digits: 0 ]
+       
+       
+   
+        Task: Shaker When Off
+        Stay Awake
+       
+        A1: [X] Play Ringtone [
+             Type: Notification
+             Sound: Capella
+             Stream: 5 ]
+       
+        A2: *Unknown Plugin* [
+             Configuration: Screen & Keyboard Lights On
+             5 Seconds
+             Timeout (Seconds): 0 ]
+       
+        A3: [X] Variable Set [
+             Name: %Armed
+             To: 0
+             Max Rounding Digits: 0 ]
+       
+        A4: [X] Show Scene [
+             Name: Panic Pop
+             Display As: Activity, No Status
+             Horizontal Position: 100
+             Vertical Position: 100
+             Animation: None
+             Show Exit Button: On
+             Show Over Keyguard: On
+             Continue Task Immediately: On
+             Allow Outside Boundaries: On ]
+       
+       
+   
+        Task: Shaken alert
+        Stay Awake
+       
+        A1: Perform Task [
+             Name: Lock Now
+             Priority: 6 ]
+       
+        A2: Play Ringtone [
+             Type: Notification
+             Sound: Vega
+             Stream: 5 ]
+       
+        A3: Perform Task [
+             Name: Get Updated Loc
+             Priority: 7 ]
+       
+        <Let Loc update stabize>
+        A4: Wait [
+             MS: 500
+             Seconds: 1
+             Minutes: 0
+             Hours: 0
+             Days: 0 ]
+       
+        A5: Stop [ ]
+            If  [ %KEYG ~ off ]
+       
+        A6: Send SMS [
+             Number: %Dest
+             Message: phone panic mode activated.  Please call for help.  My location:  %LocationUrl  Accuracy: %LocationAccuracy meters, updated: %LocationTime secs ago.
+             Continue Task After Error:On ]
+       
+        A7: [X] Return [
+             Value: 0
+             Stop: On ]
+            If  [ %SCREEN ~ on ]
+       
+        A8: Perform Task [
+             Name: Start Alarm
+             Priority: 5 ]
+       
+       
+   
+        Task: Start Alarm
+       
+        A1: [X] Alarm Volume [
+             Level: 7 ]
+       
+        A2: Media Volume [
+             Level: 15 ]
+       
+        A3: [X] Play Ringtone [
+             Type: Alarm
+             Sound: Krypton
+             Stream: 4 ]
+       
+        A4: Music Play [
+             File: Alarms/annoying_alarm.mp3
+             Start: 0
+             Stream: 3
+             Continue Task Immediately: On ]
+       
+       
+   
+        Task: Stop Alarm
+       
+        A1: Music Stop [ ]
+       
+        A2: Media Volume [
+             Level: 9 ]
+
+       
+         

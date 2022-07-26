@@ -87,7 +87,6 @@ install-simple: tools/keymaster.crt
 	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/keymaster.crt ~/.local/bin/keymaster.crt
 	cp -puv tools/nag.py ~/.local/bin/nag
-	cp -puv tools/pb-push.sh ~/.local/bin/pb-push
 	cp -puv tools/pcrypt.py ~/.local/bin/pcrypt
 	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
 	cp -puv tools/run_para.py ~/.local/bin/run_para

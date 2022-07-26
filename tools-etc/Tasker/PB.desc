@@ -1,0 +1,90 @@
+    Profiles
+        Profile: Anon
+        Settings: Restore: yes
+        Event: Received A Push [ Configuration:If I receive a note containing the text "#a" from anyone. ]
+       
+       
+       
+        Enter Task: PB Alert
+       
+        A1: Music Play [
+             File: Alarms/annoying_alarm.mp3
+             Start: 0
+             Stream: 4
+             Continue Task Immediately: On ]
+       
+        A2: Wait [
+             MS: 600
+             Seconds: 1
+             Minutes: 0
+             Hours: 0
+             Days: 0 ]
+       
+        A3: Music Stop [ ]
+       
+       
+   
+        Profile: Anon
+        Settings: Restore: yes
+        Event: Received A Push [ Configuration:If I receive a note containing the text "#i" from anyone. ]
+       
+       
+       
+        Enter Task: PB Info
+       
+        A1: Music Play [
+             File: Alarms/Helium.ogg
+             Start: 0
+             Stream: 2
+             Continue Task Immediately: On ]
+       
+        A2: Wait [
+             MS: 632
+             Seconds: 1
+             Minutes: 0
+             Hours: 0
+             Days: 0 ]
+       
+        A3: Music Stop [ ]
+       
+       
+   
+    Tasks
+        Task: PB Alert
+       
+        A1: Music Play [
+             File: Alarms/annoying_alarm.mp3
+             Start: 0
+             Stream: 4
+             Continue Task Immediately: On ]
+       
+        A2: Wait [
+             MS: 600
+             Seconds: 1
+             Minutes: 0
+             Hours: 0
+             Days: 0 ]
+       
+        A3: Music Stop [ ]
+       
+       
+   
+        Task: PB Info
+       
+        A1: Music Play [
+             File: Alarms/Helium.ogg
+             Start: 0
+             Stream: 2
+             Continue Task Immediately: On ]
+       
+        A2: Wait [
+             MS: 632
+             Seconds: 1
+             Minutes: 0
+             Hours: 0
+             Days: 0 ]
+       
+        A3: Music Stop [ ]
+
+       
+         

@@ -1,0 +1,476 @@
+Profiles
+        Profile: Timed Nag
+        Time: From  7:30AM every 15m Till 10:45PM
+       
+       
+       
+        Enter Task: Nag Run
+        Settings: Abort Existing Task, Stay Awake
+       
+        A1: Perform Task [
+             Name: Nag Paused
+             Priority: %priority
+             Stop: On
+             Structure Output (JSON, etc): On ]
+            If  [ %NagEnabled eq 0 ]
+       
+        A2: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: running... ]
+       
+        A3: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FFC9BEBE
+             End Colour: #FFC9BEBE ]
+       
+        A4: HTTP Request [
+             Method: GET
+             URL: https://home.point0.net/cgi-bin/nagios-healthz.cgi
+             Timeout (Seconds): 5
+             Structure Output (JSON, etc): On
+             Continue Task After Error:On ]
+       
+        A5: Variable Set [
+             Name: %NagQueryStatus
+             To: %http_response_code
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+        A6: Variable Set [
+             Name: %NagQueryResp
+             To: %http_data
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+        A7: Variable Search Replace [
+             Variable: %NagQueryResp
+             Search: <[^>]*>
+             Multi-Line: On
+             Replace Matches: On ]
+       
+        A8: Variable Search Replace [
+             Variable: %NagQueryResp
+             Search: \n\n*
+             Multi-Line: On
+             Replace Matches: On
+             Replace With:  |  ]
+       
+        A9: Perform Task [
+             Name: Nag Fail
+             Priority: %priority
+             Stop: On
+             Structure Output (JSON, etc): On ]
+            If  [ %http_response_code neq 200 ]
+       
+        A10: Simple Match/Regex [
+              Type: Simple
+              Text: %http_data
+              Match Pattern: W=0  C=0  U=0 ]
+       
+        A11: Perform Task [
+              Name: Nag Happy
+              Priority: %priority
+              Structure Output (JSON, etc): On ]
+            If  [ %mt_match_found ~ true ]
+       
+        A12: Perform Task [
+              Name: Nag Unhappy
+              Priority: %priority
+              Structure Output (JSON, etc): On ]
+            If  [ %mt_match_found ~ false ]
+       
+        A13: Perform Task [
+              Name: Nag Update Count
+              Priority: %priority
+              Structure Output (JSON, etc): On ]
+       
+       
+   
+    Tasks
+        Task: Nag Unhappy
+       
+        A1: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FFE42C2C
+             End Colour: #FFE42C2C ]
+       
+        A2: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: %TIME. %NagQueryResp ]
+       
+        A3: Play Ringtone [
+             Type: Notification
+             Sound: Shaula
+             Stream: 5 ]
+       
+        A4: Notify [
+             Title: Nagger
+             Text: %NagQueryResp
+             Icon: hd_aaa_ext_rain
+             Number: 0
+             Priority: 3
+             LED Colour: Red
+             LED Rate: 0
+             Category: User Notifications Actions:(2) ]
+       
+        A5: Set Widget Icon [
+             Name: Nag Show
+             Icon: cust_profile_exit_light ]
+       
+        A6: Variable Set [
+             Name: %NagCountBad
+             To: %NagCountBad + 1
+             Do Maths: On
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+       
+   
+        Task: Nag Fail
+       
+        A1: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FF5A73C3
+             End Colour: #FF5A73C3 ]
+       
+        A2: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: %NagQueryStatus : %NagQueryResp ]
+       
+        A3: Play Ringtone [
+             Type: Notification
+             Sound: Adara
+             Stream: 5 ]
+       
+        A4: Notify [
+             Title: Nagger
+             Text: Fail: %NagQueryStatus : %NagQueryResp
+             Icon: hd_aaa_ext_rain
+             Number: 0
+             Priority: 3
+             LED Colour: Red
+             LED Rate: 0
+             Category: User Notifications Actions:(2) ]
+       
+        A5: Set Widget Icon [
+             Name: Nag Show
+             Icon: cust_scrubber_normal ]
+       
+        A6: Variable Set [
+             Name: %NagCountBad
+             To: %NagCountBad + 1
+             Do Maths: On
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+       
+   
+        Task: Nag Update Count
+       
+        A1: Element Text [
+             Scene Name: Nag Scene
+             Element: Text count
+             Position: Replace Existing
+             Text: %NagCount
+             %NagCountBad ]
+       
+       
+   
+        Task: Nag Clear And Show
+       
+        A1: Perform Task [
+             Name: Nag Clear
+             Priority: %priority
+             Structure Output (JSON, etc): On ]
+       
+        A2: Perform Task [
+             Name: Nag Show
+             Priority: %priority
+             Structure Output (JSON, etc): On ]
+       
+       
+   
+        Task: Nag Clear
+       
+        A1: Notify Cancel [
+             Title: Nagger ]
+       
+       
+   
+        Task: Nag Run
+        Settings: Abort Existing Task, Stay Awake
+       
+        A1: Perform Task [
+             Name: Nag Paused
+             Priority: %priority
+             Stop: On
+             Structure Output (JSON, etc): On ]
+            If  [ %NagEnabled eq 0 ]
+       
+        A2: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: running... ]
+       
+        A3: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FFC9BEBE
+             End Colour: #FFC9BEBE ]
+       
+        A4: HTTP Request [
+             Method: GET
+             URL: https://home.point0.net/cgi-bin/nagios-healthz.cgi
+             Timeout (Seconds): 5
+             Structure Output (JSON, etc): On
+             Continue Task After Error:On ]
+       
+        A5: Variable Set [
+             Name: %NagQueryStatus
+             To: %http_response_code
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+        A6: Variable Set [
+             Name: %NagQueryResp
+             To: %http_data
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+        A7: Variable Search Replace [
+             Variable: %NagQueryResp
+             Search: <[^>]*>
+             Multi-Line: On
+             Replace Matches: On ]
+       
+        A8: Variable Search Replace [
+             Variable: %NagQueryResp
+             Search: \n\n*
+             Multi-Line: On
+             Replace Matches: On
+             Replace With:  |  ]
+       
+        A9: Perform Task [
+             Name: Nag Fail
+             Priority: %priority
+             Stop: On
+             Structure Output (JSON, etc): On ]
+            If  [ %http_response_code neq 200 ]
+       
+        A10: Simple Match/Regex [
+              Type: Simple
+              Text: %http_data
+              Match Pattern: W=0  C=0  U=0 ]
+       
+        A11: Perform Task [
+              Name: Nag Happy
+              Priority: %priority
+              Structure Output (JSON, etc): On ]
+            If  [ %mt_match_found ~ true ]
+       
+        A12: Perform Task [
+              Name: Nag Unhappy
+              Priority: %priority
+              Structure Output (JSON, etc): On ]
+            If  [ %mt_match_found ~ false ]
+       
+        A13: Perform Task [
+              Name: Nag Update Count
+              Priority: %priority
+              Structure Output (JSON, etc): On ]
+       
+       
+   
+        Task: Nag Show
+       
+        A1: Show Scene [
+             Name: Nag Scene
+             Display As: Dialog
+             Horizontal Position: 100
+             Vertical Position: 100
+             Animation: System
+             Show Exit Button: On
+             Show Over Keyguard: On
+             Continue Task Immediately: On
+             Allow Outside Boundaries: On
+             Blocking Overlay +: On
+             Overlay +: On ]
+       
+       
+   
+        Task: Nag Hide
+       
+        A1: Hide Scene [
+             Name: Nag Scene
+             Animation: System ]
+       
+       
+   
+        Task: Nag Paused
+       
+        A1: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: paused... ]
+       
+        A2: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FFA129B1
+             End Colour: #FFA129B1 ]
+       
+       
+   
+        Task: Nag Toggle Pause
+       
+        A1: Variable Add [
+             Name: %NagEnabled
+             Value: 1
+             Wrap Around: 2 ]
+       
+        A2: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: paused... ]
+            If  [ %NagEnabled eq 0 ]
+       
+        A3: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FFA129B1
+             End Colour: #FFA129B1 ]
+            If  [ %NagEnabled eq 0 ]
+       
+        A4: Set Widget Icon [
+             Name: Nag Show
+             Icon: cust_scrubber_normal ]
+            If  [ %NagEnabled eq 0 ]
+       
+        A5: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: resumed.... ]
+            If  [ %NagEnabled neq 0 ]
+       
+        A6: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FFC1BABA
+             End Colour: #FFC1BABA ]
+            If  [ %NagEnabled neq 0 ]
+       
+        A7: Set Widget Icon [
+             Name: Nag Show
+             Icon: cust_animal_panda ]
+            If  [ %NagEnabled neq 0 ]
+       
+       
+   
+        Task: Nag Toggle Chime
+       
+        A1: Variable Add [
+             Name: %NagChime
+             Value: 1
+             Wrap Around: 2 ]
+       
+        A2: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: chimes off  ]
+            If  [ %NagChime eq 0 ]
+       
+        A3: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: chimes on ]
+            If  [ %NagChime neq 0 ]
+       
+       
+   
+        Task: Nag Count Reset
+       
+        A1: Variable Set [
+             Name: %NagCount
+             To: 0
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+        A2: Variable Set [
+             Name: %NagCountBad
+             To: 0
+             Max Rounding Digits: 3
+             Structure Output (JSON, etc): On ]
+       
+        A3: Perform Task [
+             Name: Nag Update Count
+             Priority: %priority
+             Structure Output (JSON, etc): On ]
+       
+       
+   
+        Task: Nag Show And Go
+       
+        A1: Perform Task [
+             Name: Nag Show
+             Priority: %priority
+             Structure Output (JSON, etc): On ]
+       
+        A2: Perform Task [
+             Name: Nag Run
+             Priority: %priority ]
+       
+       
+   
+        Task: Nag Happy
+       
+        A1: Element Back Colour [
+             Scene Name: Nag Scene
+             Element: Nag Status Circle
+             Colour: #FF36C038
+             End Colour: #FF36C038 ]
+       
+        A2: Element Text [
+             Scene Name: Nag Scene
+             Element: nag output
+             Position: Replace Existing
+             Text: %TIME : all ok ]
+       
+        A3: Play Ringtone [
+             Type: Notification
+             Sound: Teapot
+             Stream: 5 ]
+            If  [ %TIME ~ *00 & %NagChime > 0 ]
+       
+        A4: Play Ringtone [
+             Type: Notification
+             Sound: Champagne Pop
+             Stream: 5 ]
+            If  [ %TIME ~ *30 & %NagChime > 0 ]
+       
+        A5: Set Widget Icon [
+             Name: Nag Show
+             Icon: cust_profile_enter_light ]
+       
+        A6: Variable Set [
+             Name: %NagCount
+             To: %NagCount + 1
+             Do Maths: On
+             Max Rounding Digits: 0
+             Structure Output (JSON, etc): On ]
+
+       

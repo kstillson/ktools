@@ -1,0 +1,873 @@
+<TaskerData sr="" dvi="1" tv="6.0.10">
+	<dmetric>1080.0,2028.0</dmetric>
+	<Profile sr="prof18" ve="2">
+		<cdate>1433654352344</cdate>
+		<clp>true</clp>
+		<edate>1612148268806</edate>
+		<id>18</id>
+		<mid0>19</mid0>
+		<nme>Undisable Shakelock After Alarm</nme>
+		<Event sr="con0" ve="2">
+			<code>306</code>
+		</Event>
+	</Profile>
+	<Profile sr="prof34" ve="2">
+		<cdate>1381880938952</cdate>
+		<clp>true</clp>
+		<edate>1622088510833</edate>
+		<id>34</id>
+		<mid0>35</mid0>
+		<mid1>36</mid1>
+		<nme>Face Down</nme>
+		<State sr="con0" ve="2">
+			<code>120</code>
+			<Int sr="arg0" val="1"/>
+		</State>
+		<State sr="con1" ve="2">
+			<code>123</code>
+			<Int sr="arg0" val="1"/>
+		</State>
+	</Profile>
+	<Profile sr="prof37" ve="2">
+		<cdate>1381881039968</cdate>
+		<clp>true</clp>
+		<edate>1644005825912</edate>
+		<id>37</id>
+		<mid0>38</mid0>
+		<nme>On Face Down</nme>
+		<Event sr="con0" ve="2">
+			<code>3050</code>
+			<pri>0</pri>
+			<Str sr="arg0" ve="3">%FaceDown</Str>
+			<Str sr="arg1" ve="3">1</Str>
+			<Int sr="arg2"/>
+		</Event>
+	</Profile>
+	<Profile sr="prof5" ve="2">
+		<cdate>1433654246516</cdate>
+		<clp>true</clp>
+		<edate>1612148383105</edate>
+		<id>5</id>
+		<mid0>6</mid0>
+		<nme>Disable Shakelock On Alarm</nme>
+		<Event sr="con0" ve="2">
+			<code>305</code>
+			<Str sr="arg0" ve="3"/>
+		</Event>
+	</Profile>
+	<Profile sr="prof55" ve="2">
+		<cdate>1381970361930</cdate>
+		<cldm>5</cldm>
+		<edate>1612148188157</edate>
+		<id>55</id>
+		<limit>true</limit>
+		<mid0>57</mid0>
+		<nme>Shaker Scrn Off</nme>
+		<pri>6</pri>
+		<Event sr="con0" ve="2">
+			<code>3001</code>
+			<pri>0</pri>
+			<Int sr="arg0" val="0"/>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="3"/>
+		</Event>
+		<State sr="con1" ve="2">
+			<code>123</code>
+			<Int sr="arg0" val="0"/>
+		</State>
+	</Profile>
+	<Profile sr="prof7" ve="2">
+		<cdate>1381728620261</cdate>
+		<cldm>5</cldm>
+		<clp>true</clp>
+		<edate>1658203041240</edate>
+		<id>7</id>
+		<mid0>16</mid0>
+		<nme>Shaker Scrn On</nme>
+		<Event sr="con0" ve="2">
+			<code>3001</code>
+			<pri>0</pri>
+			<Int sr="arg0" val="1"/>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="4"/>
+		</Event>
+		<State sr="con1" ve="2">
+			<code>123</code>
+			<Int sr="arg0" val="1"/>
+		</State>
+		<State sr="con2" ve="2">
+			<code>40</code>
+			<pin>true</pin>
+			<Int sr="arg0" val="0"/>
+			<Str sr="arg1" ve="3"/>
+		</State>
+	</Profile>
+	<Project sr="proj0" ve="2">
+		<cdate>1381881553284</cdate>
+		<name>Alarm</name>
+		<pids>7,18,34,55,37,5</pids>
+		<scenes>Panic Pop</scenes>
+		<tids>54,8,57,53,46,38,17,52,50,27,45,2,19,51,16,3,6,35,36</tids>
+	</Project>
+	<Scene sr="scenePanic Pop">
+		<cdate>1381969753530</cdate>
+		<edate>1612148125094</edate>
+		<heightLand>-1</heightLand>
+		<heightPort>1663</heightPort>
+		<nme>Panic Pop</nme>
+		<widthLand>-1</widthLand>
+		<widthPort>1044</widthPort>
+		<RectElement sr="elements0">
+			<flags>6</flags>
+			<geom>0,0,1044,1663,0,0,1044,1663</geom>
+			<Str sr="arg0" ve="3">Bg</Str>
+			<Int sr="arg1" val="0"/>
+			<Str sr="arg2" ve="3">#FF2B2828</Str>
+			<Str sr="arg3" ve="3">#77122A4C</Str>
+			<Int sr="arg4" val="1"/>
+			<Str sr="arg5" ve="3">#FF000000</Str>
+			<Int sr="arg6" val="0"/>
+			<Int sr="arg7" val="0"/>
+		</RectElement>
+		<ButtonElement sr="elements1" ve="3">
+			<clickTask>52</clickTask>
+			<flags>4</flags>
+			<geom>291,285,492,210,291,285,492,210</geom>
+			<Str sr="arg0" ve="3">Arm</Str>
+			<Str sr="arg1" ve="3">Arm</Str>
+			<Int sr="arg2" val="22"/>
+			<Int sr="arg3" val="100"/>
+			<Str sr="arg4" ve="3">#C7CBCB3A</Str>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="0"/>
+			<Img sr="arg7" ve="2"/>
+		</ButtonElement>
+		<ButtonElement sr="elements2" ve="3">
+			<clickTask>53</clickTask>
+			<flags>4</flags>
+			<geom>291,672,492,210,291,672,492,210</geom>
+			<Str sr="arg0" ve="3">Panic</Str>
+			<Str sr="arg1" ve="3">PANIC</Str>
+			<Int sr="arg2" val="22"/>
+			<Int sr="arg3" val="100"/>
+			<Str sr="arg4" ve="3">#FFACABAB</Str>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="0"/>
+			<Img sr="arg7" ve="2"/>
+		</ButtonElement>
+		<ButtonElement sr="elements3" ve="3">
+			<clickTask>54</clickTask>
+			<flags>4</flags>
+			<geom>291,1094,492,140,291,1094,492,140</geom>
+			<Str sr="arg0" ve="3">Quit</Str>
+			<Str sr="arg1" ve="3">Quit</Str>
+			<Int sr="arg2" val="22"/>
+			<Int sr="arg3" val="100"/>
+			<Str sr="arg4" ve="3">#FF368E38</Str>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="0"/>
+			<Img sr="arg7" ve="2"/>
+		</ButtonElement>
+	</Scene>
+	<Task sr="task16">
+		<cdate>1381857070146</cdate>
+		<edate>1636762257509</edate>
+		<id>16</id>
+		<nme>Shake Lock</nme>
+		<pri>6</pri>
+		<stayawake>true</stayawake>
+		<Action sr="act0" ve="7">
+			<code>37</code>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%FaceDown</lhs>
+					<op>2</op>
+					<rhs>1</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Shaken alert</Str>
+			<Int sr="arg1" val="5"/>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>43</code>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>126</code>
+			<Str sr="arg0" ve="3">0</Str>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%EnableShakelock</lhs>
+					<op>2</op>
+					<rhs>0</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>126</code>
+			<Str sr="arg0" ve="3">0</Str>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%DisableShakelock</lhs>
+					<op>2</op>
+					<rhs>1</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>126</code>
+			<Str sr="arg0" ve="3">0</Str>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%WIN</lhs>
+					<op>2</op>
+					<rhs>Navigat</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act6" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Lock Now</Str>
+			<Int sr="arg1" val="6"/>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act7" ve="7">
+			<code>192</code>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Hojus</Str>
+			<Int sr="arg2" val="5"/>
+		</Action>
+		<Action sr="act8" ve="7">
+			<code>38</code>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_icon_gingerbread</nme>
+		</Img>
+	</Task>
+	<Task sr="task17">
+		<cdate>1391888309557</cdate>
+		<edate>1612148517931</edate>
+		<id>17</id>
+		<nme>Tog Shakelock</nme>
+		<pri>7</pri>
+		<Action sr="act0" ve="7">
+			<code>138</code>
+			<Img sr="arg0" ve="2"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>37</code>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%EnableShakelock</lhs>
+					<op>2</op>
+					<rhs>1</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%EnableShakelock</Str>
+			<Str sr="arg1" ve="3">0</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>152</code>
+			<Str sr="arg0" ve="3">Tog Shakelock</Str>
+			<Img sr="arg1" ve="2">
+				<nme>hd_device_access_screen_rotation</nme>
+			</Img>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>43</code>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%EnableShakelock</Str>
+			<Str sr="arg1" ve="3">1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+		<Action sr="act6" ve="7">
+			<code>152</code>
+			<Str sr="arg0" ve="3">Tog Shakelock</Str>
+			<Img sr="arg1" ve="2">
+				<nme>hl_device_access_screen_rotation</nme>
+			</Img>
+		</Action>
+		<Action sr="act7" ve="7">
+			<code>38</code>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_coffee</nme>
+		</Img>
+	</Task>
+	<Task sr="task19">
+		<cdate>1433654372081</cdate>
+		<edate>1612148670250</edate>
+		<id>19</id>
+		<nme>Undisable Shakelock</nme>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%DisableShakelock</Str>
+			<Str sr="arg1" ve="3">0</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task2">
+		<cdate>1612149229228</cdate>
+		<edate>1612150401507</edate>
+		<id>2</id>
+		<nme>Get Updated Loc</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>366</code>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES>&lt;StringArray sr=""&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;%gl_coordinates_accuracy
+3. Lat, Lon Accuracy
+In meters&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;%gl_altitude
+Altitude (meters)
+In meters&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;%gl_altitude_accuracy
+Altitude Accuracy
+In meters&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES3&gt;%gl_bearing
+Bearing
+in the range 0.0–360.0; Horizontal direction of travel of this device; not related to the device orientation&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES3&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES4&gt;%gl_bearing_accuracy
+Bearing Accuracy
+In degrees&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES4&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES5&gt;%gl_latitude
+1. Latitude
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES5&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES6&gt;%gl_coordinates
+Latitude and Longitude
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES6&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES7&gt;%gl_longitude
+2. Longitude
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES7&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES8&gt;%gl_map_url
+Google Maps URL
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES8&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES9&gt;%gl_speed
+Speed
+In meters per second&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES9&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES10&gt;%gl_speed_accuracy
+Speed
+In meters per second&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES10&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES11&gt;%gl_time_seconds
+Time
+Time in seconds since EPOCH the location was gotten&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES11&gt;&lt;/StringArray&gt;</net.dinglisch.android.tasker.RELEVANT_VARIABLES>
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>[Ljava.lang.String;</net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>
+				</Vals>
+			</Bundle>
+			<Int sr="arg1" val="15"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Str sr="arg5" ve="3"/>
+			<Int sr="arg6" val="0"/>
+			<Int sr="arg7" val="0"/>
+			<Str sr="arg8" ve="3"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%LocationUrl</Str>
+			<Str sr="arg1" ve="3">%gl_map_url</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%LocationTime</Str>
+			<Str sr="arg1" ve="3">%gl_time_seconds - %TIMES</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="1"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="1"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%LocationAccuracy</Str>
+			<Str sr="arg1" ve="3">%gl_coordinates_accuracy</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task27">
+		<cdate>1381865993037</cdate>
+		<edate>1636559422735</edate>
+		<id>27</id>
+		<nme>Shaken alert</nme>
+		<pri>10</pri>
+		<stayawake>true</stayawake>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Lock Now</Str>
+			<Int sr="arg1" val="6"/>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>192</code>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Vega</Str>
+			<Int sr="arg2" val="5"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Get Updated Loc</Str>
+			<Int sr="arg1" val="7"/>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>30</code>
+			<label>Let Loc update stabize</label>
+			<Int sr="arg0" val="500"/>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+		</Action>
+		<Action sr="act4" ve="7">
+			<code>137</code>
+			<Int sr="arg0" val="0"/>
+			<Str sr="arg1" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%KEYG</lhs>
+					<op>2</op>
+					<rhs>off</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act5" ve="7">
+			<code>41</code>
+			<se>false</se>
+			<Str sr="arg0" ve="3">%Dest</Str>
+			<Str sr="arg1" ve="3">phone panic mode activated.  Please call for help.  My location:  %LocationUrl  Accuracy: %LocationAccuracy meters, updated: %LocationTime secs ago.</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3"/>
+			<Int sr="arg4" val="0"/>
+		</Action>
+		<Action sr="act6" ve="7">
+			<code>126</code>
+			<on>false</on>
+			<Str sr="arg0" ve="3">0</Str>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Str sr="arg4" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%SCREEN</lhs>
+					<op>2</op>
+					<rhs>on</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act7" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Start Alarm</Str>
+			<Int sr="arg1" val="5"/>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_icon_donut</nme>
+		</Img>
+	</Task>
+	<Task sr="task3">
+		<cdate>1381865993037</cdate>
+		<edate>1612151295077</edate>
+		<id>3</id>
+		<nme>Sorry False Alarm</nme>
+		<pri>100</pri>
+		<stayawake>true</stayawake>
+		<Action sr="act0" ve="7">
+			<code>41</code>
+			<se>false</se>
+			<Str sr="arg0" ve="3">%Dest</Str>
+			<Str sr="arg1" ve="3">apologies, false alarm. Please disregard previous text message concern panic mode.</Str>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3"/>
+			<Int sr="arg4" val="0"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_icon_donut</nme>
+		</Img>
+	</Task>
+	<Task sr="task35">
+		<cdate>1381880947516</cdate>
+		<edate>1612147695072</edate>
+		<id>35</id>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%FaceDown</Str>
+			<Str sr="arg1" ve="3">1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task36">
+		<cdate>1381880986168</cdate>
+		<edate>1612147696450</edate>
+		<id>36</id>
+		<pri>1006</pri>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%FaceDown</Str>
+			<Str sr="arg1" ve="3">0</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task38">
+		<cdate>1381881046024</cdate>
+		<edate>1556949755761</edate>
+		<id>38</id>
+		<pri>6</pri>
+		<Action sr="act0" ve="7">
+			<code>192</code>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Alya</Str>
+			<Int sr="arg2" val="5"/>
+		</Action>
+	</Task>
+	<Task sr="task45">
+		<cdate>1381903955271</cdate>
+		<edate>1612147818440</edate>
+		<id>45</id>
+		<nme>Start Alarm</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>303</code>
+			<on>false</on>
+			<Int sr="arg0" val="7"/>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>307</code>
+			<Int sr="arg0" val="15"/>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="0"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>192</code>
+			<on>false</on>
+			<Int sr="arg0" val="0"/>
+			<Str sr="arg1" ve="3">Krypton</Str>
+			<Int sr="arg2" val="4"/>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>445</code>
+			<Str sr="arg0" ve="3">Alarms/annoying_alarm.mp3</Str>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="3"/>
+			<Int sr="arg4" val="1"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_warning</nme>
+		</Img>
+	</Task>
+	<Task sr="task46">
+		<cdate>1381905352145</cdate>
+		<edate>1612147821332</edate>
+		<id>46</id>
+		<nme>Stop Alarm</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>449</code>
+			<Int sr="arg0" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>307</code>
+			<Int sr="arg0" val="9"/>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="0"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_scrubber_normal</nme>
+		</Img>
+	</Task>
+	<Task sr="task50">
+		<cdate>1381963376897</cdate>
+		<edate>1636762234890</edate>
+		<id>50</id>
+		<nme>Dest: Test</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%Dest</Str>
+			<Str sr="arg1" ve="3">6502651369</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task51">
+		<cdate>1381963423636</cdate>
+		<edate>1636819548056</edate>
+		<id>51</id>
+		<nme>Dest: Real</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%Dest</Str>
+			<Str sr="arg1" ve="3">1234567890,2345678901</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task52">
+		<cdate>1381970111289</cdate>
+		<edate>1381970111289</edate>
+		<id>52</id>
+		<pri>11</pri>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%Armed</Str>
+			<Str sr="arg1" ve="3">1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>54</code>
+			<Str sr="arg0" ve="3">Panic Pop</Str>
+			<Str sr="arg1" ve="3">Panic</Str>
+			<Str sr="arg2" ve="3">#FFC82B2B</Str>
+		</Action>
+	</Task>
+	<Task sr="task53">
+		<cdate>1381970161351</cdate>
+		<edate>1381970161351</edate>
+		<id>53</id>
+		<Action sr="act0" ve="7">
+			<code>137</code>
+			<Int sr="arg0" val="0"/>
+			<Str sr="arg1" ve="3"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%Armed</lhs>
+					<op>3</op>
+					<rhs>1</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Shaken alert</Str>
+			<Int sr="arg1" val="7"/>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task54">
+		<cdate>1381970298118</cdate>
+		<edate>1381970298118</edate>
+		<id>54</id>
+		<pri>11</pri>
+		<Action sr="act0" ve="7">
+			<code>49</code>
+			<Str sr="arg0" ve="3">Panic Pop</Str>
+		</Action>
+	</Task>
+	<Task sr="task57">
+		<cdate>1381970714858</cdate>
+		<edate>1656515143621</edate>
+		<id>57</id>
+		<nme>Shaker When Off</nme>
+		<pri>10</pri>
+		<stayawake>true</stayawake>
+		<Action sr="act0" ve="7">
+			<code>192</code>
+			<on>false</on>
+			<Int sr="arg0" val="1"/>
+			<Str sr="arg1" ve="3">Capella</Str>
+			<Int sr="arg2" val="5"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>11820</code>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<com.intangibleobject.securesettings.plugin.extra.BLURB>Screen &amp; Keyboard Lights On
+5 Seconds</com.intangibleobject.securesettings.plugin.extra.BLURB>
+					<com.intangibleobject.securesettings.plugin.extra.BLURB-type>java.lang.String</com.intangibleobject.securesettings.plugin.extra.BLURB-type>
+					<com.intangibleobject.securesettings.plugin.extra.SETTING>wake_device</com.intangibleobject.securesettings.plugin.extra.SETTING>
+					<com.intangibleobject.securesettings.plugin.extra.SETTING-type>java.lang.String</com.intangibleobject.securesettings.plugin.extra.SETTING-type>
+					<com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_DURATION>5000</com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_DURATION>
+					<com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_DURATION-type>java.lang.Long</com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_DURATION-type>
+					<com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_TYPE>full</com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_TYPE>
+					<com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_TYPE-type>java.lang.String</com.intangibleobject.securesettings.plugin.extra.WAKE_LOCK_TYPE-type>
+					<com.twofortyfouram.locale.intent.extra.BLURB>Screen &amp; Keyboard Lights On
+5 Seconds</com.twofortyfouram.locale.intent.extra.BLURB>
+					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
+					<net.dinglisch.android.tasker.subbundled>true</net.dinglisch.android.tasker.subbundled>
+					<net.dinglisch.android.tasker.subbundled-type>java.lang.Boolean</net.dinglisch.android.tasker.subbundled-type>
+				</Vals>
+			</Bundle>
+			<Str sr="arg1" ve="3">com.intangibleobject.securesettings.plugin</Str>
+			<Str sr="arg2" ve="3">Secure Settings</Str>
+			<Int sr="arg3"/>
+			<Int sr="arg4" val="0"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>547</code>
+			<on>false</on>
+			<Str sr="arg0" ve="3">%Armed</Str>
+			<Str sr="arg1" ve="3">0</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>47</code>
+			<on>false</on>
+			<Str sr="arg0" ve="3">Panic Pop</Str>
+			<Int sr="arg1" val="8"/>
+			<Int sr="arg10" val="0"/>
+			<Int sr="arg2" val="100"/>
+			<Int sr="arg3" val="100"/>
+			<Int sr="arg4" val="1"/>
+			<Int sr="arg5" val="1"/>
+			<Int sr="arg6" val="1"/>
+			<Int sr="arg7" val="1"/>
+			<Int sr="arg8" val="1"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>hd_aaa_nixx_bolt</nme>
+		</Img>
+	</Task>
+	<Task sr="task6">
+		<cdate>1433654279063</cdate>
+		<edate>1612148668480</edate>
+		<id>6</id>
+		<nme>Disable Shakelock On</nme>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%DisableShakelock</Str>
+			<Str sr="arg1" ve="3">1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5"/>
+			<Int sr="arg6" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task8">
+		<cdate>1381855874914</cdate>
+		<edate>1649708758612</edate>
+		<id>8</id>
+		<nme>Lock Now</nme>
+		<pri>100</pri>
+		<Action sr="act0" ve="7">
+			<code>130</code>
+			<on>false</on>
+			<Str sr="arg0" ve="3">Enable Lock</Str>
+			<Int sr="arg1" val="5"/>
+			<Int sr="arg10" val="0"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>16</code>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>cust_lock</nme>
+		</Img>
+	</Task>
+</TaskerData>
