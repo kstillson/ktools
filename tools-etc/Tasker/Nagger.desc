@@ -28,7 +28,7 @@ Profiles
        
         A4: HTTP Request [
              Method: GET
-             URL: https://home.point0.net/cgi-bin/nagios-healthz.cgi
+             URL: https://REDACTED/cgi-bin/nagios-healthz.cgi
              Timeout (Seconds): 5
              Structure Output (JSON, etc): On
              Continue Task After Error:On ]
@@ -230,7 +230,7 @@ Profiles
        
         A4: HTTP Request [
              Method: GET
-             URL: https://home.point0.net/cgi-bin/nagios-healthz.cgi
+             URL: https://REDACTED/cgi-bin/nagios-healthz.cgi
              Timeout (Seconds): 5
              Structure Output (JSON, etc): On
              Continue Task After Error:On ]
