@@ -14,7 +14,7 @@ configuration is stored here in the docker-containers tree.
 For example, with filewatchdock/, this is a service created by and for this
 system, so the source code and configuration are both in
 ../services/filewatchdock.  In that way, it's possible to run filewatchdock
-standalone (i.e. outside a container), with everything needed in the
+stand-alone (i.e. outside a container), with everything needed in the
 ../services/filewatchdock directory.  The container-oriented subdirectory
 contains nothing more than some logic to copy over the needed files from
 ../services, and set up a reasonably-locked-down container chroot for it to
@@ -53,7 +53,7 @@ figuring out the correct ownership uid's for mapped files is a little tricky.
 Anyway, until that's all ready-to-go, you'll have to infer the expected
 docker-volume contents, and set it up yourself.  Most of the information you
 need is in the settings.yaml files, and perhaps a few foreground container
-runs (so any error messages about inaccesable files are easy to see) should
+runs (so any error messages about inaccessible files are easy to see) should
 get you there.  Or you can just use these Docker configurations as inspiration
 for setting up your own.
 
@@ -71,7 +71,7 @@ and installs the packages in the Dockerfile.
 
 Although I've come to trust Alpine, I don't like the idea of my underlying
 platform changing unexpectedly.  So rather than having my containers be built
-directly on Apline, I introduce my own "kcore-baseline" image, and build
+directly on Alpine, I introduce my own "kcore-baseline" image, and build
 everything off that.  My baseline depends directly on Alpine, although not on
 the auto-generated "latest" tag, instead I pull from a specifically listed
 version.  This means I have to remember to check every month or so whether
@@ -150,7 +150,7 @@ could just replace the "deleted" binary with a link back to the busybox.  I
 remove the "ln" binary to make this a bit harder, but a clever hacker won't
 have too much trouble finding ways around this.  But...  You never know what
 constraints a hacker will find themselves working within, so every bit of
-additional difficult you add has the possibility of steimying them.  And if
+additional difficult you add has the possibility of stymying them.  And if
 you're just removing functionality that Alpine provides by default but you
 really don't need in the container, then there's very little reason not to.
 Anyway, if you have additional suggestions of things that could be hardened,
@@ -159,7 +159,7 @@ I'd certainly love to hear about them!  <ktools@point0.net>
 
 ## Walking through an example:  filewatchdock
 
-As with all my things, start with "make" (which implicedly runs "make all").
+As with all my things, start with "make" (which implicitly runs "make all").
 
 All depends on "copy" and "docker-all".  :copy will basically copy over the
 files fileswatch.py and filewatch_config.py from ../services/filewatch, strip
@@ -173,7 +173,7 @@ kcore-baseline built, but also tested and promoted from #latest to #live.  So
 Makefile-docker has a target to switch to ./kcore-baseline and "make all".
 
 The kcore-baseline:all target is special, in that it will build, :test, and
-:install (i.e. promot #latest to #live) all in one go.  Most of the ":all"
+:install (i.e. promote #latest to #live) all in one go.  Most of the ":all"
 targets only do the image building part.  Once the kcore-baseline#live image
 is ready, we get our ../kcore-baseline/baseline-stamp.  Then
 ../etc/Makefile-docker:build-stamp proceeds with a "sudo /root/bin/d-build"
@@ -204,8 +204,9 @@ To actually launch the container, use "sudo /root/d 1 filewatch" (or "sudo
 "d 01" rather than "d 1" if the container is already up and needs to be
 stopped before it can be re-launched.
 
-btw- a shortcut to the entire above process (all the make substeps and the
+btw- a shortcut to the entire above process (all the make sub-steps and the
 final "start and/or re-start the container") can be run with either "d-build
 -a" when in the docker-containers/filewatchdock directory, or with the even
-shorter "d u f" (docker upgrade f*) regardless of your current working dir.  See ../docker-infrastructure for the source to all those tools.
+shorter "d u f" (docker upgrade f*) regardless of your current working dir.
+See ../docker-infrastructure for the source to all those tools.
 

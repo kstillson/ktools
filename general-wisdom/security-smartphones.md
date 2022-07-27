@@ -7,13 +7,13 @@ your security and your privacy.
 The security model for smartphones has come a long way in the last few years,
 but I still really don't trust it.  I've just been to too many Defcon security
 conferences where the speaker happily announces that every phone that
-auto-connected to their Wifi access point or the femtocell they've set up is
+auto-connected to their WiFi access point or the femtocell they've set up is
 now totally hacked.
 
 So...
 
 - *Never* do security critical operations like banking on your phone.  It's
-   convenient up until the time your bank account is p'wned, and then it's
+   convenient up until the time your bank account is pwned, and then it's
    very inconvenient.
 
 - *Strongly resist* the pressure from everyone and their uncle to install

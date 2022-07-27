@@ -1,5 +1,5 @@
 
-# Containers and Microservices Everywhere
+# Containers and Micro-services Everywhere
 
 ## Background
 
@@ -18,7 +18,7 @@ about everything into separate Docker containers...
 
 - You can (with just a little care) start up independent instances of services
   that don't interfere with each other.  This allows very clean separation of
-  production, development, and testing instances, and trivial horizonal
+  production, development, and testing instances, and trivial horizontal
   scaling.
 
 But for me, but main reason I want to wrap things into containers is security.
@@ -67,10 +67,10 @@ This is a feature of Docker that isn't turned on automatically, but which you
 should absolutely turn on.  What it does is create an offset between user-id's
 inside and outside the container.  A common offset is 200,000.  So, for
 example, what looks like root (uid 0) inside the container, is actually
-executing in the real kernel as uid 200000; a completely unprivlidged user.
+executing in the real kernel as uid 200000; a completely unprivileged user.
 The very concept of real uid 0 does not exist inside the container.  There is
 no way to become it, there is no way to even reference it, as uid -200000 is
-nonesense.
+nonsense.
 
 Obviously this doesn't work is the root user in your container needs to do
 things with real host root privs, but if that's the case, you're probably
@@ -80,7 +80,7 @@ There are some complications to turning uid mapping.  First is that if you
 bind-mount directories, you've got to make sure the real uids outside the
 container match the mapped uid's inside the container.  So, for example, if
 you're mapping in the real directory /rw/dv/apache/var_log as a place for the
-Apache webserver user to store it's logs, and inside-the-container apache has
+Apache web server user to store it's logs, and inside-the-container apache has
 the uid of 33, then var_log needs to be writable by uid 200033, and the chain
 /rw/dv/apache needs to be readable by that uid.  This can look kinda confusing
 from the outside, although it can be helpful if you create /etc/passwd entries
@@ -92,7 +92,7 @@ rather than showing up as numerical usernames because there's no passwd entry.
 
 Anyway, once you activate uid-mapping, a hacker can go to all the trouble they
 care to to "hack root" from their foothold inside your service, and they'll
-still find themselves with a completely unprivlidged account.
+still find themselves with a completely unprivileged account.
 
 See [Readme-uid-mapping.md](../docker-infrastructure/Readme-uid-mapping.md)
 for more information on activating this feature.
@@ -107,7 +107,7 @@ course that would break most software, so a copy-on-write layer is put on-top
 of the read-only image.  Basically, whenever a file is changed, the modified
 contents gets stored in a changes-only directory, somewhere deep in the Docker
 infrastructure directories.  The file-system contents that are visible from
-inside the contianer is the read-only image, but with individual files
+inside the container is the read-only image, but with individual files
 overridden from the COW directory, if they exist.
 
 The well-known feature of this is that if you restart a container, the COW
@@ -144,7 +144,7 @@ changes are seen.
 
 - group/docker: to do anything with Docker, you need to be in the "docker"
   account group.  Once you're in group/docker, your command over the Docker
-  deamon (which runs as root) is basically unlimited, and there are numerous
+  daemon (which runs as root) is basically unlimited, and there are numerous
   known ways to trick the daemon into running arbitrary commands.  In other
   words, anyone in group/docker is effectively user/root.  This isn't
   immediately obvious.  You need to be really careful about adding users
@@ -160,7 +160,7 @@ changes are seen.
   any other security-critical piece of Linux FOSS...  But in my experience,
   it's better to have lots of tiny little pieces of functionality each of
   which just do one thing, and do that one thing well - rather than having
-  these giagantic do-it-all services.
+  these gigantic do-it-all services.
 
   But anyway, you can tell by the fact that I use Docker extensively, that
   I've decided the concrete advantages outweigh the potential concerns.

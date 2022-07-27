@@ -65,11 +65,11 @@ whether these are shared secrets, private keys, or whatever else?
 Keymaster ("KM") is a secrets server.  The secrets are stored in an encrypted
 text file.  When the server starts up, it does not have the key to unlock this
 data.  An authorized user must access the web-page and provide the encryption
-passphrase.  KM then de-crypts the secrets into local memory.  Clients can
+pass-phrase.  KM then de-crypts the secrets into local memory.  Clients can
 then request secrets, but only according to strict rules.  For example, the
 requestor's source IP address and which key they want must match expectations
 exactly.  Even a single unexpected request causes the KM to throw away all its
-decrpyted data and raise an alarm, both signaling that something is very wrong
+decrypted data and raise an alarm, both signaling that something is very wrong
 and that a human needs to come provide the decryption password again, once
 things are safe.
 
@@ -88,5 +88,5 @@ Regularly scans the list of running processes on a server, and compares it
 against a configured allow-list.
 
 Procmon has to be run outside containers, so it can see the whole-system
-process list.  Given this privlidged perch on the real host, it also has a few
+process list.  Given this privileged perch on the real host, it also has a few
 other security-monitoring type checks it can perform.

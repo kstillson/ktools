@@ -15,14 +15,14 @@ I've also provided a .desc file for each.  This is another Tasker-generated
 export that contains a more human-friendly description of the way the app
 works, but there doesn't seem to be a way to import it; at least not that I've
 found.  Anyway, feel free to use this as a sort of easier-to-read description
-of how it works, incase you want to re-implement something similar yourself
-and don't like the idea of importing a basically unreadble .xml file, which I
+of how it works, in-case you want to re-implement something similar yourself
+and don't like the idea of importing a basically unreadable .xml file, which I
 must admit, would make me nervous.
 
 
 ## Alarm
 
-This is a guesture-based personal alarm.
+This is a gesture-based personal alarm.
 
 If you shake your phone while the screen is on, and the phone is oriented
 normally, the script locks your phone in a way that disables a
@@ -38,7 +38,7 @@ activated your panic mode, and requests that the recipients call the police.
 It also contains a link to your current GPS-provided location.
 
 
-## BT_Mgr (bluetooth manager)
+## BT_Mgr (Bluetooth manager)
 
 I've never really trusted Bluetooth security.  I prefer to keep it turned off
 when I'm not actively using it.  This little script automates that.

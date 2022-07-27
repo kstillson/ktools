@@ -55,8 +55,8 @@ collusion or lack of review is absolutely possible.
 
 I put in the extra effort to make my systems simple so you can and will read
 and understand the code; so you will get into the habit of not blindly
-software just because it's free; and so you will put pressure on others that 
-they also make their code and dependencies simple enough that shear complexity 
+software just because it's free; and so you will put pressure on others that
+they also make their code and dependencies simple enough that shear complexity
 does not force you to accept software without review.
 
 - - -
@@ -85,7 +85,7 @@ ready-to-use functionality provided by this project.  Here's an
 
 The services can stand alone, but it's generally better when services are run
 in a single-purpose **docker containers** (see the "general wisdom" section
-for why).  Most of these containers have just the minimal substance to 
+for why).  Most of these containers have just the minimal substance to
 accomplish that.  **[Docker containers overview](docker-containers/README-containers.md)**
 
 The **"tools"** are functionality generally used in a mode ad-hoc manner that
@@ -99,7 +99,8 @@ different parts of the directory tree:
 - **[tools for docker](docker-infrastructure/README-docker-tools.md)**
 - **[tools for circuit python](pylib/circuitpy_sim/README-circuitpy.md)**
 
-<img src="etc/1x1.png" height=25>  <!-- slimy way to force a break to beyond the image -->
+<!-- slimy way to force a break to beyond the image: -->
+<img src="etc/1x1.png" height=25>
 
 
 pylib/**kcore** is a collection of reasonably low-level abstractions needed to
@@ -108,19 +109,19 @@ implement all this other stuff.
 See the included **[kcore readme](pylib/kcore/README-kcore.md)**
 or a full description.  Some highlights:
 
-   - The no-plaintext-secrets authN and secrets retriever mentioned above.
+- The no-plain-text-secrets authN and secrets retriever mentioned above.
 
-   - A very simple to use logging abstraction that integrates level filtering
-     for various outputs (files, stdout, stderr, syslog), as well a web-based
-     log retrieval.
+- A very simple to use logging abstraction that integrates level filtering
+  for various outputs (files, stdout, stderr, syslog), as well a web-based
+  log retrieval.
 
-   - A web server and client designed for simplicity of use, and which also
-     provides a uniform interface for Python 2 or 3, Raspberry PI, and Circuit
-     Python.  Also includes a bunch of Google-engineering-inspired "standard
-     handlers" that make remote monitoring and debugging easier.
+- A web server and client designed for simplicity of use, and which also
+  provides a uniform interface for Python 2 or 3, Raspberry PI, and Circuit
+  Python.  Also includes a bunch of Google-engineering-inspired "standard
+  handlers" that make remote monitoring and debugging easier.
 
-   - A GPIO and Neopixel abstraction that works on full Linux, Raspberry PIs,
-     and Circuit Python boards.
+- A GPIO and Neopixel abstraction that works on full Linux, Raspberry PIs,
+  and Circuit Python boards.
 
 The collection represents years of tinkering and fine-tuning, and it is hoped
 that this code, even if only the structural concepts and some of the

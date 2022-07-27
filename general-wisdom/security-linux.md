@@ -44,7 +44,7 @@ firewalls to be incredibly tight, especially for hosts that generally just run
 automated processes, i.e. have predictable traffic patterns.
 
 I generally start off blocking everything, inbound *and outbound*, and require
-a specific whitelist entry for every {source-ip + dest-ip + destination-port}
+a specific white-list entry for every {source-ip + dest-ip + destination-port}
 that needs to communicate.
 
 Obviously this doesn't work for workstations that have humans on them

@@ -1,12 +1,12 @@
 
-## general drops of wisdom...
+# general drops of wisdom...
 
 - [On backups](backups.md)
 - [wrt software development](development.md)
 - [Linux system administration](linux-system-administration.md)
 - [The importance of monitoring](monitoring.md)
 
-## security...
+# security...
 
 - [Web browsers](security-browsers.md)
 - [Docker, and containers in general](security-docker.md)

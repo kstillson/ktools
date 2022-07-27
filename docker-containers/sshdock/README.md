@@ -1,3 +1,3 @@
 
-TODO(doc): explain dv/ structure; provide initialiation script
+TODO(doc): explain dv/ structure; provide initialization script
 

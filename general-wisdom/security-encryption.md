@@ -26,7 +26,7 @@ you're done, the TE system just turns off the virtual directory mapping, and
 everything is automatically secure again.
 
 This is so quick and easy to use, that it pretty much makes sense to have all
-your data files encrpyted all the time, and to use TE to access them only when
+your data files encrypted all the time, and to use TE to access them only when
 you actually need access.
 
 The Linux kernel actually has a TE system built-in.  The user-space tool that
@@ -68,7 +68,7 @@ works the same way (at least assuming the TE is using efficient fixed-block
 random I/O, which I believe all of them do).  Furthermore, most TE's
 (certainly encfs) don't mind if the encrypted data is itself coming from a
 remote file-system.  In this way, even if the server is compromised, it
-actually cannot share the plaintext data with the hackers; it never sees it.
+actually cannot share the plain-text data with the hackers; it never sees it.
 
 This seems to me like an elegant separation of concerns- storage on the server,
 and decryption on the client.
@@ -95,7 +95,7 @@ ssh-agent to keep that in memory for a while after being entered, so I don't
 have to type it several times if requesting a complicated mount.
 
 In addition, I have some of my TE encryption password stored in my
-[keymanager](../services/keymanager) instance, and the mounting script knows
+[keymaster](../services/keymaster) instance, and the mounting script knows
 how to retrieve and use them.  Worth noting though- I do not keep the
 passwords for my most sensitive encryption directories stored anywhere.  They
 must be manually entered, no agent is allowed to cache them, and various

@@ -35,7 +35,7 @@ version.
 ### image
 
 I almost always use a container name that is set to the name of the image that
-created it, and where that is set to the basename of the directory that
+created it, and where that is set to the base-name of the directory that
 contains the Dockerfile.  i.e. ../docker-containers/eximdock/Dockerfile will
 create an image called eximdock, and a container named eximdock.
 
@@ -57,7 +57,7 @@ Note that the --subnet flag to d-run can override the 3rd octet (?.?.subnet.?)
 of the IP address assigned by either DNS or by the "ip" setting, and the
 --subnet flag is set implicitly by other flags, such as --dev or --dev-test.
 
-This is because I use that 3rd octet to differenciate between production and
+This is because I use that 3rd octet to differentiate between production and
 test instances.  For example, if DNS returns 192.168.2.125 for eximdock, then
 using d-run with --dev-test will automatically set --subnet=3, which will
 launch the container at IP address 192.168.3.125.  This both makes sure that
@@ -141,7 +141,7 @@ string is the path inside the container where the bind-mount will appear.
 - mount_persistent_test_copy_files: just like mount_persistent_test_copy_tree,
   except copies all the files too.
 
-- mount_logs: ok, now for some simplifications...  Use this when specifing a
+- mount_logs: ok, now for some simplifications...  Use this when specifying a
   directory to bind-mount that is just going to contain output logs.  Basically
   it just does a "mount_persistent" for production, and for test runs, creates
   just this single directory in the alternate (TMP/...) volume space.
@@ -164,7 +164,7 @@ do with any stdout / stderr created by your service.  Options are:
 - j / json:  send it to a JSON file at the location of Docker's choosing.
   (retrieve it with the "docker log" command)
 
-- or any other parma to be set directly as the --log-driver flag value.
+- or any other param to be set directly as the --log-driver flag value.
 
 
 ### extra_init / debug_extra_init:

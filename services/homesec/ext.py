@@ -27,6 +27,8 @@ DEBUG_SILENT_PANIC_MSG = SILENT_PANIC_MSG
 
 # ----------
 
+# see ../../tools/etc/speak* for the scripts this service on "pi1" talks to...
+
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
   log_msg = f'announce [{speak=}/{push_level=}/{syslog_level=}]: {msg}'
   if details: log_msg += f': {details}'

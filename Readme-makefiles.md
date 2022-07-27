@@ -16,13 +16,14 @@ changed files in a large system.
 
 ## Control Variables
 
-There are several environment variables you can set to influence what & how things are built.
+There are several environment variables you can set to influence what & how
+things are built.
 
 
 ### Top level Makefile variables
 
-
 - **BUILD_DOCKER_CONTAINERS=1**
+
 Building Docker containers is a bit special- it requires root privileges, a
 bunch of (mostly internal) dependencies must be *installed* before images can
 be built or tested, and the constructed containers likely won't be useful
@@ -32,10 +33,12 @@ not descend into the docker-containers subdirectory unless this variable is
 set to "1".
 
 - **NO_TRACKING**
+
 Set this variable to any non-blank value to disable the system's occasional
 "calling home" to let the author know you're using the system.
 
 - **SUBDIRS**=...
+
 Contains a space-separated list of the sub-directories the top level Makefile
 will descend into when figuring out what else to do.  You can set this to a
 subset of its default value if there's part of the system you want to skip.
@@ -44,6 +47,7 @@ subset of its default value if there's part of the system you want to skip.
 ### pylib Makefile variables
 
 - **BUILD_SIMPLE=1**
+
 By default, pylib/Makefile will build a Python "wheel" (.whl) file (the :all
 target), and then install that using PIP (for the :install target).  Wheel
 files are kinda cool, they track metadata like dependencies and allow for
@@ -59,42 +63,42 @@ by copying them into place.
 
 The following targets are accepted both at the top-level and in the individual subdirs:
 
-  * "**make prep**" does some one-time preparatory stuff, like making sure
-    various dependencies are installed, and getting information from you for
-    populating the self-signed certificates used by the authentication system.
-    "make all" depends on "make prep," so you don't really need to know about
-    it, but still it's a useful abstraction, so I thought I'd point it out.
+- "**make prep**" does some one-time preparatory stuff, like making sure
+  various dependencies are installed, and getting information from you for
+  populating the self-signed certificates used by the authentication system.
+  "make all" depends on "make prep," so you don't really need to know about
+  it, but still it's a useful abstraction, so I thought I'd point it out.
 
-  * "**make all**" If using BUILD_SIMPLE and not building Docker containers,
-    ":all" doesn't do very much exciting.  Mostly it depends on :prep, and
-    copies a few files around to make sure they're where they need to be.
+- "**make all**" If using BUILD_SIMPLE and not building Docker containers,
+  ":all" doesn't do very much exciting.  Mostly it depends on :prep, and
+  copies a few files around to make sure they're where they need to be.
 
-     If not using BUILD_SIMPLE, then :all actually builds the Python "wheel"
-     file for pylib/, and if BUILD_DOCKER_CONTAINERS=1, then Docker container
-     images are actually built.
-  
-  * "**make test**" runs tests.  For pylib/ these are very simple in-place
-    unit tests.  For services/ and docker-containers/, this involves actually
-    starting up real servers (generally on random high ports) and peppering
-    them with requests to confirm operation.
-  
-  * "**make install**"- for libraries and services, copies files into their
-    appropriate bin/ or ...lib/ directories.  For docker containers, tags the
-    ":latest" image as ":live", which will cause it to be used the next time
-    the container is restarted.
+   If not using BUILD_SIMPLE, then :all actually builds the Python "wheel"
+   file for pylib/, and if BUILD_DOCKER_CONTAINERS=1, then Docker container
+   images are actually built.
 
-  * "**make update**" basically a handy shorthand for "all" then "test" then
-    "install"
+- "**make test**" runs tests.  For pylib/ these are very simple in-place
+  unit tests.  For services/ and docker-containers/, this involves actually
+  starting up real servers (generally on random high ports) and peppering
+  them with requests to confirm operation.
 
-  * "**make comp**" this target compares the source files to files copied into
-    place by :install.  This is handy for checking to see if any changes made
-    in the source directory have been installed.
+- "**make install**"- for libraries and services, copies files into their
+  appropriate bin/ or ...lib/ directories.  For docker containers, tags the
+  ":latest" image as ":live", which will cause it to be used the next time
+  the container is restarted.
 
-  * "**make clean**" as is standard for Makefiles, will remove all the things
-    done in :all, and try to put things back to a default state.  Note that
-    this does **not** undo the things done in :prep.
- 
-  * "**make uninstall**" as in standard Makefiles, undoes a :install 
+- "**make update**" basically a handy shorthand for "all" then "test" then
+  "install"
+
+- "**make comp**" this target compares the source files to files copied into
+  place by :install.  This is handy for checking to see if any changes made
+  in the source directory have been installed.
+
+- "**make clean**" as is standard for Makefiles, will remove all the things
+  done in :all, and try to put things back to a default state.  Note that
+  this does **not** undo the things done in :prep.
+
+- "**make uninstall**" as in standard Makefiles, undoes a :install
 
 
 - - -
@@ -105,14 +109,16 @@ The following targets are accepted both at the top-level and in the individual s
      asking if it's okay to do something, or invoking an editor to set
      defaults.  This will become very confusing if you've activated Make's
      parallel build mode with the "-j" flag.
- 
+
 - **unit tests, not installation tests**: traditionally with Make, you build,
   then install, then test the installation.  However, in this system, "make
   test" runs pre-installation unit tests, i.e. tests that run in the
   source-code directories.
-    - So, the standard sequence is:  make && make test && make install
-    - If you want to make sure the unit tests pass before even trying the primary build, the sequence would be:  make prep && make test && make && make install
 
+  - So, the standard sequence is:  make && make test && make install
+  - If you want to make sure the unit tests pass before even trying the
+    primary build, the sequence would be:
+    make prep && make test && make && make install
 
 - - -
 
@@ -179,7 +185,7 @@ the test.log stamp file does not depend on the environment, and thus doesn't
 then "make test" to re-run the tests.
 
 
-- - - 
+- - -
 
 # Some hints on reading Makefiles
 
@@ -244,7 +250,8 @@ files for the "greetings" and "step1" targets.  It would then be important to
 also create a "clean" target that removes those stamp files (and ideally file1
 and file2 also, as those are artifacts of the make process).
 
-> Adding the "--debug=b" flag to a make command gives a pretty good summary of what it's doing and not-doing, and why.
+> Adding the "--debug=b" flag to a make command gives a pretty good summary of
+> what it's doing and not-doing, and why.
 
 ## Other useful tidbits
 
@@ -267,7 +274,7 @@ and file2 also, as those are artifacts of the make process).
   value, but only if the variable does not already have a value either within
   Make or within the environment.  So if you see "X ?= Y" in a Makefile, it
   means the author is either expecting X to be set earlier in the file (or in
-  a file that include'd this one), or that they are inviting you to override
+  a file that included this one), or that they are inviting you to override
   the default for X from the environment.
 
 - If a line in a recipe is prefixed with "@", that just means Make should not

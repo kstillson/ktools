@@ -4,7 +4,7 @@ This is a collection of python scripts intended to provide a
 semi-functional CPython binding for common Circuit Python APIs.
 
 In-other-words, if you include this directory in your Python path, then the
-various imports that would be normally be provided by thge built-in
+various imports that would be normally be provided by the built-in
 environment on a Circuit Python board will instead be provided by this code,
 thus allowing you to run code intended for Circuit Python under normal Python.
 
@@ -22,7 +22,7 @@ Python API that draws simulated Neopixels using the Python tkinter graphics
 library.  This allows you to test things like animation sequences without
 needing to construct anything in actual hardware.
 
-TODO(defer): eventually I'm hoping to also provide a tkinter inrterface for
+TODO(defer): eventually I'm hoping to also provide a tkinter interface for
 GPIO inputs and outputs, so you can simulate use-cases that involve buttons
 and LEDs, etc.  If anyone would like to help that along, your contributions
 would be most appreciated.  :-D

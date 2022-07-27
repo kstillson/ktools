@@ -2,7 +2,7 @@
 # pylib/kcore Python library
 
 kcore is a set of reasonably-low-level reasonably-common operations or
-simplicaitions:
+simplifications:
 
 
 ## auth.py
@@ -28,9 +28,9 @@ Some highlights:
 
 - A multi-level logging system (similar to Python logging, but with a few
   additional features such as web-based log retrieval and syslog integration,
-  and availablity under Circuit Python).
+  and availability under Circuit Python).
 
-- A web url retriever that for Python 3 is basically a thin wrapper around the
+- A web URL retriever that for Python 3 is basically a thin wrapper around the
   "requests" module, but which provides an identical API for Python 2 and
   Circuit Python that basically emulates the full "requests" module.
 
@@ -64,7 +64,7 @@ and generate HTML.
 # neo.py
 
 Provides abstractions for Adafruit Neopixels that provide an identical API
-that works on Raspberry PIs, Circuit Python microcontrollers, full C Python
+that works on Raspberry PIs, Circuit Python micro-controllers, full C Python
 (using a graphical simulation), and a headless simulation mode.
 
 
@@ -81,21 +81,21 @@ doesn't work under Circuit Python, or are a bit to specialized to be "common".
 
 Highlights:
 
-  - a specialized dict-class derivative, that enables serialization when the
-    value-side of the dict is a @dataclass.
+- a specialized dict-class derivative, that enables serialization when the
+  value-side of the dict is a @dataclass.
 
-  - ability to easily run some Python commands and capture their stdout/stderr.
+- ability to easily run some Python commands and capture their stdout/stderr.
 
-  - easily pass data through symmetric (password) en-de/crypt.
+- easily pass data through symmetric (password) en-de/crypt.
 
-  - safely drop root priv's
+- safely drop root priv's
 
-  - a simplified popen interface
+- a simplified popen interface
 
 
 ## varz.py
 
-Provides a simple singlton database of key/value pairs which is integrated
+Provides a simple singleton database of key/value pairs which is integrated
 with the /varz default handler from webserver.py
 
 The idea is that it's very easy for programs to "instrument" their internal
@@ -127,11 +127,11 @@ handler finding and management, default handlers, and the like.
 webserver.py basically layers the fully-featured (and thus circpy-unfriendly)
 bits on-top: networking, threading, TLS, and logging.
 
-- - - 
+- - -
 
 # Other notes
 
-- Originally most of this code was intended to work seemlessly with both
+- Originally most of this code was intended to work seamlessly with both
   python2 and python3.  I've since given up on supporting python2, but if you
-  find bits-and-pieces of anacronistic Python syntax, it's probably vestages
+  find bits-and-pieces of anachronistic Python syntax, it's probably vestiges
   of my py2 support that haven't been cleaned out yet...

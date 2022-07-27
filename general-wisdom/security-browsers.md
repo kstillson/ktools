@@ -24,36 +24,36 @@ One of the best security-defense tricks is to use different browsers for
 different purposes.  For example, I identify the following uses as areas I
 would like to keep separate from each other:
 
-  - Browsing to Google: I use a lot of Google web services: Gmail, Drive, etc.
-    Google has integrated their services into a reasonably cohesive platform,
-    and it would be difficult to separate these services from each other, even
-    if I wanted to.  So I don't try.  But I do keep the collected set of
-    Google services separate from EVERYTHING ELSE.  I have one browser that I
-    use to connect to all Google services, and that's all it's for.
+- Browsing to Google: I use a lot of Google web services: Gmail, Drive, etc.
+  Google has integrated their services into a reasonably cohesive platform,
+  and it would be difficult to separate these services from each other, even
+  if I wanted to.  So I don't try.  But I do keep the collected set of
+  Google services separate from EVERYTHING ELSE.  I have one browser that I
+  use to connect to all Google services, and that's all it's for.
 
-    IMPORTANT SECURITY NOTE: your email is one of your most security critical
-    services, even if you don't think of it as such.  This is because the vast
-    majority of web-services allow you to change your password using nothing
-    more than an email-based confirmation.  If someone captures control of
-    your email, they get all the other sites basically for free.
+  IMPORTANT SECURITY NOTE: your email is one of your most security critical
+  services, even if you don't think of it as such.  This is because the vast
+  majority of web-services allow you to change your password using nothing
+  more than an email-based confirmation.  If someone captures control of
+  your email, they get all the other sites basically for free.
 
-  - Financial stuff: I have a separate browser instance used for banks,
-    credit-cards, investing, etc.  I keep it closed all the time except when
-    it's in use, and before opening it, I close all other browser instances
-    (except the Google browser, which I generally need open because the
-    financial institutions often send 2nd factor tokens via email).
+- Financial stuff: I have a separate browser instance used for banks,
+  credit-cards, investing, etc.  I keep it closed all the time except when
+  it's in use, and before opening it, I close all other browser instances
+  (except the Google browser, which I generally need open because the
+  financial institutions often send 2nd factor tokens via email).
 
-  - High value accounts: This is for sites that I generally trust, and that I
-    use for some moderately important purpose.  Things like utility companies,
-    etc.  Less valuable than the financial group, but important enough to
-    separate from the general purpose browser.
-  
-  - General browsing: This is for sites where I have low-value accounts, or
-    where I'm just doing general-purpose exploring of places that I don't
-    consider particularly risky.  
+- High value accounts: This is for sites that I generally trust, and that I
+  use for some moderately important purpose.  Things like utility companies,
+  etc.  Less valuable than the financial group, but important enough to
+  separate from the general purpose browser.
 
-  - The "bad boy browser": Used for sites I'm moderately suspicious of, or
-    just generally feel should be quarantined from everything else.
+- General browsing: This is for sites where I have low-value accounts, or
+  where I'm just doing general-purpose exploring of places that I don't
+  consider particularly risky.
+
+- The "bad boy browser": Used for sites I'm moderately suspicious of, or
+  just generally feel should be quarantined from everything else.
 
 
 ## Keeping separate browsers separate
@@ -73,15 +73,16 @@ uses the Linux uid "ken-bbb", and in ~ken/.profile, I have:
 This means that ken-bbb can launch x-windows programs, and they show-up in
 ken's interface.  Now, this isn't perfect separation, xhost activates the full
 x-windows API, which includes a bunch of capabilities that could be used to
-spy on keystrokes (which is part of why I almost never type in passwords; see
-TODO: link).  But it is pretty good separation; ken-bbb cannot look at or
-change the files in ~ken, and an attack through the x-windows API would have
-to be very specialized.
+spy on keystrokes (which is part of why I almost never type in
+[passwords](security-passwords.md).  But it is pretty good separation; ken-bbb
+cannot look at or change the files in ~ken, and an attack through the
+x-windows API would have to be very specialized.
 
-I also run each browser instance under firejail (TODO: link), just to add
-another layer of protection against any of the alternate-uid browsers being
-able to run or persist malicious code that could figure out what I'm doing and
-perhaps consider an x-windows specific attack.
+I also run each browser instance under
+[firejail](https://firejail.wordpress.com/), just to add another layer of
+protection against any of the alternate-uid browsers being able to run or
+persist malicious code that could figure out what I'm doing and perhaps
+consider an x-windows specific attack.
 
 
 ### Keeping it convenient
@@ -116,7 +117,7 @@ all to grab files downloaded by one of the specialized browser accounts.
 The x-windows API enabled by xhost does not permit audio to pass from one
 Linux uid to another.  I fiddled around for a while to get this working, and
 here's what I found...
-(source: http://billauer.co.il/blog/2014/01/pa-multiple-users/)
+[source](http://billauer.co.il/blog/2014/01/pa-multiple-users/)
 
 For the account that wants to receive sound from others ("ken" in my case),
 add the following to ~/.pulse/default.pa:

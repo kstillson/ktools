@@ -38,7 +38,7 @@ name+x2@gmail.com, etc, all route to your account.  You can put whatever you
 want after the "+"; Gmail just sort-of ignores it.
 
 If when you're dealing with AT&T, you use name+att@gmail.com, and when you're
-dealing with the New York Times you use name+nyt@gmai.com, then you
+dealing with the New York Times you use name+nyt@gmail.com, then you
 effectively have a different username for every site on the Internet.  As a
 side-benefit, when you receive spam, you can determine which business it was
 that leaked your address, just by checking the address the mail was sent to.
@@ -59,7 +59,7 @@ formula.
 
 Here's an example:
 
-    qWe974${L}${T}${F}__Z
+    ```qWe974${L}${T}${F}__Z```
 
 where:
     ${L} is the last two characters of the site's address
@@ -127,8 +127,8 @@ for your most valuable sites, to minimize the inconvenience.
 
 ### PM mitigation 2: browser separation
 
-If you're going to use a PM, *please* read my other file on separating
-browsers by context [TODO: link].  You do not want your passwords for
+If you're going to use a PM, *please* read my other file on [separating
+browsers by context](security-browsers.md).  You do not want your passwords for
 low-value sites to exist in the same PM as your critically important ones.
 
 In-fact, ideally, you should keep your critical sites browser closed and it's
@@ -150,6 +150,6 @@ I don't mind too much the idea of using a fingerprint to unlock your phone.
 That's something you do very frequently (so the value of a rapid unlock is
 increased), and where it is reasonably easy to cancel your phone's credentials
 from remote should it fall out of your hands.  But see my thoughts on
-smartphone security [TODO: link]; the main reason I'm willing to accept this
-risk is that I consider smartphones to be incredibly vulnerable and I don't
-put much of value on them to begin with.
+[smartphone security](security-smartphones.md); the main reason I'm willing to
+accept this risk is that I consider smartphones to be incredibly vulnerable
+and I don't put much of value on them to begin with.

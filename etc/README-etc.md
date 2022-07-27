@@ -9,7 +9,7 @@ Makefile content that are imported into the other real Makefile's throughout
 the system.
 
 There are also several .py and .sh helper scripts that perform operations too
-complex to easily code up in Makefile recipies.
+complex to easily code up in Makefile recipes.
 
 And there are several .template files that contain starter content for
 configuration files that will be copied into position and offered up for
