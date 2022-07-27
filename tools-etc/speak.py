@@ -25,7 +25,7 @@ See also ./speak-cgi.py, which is a CGI wrapper around this script.
 
 '''
 
-# TODO(defer): update to python3 and kcore
+# TODO: update to python3 and kcore
 
 # Sorry- you'll need to get your own of these...
 VOICE_RSS_KEY = ''

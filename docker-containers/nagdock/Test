@@ -106,7 +106,7 @@ def main():
     D.file_expect('SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
     if not HITS == 1: D.abort(f'expected 1 hit against test server, but saw {HITS}')
 
-    '''TODO(defer): At this point, we should be able to re-parse the status file
+    '''TODO: At this point, we should be able to re-parse the status file
     and confirm the current state has changed to 0.  However, for reasons I
     don't understand, the status file doesn't seem to get updated unless we
     wait a really long time.  The checks about (against LOG_FILE and HITS)

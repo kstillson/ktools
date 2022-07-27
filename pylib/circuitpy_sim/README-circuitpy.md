@@ -22,7 +22,7 @@ Python API that draws simulated Neopixels using the Python tkinter graphics
 library.  This allows you to test things like animation sequences without
 needing to construct anything in actual hardware.
 
-TODO(defer): eventually I'm hoping to also provide a tkinter interface for
+TODO: eventually I'm hoping to also provide a tkinter interface for
 GPIO inputs and outputs, so you can simulate use-cases that involve buttons
 and LEDs, etc.  If anyone would like to help that along, your contributions
 would be most appreciated.  :-D

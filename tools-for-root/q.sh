@@ -82,7 +82,7 @@ function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@";
 
 # ---------- ssh agent
 
-# TODO(defer): can this be simplified?  externalized?
+# TODO: can this be simplified?  externalized?
 
 # return success (0) if agent is running and registered with this shell.
 function test_ssh_agent() {
@@ -250,7 +250,7 @@ function git_check_all() {
 # $1 is a git controlled directory.  Will check-in any local changes, then
 # pull updates from all remotes, then push updates to all remotes.
 # assumes "need_ssh_agent" was already called.
-# TODO(defer): assumes remote branch is named "master"
+# TODO: assumes remote branch is named "master"
 function git_sync() {
     dir="$1"
     if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; return 1; fi
@@ -366,8 +366,8 @@ function iptables_query() {
 }
 
 # Save current iptables rules to disk for auto-restore upon boot.
-  # TODO(defer): move to standard location (with autodetect for ro root)
-  # TODO(defer): check if fail2ban is running, and if so, turn it off before saving and then back on again afterwards.
+  # TODO: move to standard location (with autodetect for ro root)
+  # TODO: check if fail2ban is running, and if so, turn it off before saving and then back on again afterwards.
 function iptables_save() {
     runner "/bin/mv -f ~/iptables.rules ~/iptables.rules.mbk"
     runner "/usr/sbin/iptables-save > ~/iptables.rules"
@@ -892,7 +892,7 @@ function main() {
         list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;   ## list all hosts using rsnapshot (hard-coded list)
         list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
-        listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems; TODO(defer)
+        listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems; TODO
 	    RP_FLAGS="--output - $RP_FLAGS"
 	    RUN_PARA LOCAL "$(cat)" "$@" ;;
         run | run-remote | rr | r)                                 ## run cmd $2+ on listed hosts $1

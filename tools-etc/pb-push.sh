@@ -6,7 +6,7 @@
 
 # Reference doc:  https://docs.pushbullet.com/#create-push
 
-# TODO(defer): rewrite in python3 and using kcore
+# TODO: rewrite in python3 and using kcore
 
 # Ken-specific note: "Tasker" app on Android phone uses contents to change
 # audible alert done.  Include "#a" to escalate to alert tone, or #i to
@@ -18,7 +18,7 @@ DEFAULT_RATE_LIMIT=${DEFAULT_RATE_LIMIT:-2,240}  # Allow 2 pushes every 4 minute
 LOG=${PB_LOG:-/var/log/apache2/pb-push.log}
 RL_FILE=${RL_FILE:-/tmp/pb.rl}
 
-# TODO(defer): somewhat Ken specific.
+# TODO: somewhat Ken specific.
 # Default LOG location is in the apache log dir.  But if that doesn't
 # exist, it indicates this script is being called from outside docker,
 # so instead use the full host path to the same file.

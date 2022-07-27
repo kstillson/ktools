@@ -32,7 +32,7 @@ This module is built on-top of webserver_base.py, so that much of the
 handler-based business-logic can be shared with the full Python version in
 webserver.py.
 
-TODO(defer): add POST submission parsing.  Currently this module inherets it's
+TODO: add POST submission parsing.  Currently this module inherets it's
 GET parameter parsing from webserver_base.py, but I haven't yet attempted to
 port webserverp.y:parse_port to Circuit Python.
 

@@ -1,18 +1,13 @@
 
-# General
+# queued minor improvements
 
-  - new name for ktools ?  (kcore?  kdev?  Mauveine?  #8D029B)
-    A: kwisdom/kwizdom?  (nb with k*: confusion w/ kuberneties)
-    kwizmet ?
+  - links tools-etc from top-level readme.
 
-# ---------- MILESTONE: v1.0
+# new subsystems
 
-# other ideas & improvements
-
-  - Makefile: add BUILD_SUDO_OK, etc/check-sudo-ok
   - iptables abstraction (easier to read/write/analyze) + assoc. tools
 
-# deferred homectrl related
+# homectrl new features
 
   - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio
   - graphical interface for inputs and outputs
@@ -20,8 +15,18 @@
 
 # docker improvements
 
-  - :prep needs to set up /rw/dv/...
-    - docker-containers/gitdock/Makefile:
-      TODO!: need to provide code to generate host-keys and put them in place
-  - need a :prep that sets up things like network docker2
-  - most docker-container tests fail when run off of jack
+  - docker-containers needs a :prep
+    - set up /rw/dv/...
+    - sshdock/gitdock need generated host-keys
+    - idempotent setup of docker networks
+
+# new project name?
+
+  - new name for ktools?
+    - kcore?  kdev?  Mauveine?, kwisdom?, kwizdom?, kwizmet?
+    - nb with k*: possible confusion w/ kuberneties
+
+# other general thoughts
+
+  - Makefile: add BUILD_SUDO_OK, etc/check-sudo-ok
+

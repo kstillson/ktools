@@ -24,7 +24,7 @@ def main():
     d_lib.file_expect(cookie, cow + '/root/cookie')
 
     # Make sure bash-history is being recorded in cow dir.
-    # TODO(defer): can't find a way to run this in an automated way that looks sufficiently
+    # TODO: can't find a way to run this in an automated way that looks sufficiently
     # like it's interactive so that bash records it.  Tried various combinations of
     # passing -ti to docker and -il to bash, no joy.  Disabling for now.
     # On the plus side, actual interactive sessions do seem to get logged.
@@ -32,7 +32,7 @@ def main():
 
     print('pass')
 
-    # TODO(defer): launch a local server and test kmc against it.
+    # TODO: launch a local server and test kmc against it.
 
 if __name__ == "__main__":
   main()

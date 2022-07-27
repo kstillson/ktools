@@ -1,7 +1,7 @@
 
 TODO(doc)
 
-TODO(defer): user must manually generate and populate these:
+TODO: user must manually generate and populate these:
   files/root/.ssh/private.d/known_hosts
   files/root/.ssh/private.d/id_rsa
   files/root/.ssh/private.d/id_rsa.pub

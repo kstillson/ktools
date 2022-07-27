@@ -16,7 +16,7 @@ include ../etc/Makefile-common
 
 # ---------- testing
 
-# TODO(defer): add some tests
+# TODO: add some tests
 $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
 	touch $(TEST_LOG)
 	# script -e -c "pytest-3 test_*.py" $(TEST_LOG)

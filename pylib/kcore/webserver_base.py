@@ -62,7 +62,7 @@ Supported standard handlers:
   no access control by default, so DO NOT PUT SENSITIVE INFORMATION IN VARZ.
 
 
-TODO(defer): add support for basic auth (with db file compatible with htpasswd...?)
+TODO: add support for basic auth (with db file compatible with htpasswd...?)
 
 '''
 

@@ -6,7 +6,7 @@ all: local-rclone docker-all
 # At time of writing, the version of rclone in Apline is 1.57, which only supports
 # a version of "out of band oAuth" that is no longer supported by Google.  So we
 # need to download the current version and use that instead.
-# TODO(defer): once 1.58 or beyond is available in Alpine, remove all this logic
+# TODO: once 1.58 or beyond is available in Alpine, remove all this logic
 # and just "apk add rclone" in the Dockerfile.
 #
 local-rclone: files/root/bin/rclone

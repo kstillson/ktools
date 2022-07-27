@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ## NB: depends on Ken-specific current dv/ content.
-## TODO(defer): generalize?  make dep on default account from init script?
+## TODO: generalize?  make dep on default account from init script?
 
 
 import argparse, os, sys, subprocess, tempfile, time

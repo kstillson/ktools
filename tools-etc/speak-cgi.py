@@ -8,7 +8,7 @@ speak.py directly built-in to homesec), because in the original author's
 setup, the server connected to the speakers (referred to in ext.py as "pi1")
 is different from the server that runs the homesec instance.
 
-TODO(defer): update to python3 and generally tidy & improve.
+TODO: update to python3 and generally tidy & improve.
 
 '''
 

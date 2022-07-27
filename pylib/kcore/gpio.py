@@ -24,7 +24,7 @@ In simulation mode, bcm_pin's should be an int.
 For CircuitPython, they must be an instance from the board.* module
 For RPi, they can be either of those.
 
-TODO(defer): add support for:
+TODO: add support for:
  - Running using ../circuitpy_sim, which uses tkinter to draw simulated
    graphical buttons on a Linux workstation
 
