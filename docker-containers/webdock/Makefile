@@ -19,7 +19,7 @@ copy: $(TOOL_TARGETS) $(ETC_TARGETS)
 $(TOOL_TARGETS): $(ULB_DIR)/% : ../../pylib/tools/%.py
 	cp $^ $@
 
-$(ETC_TARGETS): $(ULB_DIR)/% : ../../pylib/etc/%
+$(ETC_TARGETS): $(ULB_DIR)/% : ../../tools-etc/%
 	cp $^ $@
 
 

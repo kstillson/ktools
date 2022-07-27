@@ -18,8 +18,12 @@ KCORE_FILES := auth.py common.py html.py uncommon.py varz.py webserver.py
 KCORE_TARGETS := $(addprefix $(KCORE_DIR)/, $(KCORE_FILES))
 
 KTOOLS_DIR := files/usr/lib/python3.9/site-packages/ktools
-KTOOLS_FILES := kmc.py ratelimiter.py pb-push.sh
+KTOOLS_FILES := kmc.py ratelimiter.py
 KTOOLS_TARGETS := $(addprefix $(KTOOLS_DIR)/, $(KTOOLS_FILES))
+
+KTOOLS_ETC_FILES := pb-push.sh
+KTOOLS_ETC_TARGETS := $(addprefix $(KTOOLS_DIR)/, $(KTOOLS_ETC_FILES))
+
 
 DIRS := $(HSH_DIR) $(HSH_PRIV_DIR) $(KCORE_DIR) $(KTOOLS_DIR)
 
@@ -51,6 +55,9 @@ $(KCORE_TARGETS): $(KCORE_DIR)/% : ../../pylib/kcore/%
 	cp $^ $@
 
 $(KTOOLS_TARGETS): $(KTOOLS_DIR)/% : ../../pylib/tools/%
+	cp $^ $@
+
+$(KTOOLS_ETC_TARGETS): $(KTOOLS_DIR)/% : ../../tools-etc/%
 	cp $^ $@
 
 # ---------- pass-throughs
