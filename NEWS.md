@@ -19,6 +19,6 @@ complicated when uid namespace mapping is enabled in Docker).  For details,
 see the "current status" section in
 [README-containers.md](docker-containers/README-containers.md)
 
-For this reason, the top-level Makefile does not automatically decend into the
-docker-containers subdirectoryn unless $BUILD_DOCKER_CONTAINERS=1.
+For this reason, the top-level Makefile does not automatically descend into the
+docker-containers subdirectory unless $BUILD_DOCKER_CONTAINERS=1.
 
