@@ -35,10 +35,8 @@ IGNORE_LIST = [
     'rsnapdock:/etc/rsnapshot',
     'rsnapdock:/root/.bashrc',
     'rsnapdock:/root/.ssh',
-    'sshdock:/var/log/rootsh/ken.',
     'syslogdock:/run/syslog-ng.ctl',
     'syslogdock:/run/syslog-ng.persist',
-    'webdock:/tmp/sess_',
     'webdock:/tmp/pb.rl',
 ]
 
@@ -96,6 +94,21 @@ def problem(filespec, msg):
     return False
 
 
+def load_ignore_list(privfile):
+    if not privfile: return
+    privfile_orig = privfile
+    if not os.path.isfile(privfile):
+        privfile = os.path.join(os.path.dirname(__file__), privfile_orig)
+    if not os.path.isfile(privfile):
+        privfile = os.path.join('private.d', privfile_orig)
+    if not os.path.isfile(privfile):
+        return problem(privfile, 'unable to load --private ignore list')
+    global IGNORE_LIST
+    addl = UC.load_file_as_module(privfile)
+    IGNORE_LIST.extend(addl.IGNORE_LIST)
+    if ARGS.debug > 0: print(f'Added {len(addl.IGNORE_LIST)} ignore items from {privfile}')
+
+
 def write_token():
     UC.popen(['/usr/bin/docker', 'exec', '-u', '0', ARGS.token_container, '/bin/bash', '-c', 'echo "%s" > %s' % (TOKEN, ARGS.token_file)])
 
@@ -106,19 +119,14 @@ def write_token():
 def main():
     ap = argparse.ArgumentParser(description='docker container launcher')
     ap.add_argument('--debug', '-d',     default=0, type=int, help='debug level, 0-3')
-    ap.add_argument('--private', '-p',   default='private.d/d-cowscan.ignore', help='file with additional IGNORE_LIST contents')    
+    ap.add_argument('--private', '-p',   default='d-cowscan.ignore', help='file with additional IGNORE_LIST contents')
     ap.add_argument('--rm', '-R',        action='store_true', help='remove offending files rather than just printing them.')
     ap.add_argument('--token_container', default='eximdock', help='name of container into which to induce a change to make sure we detect it')
     ap.add_argument('--token_file',      default='/tmp/.stamp', help='name of file for induced change')
     global ARGS
     ARGS = ap.parse_args()
 
-    if ARGS.private:
-        global IGNORE_LIST
-        addl = UC.load_file_as_module(ARGS.private)
-        IGNORE_LIST.append(addl.IGNORE_LIST)
-        if ARGS.debug > 0: print(f'Added {len(addl.IGNORE_LIST)} ignore items from {ARGS.private}')
-    
+    load_ignore_list(ARGS.private)
     write_token()
 
     for temp in UC.popener(['/usr/bin/docker', 'ps', '--format', '{{.Names}} {{.ID}}']).split('\n'):

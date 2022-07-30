@@ -55,9 +55,9 @@ def main():
         return 0
         
     print(f'{args.base}: {len(matches)} matched;  {len(missing)} missing;  {len(missing)} mismatched:')
-    for i in missing:    print(f'  missing: {i}')
-    for i in mismatches: print(f'  mismatch: {i}')
-    return 1
+    for i in missing:    print(f'  MISSING: {i}')
+    for i in mismatches: print(f'  MISMATCH: {i}')
+    return 0
 
 
 if __name__ == '__main__':

@@ -14,6 +14,23 @@ SH_TARGETS := d d-build d-map
 INSTALL_DIR ?= /root/bin
 include ../etc/Makefile-common
 
+# ---------- addl files
+
+install: $(INSTALL_DIR)/d-cowscan.ignore
+
+$(INSTALL_DIR)/d-cowscan.ignore: private.d/d-cowscan.ignore
+	sudo cp $^ $@
+
+
+# ----- Create an empty private.d/d-cowscan.ignore if one doesn't exist.
+
+private.d/d-cowscan.ignore:  private.d
+	touch $@
+
+private.d:
+	mkdir -p $@
+
+
 # ---------- testing
 
 # TODO: add some tests
