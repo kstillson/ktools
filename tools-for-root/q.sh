@@ -41,7 +41,8 @@ VERBOSE=0        # print commands as they are run
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 # default flags to run_para command (see ../pylib_tools):
-RP_FLAGS="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
+RP_FLAGS_BASE="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
+RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
 
 # ---------- hard-coded control constants
@@ -304,7 +305,7 @@ function git_pull_all() {
 function git_update_pis() {
     set +e
     t=$(gettemp git-updates.out)
-    RP_FLAGS="$RP_FLAGS --output $t"
+    RP_FLAGS="${RP_FLAGS_BASE} --output $t"
     hosts=$(list_pis | without hs-front,pi1,lightning)
     echo "pulling git updates..."
     RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/dev; git pull'"
@@ -377,7 +378,7 @@ function iptables_save() {
 # (in parallel) ping the list of hosts in $@.  Try up to 3 times.
 function pinger() {
     set +e
-    RP_FLAGS="$RP_FLAGS -q -m 99 -o -"
+    RP_FLAGS="${RP_FLAGS_BASE} -q -m 99 -o -"
     problems=$(RUN_PARA LOCAL "$@" "set -o pipefail; ping -c3 -W3 -i0.5 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emitc green "all ok\n"; return; fi
     for try in 1 2 3; do
@@ -868,7 +869,6 @@ function main() {
         without | wo) cat | without "$@" ;;                        ## remove args (csv or regexp) from stdin (space, csv, or line separated)
     # general linux maintenance routines - for multiple hosts
         disk-free-all | dfa | linux-free | lf)                     ## root disk free for all linux hosts
-	    RP_FLAGS="--output - $RP_FLAGS"
             RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;
         ping-pis | p) pinger "$(list_pis)" ;;                      ## ping all pis
         ping-pis-continuous | ppc | pp)                            ## ping all pi's continuously until stopped
@@ -883,7 +883,6 @@ function main() {
         update-all | update_all | ua)                              ## run apt-get upgrade on all linux hosts
             updater "$(list_linux | without jack,blue,mc2)" ;;
         uptime | uta | ut)                                         ## uptime for all linux hosts list multiple hosts (or multiple other things)
-	    RP_FLAGS="--output - $RP_FLAGS"
             RUN_PARA "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;
         list-all | la) list_all | without $EXCLUDE ;;              ## list all known local-network hosts (respecting -x) via dhcp server leases
         list-git-dirs | lg) echo $GIT_DIRS ;;                      ## list all known git dirs (hard-coded list)
@@ -893,16 +892,12 @@ function main() {
         list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
         listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems; TODO
-	    RP_FLAGS="--output - $RP_FLAGS"
 	    RUN_PARA LOCAL "$(cat)" "$@" ;;
         run | run-remote | rr | r)                                 ## run cmd $2+ on listed hosts $1
-	    RP_FLAGS="--output - $RP_FLAGS"
             hostspec=$1; shift; RUN_PARA "$(list_dynamic $hostspec)" "$@" ;;
         run-local | rl)                                            ## eg: q run-local linux scp localfile @:/destdir
-	    RP_FLAGS="--output - $RP_FLAGS"
             hostspec=$1; shift; RUN_PARA LOCAL "$(list_dynamic $hostspec)" "$@" ;;
         run-pis | rpis | rp)                                       ## run command on all pi's
-	    RP_FLAGS="--output - $RP_FLAGS"
 	    RUN_PARA "$(list_pis)" "$@" ;;
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
