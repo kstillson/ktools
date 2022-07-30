@@ -557,7 +557,7 @@ function procmon_update() {
     sort -u < $PROCQ > $t
     cd /root/dev/ktools/services/procmon
     emacs procmon_whitelist.py $t
-    ./procmon -t | tee $t
+    ./procmon.py -t -w procmon_whitelist.py | tee $t
     last=$(tail -1 $t)
     rm -f $t
     if [[ "$last" != "all ok" ]]; then

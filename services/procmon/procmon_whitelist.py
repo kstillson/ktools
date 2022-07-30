@@ -28,6 +28,7 @@ WHITELIST = [
     WL('/',         'root',        False, False, '/usr/bin/docker-proxy -proto'),
     WL('/',         'root',        False, False, '/usr/bin/dockerd -H'),
     WL('/',         'root',        False, False, '/usr/bin/python3 /root/bin/d-run --cd rclonedock --fg --settings'),
+    WL('/',         'root',        False, False, '/usr/bin/python3 /usr/local/bin/hc'),
     WL('/',         'root',        False, False, '/usr/bin/python3 /usr/local/bin/sunsetter.py'),
     WL('/',         'root',        False, False, '/usr/bin/retry -d [0-9]* -t [0-9]* -- /usr/local/bin/hc'),
     WL('/',         'root',        False, False, '/usr/lib/openssh/sftp-server'),
