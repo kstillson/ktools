@@ -377,7 +377,7 @@ function iptables_save() {
 # (in parallel) ping the list of hosts in $@.  Try up to 3 times.
 function pinger() {
     set +e
-    RP_FLAGS="$RP_FLAGS -q -m 99 "
+    RP_FLAGS="$RP_FLAGS -q -m 99 -o -"
     problems=$(RUN_PARA LOCAL "$@" "set -o pipefail; ping -c3 -W3 -i0.5 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emitc green "all ok\n"; return; fi
     for try in 1 2 3; do
