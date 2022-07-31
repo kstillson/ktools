@@ -186,6 +186,8 @@ def get_ip_to_use(args, settings):
 def get_puid(name):
     '''Decorate the machine's PUID with a container-name specific one.'''
     system_puid = kcore.auth.get_machine_private_data()
+    if ':' in system_puid:
+        _, _, system_puid = system_puid.split(':', 2)
     return f'v2p:dpu:{system_puid}:{name}'
 
 
