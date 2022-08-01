@@ -5,6 +5,7 @@
 
 # new subsystems
 
+  - add homesec client modules...?
   - iptables abstraction (easier to read/write/analyze) + assoc. tools
 
 # homectrl new features
