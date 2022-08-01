@@ -25,7 +25,7 @@ clean:
 	@printf "\n NOT cleaning the $(YELLOW)venv directory$(RESET).  use make target 'vclean' or remove manually if needed.\n\n"
 
 comp:
-	@$(COMP) -b "$(INSTALL_BASE)" -L 'tools/ktools' circuitpy_sim/*.py home_control/*.py kcore/*.py tools/*.py
+	$(COMP) -b "$(INSTALL_BASE)" -L 'tools/ktools' circuitpy_sim/*.py home_control/*.py kcore/*.py tools/*.py
 
 install:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
