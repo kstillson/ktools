@@ -5,3 +5,6 @@ ports:
 mount_logs:
   - var_log_hc: /var/log/hc
 
+mount_persistent_test_ro:
+  - /dev/log: /dev/log
+

@@ -60,7 +60,7 @@ def hs_control_handler(request):
     except:
         return W.Response('correct path looks like /control/target[/command].', 400)
     ok, rslt = HC.control(target, command)
-    C.log(f'({target},{command}) -> ok={ok}: {rslt}')
+    C.log(f'({target},{command}) -> ok={ok}: {rslt}', C.INFO if ok else C.ERROR)
     return f'{"ok" if ok else "ERROR"}: {rslt}'
 
 
@@ -75,7 +75,7 @@ def hs_c_handler(request):
     if not command: command = 'on'
 
     ok, rslt = HC.control(target, command)
-    C.log(f'({target},{command}) -> ok={ok}: {rslt}')
+    C.log(f'({target},{command}) -> ok={ok}: {rslt}', C.INFO if ok else C.ERROR)
     return f'{"ok" if ok else "ERROR"}: {rslt}'
 
 
@@ -95,7 +95,7 @@ def parse_args(argv):
   ap.add_argument('--debug', '-d', action='store_true', help='put home_control into debug mode')
   ap.add_argument('--logfile', '-l', default='hs.log', help='filename for operations log.  "-" for stderr, blank to disable log file')
   ap.add_argument('--port', '-p', type=int, default=8080, help='port to listen on')
-  ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
+  ap.add_argument('--syslog', '-s', action='store_true', help='send error level log messages to syslog')
   return ap.parse_args(argv)
 
 
@@ -105,7 +105,7 @@ def main(argv=[]):
   C.init_log('hs server', args.logfile,
              filter_level_logfile=C.INFO,
              filter_level_stderr=C.DEBUG if args.debug else C.NEVER,
-             filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
+             filter_level_syslog=C.ERROR if args.syslog else C.NEVER)
 
   if args.debug: HC.control('doesnt', 'matter', {'debug': True})
   
