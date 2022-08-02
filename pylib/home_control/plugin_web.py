@@ -34,15 +34,15 @@ def control(plugin_name, plugin_params, device_name, command):
   url = url.replace('%d', device_name).replace('%c', command)
 
 
-  # ----- If we're in debug mode, send the web request synchronously
+  # ----- If we're in synchronous mode, send the web request synchronously
   #       and return the actual results.
 
-  if SETTINGS['debug']:
+  if not SETTINGS['quick']:
     try:
       rslt = requests.get(url, allow_redirects=True, timeout=SETTINGS['timeout'])
       status = 'ok' if rslt.ok else 'error'
       details = f'{device_name}: {status} [{rslt.status_code}]: {rslt.text}'
-      print(f'web request [{url}] -> {details}')
+      if SETTINGS['debug']: print(f'DEBUG: web request [{url}] -> {details}')
       return rslt.ok, details
 
     except Exception as e:

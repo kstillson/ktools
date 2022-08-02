@@ -105,7 +105,7 @@ in send-and-forget mode), then "success" just means that the command was
 successfully queued.
 '''
 
-import argparse, fnmatch, glob, os, site, sys
+import argparse, fnmatch, glob, os, pprint, site, sys
 from dataclasses import dataclass
 from typing import Any
 import kcore.uncommon as UC
@@ -138,11 +138,12 @@ class Setting:
 INITIAL_SETTINGS = [
   Setting('data_dir',    ['.'],          'base directories in which to search for data files (see also private_dir)'),
   Setting('datafiles',   ['hcdata*.py'], 'glob-list of files (within data_dir) to load devices and scenes from', '-D'),
-  Setting('debug',       False,          'print debugging info and use syncronous mode (no parallelism)', '-d'),
+  Setting('debug',       False,          'print debugging info', '-d'),
   Setting('plugin_args', [],             'plugin-specific settings in the form key=value', '-p'),
   Setting('plugins_dir', ['.'],          'base directories in which to search for plugin files (see also private_dir)'),
   Setting('plugins',     ['plugin_*.py'],'glob-list of files to load as plugins'),
   Setting('private_dir' ,'private.d',    'extra directory (relative to data_dir and plugins_dir) in which to search for files.  Note: if you change this, you might need to make corresponding changes to .gitignore to keep your files private.', '-P'),
+  Setting('quick',       False,          'use asyncronous mode (full parallelism).  quicker exit, but no accurate status outputs', '-q'),
   Setting('test',        False,          "Just show what would be done, don't do it.", '-T'),
   Setting('timeout',     5,              'default timeout for external communications', '-t'),
 ]
@@ -195,8 +196,11 @@ def load_plugins(settings):
     new_module = UC.load_file_as_module(i)
     pi_names = new_module.init(settings)
     for j in pi_names:
-      plugins[j] = new_module
-      if SETTINGS['debug']: print(f'DEBUG: plugin {j} -> {i}')
+      if j not in plugins:
+        plugins[j] = new_module
+        if SETTINGS['debug']: print(f'DEBUG: plugin {j} -> {i}')
+      else:
+        if SETTINGS['debug']: print(f'DEBUG: skipping {i}; already have {j}')
   if not plugins: print('WARNING- no plugins found.', file=sys.stderr)
   V.set('plugins-loaded', len(plugins))
   return plugins
@@ -353,7 +357,8 @@ def main(argv=[]):
 
   # and pass to the library API
   rslt = control(args.target, args.command, settings)
-  print(rslt)
+  width = os.get_terminal_size().columns
+  pprint.pprint(rslt, indent=2, width=width, compact=True)
 
   # if there are any lingering threads, finish them up before exiting.
   if SETTINGS['_threads']: print('waiting for pending threads to finish...')

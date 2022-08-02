@@ -155,6 +155,7 @@ def normalize(plugin_type, hostname_in, command_in):
   elif plugin_type in ['TPLINK-PLUG', 'plug']:
     command = command.replace('bulb-', '').replace('-slow', '').replace('dim:0', 'off')
     if command.startswith('dim'): command = 'on'
+    if command in ['med', 'full']: command = 'on'
 
   elif plugin_type in ['TPLINK-BULB', 'bulb']:
     if not command.startswith('bulb-'): command = 'bulb-' + command
@@ -163,8 +164,8 @@ def normalize(plugin_type, hostname_in, command_in):
     print(f'ERROR- unknown plugin name: {plugin_type}; command normalization skipped', file=sys.stderr)
 
   if SETTINGS['debug']:
-    if hostname != hostname_in: print(f'hostname "{hostname_in}" normalized to "{hostname}"')
-    if command != command_in: print(f'command "{command_in}" normalized to "{command}"')
+    if hostname != hostname_in: print(f'DEBUG: hostname "{hostname_in}" normalized to "{hostname}"')
+    if command != command_in: print(f'DEBUG: command "{command_in}" normalized to "{command}"')
   return hostname, command
 
 
@@ -212,7 +213,7 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param):
   if cmd_param: raw_cmd = raw_cmd.replace('@@', cmd_param)
 
   if SETTINGS['test']: return True, f'would send {hostname} : {raw_cmd}'
-  if SETTINGS['debug']: print(f'sending {hostname} : {raw_cmd}')
+  if SETTINGS['debug']: print(f'DEBUG: sending {hostname} : {raw_cmd}')
 
   sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   try:
@@ -221,7 +222,7 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param):
     sock_tcp.send(encrypt(raw_cmd))
   except Exception as e:
     return False, f'{hostname}: error: {str(e)}'
-  if not SETTINGS['debug']:   # async mode; send and forget
+  if SETTINGS['quick']:   # async mode; send and forget
     sock_tcp.close()
     return True, f'{hostname}: sent'
   resp = sock_tcp.recv(2048)

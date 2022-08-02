@@ -30,7 +30,7 @@ def control(plugin_name, plugin_params, device_name, command):
       return False, f'DELAY device config error: params should be delay_time:delayed_target:delayed_command, but saw "{plugin_params}"'
 
   global SETTINGS
-  if SETTINGS['debug']:
+  if not SETTINGS['quick']:
       # Single threaded syncronous mode.
       time.sleep(delay_time)
       return SETTINGS['_control'](delayed_target, delayed_command)

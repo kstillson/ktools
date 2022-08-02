@@ -58,7 +58,7 @@ def test_delay_plugin(init):
 
     # ----- Try a backgrounded request (non-debug mode).
 
-    TEST_SETTINGS['debug'] = False
+    TEST_SETTINGS['quick'] = True
     HANDLER_DELAY = 2
     LAST_REQUEST = '--'
     ok, details = hc.control('web1', random_high_port_str)
