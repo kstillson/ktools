@@ -137,9 +137,9 @@ class SharedSecret:
   def generate(username, user_password, client_override_hostname=None):
     hostname = client_override_hostname or socket.gethostname()
     data_to_hash = '%s:%s:%s:%s' % (hostname, get_machine_private_data(), username, user_password)
-    debug_msg(f'DEBUG: generating SharedSecret from plaintext: {data_to_hash}')
     item = SharedSecret(version_tag=TOKEN_VERSION, hostname=hostname, username=username,
                         secret=hasher(data_to_hash))
+    debug_msg(f'generating SharedSecret from plaintext: {data_to_hash} -> {item}')
     return item
 
 
@@ -350,8 +350,9 @@ def generate_token_given_shared_secret(
   time_now = override_time or now()
   plaintext_context = '%s:%s:%s:%s' % (TOKEN_VERSION, hostname, username, time_now)
   data_to_hash = '%s:%s:%s' % (plaintext_context, command, shared_secret_str)
-  debug_msg('hash data: "%s"' % data_to_hash)
-  return '%s:%s' % (plaintext_context, hasher(data_to_hash))
+  hashed = hasher(data_to_hash)
+  debug_msg(f'hash data: {data_to_hash} -> {hashed}')
+  return '%s:%s' % (plaintext_context, hashed)
 
 
 # ---------- server-side authN logic
@@ -527,6 +528,7 @@ def parse_args(argv):
   group4.add_argument('--max-time-delta', '-m', default=DEFAULT_MAX_TIME_DELTA, type=int, help='max # seconds between token generation and consumption.')
 
   group5 = ap.add_argument_group('special' 'other alternate modes')
+  group5.add_argument('--debug', '-d', action='store_true', help='activate debugging info.  WARNING- outputs lots of secrets!')
   group5.add_argument('--extract-machine-secret', '-e', action='store_true', help='run on the client to output the machine-unique-private data and stop.  See -s.')
   group5.add_argument('--use-machine-secret', '-s', default=None, help='on the client, use this provided client machine secret rather than querying the machine for its real secret.  Equivalent to setting $PUID.')
 
@@ -536,6 +538,9 @@ def parse_args(argv):
 
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
+
+  global DEBUG
+  if args.debug: DEBUG = True
 
   if args.extract_machine_secret:
     print(get_machine_private_data())

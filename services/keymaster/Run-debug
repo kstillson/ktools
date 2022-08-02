@@ -1,0 +1,27 @@
+#!/bin/bash
+
+PASSWORD="$1"
+
+# Override from environment...
+PORT="${PORT:-8080}"
+PRIV="${PRIV:-../../private.d}"
+
+# -----
+
+function unlock() {
+  sleep 2
+  echo -n "attempting to unlock: "
+  curl -k -d "password=$PASSWORD" https://localhost:${PORT}/load
+  echo ""
+}
+
+# ----- main
+
+if [[ "$PASSWORD" != "" ]]; then
+  unlock &
+fi
+
+./km.py --debug --dont-panic --nohostcheck \
+  --certkeyfile ${PRIV}/keymaster.pem --datafile ${PRIV}/km.data.pcrypt \
+  --db-filename ${PRIV}/kcore_auth_db.data.pcrypt --logfile - --port $PORT --window 0
+

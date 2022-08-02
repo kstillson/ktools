@@ -99,6 +99,7 @@ def parse_args(argv):
   ap.add_argument('keyname', default=None, help='name of the key to retrieve/create')
 
   group1 = ap.add_argument_group('advanced', 'advanced settings for key retrival')
+  group1.add_argument('--debug', '-d', action='store_true', help='activate debugging info. WARNING: outputs lots of secrets!')
   group1.add_argument('--km-host-port', default='keys:4444', help='hostname:port for keymaster to contact')
   group1.add_argument('--km_cert', default='keymaster.crt', help='filename of cert to use for km server TLS checks, or "" to use unverified TLS, or "-" to use HTTP without TLS.')
   group1.add_argument('--override-hostname', '-O', default=None, help='intended for testing; generate authN token based on this hostname rather than the real one.')
@@ -114,6 +115,9 @@ def parse_args(argv):
 
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
+
+  if args.debug:
+    DEBUG = kcore.auth.DEBUG = True
 
   if args.extract_machine_secret:
     print(kcore.auth.get_machine_private_data())

@@ -211,7 +211,7 @@ def km_default_handler(request):
     if not secret:
         return ouch('no such key', f'attempt to get non-existent key: {keyname}', 'keyfail-notfound')
 
-    client_addr = request.remote_address.split(':')[0]
+    client_addr = None if ARGS.nohostcheck else request.remote_address.split(':')[0]
 
     rslt = A.verify_token(token=token, command=keyname, client_addr=client_addr,
                           db_filename=ARGS.db_filename, db_passwd=SECRETS_PASSWORD,
@@ -242,6 +242,7 @@ def parse_args(argv):
   ap.add_argument('--dont-panic', action='store_true', help='By default the server will panic (i.e. clear its decrypted secrets database) if just about anything unexpected happens, including any denied request for a key.  This flag disables that, favoring stability over pananoia.')
   ap.add_argument('--logfile', '-l', default='km.log', help='filename for operations log.  "-" for stderr, blank to disable log file')
   ap.add_argument('--port', '-p', type=int, default=4444, help='port to listen on')
+  ap.add_argument('--nohostcheck', '-H', action='store_true', help='Skip hostname verification (advised for testing only!)')
   ap.add_argument('--noratchet', '-R', action='store_true', help='By default each request for a key must come after the last successful request for that key; this prevents request replay attacks.  It also limits key retrievals to one-per-second (for each key).  This disables that limit, and relies just on --window to prevent replay attacks.')
   ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
   ap.add_argument('--window', '-w', type=int, default=90, help='max seconds time difference between client key request and server receipt (i.e. max clock skew between clients and servers).  Set to 0 for "unlimited".')
