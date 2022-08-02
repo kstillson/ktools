@@ -1,5 +1,5 @@
 
-# general drops of wisdom...
+# General best practices...
 
 - [On backups](backups.md)
 - [wrt software development](development.md)

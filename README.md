@@ -84,7 +84,7 @@ ready-to-use functionality provided by this project.  Here's an
 **[services overview](services/README-services.md)** of what's there.
 
 The services can stand alone, but it's generally better when services are run
-in a single-purpose **docker containers** (see the "general wisdom" section
+in a single-purpose **docker containers** (see the "best-practices" section
 for why).  Most of these containers have just the minimal substance to
 accomplish that.  **[Docker containers overview](docker-containers/README-containers.md)**
 
@@ -144,8 +144,9 @@ be getting and what your options are.
 <center># # # # #</center>
 
 I'd like to call attention to the
-[general-wisdom](general-wisdom/README-wisdom.md) section.  This directory
-contains several decades of experience, distilled down to a few kilobytes.
+[best-practices](best-practices/README-best-practices.md) section.  This
+directory contains several decades of experience, distilled down to a few
+kilobytes.
 
 Some highlights:
 
@@ -159,11 +160,11 @@ Some highlights:
 
 - Design schemes for Linux system administration.  Basically this is an
   explanation and road-map for the provided services and Docker images.  You
-  can certainly use these t hings without reading the wisdom-docs, but chances
-  are you'll end up missing out on some of the key benefits.  For example, to
-  get the full value of running your own DHCP and DNS services, you really
-  need to understand how the configuration is used to create pseudo subnets
-  with different levels of trust.
+  can certainly use these t hings without reading the best-practices docs, but
+  chances are you'll end up missing out on some of the key benefits.  For
+  example, to get the full value of running your own DHCP and DNS services,
+  you really need to understand how the configuration is used to create pseudo
+  subnets with different levels of trust.
 
 
 <center>#</center>

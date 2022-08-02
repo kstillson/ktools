@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-'''Trivial slow color animation sequence for TP-Link smart bulbs.
+'''Slow color animation sequence for TP-Link smart bulbs.
 
 This code sends color setting commands to 4 TP-Link color changing bulbs I've
 got around my living room.  The idea is that the bulbs change between randomly

@@ -1,7 +1,7 @@
 
 # Docker containers
 
-For the reasons outlined under ../general-wisdom, it's my belief that just
+For the reasons outlined under ../best-practices, it's my belief that just
 about everything should be wrapped in its own micro-service container, and
 I've been pretty happy with Docker, so that's what I tend to use.
 

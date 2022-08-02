@@ -5,8 +5,8 @@ digraph G {
     edge [color=darkgrey, penwidth=1];
 
     docker_containers -> { services, kcore, tools };
-    tools -> { kcore, general_wisdom };
-    services -> { kcore, general_wisdom };
-    kcore -> general_wisdom;
+    tools -> { kcore, best_practices };
+    services -> { kcore, best_practices };
+    kcore -> best_practices;
   }
 }

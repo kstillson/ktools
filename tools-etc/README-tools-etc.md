@@ -12,5 +12,18 @@ But I do have a little documentation inside each one, so feel free to take a
 look, and make use of anything that appeals to you.
 
 
+## Contents
+
+- gpg_s: simple wrapper around gpg symmetric encrpytion
+- m: run-time filesystem mounter
+- party-lights: Slow color animation sequence for TP-Link smart bulbs.
+- pb-push: sends push-notifications via the Android Push Bullet app
+- speak-cgi: Trivial CGI wrapper for speak.py
+- speak: Convert the text on the command-line into speech, and say it.
+- sunsetter: Wait until an offset before or after sunset.
+- tplink: Deprecated tplink controller.
+
+## Tasker
+
 The subdirectory ./Tasker has a bunch of my scripts for the Android Tasker
 app.  See [README-Tasker](Tasker/README-Tasker.md) for details.

@@ -788,10 +788,10 @@ function without() {
 # Scan my own source code, find the main switch statement, extract and format showing the commands this script supports.
 function myhelp_real() {
     awk -- '/case "\$flag/,/esac/{ print } /case "\$cmd/,/esac/{ print }' $0 | \
-	sed -e 's/\t/        /' | \
-	egrep '(^ *#)|(^ *--)|(^        [a-z])' | \
-	sed -e '/case /d' -e '/esac/d' -e 's/^    //' -e 's/##/~/' -e 's/).*;;//' | \
-	column -t -s~
+        sed -e 's/\t/        /' | \
+        egrep '(^ *#)|(^ *--)|(^        [a-z])' | \
+        sed -e '/case /d' -e '/esac/d' -e 's/^    //' -e 's/##/~/' -e 's/).*;;//' | \
+        column -t -s~
 }
 
 # Wrapper around myhelp_real, optionally searching for $@ and auto-paging if on an interactive terminal.
@@ -838,7 +838,8 @@ function main() {
     if [[ "$cmd" == "" ]]; then myhelp; exit 0; fi
     shift
     case "$cmd" in
-    # general linux maintenance routines for localhost
+        # general linux maintenance routines for localhost
+        binds | bm | lbm) findmnt | grep  "\[" ;;                  ## list bind mounts
         df) df -h | egrep -v '/docker|/snap|tmpfs|udev' ;;         ## df with only interesting output
         epoch-day | ed | ED)                                       ## epoch day $1 to m/d/y
             date -u +%m/%d/%y -d @$(( $1 * 86400 )) ;;
@@ -892,13 +893,13 @@ function main() {
         list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
         listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems; TODO
-	    RUN_PARA LOCAL "$(cat)" "$@" ;;
+            RUN_PARA LOCAL "$(cat)" "$@" ;;
         run | run-remote | rr | r)                                 ## run cmd $2+ on listed hosts $1
             hostspec=$1; shift; RUN_PARA "$(list_dynamic $hostspec)" "$@" ;;
         run-local | rl)                                            ## eg: q run-local linux scp localfile @:/destdir
             hostspec=$1; shift; RUN_PARA LOCAL "$(list_dynamic $hostspec)" "$@" ;;
         run-pis | rpis | rp)                                       ## run command on all pi's
-	    RUN_PARA "$(list_pis)" "$@" ;;
+            RUN_PARA "$(list_pis)" "$@" ;;
     # jack/homesec specific maintenance routines
         checks | c) checks ;;                                             ## run all (local) status checks
         dhcp-lease-rm | lease-rm | rml | rmmac) dns_update_rmmac "$@" ;;  ## update lease file to remove an undesired dhcp assignment
