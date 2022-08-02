@@ -6,7 +6,7 @@
 
 This is a collection of computer-security-first services, tools, and
 libraries, intended for moderately knowledgeable owners of Linux and
-Circuit-Python based systems.  [Project home page](https://point0.net/ktools/).
+Circuit-Python based systems.  [Project home page](https://k3n.cc/0).
 
 Some highlights:
 
@@ -26,6 +26,12 @@ Some highlights:
   containers, and easy addition of new ones
 
 - A Python library and tools that underpin the above and a fair bit more.
+
+
+This seems like a bit of a hodge-podge; why release it as a single project?
+There are other open-source solutions for each of use-cases, and they are
+probably better, or at least more comprehensive, if your goals are not focused
+around security and simplicity; read on...
 
 - - -
 
@@ -141,7 +147,7 @@ However, you'll probably find it more useful to review
 be getting and what your options are.
 
 
-<center># # # # #</center>
+- - -
 
 I'd like to call attention to the
 [best-practices](best-practices/README-best-practices.md) section.  This
@@ -166,5 +172,11 @@ Some highlights:
   you really need to understand how the configuration is used to create pseudo
   subnets with different levels of trust.
 
+- - -
 
-<center>#</center>
+## My challenge to you
+
+If you ever find yourself with a system you're proud of, and you've got the IP
+rights and the financial wherewithal to give away something even though it
+might have value -- see if you can find your way to paying it forward...
+
