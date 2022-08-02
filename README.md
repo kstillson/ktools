@@ -101,6 +101,7 @@ different parts of the directory tree:
 
 - **[tools for root](tools-for-root/README-root-tools.md)**
 - **[tools for users](pylib/tools/README-user-tools.md)**
+- **[more ad-hoc tools for users](tools-etc/README-tools-etc.md)**
 - **[smart-home control](pylib/home_control/README-home-control.md)**
 - **[tools for docker](docker-infrastructure/README-docker-tools.md)**
 - **[tools for circuit python](pylib/circuitpy_sim/README-circuitpy.md)**

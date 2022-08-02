@@ -1,8 +1,6 @@
 
 # queued minor improvements
 
-  - links tools-etc from top-level readme.
-
 # new subsystems
 
   - add homesec client modules...?
