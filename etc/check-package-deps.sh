@@ -1,7 +1,9 @@
 #!/bin/bash
 
+# Are we looking for "default" or "docker" dependencies?
 dep_set="${1:-default}"
 
+# List of packages that need to be installed.
 OUT=$(mktemp)
 
 # Term colorization
@@ -11,6 +13,10 @@ RESET=$(tput sgr0)
 
 # ---------- dep checking infrastructure
 
+# Use $test_cmd to see if $pkg is installed.  If it's ok, return 0.
+# If not, issue $prompt, and append $pkg to the list of things that need
+# to be installed (a file named $OUT), and return 1.
+#
 function tester() {
     test_cmd="$1"
     pkg="$2"
@@ -27,6 +33,8 @@ function tester() {
 
 # -----
 
+# Check that packages needed for all parts of the system are available.
+#
 function default_dep_checks() {
     prompt="required package appears to be missing: "
     tester "python3 --version"              "python3"                 "$prompt"
@@ -34,6 +42,7 @@ function default_dep_checks() {
     tester "python3 -m pytest_timeout"      "python3-pytest-timeout"  "$prompt"
     echo "import psutil" | tester "python3" "python3-psutil"          "$prompt"
 
+    # If not using $BUILD_SIMPLE, we need extra pieces to build Python wheels.
     if [[ "$BUILD_SIMPLE" != "1" ]]; then
 	echo ""
 	prompt='Python wheel related package missing.  Either install or set $BUILD_SIMPLE=1: '
@@ -42,6 +51,8 @@ function default_dep_checks() {
     fi
 }
 
+# Check that packages needed for Docker container building & testing are available.
+#
 function docker_dep_checks() {
     prompt="package required for Docker appears to be missing: "
     tester "docker --help"      "docker.io"     "$prompt"
@@ -56,12 +67,15 @@ case "$dep_set" in
      *) echo "unknown dependency set requested: $dep_set"; exit -3 ;;
 esac
 
-# ----- summary and follow-up
+# -- If $OUT is empty; we're all set.
 
 if [[ ! -s $OUT ]]; then
+    rm -f $OUT
     echo "$0: all ok"
     exit 0
 fi
+
+# -- Tell the user what needs to be done, and offer to do it for them.
 
 cmd="sudo apt-get install $(tr '\n' ' ' < $OUT)"
 printf "\nYou probably want to run the following command:\n\n   ${cmd}\n\n"

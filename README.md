@@ -28,19 +28,20 @@ Some highlights:
 - A Python library and tools that underpin the above and a fair bit more.
 
 
-This seems like a bit of a hodge-podge; why release it as a single project?
-There are other open-source solutions for each of use-cases, and they are
-probably better, or at least more comprehensive, if your goals are not focused
-around security and simplicity; read on...
-
 - - -
 
 ## About the Design Philosophy
 
-I try hard to make my systems minimal: in the volume of the code, the
-complexity of the abstractions, and the external dependencies.  See
+This seems like a bit of a hodge-podge; why release it as a single project?
+There are other open-source solutions for each of use-cases, and they are
+probably better, or at least more comprehensive, if your goals are not focused
+around security and simplicity.  This project builds up functionality from
+clean and thin layers, many of which are not more than a page or two of code.
+
+I try hard to make things minimal: in the volume of the code, the complexity
+of the abstractions, and the external dependencies.  See
 [etc/check-package-deps.sh](etc/check-package-deps.sh) for the small set of
-requirements.
+external requirements.
 
 *It is my hope and intention that you will review my code and pick out the
 pieces you want, rather than unquestioningly using the whole system.*
@@ -54,10 +55,10 @@ much as the [top-level Makefile](./Makefile) to turn it off.
 Why do this?  As a warning and a reminder: when you download code from the
 Internet, it can do *ANYTHING* -- violate your privacy, penetrate your
 security, burrow into your system and leave vulnerabilities, either
-deliberately or because of a lack of knowledge of its authors.  Some
+deliberately or because of a lack of knowledge of its author(s).  Some
 open-source projects have many contributors, and hopefully those many eyes
-will catch bad behavior.  But most FOSS has a small enough team that
-collusion or lack of review is absolutely possible.
+will catch bad behavior.  But most FOSS has a small enough team that collusion
+or lack of review is absolutely possible.
 
 I put in the extra effort to make my systems simple so you can and will read
 and understand the code; so you will get into the habit of not blindly
@@ -94,14 +95,13 @@ in a single-purpose **docker containers** (see the "best-practices" section
 for why).  Most of these containers have just the minimal substance to
 accomplish that.  **[Docker containers overview](docker-containers/README-containers.md)**
 
-The **"tools"** are functionality generally used in a mode ad-hoc manner that
-don't need to be wrapped as services/containers, but can be run directly from
-the command-line.  The ones provided come in several flavors, located in
-different parts of the directory tree:
+The **"tools"** are used as-needed directly from the command-line (not wrapped
+in services or containers).  The ones provided come in several flavors,
+located in different parts of the directory tree:
 
 - **[tools for root](tools-for-root/README-root-tools.md)**
 - **[tools for users](pylib/tools/README-user-tools.md)**
-- **[more ad-hoc tools for users](tools-etc/README-tools-etc.md)**
+- **[somewhat more ad-hoc tools for users](tools-etc/README-tools-etc.md)**
 - **[smart-home control](pylib/home_control/README-home-control.md)**
 - **[tools for docker](docker-infrastructure/README-docker-tools.md)**
 - **[tools for circuit python](pylib/circuitpy_sim/README-circuitpy.md)**
@@ -118,9 +118,9 @@ or a full description.  Some highlights:
 
 - The no-plain-text-secrets authN and secrets retriever mentioned above.
 
-- A very simple to use logging abstraction that integrates level filtering
-  for various outputs (files, stdout, stderr, syslog), as well a web-based
-  log retrieval.
+- A very simple-to-use logging abstraction that integrates level filtering for
+  various outputs (files, stdout, stderr, *syslog*), as well a web-based log
+  retrieval.
 
 - A web server and client designed for simplicity of use, and which also
   provides a uniform interface for Python 2 or 3, Raspberry PI, and Circuit
