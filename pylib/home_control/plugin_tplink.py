@@ -228,7 +228,7 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param):
   resp = sock_tcp.recv(2048)
   sock_tcp.close()
   out = decrypt(resp[4:])
-  ok = '{"err_code":0}' in out
+  ok = '"err_code":0' in out
   if SETTINGS.get('raw', False) is False and ok: out = 'ok'
   return ok, f'{hostname}: {out}'
 
