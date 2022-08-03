@@ -20,5 +20,6 @@ with open('/etc/apache2/conf.d/site-k3n-ssl.conf') as f:
         redir = redir.replace('.point0.net', '')
         redir = chop_at('/drive/', redir)
         redir = chop_at('/spreadsheets/', redir)
+        redir = chop_at('/presentation/', redir)
         print(f'  <tr><td>{addr}</td><td>{redir}</td></tr>\n')
 print("</table>\n</html>\n")
