@@ -1,0 +1,17 @@
+[Unit]
+Description=procmon scanning service
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+WorkingDirectory=/root/ktools/procmon
+ExecStartPre=/bin/sleep 3
+ExecStart=/root/ktools/procmon/procmon
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+User=nobody
+# group adm for acces to /root/... dirs
+Group=adm
+
+[Install]
+WantedBy=multi-user.target

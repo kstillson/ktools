@@ -6,7 +6,7 @@
 
 This is a collection of computer-security-first services, tools, and
 libraries, intended for moderately knowledgeable owners of Linux and
-Circuit-Python based systems.  [Project home page](http://k3n.cc/0).
+Circuit-Python based systems.  [Project home page](https://k3n.cc/0).
 
 Some highlights:
 

@@ -11,7 +11,7 @@ print('Content-Type: text/html')
 print()
 
 print("<html>\n<table border='1'>\n")
-with open('/etc/apache2/conf.d/site-k3n.conf') as f:
+with open('/etc/apache2/conf.d/site-k3n-ssl.conf') as f:
     for line in f:
         if not line.startswith('Redirect'): continue
         _, addr, redir = re.split('[\t ]+', line)
