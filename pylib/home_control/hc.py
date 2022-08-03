@@ -357,7 +357,13 @@ def main(argv=[]):
 
   # and pass to the library API
   rslt = control(args.target, args.command, settings)
-  width = os.get_terminal_size().columns
+
+  # Pretty print the results.
+  try:
+    # If run w/o a term, this raises "Inappropriate ioctl for device".
+    width = os.get_terminal_size().columns
+  except OSError:
+    width = 80
   pprint.pprint(rslt, indent=2, width=width, compact=True)
 
   # if there are any lingering threads, finish them up before exiting.
