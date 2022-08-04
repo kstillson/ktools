@@ -625,7 +625,7 @@ function keypad_commands {
     else
         fmt="fgrep $1"
     fi
-    git archive --remote gitro:git/homectrl.git master ks_common.py | tar -xOf - | \
+    git archive --remote gitro:git/homectrl.git master keypad_scanner.py | tar -xOf - | \
         sed -e '/[#:]/!d' -e 's/, GO//' -e 's/common.trigger//' -e 's/common.control//' -e 's@common.read_web(\"http://@(web-@' \
             -e '/touch-home/d' -e '/disarm/d' \
             -e "s/)\',//" -e 's/#/:####/' -e "s/'//g" -e 's/"//g' -e 's/),/)/g' | \
