@@ -15,6 +15,7 @@ look, and make use of anything that appeals to you.
 ## Contents
 
 - gpg_s: simple wrapper around gpg symmetric encrpytion
+- Hc: wrapper around hc that provides device substring name matching.
 - m: run-time filesystem mounter
 - party-lights: Slow color animation sequence for TP-Link smart bulbs.
 - pb-push: sends push-notifications via the Android Push Bullet app

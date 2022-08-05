@@ -68,6 +68,20 @@ class ListOfDataclasses(list):
 
 # ---------- I/O
 
+def getch(prompt=None, echo=True):
+    if prompt: print(prompt, end='', flush=True)
+    import termios, tty
+    fd = sys.stdin.fileno()
+    orig = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        got = sys.stdin.read(1)
+        if echo: print(got, flush=True)
+        return got
+    finally:
+        termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
+                                
+
 class Capture():
     '''Temporarily captures stdout and stderr and makes them available.
     Outputs an instance with .out .err.  Conversion to string gives .out
@@ -98,19 +112,8 @@ class Capture():
         e = self.stderr.getvalue()
         return e.strip() if self._strip else e
 
-
-def exec_wrapper(cmd, locals=globals(), strip=True):
-    '''Run a string as Python code and capture any output.
-       Returns a Capture object, with added .exception field.'''
-    with Capture(strip) as cap:
-        try:
-            exec(cmd, globals(), locals)
-            cap.exception = None
-            return cap
-        except Exception as e:
-            cap.exception = e
-            return cap
-
+    
+# ---------- Module-based stuff
 
 def load_file_as_module(filename, desired_module_name=None):
     '''Load a Python file into a new module and return the new module.
@@ -148,6 +151,21 @@ def load_file_into_module(source_filename, target_module=None):
         if k.startswith('__'): continue
         target_dict[k] = v
     return True
+
+
+# ---------- Process-based stuff
+
+def exec_wrapper(cmd, locals=globals(), strip=True):
+    '''Run a string as Python code and capture any output.
+       Returns a Capture object, with added .exception field.'''
+    with Capture(strip) as cap:
+        try:
+            exec(cmd, globals(), locals)
+            cap.exception = None
+            return cap
+        except Exception as e:
+            cap.exception = e
+            return cap
 
 
 def pgrep(srch):
