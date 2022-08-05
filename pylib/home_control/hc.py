@@ -297,15 +297,18 @@ def control(target, command='on', settings=None, top_level_call=True):
   if scene_list:
     if SETTINGS['debug']: print(f'DEBUG: scene {target}:{command} -> {scene_list}')
 
-    overall_okay = True
-    outputs = []
+    q = UC.ParallelQueue(single_threaded=SETTINGS['debug'])
     for i in scene_list:
       if ':' in i:
         target_i, command_i = i.split(':', 1)
       else:
         target_i = i
         command_i = command
-      ok, answer = control(target_i, command_i, settings, False)
+      q.add(control, target_i, command_i, settings, False)
+
+    overall_okay = True
+    outputs = []
+    for ok, answer in q.join():
       if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned ok={ok}, answer={answer}')
       if not ok: overall_okay = False
       outputs.append(answer)

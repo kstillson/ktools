@@ -1,5 +1,5 @@
 
-import io, os, sys
+import io, os, sys, time
 from dataclasses import dataclass
 
 import context_kcore     # fix path to includes work as expected in tests
@@ -151,6 +151,62 @@ def test_gpg_symmetric():
 
     err = UC.gpg_symmetric(crypted, 'bad-password')
     assert err.startswith('ERROR:')
+
+
+TEST_DATA = {}
+def thread_tester(delay, key, value):
+    time.sleep(delay)
+    global TEST_DATA
+    TEST_DATA[key] = value
+    return value
+
+def test_ParallelQueue():
+    q1 = UC.ParallelQueue()
+    q1.add(thread_tester, 0.5, 'a', 1)
+    q1.add(thread_tester, 1.0, 'a', 2)
+    assert TEST_DATA.get('a') is None
+    time.sleep(0.6)
+    assert TEST_DATA.get('a') == 1
+    time.sleep(0.6)
+    assert TEST_DATA.get('a') == 2
+    start_join = time.time()
+    assert q1.join(1.0) == [1, 2]
+    assert time.time() - start_join < 0.2
+
+def test_ParallelQueue_join():
+    q1 = UC.ParallelQueue()
+    q1.add(thread_tester, 0.3, 'b', 1)
+    q1.add(func=thread_tester, delay=0.2, key='b', value=2)
+    q1.add(thread_tester, 0.1, key='b', value=3)
+    start_join = time.time()
+    assert q1.join(1.0) == [1, 2, 3]
+    assert time.time() - start_join < 0.5
+    assert TEST_DATA.get('b') == 1
+
+def test_ParallelQueue_join_timeout():
+    q1 = UC.ParallelQueue()
+    q1.add(thread_tester, 0.1, key='c', value=1)
+    q1.add(thread_tester, 1.0, 'c', 2)
+    start_join = time.time()
+    assert q1.join(0.3) == [1, None]
+    assert time.time() - start_join < 0.5
+    assert TEST_DATA.get('c') == 1
+
+def test_ParallelQueue_single_threaded():
+    q1 = UC.ParallelQueue(single_threaded=True)
+    start_time = time.time()
+    q1.add(thread_tester, 0.2, 'd', 1)
+    t1 = time.time()
+    assert t1 - start_time > 0.15
+    assert t1 - start_time < 0.25
+    assert TEST_DATA.get('d') == 1
+
+    q1.add(thread_tester, 0.2, 'd', 2)
+    t2 = time.time()
+    assert t2 - start_time > 0.25
+    assert t2 - start_time < 0.45
+    assert TEST_DATA.get('d') == 2
+    assert q1.join() == [1, 2]
 
 
 @dataclass

@@ -14,7 +14,7 @@ Highlights:
 
 '''
 
-import inspect, grp, os, pwd, signal, subprocess, sys
+import inspect, grp, os, pwd, signal, subprocess, sys, threading
 from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
@@ -299,6 +299,50 @@ def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     os.setgid(running_gid)
     os.setuid(running_uid)
     old_umask = os.umask(0o077)
+
+
+# ---------- Parallel queue
+
+class ParallelQueue:
+    '''Run a bunch of functions in parallel, and support waiting for all to finish.'''
+
+    def __init__(self, single_threaded=False):
+        self.single_threaded = single_threaded
+        self.counter = 0
+        self.threads = []
+        self.timed_out = False
+        self.returns = {}
+
+    def add(self, func, *args, **kwargs):
+        if self.single_threaded:
+            self.returns[self.counter] = func(*args, **kwargs)
+            self.counter += 1
+            return
+        kwargs['_func'] = func
+        kwargs['_id'] = self.counter
+        self.counter += 1
+        thread = threading.Thread(target=self.run_wrapper, args=args, kwargs=kwargs)
+        thread.daemon = True
+        thread.start()
+        self.threads.append(thread)
+
+    def run_wrapper(self, *args, **kwargs):
+        _id = kwargs.pop('_id')
+        func = kwargs.pop('_func')
+        tmp = func(*args, **kwargs)
+        self.returns[_id] = tmp
+
+    def join(self, timeout=None):   # timeout is a float in seconds.
+        '''Wait for all to finish.  timeout is a float in seconds.
+           Returns a list of return values in order of additions.'''
+        if not self.single_threaded:
+            for t in self.threads:
+                t.join(timeout=timeout)
+                if t.is_alive():
+                    self.timed_out = True
+                    timeout = 0.0
+        out = [self.returns.get(i) for i in range(self.counter)]
+        return out
 
 
 # ---------- Argparse helpers

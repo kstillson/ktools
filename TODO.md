@@ -1,8 +1,6 @@
 
 # queued minor improvements
 
-  - hc: run scenes concurrently, even without --quick
-
 # new subsystems
 
   - add homesec client modules...?
