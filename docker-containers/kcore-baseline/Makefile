@@ -52,7 +52,7 @@ $(PLIB):
 	mkdir -p $@
 
 $(PLIB)/kcore: ../../pylib/kcore
-	cp -rpuv $^ $@
+	cp -rpuv $^ $(PLIB)
 	chmod -R go+rX $@
 
 

@@ -13,10 +13,6 @@ PRIV_HS_TARGETS := $(addprefix $(HSH_PRIV_DIR)/, $(PRIV_HS_FILES))
 KMH_TEST_FILES := kcore_auth_db-test.data.pcrypt km-test.data.pcrypt 
 KMH_TEST_TARGETS := $(addprefix $(HSH_DIR)/, $(KMH_TEST_FILES))
 
-KCORE_DIR := files/usr/lib/python3.9/site-packages/kcore
-KCORE_FILES := auth.py common.py html.py uncommon.py varz.py webserver.py
-KCORE_TARGETS := $(addprefix $(KCORE_DIR)/, $(KCORE_FILES))
-
 KTOOLS_DIR := files/usr/lib/python3.9/site-packages/ktools
 KTOOLS_FILES := kmc.py ratelimiter.py
 KTOOLS_TARGETS := $(addprefix $(KTOOLS_DIR)/, $(KTOOLS_FILES))
@@ -25,16 +21,16 @@ KTOOLS_ETC_FILES := pb-push.sh
 KTOOLS_ETC_TARGETS := $(addprefix $(KTOOLS_DIR)/, $(KTOOLS_ETC_FILES))
 
 
-DIRS := $(HSH_DIR) $(HSH_PRIV_DIR) $(KCORE_DIR) $(KTOOLS_DIR)
+DIRS := $(HSH_DIR) $(HSH_PRIV_DIR) $(KTOOLS_DIR)
 
 # ---------- local custom logic
 
 all: copy docker-all
 
 clean:
-	rm -rf $(HSH_DIR) $(KCORE_DIR) $(KTOOLS_DIR)
+	rm -rf $(HSH_DIR) $(KTOOLS_DIR)
 
-copy: $(DIRS) $(HSH_DIR) $(PRIV_TARGETS) $(PRIV_HS_DIR) $(PRIV_HS_TARGETS) $(HSH_TARGETS) $(KCORE_DIR) $(KCORE_TARGETS) $(KTOOLS_DIR) $(KTOOLS_TARGETS)
+copy: $(DIRS) $(HSH_DIR) $(PRIV_TARGETS) $(PRIV_HS_DIR) $(PRIV_HS_TARGETS) $(HSH_TARGETS) $(KTOOLS_DIR) $(KTOOLS_TARGETS)
 
 $(DIRS):
 	mkdir -p $@
@@ -49,9 +45,6 @@ $(PRIV_HS_TARGETS): $(HSH_PRIV_DIR)/% : ../../services/homesec/private.d/%
 	cp $^ $@
 
 $(KMH_TEST_TARGETS): $(HSH_DIR)/% : ../../services/keymaster/tests/%
-	cp $^ $@
-
-$(KCORE_TARGETS): $(KCORE_DIR)/% : ../../pylib/kcore/%
 	cp $^ $@
 
 $(KTOOLS_TARGETS): $(KTOOLS_DIR)/% : ../../pylib/tools/%
