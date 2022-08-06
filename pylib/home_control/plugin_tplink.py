@@ -217,7 +217,7 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param):
 
   sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   try:
-    sock_tcp.settimeout(SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+    sock_tcp.settimeout(int(SETTINGS.get('timeout', DEFAULT_TIMEOUT)))
     sock_tcp.connect((hostname, 9999))
     sock_tcp.send(encrypt(raw_cmd))
   except Exception as e:

@@ -308,8 +308,13 @@ def control(target, command='on', settings=None, top_level_call=True):
 
     overall_okay = True
     outputs = []
-    for ok, answer in q.join():
-      if SETTINGS['debug']: print(f'DEBUG: {target} -> {command} returned ok={ok}, answer={answer}')
+    queue_out = q.join(timeout=int(SETTINGS['timeout']))
+    for i, i_out in enumerate(queue_out):
+      if i_out and len(i_out) == 2:
+        ok, answer = i_out
+      else:
+        ok, answer = False, f'{scene_list[i]} -> timeout'
+      if SETTINGS['debug']: print(f'DEBUG: {scene_list[i]} -> ok={ok}, answer={answer}')
       if not ok: overall_okay = False
       outputs.append(answer)
 
