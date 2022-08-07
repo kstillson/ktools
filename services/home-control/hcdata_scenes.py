@@ -38,7 +38,7 @@ SCENES = {
   'fam'         : [ 'tp-family-room-left', 'tp-family-room-right', 'tp-dining-chandelier' ],
   'inside'      : [ 'bedrm', 'fam', 'kit', 'main' ],
   'office'      : [ 'tp-office' ],
-  'outside'     : [ 'BULB-tp-door-entry', 'tp-landscaping', 'BULB-tp-lantern', 'tp-patio', 'tp-rear-flood' ],
+  'outside'     : [ 'BULB-tp-door-entry', 'PLUG-tp-landscaping', 'BULB-tp-lantern', 'PLUG-tp-patio', 'PLUG-tp-rear-flood' ],
   'kit'         : [ 'tp-kitchen', 'tp-kitchen-pendants', 'tp-breakfast-nook' ],
   'lng'         : [ 'PLUG-tp-bendy', 'tp-lounge', 'tp-window-lights', 'tp-dining-chandelier' ],
   'main'        : [ 'fam', 'kit', 'lng', 'office' ],
