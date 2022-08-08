@@ -24,6 +24,7 @@
   - new name for ktools?
     - kcore?  kdev?  Mauveine?, kwisdom?, kwizdom?, kwizmet?
     - nb with k*: possible confusion w/ kuberneties
+    - Peter T: Stillery
 
 # other general thoughts
 
