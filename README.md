@@ -52,7 +52,8 @@ Perhaps you consider this a fair price to pay for getting free functionality,
 or perhaps you'd prefer it didn't.  You're going to have to read at least as
 much as the [top-level Makefile](./Makefile) to turn it off.
 
-Why do this?  As a warning and a reminder: when you download code from the
+It's not particularly intrusive, and not even particularly well hidden, so why
+do this?  As a warning and a reminder: when you download code from the
 Internet, it can do *ANYTHING* -- violate your privacy, penetrate your
 security, burrow into your system and leave vulnerabilities, either
 deliberately or because of a lack of knowledge of its author(s).  Some
