@@ -369,7 +369,7 @@ def main(argv=[], stdin_list=[]):
     while DONE_WORKERS < num_workers:
       time.sleep(ARGS.cycle_time)
       cursor_up(num_workers + 2)
-      print(f'Running {num_workers - DONE_WORKERS} workers on remaining {num_jobs - DONE_JOBS} tasks', file=sys.stderr)
+      print(f'Running {num_workers - DONE_WORKERS} workers on remaining {num_jobs - DONE_JOBS} tasks       ', file=sys.stderr)
       for worker_number in range(num_workers):
         job_id = CURRENT_WORK[worker_number]
         max_len = columns - (len(job_id) + 4)
