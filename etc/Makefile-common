@@ -49,9 +49,8 @@ INSTALL_PY_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PY_TARGETS))
 INSTALL_SH_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(SH_TARGETS))
 INSTALL_PLAIN_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PLAIN_TARGETS))
 
-ETC_DIR := $(wildcard ../et? ../../et? ../../../et?)
-COMP := $(ETC_DIR)/comp.py
-SUDOOK := $(ETC)/check-sudo-ok
+COMP := $(wildcard ../et?/comp.py ../../et?/comp.py ../../../et?/comp.py)
+ETC_DIR := $(shell dirname ${COMP})
 PYLIB_DIR := $(wildcard ../pyli? ../../pyli? ../../../pyli?)
 
 include $(ETC_DIR)/Makefile-colors
