@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Gift Coordinator: Add idea</title>
+  <meta name="viewport" content="width=device-width">
+</head>
+
+<body>
+  <form action="/add" method="post" style="display: inline;">
+    <table border="1" cellpadding="5">
+      <tr><td>Recipient</td><td>{{ USER_INPUT }}</td></tr>
+      <tr><td>Item</td><td><input name="item" size="50"></td></tr>
+      <tr><td>Taken?</td><td>{{ TAKEN_INPUT }}</td></tr>
+      <tr><td>Link</td><td><input name="url" size="50"></td></tr>
+      <tr><td>Notes</td><td><textarea name="notes" rows="4" cols="50"></textarea></td></tr>
+    </table><br/>
+    <input type="submit" value=" add ">
+  </form>
+  <form action="/" method="post" style="display: inline;">
+    <input type="submit" value=" cancel add "/>
+  </form>
+ 
+</body>
+</html>

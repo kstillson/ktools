@@ -1,0 +1,18 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Gift Coordinator</title>
+  <meta name="viewport" content="width=device-width">
+</head>
+
+<body>
+  <form action="/login" method="post">
+    <p>I am {{ USER_INPUT }} 
+      &nbsp; &nbsp; <input type="checkbox" name="hide_mine" value="X" checked>Hide items to me
+      &nbsp; &nbsp; <input type="checkbox" name="hide_taken" value="X" checked>Hide taken items
+      <input type="submit" value=" view ">
+  </form>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Gift Coordinator: Edit idea</title>
+  <meta name="viewport" content="width=device-width">
+</head>
+
+<body>
+  <form action="/edit?key={{ KEY }}" method="post" style="display: inline;">
+    <table border="1" cellpadding="5">
+      <tr><td>Recipient</td><td>{{ USER_INPUT }}</td></tr>
+      <tr><td>Item</td><td><input name="item" size="50" value="{{ ITEM }}"></td></tr>
+      <tr><td>Taken?</td><td>{{ TAKEN_INPUT }}</td></tr>
+      <tr><td>Link</td><td><input name="url" size="50" value="{{ URL }}"></td></tr>
+      <tr><td>Notes</td><td><textarea name="notes" rows="4" cols="50">{{ NOTES }}</textarea></td></tr>
+    </table><br/>
+    <input type="submit" value=" save ">
+  </form> &nbsp;
+  <form action="/edit?del=1&key={{ KEY }}" method="post" style="display: inline;">
+    <input type="submit" value=" delete "/>
+  </form> &nbsp;
+  <form action="/" method="post" style="display: inline;">
+    <input type="submit" value=" cancel edit "/>
+  </form>
+</body>
+</html>
