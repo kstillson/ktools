@@ -13,9 +13,20 @@ def html_page_wrap(body_contents, title='', css=[],
     return out
 
 
+def list_to_select_input(name, values, prompts=None, selected=None, id=None, indent='  ', autofocus=False):
+    set_id = f'id="{id}"' if id else ''
+    out = f'{indent}<select name={name} {set_id}{" autofocus" if autofocus else ""}>\n'
+    for cnt, val in enumerate(values):
+        prompt = prompts[cnt] if prompts else val
+        sel = ' selected' if val == selected or prompt == selected else ''
+        out += f'{indent}  <option value="{val}"{sel}>{prompt}</option>\n'
+    out += f'{indent}</select>\n'
+    return out
+
+
 # in: a dict or a list of lists. out: html code for a table
 def list_to_table(list_in, table_fmt='border=1 cellpadding=2', header_list=[], autoexpand=True, title=None):
-    if not list_in: return ''
+    ### if not list_in: return ''
     out = '<p/>' + wrap(title, 'b') + '<br/>\n' if title else ''
     out += '<table %s>\n' % table_fmt
     if header_list: out += table_row(header_list, 'th')
@@ -35,10 +46,11 @@ def dict_to_page(d, title=''):
     return html_page_wrap(list_to_table(out), title)
 
 
-def redirect(to):
+def redirect(to, delay=0, content=None):
+    if not content: content =  f'Please <a href="{to}">click here</a>.'
     return html_page_wrap(
-        f'Please <a href="{to}">click here</a>.',
-        other_heads=[f'<meta http-equiv="refresh" content="0; url=\'{to}\'" />'])
+        content,
+        other_heads=[f'<meta http-equiv="refresh" content="{delay}; url=\'{to}\'" />'])
 
 
 # in: any iterable, out: html for a row of data in a table.

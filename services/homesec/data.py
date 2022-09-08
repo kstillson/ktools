@@ -21,7 +21,7 @@ def nice_time(epoch_seconds=None):
   return str(datetime.datetime.fromtimestamp(epoch_seconds))
 
 
-# ---------- hard-coded data types
+# ---------- static data types
 
 @dataclass
 class StateRule:
@@ -54,7 +54,7 @@ class TriggerRule:
     params: str = ''
 
 
-# ---------- hard-coded constants
+# ---------- static data contents
 
 # ----- simple constants
 
