@@ -49,12 +49,15 @@ def err(msg):
 # ----------------------------------------
 # 2nd level helpers
 
+# TODO(!): this is currently specialized for Ken's environment on jack or a1;
+# it'll fail looking up hostname 'syslogdock' on other systems.  needs to be
+# generalized.
 def expand_log_shorthand(log, name):
     ctrl = log.lower()
     if ctrl in ['n', 'none', 'z']:
         return ['--log-driver=none']
     elif ctrl in ['s', 'syslog']:
-        if socket.gethostname().startswith('a1'):
+        if socket.gethostname().startswith('a2'):
             slog = 'syslog-address=tcp://localhost:5514'
         else:
             slog = 'syslog-address=udp://%s:1514' % socket.gethostbyname('syslogdock')
