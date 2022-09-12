@@ -8,7 +8,7 @@
 </head>
 
 <body>
-  <form action="/edit?key={{ KEY }}" method="post" style="display: inline;">
+  <form action="edit?key={{ KEY }}" method="post" style="display: inline;">
     <table border="1" cellpadding="5">
       <tr><td>Recipient</td><td>{{ USER_INPUT }}</td></tr>
       <tr><td>Item</td><td><input name="item" size="50" value="{{ ITEM }}"></td></tr>
@@ -18,10 +18,10 @@
     </table><br/>
     <input type="submit" value=" save ">
   </form> &nbsp;
-  <form action="/edit?del=1&key={{ KEY }}" method="post" style="display: inline;">
+  <form action="edit?del=1&key={{ KEY }}" method="post" style="display: inline;">
     <input type="submit" value=" delete "/>
   </form> &nbsp;
-  <form action="/" method="post" style="display: inline;">
+  <form action="./" method="post" style="display: inline;">
     <input type="submit" value=" cancel edit "/>
   </form>
 </body>

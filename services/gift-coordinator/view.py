@@ -27,9 +27,9 @@ def done(user_verb, log_msg, success=True):
         V.set('last-log-fail', log_msg)
         V.stamp('last-log-fail-stamp')
         out = f'<p>Something went wrong during the {user_verb}.</p>\n'
-        out += '<a href="/">Try again</a>\n'
+        out += '<a href=".">Try again</a>\n'
         return W.Response(H.html_page_wrap(out), 500)
-    return H.redirect('/', 1.2, f'<p style="color: green"><b>successful {user_verb}</b></p>')
+    return H.redirect('.', 1.2, f'<p style="color: green"><b>successful {user_verb}</b></p>')
 
 
 # ---------- cookie handling
@@ -138,7 +138,7 @@ def login_view(request):
 
 def logout_view(request):
     model.del_session(get_session_data(request))
-    return W.Response(H.redirect("/"),
+    return W.Response(H.redirect("."),
                       extra_headers={'Set-Cookie': f'{SESSION_COOKIE_NAME}=; Max-Age=0'})
 
 
@@ -148,7 +148,7 @@ def root_view(request):
 
     all = request.get_params.get('all') == '1'
     
-    out = f'<br/>hello {session_data["user"]} &nbsp; &nbsp; [ <a href="/logout">logout</a> ]<p>'
+    out = f'<br/>hello {session_data["user"]} &nbsp; &nbsp; [ <a href="./logout">logout</a> ]<p>'
 
     tab = []
     for gi in model.get_gift_ideas():
@@ -162,12 +162,12 @@ def root_view(request):
         if url:
             if not url.startswith('http'): url = f'https://{gi.url}'
             notes += f'<p>[ <a href="{url}" target="_new">link</a> ]'
-        controls = f'<form action="/edit?key={gi.key}" method="post"><input type="submit" value="edit"/></form>'
+        controls = f'<form action="edit?key={gi.key}" method="post"><input type="submit" value="edit"/></form>'
         tab.append([controls, gi.recip, gi.item, gi.taken, gi.entered_by, notes])
 
     out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"', 
                            header_list=['controls', 'recipient', 'item', 'taken?', 'entered by', 'notes'],
                            title='Gift ideas')
 
-    out += '<p>[ <a href="/add">Add a gift idea</a> ]'
+    out += '<p>[ <a href="./add">Add a gift idea</a> ]'
     return H.html_page_wrap(out, 'Gift Coordinator')
