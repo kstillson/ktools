@@ -16,6 +16,9 @@
 # Make sure local root is not passwordless.
 sed -i -e 's/root:::/root:!::/' /etc/shadow
 
+# Make sure permissions didn't get messed up from files/usr/... import.
+chmod go+rX /usr /usr/* /usr/lib/python* /usr/lib/python*/site-pack*
+
 # get python3 requests module
 pip3 install requests
 

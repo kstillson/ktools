@@ -2,7 +2,8 @@ FROM docker.io/alpine:3.15
 
 # python3 is for kmc (copied in by ./Build)
 
-RUN apk upgrade -U && \
+RUN umask 022 && \
+    apk upgrade -U && \
     apk add --no-cache bash python3 py3-cryptography py3-pip tzdata && \
     rm -rf /var/cache/apk/*
 
