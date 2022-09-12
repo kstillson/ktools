@@ -1,0 +1,41 @@
+#!/usr/bin/python3
+
+import argparse, os, subprocess, sys, tempfile, time
+
+sys.path.append('/root/bin')
+import kcore.docker_lib as D
+
+
+def main():
+    ap = argparse.ArgumentParser(description='gift-coordinator test')
+    D.add_testing_args(ap)
+    args = ap.parse_args()
+    name, ip, cow, dv = D.launch_or_find_container(args)
+    if not cow or not ip: sys.exit('cannot find container %s' % name)
+
+    # First check that everything is ok.
+    wait = 8
+    print(f'{wait} second startup wait (not sure why it needs so long)...', file=sys.stderr)
+    time.sleep(wait)   # Allow for startup time.
+    D.web_expect('ok', ip, '/healthz', 8080)
+
+    # Switch to curl to use cookies
+    with tempfile.NamedTemporaryFile() as tf:
+        cookie_jar = tf.name
+        D.popen_expect(['curl', '-v', '-L', '-c', cookie_jar, f'http://{ip}:8080/'],
+                       'login')
+        D.popen_expect(['curl', '-v', '-b', cookie_jar, '-d', 'user=Ken', f'http://{ip}:8080/login'],
+                       'successful login')
+        D.popen_expect(['curl', '-v', '-b', cookie_jar, f'http://{ip}:8080/'],
+                       'hello Ken')
+        D.popen_expect(['curl', '-v', '-b', cookie_jar, '-d', 'user=Nanny&item=item1&taken=hold&notes=notes1&url=url1', f'http://{ip}:8080/add'],
+                       'successful add')
+        D.popen_expect(['curl', '-v', '-b', cookie_jar, f'http://{ip}:8080/'],
+                       'item1')
+        
+    print('pass')
+
+
+if __name__ == "__main__":
+  main()
+

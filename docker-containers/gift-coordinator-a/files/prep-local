@@ -1,0 +1,12 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(root|santa|nobody)"
+GROUP_DONT_DELETE_REGEX="^(root|santa|nobody)"
+SUID_DONT_DELETE_REGEX="fusermount"
+
+# ---------- fix ownership / permissions
+
+chgrp -R santa /home/santa
+chmod -R g+rX /home
+
+##@@
+exit 0
