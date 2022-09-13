@@ -8,5 +8,3 @@ SUID_DONT_DELETE_REGEX="fusermount"
 chgrp -R santa /home/santa
 chmod -R g+rX /home
 
-##@@
-exit 0
