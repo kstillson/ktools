@@ -217,6 +217,11 @@ def take_action(tracking, action, params):
   elif action == 'httpget':
     C.log('httpget action returned: %s' % ext.read_web(params))
 
+  elif action is None:
+    msg = 'No matching action found for event: %s' % tracking
+    C.log_warning(msg)
+    return msg
+
   else:
     msg = 'Unknown action: %s' % tracking
     C.log_error(msg)
