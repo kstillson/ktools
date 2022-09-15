@@ -105,7 +105,7 @@ in send-and-forget mode), then "success" just means that the command was
 successfully queued.
 '''
 
-import argparse, fnmatch, glob, os, pprint, site, sys
+import argparse, fnmatch, glob, os, pprint, site, sys, time
 from dataclasses import dataclass
 from typing import Any
 import kcore.uncommon as UC
@@ -139,11 +139,14 @@ INITIAL_SETTINGS = [
   Setting('data_dir',    ['.'],          'base directories in which to search for data files (see also private_dir)'),
   Setting('datafiles',   ['hcdata*.py'], 'glob-list of files (within data_dir) to load devices and scenes from', '-D'),
   Setting('debug',       False,          'print debugging info', '-d'),
+  Setting('fast',        False,          'use send-and-forget mode.  quicker run, always assumes success (retries disabled)', '-f'),
   Setting('plugin_args', [],             'plugin-specific settings in the form key=value', '-p'),
   Setting('plugins_dir', ['.'],          'base directories in which to search for plugin files (see also private_dir)'),
   Setting('plugins',     ['plugin_*.py'],'glob-list of files to load as plugins'),
   Setting('private_dir' ,'private.d',    'extra directory (relative to data_dir and plugins_dir) in which to search for files.  Note: if you change this, you might need to make corresponding changes to .gitignore to keep your files private.', '-P'),
-  Setting('quick',       False,          'use asyncronous mode (full parallelism).  quicker exit, but no accurate status outputs', '-q'),
+  Setting('retry',       0,              "Try this many times upon network error contacting target", '-r'),
+  Setting('retry_delay', 5,              "Seconds to wait between retry attampts"),
+  Setting('quiet',       False,          "Show no output if everything worked out in the end (i.e. after any retries)", '-q'),
   Setting('test',        False,          "Just show what would be done, don't do it.", '-T'),
   Setting('timeout',     5,              'default timeout for external communications', '-t'),
 ]
@@ -158,7 +161,10 @@ def init_settings(baseline_settings):
 
   # Copy over anything needed from default settings
   for s in INITIAL_SETTINGS:
-    if s.name not in SETTINGS: SETTINGS[s.name] = s.default
+    if s.name not in SETTINGS:
+      SETTINGS[s.name] = s.default
+    else:
+      if isinstance(s.default, int): SETTINGS[s.name] = int(SETTINGS[s.name])
 
   # In-case any plugins (e.g. plugin_delay) need to make recursive calls back into this module:
   SETTINGS['_control'] = control
@@ -331,6 +337,19 @@ def control(target, command='on', settings=None, top_level_call=True):
     if SETTINGS['test']:
       return True, f'TEST mode: would send {target}->{command} to plugin {plugin_name}(plugin_params={plugin_params})'
     ok, answer = plugin_module.control(plugin_name, plugin_params, target, command)
+
+    # --- Retry logic.
+    if not ok and SETTINGS['retry'] > 0:
+      retries = 0
+      while retries < SETTINGS['retry']:
+        retries += 1
+        msg = f'DEBUG: initial attempt failed; retry #{retries} of {SETTINGS["retry"]} after {SETTINGS["retry_delay"]} seconds; {answer}'
+        if SETTINGS['debug'] or (SETTINGS['cli'] and not SETTINGS['quiet']): print(msg)
+        V.bump('retries')
+        time.sleep(SETTINGS['retry_delay'])
+        ok, answer = plugin_module.control(plugin_name, plugin_params, target, command)
+      answer += f'  [{retries} retries]'
+
     V.bump('device-success' if ok else 'device-fail')
     return ok, answer
 
@@ -362,17 +381,19 @@ def main(argv=[]):
   # Translate args to settings
   settings = {}
   for key, value in vars(args).items(): settings[key] = value
+  settings['cli'] = True
 
   # and pass to the library API
   rslt = control(args.target, args.command, settings)
 
   # Pretty print the results.
-  try:
-    # If run w/o a term, this raises "Inappropriate ioctl for device".
-    width = os.get_terminal_size().columns
-  except OSError:
-    width = 80
-  pprint.pprint(rslt, indent=2, width=width, compact=True)
+  if not rslt[0] or not SETTINGS['quiet']:
+    try:
+      # If run w/o a term, this raises "Inappropriate ioctl for device".
+      width = os.get_terminal_size().columns
+    except OSError:
+      width = 80
+    pprint.pprint(rslt, indent=2, width=width, compact=True)
 
   # if there are any lingering threads, finish them up before exiting.
   if SETTINGS['_threads']: print('waiting for pending threads to finish...')

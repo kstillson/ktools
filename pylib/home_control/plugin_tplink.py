@@ -222,7 +222,7 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param):
     sock_tcp.send(encrypt(raw_cmd))
   except Exception as e:
     return False, f'{hostname}: error: {str(e)}'
-  if SETTINGS['quick']:   # async mode; send and forget
+  if SETTINGS['fast']:   # async mode; send and forget
     sock_tcp.close()
     return True, f'{hostname}: sent'
   resp = sock_tcp.recv(2048)

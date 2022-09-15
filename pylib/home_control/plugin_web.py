@@ -37,7 +37,7 @@ def control(plugin_name, plugin_params, device_name, command):
   # ----- If we're in synchronous mode, send the web request synchronously
   #       and return the actual results.
 
-  if not SETTINGS['quick']:
+  if not SETTINGS['fast']:
     try:
       rslt = requests.get(url, allow_redirects=True, timeout=SETTINGS['timeout'])
       status = 'ok' if rslt.ok else 'error'
