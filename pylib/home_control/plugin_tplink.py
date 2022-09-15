@@ -209,7 +209,7 @@ def tplink_send(hostname, command):
   return all_ok, ','.join(answers)  # device level commands are supposed to return strings, not lists, so much the answers together.
 
 
-def tplink_send_raw(hostname, raw_cmd, cmd_param):
+def tplink_send_raw(hostname, raw_cmd, cmd_param=None):
   if cmd_param: raw_cmd = raw_cmd.replace('@@', cmd_param)
 
   if SETTINGS['test']: return True, f'would send {hostname} : {raw_cmd}'
@@ -222,7 +222,7 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param):
     sock_tcp.send(encrypt(raw_cmd))
   except Exception as e:
     return False, f'{hostname}: error: {str(e)}'
-  if SETTINGS['fast']:   # async mode; send and forget
+  if SETTINGS.get('fast'):   # async mode; send and forget
     sock_tcp.close()
     return True, f'{hostname}: sent'
   resp = sock_tcp.recv(2048)
@@ -239,6 +239,7 @@ def main():
   global SETTINGS
   ap = argparse.ArgumentParser(description='tplink command sender')
   ap.add_argument('--debug', '-d', action='store_true', help='wait for response, print extra diagnostics')
+  ap.add_argument('--json', '-j', action='store_true', help='send command as raw json (see https://github.com/softScheck/tplink-smartplug/blob/master/tplink-smarthome-commands.txt)')
   ap.add_argument('--normalize', '-n', default=None, help='normalize the command for specified device type (switch,plug,bulb)')
   ap.add_argument('--raw', '-r', action='store_true', help='return raw output rather than simplified')
   ap.add_argument('--test', '-T', action='store_true', help='print what would be done without doing it')
@@ -250,8 +251,13 @@ def main():
   SETTINGS['test'] = args.test
   SETTINGS['raw'] = args.raw
   SETTINGS['timeout'] = args.timeout
+
+  if args.json:
+    return tplink_send_raw(args.hostname, args.command)
+
   if args.normalize:
     args.hostname, args.command = normalize(args.normalize, args.hostname, args.command)
+
   return tplink_send(args.hostname, args.command)
 
 
