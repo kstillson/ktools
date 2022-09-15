@@ -226,7 +226,7 @@ class WebServerBase:
             and self.logger.log_request
             and not C.str_in_substring_list(request.full_path, self.logging_filters)):
             # Get params can be sensitive, so log path rather than full_path.
-            self.logger.log_request('%s: %s' % (request.method, request.path))
+            self.logger.log_request('%s from %s: %s' % (request.method, request.remote_address, request.path))
 
         # varz
         if self.varz:
