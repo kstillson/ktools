@@ -40,7 +40,7 @@ SCENES = {
   'office'      : [ 'tp-office' ],
   'outside'     : [ 'BULB-tp-door-entry', 'PLUG-tp-landscaping', 'BULB-tp-lantern', 'PLUG-tp-patio', 'PLUG-tp-rear-flood' ],
   'kit'         : [ 'tp-kitchen', 'tp-kitchen-pendants', 'tp-breakfast-nook' ],
-  'lng'         : [ 'PLUG-tp-bendy', 'tp-lounge', 'tp-window-lights', 'tp-dining-chandelier' ],
+  'lng'         : [ 'PLUG-tp-bendy', 'tp-lounge', 'tp-window-lights', 'tp-lounge-chandelier' ],
   'main'        : [ 'fam', 'kit', 'lng', 'office' ],
 
  # Groupings by similar purpose
