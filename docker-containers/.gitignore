@@ -5,3 +5,7 @@
 
 # Ignore backup files (sometimes created by ./Build updates)
 *~
+
+# Ignore some host specific containers that don't have value to share
+goaccess-a/
+nagdock-a/

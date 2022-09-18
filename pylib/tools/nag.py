@@ -69,7 +69,7 @@ def scan(status_file):
     retries = 0
     while not os.path.isfile(status_file):
       retries += 1
-      if retries > 4: raise RuntimeException(f'unable to open Nagios status file {status_file}.')
+      if retries > 4: raise RuntimeError(f'unable to open Nagios status file {status_file}.')
       time.sleep(0.5)
     
     section = '?'
