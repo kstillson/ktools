@@ -8,7 +8,17 @@ from email.mime.text import MIMEText
 import kcore.common as C
 import kcore.uncommon as UC
 
+# ---------- Global state and controls
+
 DEBUG = False
+
+# ----- rate limiters
+
+RL_CONTROL = UC.RateLimiter(5, 15)
+RL_EMAIL =   UC.RateLimiter(4, 30)
+RL_PUSH =    UC.RateLimiter(4, 30)
+RL_SPEAK =   UC.RateLimiter(4, 30)
+RL_SYSLOG =  UC.RateLimiter(10, 20)
 
 
 # ---------- Silent panic message data
@@ -29,21 +39,32 @@ DEBUG_SILENT_PANIC_MSG = SILENT_PANIC_MSG
 
 # see ../../tools/etc/speak* for the scripts this service on "pi1" talks to...
 
+
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
+  global RL_SPEAK, RL_SYSLOG
   log_msg = f'announce [{speak=}/{push_level=}/{syslog_level=}]: {msg}'
   if details: log_msg += f': {details}'
   if DEBUG: return C.log_debug(f'ext would announce: {log_msg}')
   C.log(log_msg)
   if speak:
-    rslt = C.read_web('http://pi1/speak/' + C.quote_plus(msg))
-    if not '<p>ok' in rslt: C.log_error(f'unexpected result from speak command: {rslt}')
+    if RL_SPEAK.check():
+      rslt = C.read_web('http://pi1/speak/' + C.quote_plus(msg))
+      if not '<p>ok' in rslt: C.log_error(f'unexpected result from speak command: {rslt}')
+    else:
+      C.log_warning(f'speak request rate limited: {msg}')
   if details: msg += ': %s' % details
   if push_level: push_notification(msg, push_level)
-  if syslog_level: syslog.syslog(syslog_level, msg)
+  if syslog_level and RL_SYSLOG.check(): syslog.syslog(syslog_level, msg)
 
 
 def control(target, command='on'):
   if DEBUG: return C.log_debug(f'ext would control {target} -> {command}')
+
+  global RL_EMAIL
+  if not RL_EMAIL.check():
+    C.log_warning(f'rate limited control {target=} {command=}')
+    return 'ERROR: rate limited'
+
   out = C.read_web(f'https://home.point0.net/control/{target}/{command}')
   if 'ok' in out:
     C.log(f'sent control command {target} -> {command}')
@@ -63,6 +84,12 @@ def read_web(url):
 # levels supported by client-side: alert, info, other
 def push_notification(msg, level='other'):
   if DEBUG: return C.log_debug(f'ext would push notification {msg}@{level}')
+
+  global RL_PUSH
+  if not RL_PUSH.check():
+    C.log_warning(f'rate limited push notification: [level={level}: {msg}')
+    return -2
+
   C.log(f'pushbullet sending [level={level}]: {msg}')
   if level != 'other': msg += ' !%s' % level
   ok = subprocess.call(["/usr/local/bin/pb-push", msg])
@@ -72,6 +99,12 @@ def push_notification(msg, level='other'):
 
 def send_emails(from_addr, to, subj, contents):
   if DEBUG: return C.log_debug(f'ext would send email {to=} {subj=}')
+
+  global RL_EMAIL
+  if not RL_EMAIL.check():
+    C.log_warning(f'rate limited email {to=} {subj=}')
+    return
+
   msg = MIMEText(contents)
   msg['Subject'] = subj
   msg['From'] = from_addr

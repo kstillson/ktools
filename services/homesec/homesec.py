@@ -60,11 +60,11 @@ a "Ken is leaving" button, which sends /trigger/touch-away-delay/ken.  After a
 few seconds, this marks "ken" as "away".  When I return, I enter my code into
 a keypad, which results in sending /trigger/touch-home/ken.  Now I'm home.  My
 house-mate also has their own 'leaving' button and 'returning' keypad code.
-If anyone is marked as 'home', then 'arm-auto' resolves to 'arm-home'.  
+If anyone is marked as 'home', then 'arm-auto' resolves to 'arm-home'.
 If no-one is marked as 'home', then 'arm-auto' resolves to 'arm-away'.
 
 Authentication is requred for web handlers that can change system state, for
-example /trigger's.  homesec supports two different authN mechanisms: 
+example /trigger's.  homesec supports two different authN mechanisms:
  - For humans, http basic auth is supported, using username/password combinations
    in the USER_LOGINS dict.
  - For automated systems (e.g. sensors), the kcore.auth system is used.
@@ -76,7 +76,7 @@ homesec.py: This file contains the system 'main', but doesn't actually do much
 
 view.py: The view contains the external user interface, which in this case means
   the handlers for the web-server and the authentication logic.  Like all
-  kcore.webserver handlers, these take in kcore.webserver.Request objects and 
+  kcore.webserver handlers, these take in kcore.webserver.Request objects and
   return HTML.  There's also a trivial template system in the render() function.
 
 controller.py: This is where all the 'business logic' happens.  There are a
@@ -118,9 +118,9 @@ data.py: This is where the data actually lives.  For the most-part, the data
   and then trying to deal with migrations and separate access control for it..
 
 ext.py: There are several cases where the controller needs to take actions
-  that involve reaching outside the homesec system: sending speech synthesis 
-  "announcement" requests, sending push notifications, sending emails, 
-  controlling lights / sirens, etc.  All of that is gathered here.  
+  that involve reaching outside the homesec system: sending speech synthesis
+  "announcement" requests, sending push notifications, sending emails,
+  controlling lights / sirens, etc.  All of that is gathered here.
   NOTE: many of the details in the provided file are specific to the author's
   home system.  Use this as a reference/example, but you'll doubtless need to
   make changes to inegrate with your own systems.
@@ -167,10 +167,10 @@ def parse_args(argv):
   ap.add_argument('--kauth-db-filename', '-F', default=A.DEFAULT_DB_FILENAME, help='kauth shared secrets filename')
   ap.add_argument('--kauth-db-password', '-P', default='-', help='kauth shared secrets encryption password.  "-" means query keymanager for "kauth".  Blank disables kauth authN, i.e. clients must use http basic auth when authN required.')
   ap.add_argument('--kauth-max-delta', '-D', type=int, default=A.DEFAULT_MAX_TIME_DELTA, help='max seconds between client and server token times (i.e. replay attack window)')
-  ap.add_argument('--kauth-no-ratchet', '-R', action='store_true', help='disable requirement that each kauth request have a later timestamp than the previous one.')  
+  ap.add_argument('--kauth-no-ratchet', '-R', action='store_true', help='disable requirement that each kauth request have a later timestamp than the previous one.')
   ap.add_argument('--logfile', '-l', default='homesec.log', help='filename for operations log.  "-" for stdout, blank to disable log file')
   ap.add_argument('--port', '-p', type=int, default=8080, help='port to listen on')
-  ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
+  ap.add_argument('--syslog', '-s', action='store_true', help='send critical log messages to syslog')
   return ap.parse_args(argv)
 
 
@@ -189,16 +189,16 @@ def main(argv=[]):
     db_passwd=args.kauth_db_password, db_filename=args.kauth_db_filename,
     max_time_delta=args.kauth_max_delta, must_be_later_than_last_check=not args.kauth_no_ratchet)
   view.init_kauth(kauth_params)
-  
+
   if args.debug:
     import ext
     ext.DEBUG = True
     view.DEBUG = True
     C.log_warning('** DEBUG MODE ACTIVATED **')
-  
+
   ws = W.WebServer(WEB_HANDLERS, wrap_handlers=not args.debug)
   ws.start(port=args.port, background=False)  # Doesn't return.
 
-  
+
 if __name__ == '__main__':
     sys.exit(main())

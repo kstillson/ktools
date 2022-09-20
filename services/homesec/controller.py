@@ -64,7 +64,8 @@ def run_trigger(request_dict, name, trigger_param=None):
 
   V.set('last_action', tracking['action'])
   V.bump(f'action_{tracking["action"]}')
-  return err, tracking if err else 'ok', tracking
+  if err: return err, tracking
+  return 'ok', tracking
 
 
 # ---------- support routines
