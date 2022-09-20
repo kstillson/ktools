@@ -74,6 +74,7 @@ WHITELIST = [
     WL('dnsdock',   '200350',      False, True,  '/usr/sbin/dnsmasq --conf-file=/etc/dnsmasq/dnsmasq.conf'),
     WL('eximdock',  '200100',      False, True,  '/usr/sbin/exim'),
     WL('filewatchdock', '200900',  False, True,  '/usr/bin/python3 /home/watch/filewatch'),
+    WL('fsdock',    '200022',      False, False, 'sshd: ken'),
     WL('fsdock',    'dken',        False, False, '/usr/lib/ssh/sftp-server'),
     WL('fsdock',    'dken',        False, False, 'sshd: ken@notty'),
     WL('fsdock',    'droot',       False, False, '/usr/sbin/rsyslogd'),
