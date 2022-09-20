@@ -1,5 +1,7 @@
 
-import io, os, sys, time
+'''tests for uncommon.py'''
+
+import io, os, sys, threading, time
 from dataclasses import dataclass
 
 import context_kcore     # fix path to includes work as expected in tests
@@ -22,6 +24,9 @@ def test_capture():
     with UC.Capture() as cap:
         assert cap.out == ''
         assert cap.err == ''
+
+
+# ----- collections of dataclasses tests
 
 @dataclass
 class T1:
@@ -47,6 +52,8 @@ def test_list_of_dataclasses():
     assert l2[1].b == 2
 
 
+# ----- process based tests
+
 def test_exec_wrapper():
     assert UC.exec_wrapper('print(1+2)').out == '3'
     # Try passing in a local variable.
@@ -61,6 +68,19 @@ def test_exec_wrapper():
     kcore.varz.set('x', 'y')
     assert UC.exec_wrapper('print(kcore.varz.VARZ["x"])', globals()).out == 'y'
 
+
+# ----- Python file based
+
+def test_get_callers_module():
+    assert UC.get_callers_module().__file__ == __file__
+
+
+def test_get_initial_python_file_comment():
+    assert UC.get_initial_python_file_comment(__file__) == 'tests for uncommon.py'
+    assert UC.get_initial_python_file_comment() == 'tests for uncommon.py'
+
+
+# ----- module based
 
 def test_load_file_as_module():
     m = UC.load_file_as_module('testdata/bad-filename.py')
@@ -125,6 +145,38 @@ def test_popener():
     assert 'exception' in UC.popener('/bin/invalid')
 
 
+# ----- rate limiter tests & infrastructure
+
+RL_COUNT = 0
+RL_COUNT_LOCK = threading.Lock()
+def rl_helper_bump_count():
+    global RL_COUNT, RL_COUNT_LOCK
+    with RL_COUNT_LOCK:
+        RL_COUNT += 1
+
+def rl_helper_try_to_bump_count(rl, times=5):
+    for _ in range(times):
+        if rl.check(): rl_helper_bump_count()
+
+def test_rate_limiter():
+    rl = UC.RateLimiter(10, 1)
+    threads = []
+    for _ in range(10):
+        t = threading.Thread(target=rl_helper_try_to_bump_count, args=(rl, ))
+        threads.append(t)
+        t.start()
+    for t in threads: t.join()
+    assert RL_COUNT == 10
+    assert not rl.check()
+    start_wait = time.time()
+    rl.wait()
+    delta = time.time() - start_wait
+    assert delta > 0.5
+    assert delta < 1.5
+
+
+# ----- encryption
+
 def test_symmetric_encryption():
     plaintext = 'heres my secret'
     password = 'my-password'
@@ -152,6 +204,8 @@ def test_gpg_symmetric():
     err = UC.gpg_symmetric(crypted, 'bad-password')
     assert err.startswith('ERROR:')
 
+
+# ----- parallel queue tests & infrastructure
 
 TEST_DATA = {}
 def thread_tester(delay, key, value):
@@ -208,6 +262,8 @@ def test_ParallelQueue_single_threaded():
     assert TEST_DATA.get('d') == 2
     assert q1.join() == [1, 2]
 
+
+# ----- argparse helper tests
 
 @dataclass
 class FakeArgs:

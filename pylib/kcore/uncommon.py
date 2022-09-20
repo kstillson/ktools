@@ -8,13 +8,14 @@ Highlights:
   - Serialize/de-serialize helpers for dicts with RHS that are @dataclass's
   - A context manager (used with a "with" statement) for grabbing stdout/stderr
   - Helper to load files as modules (like "import" but with dynamically named files)
-  - A simplified and a very-simplied front-end to subprocess.popen
+  - Simplified and a very-simplied front-ends to subprocess.popen
+  - An in-memory multi-thread-safe rate limiter.
   - Very easy to use encrypt/decrypt for symmetric encryption w/ a provided key/salt.
-  - Helper to pull argument values from no-echo-tty, environ, or keymaster
-
+  - argparse helper to pull argument values from no-echo-tty, environ, or keymaster
+  - argparse helper to generate help epilog from the Python file's initial comment.
 '''
 
-import inspect, grp, os, pwd, signal, subprocess, sys, threading
+import argparse, grp, os, pwd, time, signal, subprocess, sys, threading
 from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
@@ -80,7 +81,7 @@ def getch(prompt=None, echo=True):
         return got
     finally:
         termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
-                                
+
 
 class Capture():
     '''Temporarily captures stdout and stderr and makes them available.
@@ -112,8 +113,29 @@ class Capture():
         e = self.stderr.getvalue()
         return e.strip() if self._strip else e
 
-    
-# ---------- Module-based stuff
+
+# ---------- Python file related
+
+def get_callers_module(levels=1):
+    '''Return this function caller's module instance.'''
+    import inspect
+    frame = inspect.stack()[levels]
+    return inspect.getmodule(frame[0])
+
+
+def get_initial_python_file_comment(filename=None):
+    '''Parse the given Python file for it's initial long-form comment and return it.
+       If filename not provided, will use the caller's filename.  Returns '' on error.
+    '''
+    if not filename: filename = get_callers_module(levels=2).__file__
+    try:
+        with open(filename) as f: data = f.read()
+        return data.split("'''")[1]
+    except:
+        return ''
+
+
+# ---------- Module-based
 
 def load_file_as_module(filename, desired_module_name=None):
     '''Load a Python file into a new module and return the new module.
@@ -141,9 +163,7 @@ def load_file_into_module(source_filename, target_module=None):
 
     if not os.path.isfile(source_filename): return False
 
-    if not target_module:
-        caller = inspect.stack()[1]
-        target_module = inspect.getmodule(caller[0])
+    if not target_module: target_module = get_callers_module(levels=2)
     target_dict = target_module.__dict__
 
     mod = load_file_as_module(source_filename)
@@ -153,7 +173,7 @@ def load_file_into_module(source_filename, target_module=None):
     return True
 
 
-# ---------- Process-based stuff
+# ---------- Process-based
 
 def exec_wrapper(cmd, locals=globals(), strip=True):
     '''Run a string as Python code and capture any output.
@@ -246,6 +266,51 @@ def popener(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
        from stderr), use uncommon.popen() instead.
     '''
     return popen(args, stdin_str, timeout, strip, **kwargs_to_popen).out
+
+
+# ---------- Rate limiter
+
+
+class RateLimiter:
+    '''In-memory rate limiter.
+
+       Tell the constructor how many events you want to allow per time period (in seconds).
+       Then call check() before taking the action.  If it returns True, the action should be allowed.
+    '''
+    def __init__(self, rate, per, interthread_locking=True):
+        self.rate = rate
+        self.per = per
+        self.allowance = rate
+        self.last_check = time.time()
+        self._lock = threading.Lock() if interthread_locking else None
+
+    def __str__(self):
+        return f'rate:{self.rate}  per:{self.per}  allowance:{self.allowance}  last_check:{self.last_check}'
+
+    def check_real(self):
+        '''Provides the actual check, but without any locking; caller must provide that.'''
+        current = time.time();
+        time_passed = current - self.last_check;
+        self.last_check = current;
+        self.allowance += time_passed * (self.rate / self.per);
+        if self.allowance > self.rate:
+            self.allowance = self.rate  # throttle
+        if self.allowance < 1.0:
+            return False
+        else:
+            self.allowance -= 1.0
+            return True
+
+    def check(self):
+        '''Return True if rate limit is not hit, False otherwise.  Includes locking if requested.'''
+        if not self._lock: return self.check_real()
+        with self._lock:
+            return self.check_real()
+
+    def wait(self, polling_interval=0.5):
+        '''Wait until rate limit is cleared.  TODO(defer): calculate wait time rather than poll.'''
+        while not self.check():
+            time.sleep(polling_interval)
 
 
 # ---------- Symmetric encryption
@@ -365,6 +430,14 @@ class ParallelQueue:
 
 # ---------- Argparse helpers
 
+def argparse_epilog(*args, **kwargs):
+    '''Return an argparse with populated epilog matching the caller's Python file comment.'''
+    filename = get_callers_module(levels=2).__file__
+    return argparse.ArgumentParser(epilog=get_initial_python_file_comment(filename),
+                                   formatter_class=argparse.RawDescriptionHelpFormatter,
+                                   *args, **kwargs)
+
+
 def resolve_special_arg(args, argname, required=True):
     '''Process various special argument values.  Write resolved value back into args and return it.
 
@@ -399,3 +472,4 @@ def resolve_special_arg(args, argname, required=True):
 
     if required and not value: raise ValueError(f'Unable to get required value for {argname}.')
     return value
+
