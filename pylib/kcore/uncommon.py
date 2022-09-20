@@ -295,7 +295,7 @@ class RateLimiter:
        Tell the constructor how many events you want to allow per time period (in seconds).
        Then call check() before taking the action.  If it returns True, the action should be allowed.
     '''
-    def __init__(self, rate, per, interthread_locking=True):
+    def __init__(self, rate=1, per=1.0, interthread_locking=True):
         self.rate = rate
         self.per = per
         self.allowance = rate
@@ -329,6 +329,17 @@ class RateLimiter:
         '''Wait until rate limit is cleared.  TODO(defer): calculate wait time rather than poll.'''
         while not self.check():
             time.sleep(polling_interval)
+
+
+    def serialize(self):
+        return f'{self.rate}, {self.per}, {self.allowance}, {self.last_check}'
+
+    def deserialize(self, s):
+        r, p, a, lc = s.split(', ')
+        self.rate = float(r)
+        self.per = float(p)
+        self.allowance = float(a)
+        self.last_check = float(lc)
 
 
 # ---------- Symmetric encryption

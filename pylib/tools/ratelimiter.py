@@ -26,100 +26,72 @@ So either give it write access to the directory or pre-create the lock
 file with r+w access.  The lock file remains.
 '''
 
-import fcntl, os, pickle, sys, time
+import os, sys, time
 import kcore.uncommon as UC
 
-
-# Class for ensuring that all file operations are atomic, treat
-# initialization like a standard call to 'open' that happens to be atomic.
-# This file opener *must* be used in a "with" block.
-class AtomicOpen:
-    def __init__(self, path, *args, **kwargs):
-        self.file = open(path, *args, **kwargs)
-        fcntl.lockf(self.file, fcntl.LOCK_EX)
-
-    # Return the opened file object (knowing a lock has been obtained).
-    def __enter__(self, *args, **kwargs): return self.file
-
-    # Unlock the file and close the file object.
-    def __exit__(self, exc_type=None, exc_value=None, traceback=None):
-        self.file.flush()
-        os.fsync(self.file.fileno())
-        fcntl.lockf(self.file, fcntl.LOCK_UN)
-        self.file.close()
-        if (exc_type != None): return False
-        else:                  return True
+VERBOSE = False
+WAIT_POLLING_INTERVAL = 0.5 # seconds
 
 
-class RateLimiter:
-    def __init__(self, rate, per):
-        self.rate = rate
-        self.per = per
-        self.allowance = rate
-        self.last_check = time.time()
+def build_instance(args):
+    if args.init:
+        rate, per = args.init.split(',')
+        rl = UC.RateLimiter(float(rate), float(per))
+        save_state(rl, args.statefile)
 
-    def __str__(self):
-        return 'rate:%f  per:%f  allowance:%f  last_check:%f' % (self.rate, self.per, self.allowance, self.last_check)
+    elif args.limit and not os.path.isfile(args.statefile):
+        rate, per = args.limit.split(',')
+        rl = UC.RateLimiter(float(rate), float(per))
+        save_state(rl, args.statefile)
 
-    def check(self):
-        current = time.time();
-        time_passed = current - self.last_check;
-        self.last_check = current;
-        self.allowance += time_passed * (self.rate / self.per);
-        if self.allowance > self.rate:
-            self.allowance = self.rate  # throttle
-        if self.allowance < 1.0:
-            return False
-        else:
-            self.allowance -= 1.0
-            return True
-        
+    else:
+        rl = UC.RateLimiter()
+        with open(args.statefile) as f: s = f.read()
+        rl.deserialize(s)
 
-def do_check(args):
-    lockfile = '%s.lock' % args.statefile
-    with AtomicOpen(lockfile, 'w') as lock:
-        with open(args.statefile, 'rb') as f:
-            rl = pickle.load(f)
-        if args.verbose: print('before: %s' % rl)
-        ok = rl.check()
-        if args.verbose: print('after: %s\nresult: %s' % (rl, 'ALLOW' if ok else 'REJECT'))
-        with AtomicOpen(args.statefile, 'wb') as f2:
-            pickle.dump(rl, f2)
-    return ok
+    return rl
+
+
+def do_check(rl, statefile):
+    with UC.FileLock(statefile):
+        if VERBOSE: print(f'before: {str(rl)}')
+        check = rl.check()
+        if VERBOSE: print(f'after: {str(rl)}\nresult: {"ALLOW" if ok else "REJECT"}')
+        save_state(rl, statefile)
+        return check
+
+
+def save_state(rl, statefile):
+        with open(statefile, 'w') as f: f.write(rl.serialize())
 
 
 def parse_args(argv):
     ap = UC.argparse_epilog(description='stateful ratelimiter')
-    ap.add_argument('--init', '-i', default=None, help='initialize state file with rate,per(seconds)')
-    ap.add_argument('--cmd', '-c', default=None, help='if provided, run this command if rate limit allows (or run it after delay if -w used)')
-    ap.add_argument('--wait', '-w', type=float, default=0.0, help='if limit exceeded, rather than error exit, wait this many seconds (in a loop) and try again')
+    ap.add_argument('--init', '-i', default=None, help='initialize state file with rate,per(seconds).  Overwrites any existing state file with new limit and cleared allowance')
+    ap.add_argument('--cmd', '-c', default=None, help='if provided, run this command if rate limit allows (or run it after limit allows, if -w is also specified)')
+    ap.add_argument('--limit', '-l', default=None, help='same as --init, but leaves an existing state file alone; only does anything if a new state file needs to be created.')
+    ap.add_argument('--wait', '-w', action='store_true', help='if the limit is exceeded, rather than returning an error, just wait until back under the limit')
     ap.add_argument('--verbose', '-v', action='store_true', help='print state')
-    ap.add_argument('--zap', '-z', action='store_true', help='if true, exit without error (and without running -c) if ratelimit hit')
     ap.add_argument('statefile')
     return ap.parse_args(argv)
 
 
 def main(argv=[]):
     args = parse_args(argv or sys.argv[1:])
-    
-    if args.init:
-        rate, per = args.init.split(',')
-        rl = RateLimiter(float(rate), float(per))
-        with AtomicOpen(args.statefile, 'wb') as f:
-            pickle.dump(rl, f)
-        print('initialized to max %s per %s seconds.' % (rate, per))
-        return 0
 
-    while True:
-        ok = do_check(args)
-        if ok: 
-            if args.cmd: os.system(args.cmd)
-            return 0
-        # Not ok.
-        if not args.wait: 
-            return 0 if args.zap else 1
-        time.sleep(args.wait)
-        # Continue looping...
+    global VERBOSE
+    if args.verbose: VERBOSE = True
+
+    rl = build_instance(args)
+    check = do_check(rl, args.statefile)
+
+    while not check and args.wait:
+        time.sleep(WAIT_POLLING_INTERVAL)
+        check = do_check(rl, args.statefile)
+
+    if args.cmd: return os.system(args.cmd)
+
+    return 0 if check else 1
 
 
 if __name__ == '__main__':
