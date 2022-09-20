@@ -6,8 +6,11 @@ from dataclasses import dataclass
 
 import context_kcore     # fix path to includes work as expected in tests
 import kcore.varz
+import kcore.common as C
 import kcore.uncommon as UC
 
+
+# ----- I/O
 
 def test_capture():
     with UC.Capture(strip=False) as cap:
@@ -24,6 +27,22 @@ def test_capture():
     with UC.Capture() as cap:
         assert cap.out == ''
         assert cap.err == ''
+
+
+def try_to_update(filename, new_contents):
+    with UC.FileLock(filename):
+        C.write_file(filename, new_contents)
+
+def test_filelock(tmp_path):
+    filename = str(tmp_path / 'file1')
+    pq = UC.ParallelQueue()
+    with UC.FileLock(filename):
+        C.write_file(filename, '1')
+        pq.add(try_to_update, filename, '2')
+        time.sleep(0.2)
+        assert C.read_file(filename, wrap_exceptions=False) == '1'
+    time.sleep(0.3)
+    assert C.read_file(filename) == '2'
 
 
 # ----- collections of dataclasses tests

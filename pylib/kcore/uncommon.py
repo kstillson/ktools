@@ -15,7 +15,7 @@ Highlights:
   - argparse helper to generate help epilog from the Python file's initial comment.
 '''
 
-import argparse, grp, os, pwd, time, signal, subprocess, sys, threading
+import argparse, errno, grp, os, pwd, time, signal, subprocess, sys, threading
 from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
@@ -112,6 +112,24 @@ class Capture():
     def err(self):
         e = self.stderr.getvalue()
         return e.strip() if self._strip else e
+
+
+class FileLock:
+    def __init__(self, filename):
+        self.lock_filename = filename + '.lock'
+
+    def __enter__(self):
+        while True:
+            try:
+                fd = os.open(self.lock_filename, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                os.close(fd)
+                return self
+            except OSError as e:
+                if e.errno != errno.EEXIST: raise
+            time.sleep(0.3)
+
+    def __exit__(self, type, value, trackback):
+        os.unlink(self.lock_filename)
 
 
 # ---------- Python file related
