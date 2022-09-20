@@ -64,7 +64,7 @@ def run_trigger(request_dict, name, trigger_param=None):
 
   V.set('last_action', tracking['action'])
   V.bump(f'action_{tracking["action"]}')
-  return err or 'ok', tracking
+  return err, tracking if err else 'ok', tracking
 
 
 # ---------- support routines
@@ -72,6 +72,9 @@ def run_trigger(request_dict, name, trigger_param=None):
 def lookup_action(state, partition, zone, trigger):
   '''returns (action, params)'''
   action, param = model.lookup_trigger_rule(state, partition, zone, trigger)
+  if not action:
+    action = 'pass'
+    C.log_warning(f'no action found for {tracking}; defaulting to pass')
   V.set('last_action', '%s(%s)' % (action, param))
   return action, param
 
@@ -186,6 +189,7 @@ def take_action(tracking, action, params):
       msg += ', system will arm in %s seconds' % delay
     ext.announce(msg)
     schedule_trigger(tracking, delay, 'touch-away', user)
+
   elif action == 'pass':
     pass
 

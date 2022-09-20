@@ -171,14 +171,23 @@ TRIGGER_RULES = [
     TriggerRule('arm-home'       , '*'      , 'chime'        , '*'               , 'announce'           , '@chime10'),
     TriggerRule('arm-away'       , '*'      , 'outside'      , '*'               , 'pass'               , 'could turn on a light or such..'),
 
-  # Remaining alarm mechanics.
-    TriggerRule('arm-home'       , '*'      , '*'            , '*'               , 'announce'           , '#o,@chime4,%f'),
+  # Transitioning into an alarm state.
     TriggerRule('arm-away'       , '*'      , '*'            , '*'               , 'state-delay-trigger', 'alarm-triggered, %Ttrig, alarm'),
     TriggerRule('alarm-triggered', '*'      , '*'            , 'alarm'           , 'state-delay-trigger', 'alarm, %Talarm, alarm-timeout'),
+
+  # Transitioning out of an alarm state.
     TriggerRule('alarm'          , '*'      , '*'            , 'alarm-timeout'   , 'state'              , 'arm-auto'),
     TriggerRule('panic'          , '*'      , '*'            , 'panic-timeout'   , 'state'              , 'arm-auto'),
-    TriggerRule('*'              , '*'      , '*'            , 'alarm'           , 'pass'               , 'delayed alarm trigger arrives in state %s'),
+
+  # Straggler events that can be ignored for various reasons.
     TriggerRule('disarmed'       , '*'      , '*'            , '*'               , 'pass'               , 'pass %t/%z (disarmed)'),
+    TriggerRule('*'              , '*'      , '*'            , 'alarm'           , 'pass'               , 'delayed alarm trigger arrived in state %s (ignored)'),
+    TriggerRule('alarm-triggered', '*'      , '*'            , '*'               , 'pass'               , 'non-control trigger arrived when already in triggered state (ignored)'),
+    TriggerRule('alarm'          , '*'      , '*'            , '*'               , 'pass'               , 'non-control trigger arrived when already in alarm state (ignored)'),
+    TriggerRule('panic'          , '*'      , '*'            , '*'               , 'pass'               , 'non-control trigger arrived when already in panic state (ignored)'),
+
+  # If we're in arm-home mode, just announce the trigger's friendly name..
+    TriggerRule('arm-home'       , '*'      , '*'            , '*'               , 'announce'           , '#o,@chime4,%f'),
 ]
 
 

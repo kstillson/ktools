@@ -60,7 +60,7 @@ def get_touches(search=['ken', 'dad']):
   touches = get_all_touches()
   return [x for x in touches if x.trigger in search]
 
-  
+
 def last_trigger_touch(trigger):
   '''Returns int epoch seconds of last touch for given trigger.'''
   for touch in get_all_touches():
@@ -163,7 +163,7 @@ def touch(trigger_name, value=''):
       if t.trigger == trigger_name:
         t.last_update = time_now
         t.last_update_nice = data.nice_time(time_now)
-        t.value = value
+        if value: t.value = value
         return True
     # Not found, so make a new one.
     tdata.append(data.TouchData(trigger_name, now(), value))
