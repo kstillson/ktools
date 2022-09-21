@@ -20,8 +20,7 @@ LOG=${PB_LOG:-/var/log/homesec/pb-push.log}
 RL_FILE=${RL_FILE:-/tmp/pb.rl}
 ACCESS_TOKEN=${PB_TOKEN}
 
-if [[ ! -f "${RL_FILE}" ]]; then ratelimiter -i $DEFAULT_RATE_LIMIT $RL_FILE; fi
-ratelimiter ${RL_FILE} || { { echo "$(date): RATELIMITED: $MSG" | tee -a $LOG; } >&2 ; exit 1; }
+ratelimiter --limit ${DEFAULT_RATE_LIMIT} ${RL_FILE} || { { echo "$(date): RATELIMITED: $MSG" | tee -a $LOG; } >&2 ; exit 1; }
 
 if [[ "$ACCESS_TOKEN" == "" ]]; then
     ACCESS_TOKEN=$(/usr/local/bin/kmc pb-push)
