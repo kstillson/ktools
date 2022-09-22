@@ -1,7 +1,7 @@
 '''Docker related support library.
 
 This module primarily provides logic that was too hard to code in shell which is
-needed by ../../docker-infrastructure/*.  
+needed by ../../docker-infrastructure/*.
 
 Some highlights:
   - Return the directory with copy-on-write contents for an up container
@@ -12,7 +12,7 @@ Some highlights:
 
 '''
 
-import atexit, glob, os, random, ssl, string, sys
+import atexit, glob, os, random, ssl, string, sys, time
 import kcore.common as C
 import kcore.uncommon as UC
 
@@ -146,8 +146,9 @@ def stop_container_at_exit(args):
     return not rslt.startswith('ERROR')
 
 
-# filename is in the regular (jack host) filesystem.
-def file_expect(expect, filename, invert=False, missing_ok=False):
+# filename is in the regular host filesystem.
+# returns error message of None if all ok.
+def file_expect_real(expect, filename, invert=False, missing_ok=False):
     ok = os.path.isfile(filename)
     if not ok:
         if missing_ok: return emit('success; file %s missing, and thats ok.' % filename)
@@ -162,6 +163,21 @@ def file_expect(expect, filename, invert=False, missing_ok=False):
         else: abort('found "%s" in %s when not expected' % (expect, filename))
     if expect in contents: return emit('success; "%s" in %s, as expected' % (expect, filename))
     else: abort('Unable to find "%s" in: %s' % (expect, filename))
+
+
+def file_expect(expect, filename, invert=False, missing_ok=False):
+    err = file_expect_real(expect, filename, invert=False, missing_ok=False)
+    if err: abort(err)
+    return True
+
+def file_expect_within(within_seconds, expect, filename, invert=False, missing_ok=False):
+    stop_time = time.time() + within_seconds
+    while time.time() < stop_time:
+        err = file_expect_real(expect, filename, invert=False, missing_ok=False)
+        if not err: return True
+        time.sleep(1)
+    # If we get to here, we time-out, so reflect the most recent error as fatal.
+    abort(err)
 
 
 # filename is inside the conainter.

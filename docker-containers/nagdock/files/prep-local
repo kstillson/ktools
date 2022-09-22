@@ -10,6 +10,9 @@ WORLD_WRITABLE_DIRS_RM=0
 # Fix ownerships.
 /bin/chown -R root:nagios /etc/nagios
 
+# Fix perms
+/bin/chgrp nagios /etc/init
+
 # Fix email from address
 /bin/sed -i -e 's/Linux User/Nagios/' /etc/passwd
 

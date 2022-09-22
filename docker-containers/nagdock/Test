@@ -8,12 +8,12 @@ import kcore.webserver as W
 CMD_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/rw/nagios.cmd'
 LOG_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_log_nagios/nagios.log'
 STATUS_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/status.dat'
-UPDATE_DELAY = 8
 
 PORT = 12345
+UPDATE_DELAY = 5
+MAX_UPDATE_DELAY = 20
 
 HITS = 0
-
 def default_handler(request):
   global HITS
   HITS += 1
@@ -22,8 +22,10 @@ def default_handler(request):
 
 def send_cmd(cmd, alt=True):
   now = str(int(time.time()))
-  with open(CMD_FILE, 'a') as f:
-    f.write('[%s] %s\n' % (now, cmd.replace('$NOW', now)))
+  msg = '[%s] %s\n' % (now, cmd.replace('$NOW', now))
+  D.emit(f'sending: {msg.strip()}')
+  with open(CMD_FILE, 'a') as f: f.write(msg)
+  time.sleep(1)
 
 
 def parse_nagios(nagfile):
@@ -72,7 +74,7 @@ def main():
     args = ap.parse_args()
     if args.prod: sys.exit('sorry, in-place prod testing not supported')
 
-    name, ip, cow, dv = D.launch_or_find_container(args)
+    name, ip, cow, dv = D.launch_or_find_container(args, ['--extra-docker', '--env TEST=1'])
     if not cow or not ip: sys.exit('cannot find container %s' % name)
 
     # Check incoming assumptions
@@ -84,12 +86,12 @@ def main():
     # Enable checking
     send_cmd('ENABLE_SVC_CHECK;jack;test-service')
     send_cmd('SCHEDULE_FORCED_SVC_CHECK;jack;test-service;$NOW')
-    D.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
-    time.sleep(UPDATE_DELAY)
+    D.emit('waiting for nagios to check (to up %s seconds)...' % MAX_UPDATE_DELAY)
 
     # test server is off, so expect failure.
-    D.file_expect('EXTERNAL COMMAND: ENABLE_SVC_CHECK;jack;test-service', LOG_FILE)
+    D.file_expect_within(MAX_UPDATE_DELAY, 'EXTERNAL COMMAND: ENABLE_SVC_CHECK;jack;test-service', LOG_FILE)
     D.file_expect('SERVICE ALERT: jack;test-service;CRITICAL;HARD;1;CRITICAL', LOG_FILE)
+    time.sleep(UPDATE_DELAY)
     conf = parse_nagios(STATUS_FILE)
     status_expect('active_checks_enabled', '1', conf)
     status_expect('has_been_checked', '1', conf)
@@ -100,11 +102,10 @@ def main():
     ws.start(port=PORT)
 
     send_cmd('SCHEDULE_FORCED_SVC_CHECK;jack;test-service;$NOW')
-    D.emit('waiting for nagios to check (%s seconds)...' % UPDATE_DELAY)
-    time.sleep(UPDATE_DELAY)
+    D.emit('waiting for nagios to check (up to %s seconds)...' % MAX_UPDATE_DELAY)
 
-    D.file_expect('SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
-    if not HITS == 1: D.abort(f'expected 1 hit against test server, but saw {HITS}')
+    D.file_expect_within(MAX_UPDATE_DELAY, 'SERVICE ALERT: jack;test-service;OK;HARD;1;OK', LOG_FILE)
+    if HITS == 0: D.abort(f'expected >=1 hit against test server, but saw {HITS}')
 
     '''TODO: At this point, we should be able to re-parse the status file
     and confirm the current state has changed to 0.  However, for reasons I

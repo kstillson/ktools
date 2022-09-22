@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [[ -z "$TEST" ]]; then
+  CONFIG="/etc/nagios/nagios.cfg"
+else
+  CONFIG="/etc/nagios/nagios-test.cfg"
+fi
+
+exec /usr/sbin/nagios ${CONFIG}

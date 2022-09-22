@@ -1,6 +1,14 @@
 #!/bin/bash
 
-if [[ "$1" == "--ssl" ]]; then PROTO="https"; shift; else PROTO="http"; fi
+PROTO="http"
+MAX_TIME="55"
+RETRIES="10"
+if [[ "$1" == "--quick" ]]; then
+    MAX_TIME="3"
+    RETRIES="0"
+    shift
+fi
+if [[ "$1" == "--ssl" ]]; then PROTO="https"; shift; fi
 
 SERVER="$1"
 PORT="$2"
@@ -12,10 +20,15 @@ fi
 
 URL="${PROTO}://${SERVER}:${PORT}${ADDR}"
 
-ARGS="--connect-timeout 10 -L --max-time 23 --retry 2 --retry-delay 2 -s -k"
+ARGS="-L -sS -k --connect-timeout 6 --max-time ${MAX_TIME} --retry ${RETRIES} --retry-connrefused --retry-delay 5"
 
 out=$(curl ${ARGS} ${URL} | head -1 | tr '[:upper:]' '[:lower:]')
-if [[ $PIPESTATUS != 0 ]]; then
+STATUS=$PIPESTATUS
+
+##@@ TEMP
+echo "$(now) ;; ARGS=$ARGS ;; URL=$URL ;; STATUS=$STATUS ;; out=$out " >> /tmp/check-healthz-debug.log
+
+if [[ $STATUS != 0 ]]; then
   echo "CRITICAL; error trying to retrieve ${URL}"
   exit 2
 fi

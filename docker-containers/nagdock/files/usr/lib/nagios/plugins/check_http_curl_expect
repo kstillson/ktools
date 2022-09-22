@@ -2,10 +2,11 @@
 
 EXPECT="$1"
 shift
-CURL_PARAMS="$@"
+
+CURL_PARAMS="$@ -L -sS -k --connect-timeout 6 --max-time 55 --retry 10 --retry-connrefused --retry-delay 5"
 
 outfile="/tmp/x"
-cmd="curl -s -o $outfile ${CURL_PARAMS}"
+cmd="curl -o $outfile ${CURL_PARAMS}"
 $cmd
 
 fgrep -q "$EXPECT" $outfile && { echo "OK"; exit 0; }

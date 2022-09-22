@@ -13,6 +13,4 @@ COPY files /
 RUN /prep
 
 USER nagios
-ENTRYPOINT ["/usr/sbin/nagios"]
-CMD ["/etc/nagios/nagios.cfg"]
-
+ENTRYPOINT ["/etc/init"]
