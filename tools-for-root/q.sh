@@ -856,6 +856,8 @@ function main() {
         git-check-all | gca | gc) git_check_all ;;                 ## list any known git dirs with local changes
         git-sync | git | g) need_ssh_agent; git_sync "${1:-.}" ;;  ## git sync a single directory (defaults to .)
         git-sync-all | git-all | ga) git_sync_all ;;               ## check all git dirs for unsubmitted changes and submit them
+	man-packages)                                              ## list manually installed packages  ;-)
+	    comm -23 <(apt-mark showmanual | sort -u) <(gzip -dc /var/log/installer/initial-status.gz | sed -n 's/^Package: //p' | sort -u) ;;
         pi-root | pir) pi_root ${1:-rp} ;;                         ## copy root pubkey to root@ arg1's a_k via pi std login.
         ports | listening | l)                                     ## list listening TCP ports
             ss -tupln | tail -n +2 | awk '{$3=$4=$6=""; print; }' | sed -e 's/users:((//' -e 's/))//' -e 's/,/ /g' -e 's/"//g' | column -t | sort -n ;;
