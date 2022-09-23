@@ -30,7 +30,7 @@ set -e
 # ---------- flag defaults
 
 DEBUG=0          # don't delete tempfiles
-EXCLUDE="blue"   # csv list of hosts to exclude
+EXCLUDE=""       # csv list of hosts to exclude
 HOST_SUBST="@"   # replace this substring with hostnames in some commands
 PARA=1           # run commands for multiple hosts in parallel
 TEST=0           # for commands that would make changes, print them rather than running them
