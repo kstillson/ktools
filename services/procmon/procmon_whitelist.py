@@ -8,6 +8,7 @@ WHITELIST = [
     WL('/',         'blue-backup', False, False, 'sshd: blue-backup'),
     WL('/',         'ken',         False, False, '(/bin/sh -c *)?/usr/local/bin/hc tree'),
     WL('/',         'ken',         False, False, '/usr/sbin/sendmail'),
+    WL('/',         'man',         False, False, '/usr/bin/mandb --quiet'),
     WL('/',         'messagebus',  False, True,  '/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation'),
     WL('/',         'nobody',      False, False, '(/bin/bash -c *)?/bin/ping -c1 -q -w4 hs-front'),
     WL('/',         'nobody',      False, False, '/usr/bin/python3 /root/ktools/procmon/procmon'),
