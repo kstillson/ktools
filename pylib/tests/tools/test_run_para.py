@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import os, tempfile
 
 import context_tools     # fix path to includes work as expected in tests
 import run_para

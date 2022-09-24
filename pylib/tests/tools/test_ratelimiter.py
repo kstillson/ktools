@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, tempfile, time
+import os, time
 
 import context_tools     # fix path to includes work as expected in tests
 import ratelimiter as R
