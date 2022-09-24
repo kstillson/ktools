@@ -31,9 +31,9 @@ def web_server():
     print('starting test webserver on port %d' % PORT, file=sys.stderr)
     server_address = ('localhost', PORT)
     httpd = http.server.HTTPServer(server_address, MyHandler)
-    httpd.socket = ssl.wrap_socket(
-        httpd.socket, server_side=True,
-        certfile='testdata/server-cn=localhost.pem', ssl_version=ssl.PROTOCOL_TLS)
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.load_cert_chain(certfile='testdata/server-cn=localhost.pem')
+    httpd.socket = ctx.wrap_socket(httpd.socket)
     # daemon thread will die when main program exits.
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
@@ -45,7 +45,7 @@ def test_simple_successful_get_without_authn_check(web_server):
     assert 'world' in kmc.query_km('keyname', **KWARGS)
     assert INCOMING_PATH.startswith('/keyname?a=v2')
 
-    
+
 def test_all_retries_fail(web_server):
     global RESP
     RESP = (401, 'error')
@@ -58,7 +58,7 @@ def test_full_authn_cycle(web_server):
     # as client
     shared_secret_str = kcore.auth.generate_shared_secret()
     answer = kmc.query_km('key4', **KWARGS)
-    
+
     # now let's perform the server-side authN check logic
     # (our simplistic server has already given up the secret, but we can
     #  still test now whether what it should have done would have worked).
@@ -68,7 +68,7 @@ def test_full_authn_cycle(web_server):
     assert rslt.ok
     assert rslt.status == 'ok'
     assert not rslt.username
-    
+
     # and finally check the client got the expected answer
     assert answer == 'mysecret'
 

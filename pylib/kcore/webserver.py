@@ -116,8 +116,9 @@ class WebServer(WebServerBase):
 
         if tls_key_password: raise RuntimeError('TODO: support tls_key_password')
         if tls_key_file:
-            self.httpd.socket = ssl.wrap_socket(self.httpd.socket, certfile=tls_cert_file, keyfile=tls_key_file, server_side=True)
-
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.load_cert_chain(certfile=tls_cert_file, keyfile=tls_key_file)
+            self.httpd.socket = ctx.wrap_socket(self.httpd.socket)
         self.httpd._k_webserver = self  # Make my instance visible to handlers.
         self.logger.log_general('starting webserver on port %d' % self.port)
         if background:
