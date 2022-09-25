@@ -64,7 +64,7 @@ def test_basic_operation():
 
     # ---------- confirm disable reply prevention
 
-    shared_secret = A.get_shared_secret_from_db(token_hostname=None, username=use_username)
+    shared_secret = A.get_shared_secret_from_db(db_passwd=use_dbpasswd, db_filename=None, token_hostname=None, username=use_username)
     assert shared_secret is not None
     rslt = A.verify_token_given_shared_secret(token=token, command=use_command, shared_secret=shared_secret, client_addr=use_client_addr, must_be_later_than_last_check=False, max_time_delta=None)
     assert rslt.ok
