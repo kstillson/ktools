@@ -61,6 +61,12 @@ A very simple set of functions that take various forms of plain text and lists
 and generate HTML.
 
 
+# persister.py
+
+A simple mechanism for keeping an in-memory cache of a Python data structure
+up-to-date wrt a human-readable serialized copy.
+
+
 # neo.py
 
 Provides abstractions for Adafruit Neopixels that provide an identical API
