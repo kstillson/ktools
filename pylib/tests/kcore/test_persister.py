@@ -119,6 +119,12 @@ def test_dict_of_dataclasses(tmp_path):
     assert d1.get()['key2'].f2 == 99
     assert d2.get()['key2'].f2 == 99
 
+    # Check that serialized format is human-readable, as expected.
+    with open(tempfile) as f: serialized = f.read()
+    lines = serialized.split('\n')
+    assert lines[0] == "'key1': Dc1(f1='str1', f2=11)"
+    assert lines[1] == "'key2': Dc1(f1='str2', f2=99)"
+
 
 # ---------- list of dataclasses
 
@@ -145,6 +151,12 @@ def test_list_of_dataclasses(tmp_path):
     assert snapshot[1].f2 == 22
     assert d1.get()[1].f2 == 99
     assert d2.get()[1].f2 == 99
+
+    # Check that serialized format is human-readable, as expected.
+    with open(tempfile) as f: serialized = f.read()
+    lines = serialized.split('\n')
+    assert lines[0] == "Dc1(f1='str1', f2=11)"
+    assert lines[1] == "Dc1(f1='str2', f2=99)"
 
 
 # ----- convenience classes
