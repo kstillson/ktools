@@ -45,6 +45,16 @@ def test_persister_simple_list(tmp_path):
     with d2.get_ro() as d: assert d[1] == 99
 
 
+def test_persister_simple_list_get_rw_with_default(tmp_path):
+    tempfile = str(tmp_path / "tempfile")
+    d1 = P.Persister(tempfile)
+    d2 = P.Persister(tempfile)
+
+    with d1.get_rw(default_value=[]) as d:
+        d.append(11)
+    assert d2.get()[0] == 11
+
+
 def test_persister_simple_dict(tmp_path):
     tempfile = str(tmp_path / "tempfile")
     d1 = P.Persister(tempfile)
@@ -131,7 +141,6 @@ def test_list_of_dataclasses(tmp_path):
 
 def test_DictOfDataclasses(tmp_path):
     tempfile = str(tmp_path / "tempfile")
-    tempfile = 'file1'
     d1 = P.DictOfDataclasses(filename=None, rhs_type=Dc1)  # Filename deferred.
     d2 = P.DictOfDataclasses(None, Dc1)
 
@@ -146,7 +155,6 @@ def test_DictOfDataclasses(tmp_path):
 
 def test_ListOfDataclasses(tmp_path):
     tempfile = str(tmp_path / "tempfile")
-    tempfile = 'file2'
     d1 = P.ListOfDataclasses(tempfile, Dc1)
     d2 = P.ListOfDataclasses(tempfile, Dc1)
 

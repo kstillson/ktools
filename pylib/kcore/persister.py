@@ -22,7 +22,7 @@ serialized data format should be easily human-readable and human-modifyable.
 The base Persister class provides simple "deserialize" and "serialize" methods
 that work reasonably for simple Python types (numbers, strings, lists, dicts,
 etc).  But things get more complicated when @dataclass instances are involved,
-primarily because deserialize() needs to 'eval()' the serialized data in a
+primarily because deserialize() needs to eval() the serialized data in a
 context that knows about the @dataclass type.  Therefore, several derived
 classes are provided that specialize the deserialize() and serialize() methods
 for some common arrangements: a stand-alone @dataclass, and lists and dicts of
@@ -78,14 +78,20 @@ class Persister:
     def get_ro(self):
         yield self.get()
 
-    # WARNING: only works for types where a pointer to the real data is returned,
-    # i.e. things like lists and dicts, not simple things like ints and strings.
-    # for those, use set().  It also tends to return None when the serialized
-    # file doesn't exist, and you can't modify things via a None, so again, use
-    # set() if it's possible the serialized file doesn't exist yet.
+    # WARNING: only works for types where a pointer is returned, i.e. things
+    # like lists and dicts, not simple things like ints and strings.  For
+    # those atomic types, use set().
+    #
+    # default_value is there so that if neither the internal cache nor the
+    # saved file have contents, get_rw can yield some more useful starting
+    # point, like an empty list, empty dict, or initialized class.
     @contextmanager
-    def get_rw(self):
-        yield self.get()
+    def get_rw(self, default_value=None):
+        local_data = self.get()
+        if local_data is None:
+            self.cache = local_data = default_value
+        yield local_data
+
         self.save_to_file(self.filename)
 
     # ---------- API with locking options
@@ -134,7 +140,6 @@ class Persister:
 
     def load_from_file(self, in_filename=None):
         filename = in_filename or self.filename
-        print(f'@@lff {in_filename=} {self.filename=} {filename=}')
         self.filename = filename
         if not filename or not os.path.isfile(filename):
             self.cache = self.default_value
