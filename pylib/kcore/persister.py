@@ -28,9 +28,9 @@ classes are provided that specialize the deserialize() and serialize() methods
 for some common arrangements: a stand-alone @dataclass, and lists and dicts of
 @dataclass's.
 
-There are simple get() and set() methods.  You don't need to call get() every
-time you reference the data, just when you need to check if the data has changed
-since the last time you called get().
+There are simple get_data() and set_data() methods.  You don't need to call
+get_data() every time you reference the data, just when you need to check if
+the data has changed since the last time you called get_data().
 
 There are also @contextmanager methods for those who prefer that structure
 (although the get_ro one is a bit pointless).
@@ -46,21 +46,28 @@ should probably use a real database anyway.
 import os
 from contextlib import contextmanager
 
+import kcore.uncommon as UC
+
 class Persister:
     # ---------- primary API
 
-    def __init__(self, filename=None, default_value=None):
-        '''filename can be passed as None, but must then be set either by directly
-           setting the field or calling load_from_file() or save_to_file().
-           and providing the filename there.
+    def __init__(self, filename=None, default_value=None, password=None):
+        '''filename can be passed as None, but then must then be set either by
+           directly setting the field or calling load_from_file() or
+           save_to_file() and providing the filename there.  If you don't,
+           then the file will never be saved.
 
            default_value is so that if neither the internal cache nor the
            saved file have contents, you can get a more useful starting point,
            like an empty list, empty dict, or blank initialized class.
+
+           providing a password will encrypt the stored data using
+           kcore.uncommon.symmetric_crypt().
         '''
 
         self.filename = filename
         self.default_value = default_value
+        self.password = password
 
         self.cache = self.default_value
         self.file_lock = None
@@ -70,11 +77,12 @@ class Persister:
 
     # ----- simple getter and setter
 
-    def get(self):
+    # Can't call it "get" as that would conflct with Dict.get() in derived classes.
+    def get_data(self):
         return self.cache if self.is_cache_fresh() else self.load_from_file(self.filename)
 
     # Passing None for data just saves the current cached data.
-    def set(self, data=None):
+    def set_data(self, data=None):
         if data: self.cache = data
         self.save_to_file(self.filename)
 
@@ -82,21 +90,20 @@ class Persister:
 
     @contextmanager
     def get_ro(self):
-        yield self.get()
+        yield self.get_data()
 
     # WARNING: only works for types where a pointer is returned, i.e. things
     # like lists and dicts, not simple things like ints and strings.  For
-    # those atomic types, use set().
+    # those atomic types, use set_data().
     #
     # default_value is there so that if neither the internal cache nor the
     # saved file have contents, get_rw can yield some more useful starting
     # point, like an empty list, empty dict, or initialized class.
     @contextmanager
-    def get_rw(self, default_value=None):
-        local_data = self.get()
+    def get_rw(self):
+        local_data = self.get_data()
         if local_data is None:
-            if default_value is None: default_value = self.default_value
-            self.cache = local_data = default_value
+            self.cache = local_data = self.default_value
         yield local_data
 
         self.save_to_file(self.filename)
@@ -128,8 +135,10 @@ class Persister:
 
     def deserialize(self, serialized):
         if not serialized or not os.path.isfile(self.filename): return self.default_value
-        with open(self.filename) as f: serialized = f.read()
-        return eval(serialized, {}, {})
+        try:
+            return eval(serialized, {}, {})
+        except:
+            return None
 
     def serialize(self, data):
         out = "'%s'" % data if isinstance(data, str) else str(data)
@@ -153,6 +162,9 @@ class Persister:
             return self.cache
 
         with open(filename) as f: serialized = f.read()
+        if self.password:
+            serialized = UC.decrypt(serialized, self.password)
+            if serialized.startswith('ERROR'): raise ValueError('incorrect password')
         self.cache = self.deserialize(serialized)
         self.mtime = self.get_file_mtime()
         return self.cache
@@ -162,8 +174,9 @@ class Persister:
         self.filename = filename
         if not filename: return False
 
-        with open(self.filename, 'w') as f:
-            f.write(self.serialize(self.cache))
+        serialized = self.serialize(self.cache)
+        if self.password: serialized = UC.encrypt(serialized, self.password)
+        with open(self.filename, 'w') as f: f.write(serialized)
         self.mtime = self.get_file_mtime()
         return True
 
@@ -180,7 +193,10 @@ class PersisterDC(Persister):
     def deserialize(self, serialized):
         if not serialized: return None
         locals = { self.dc_type.__name__: self.dc_type }
-        data = eval(serialized, {}, locals)
+        try:
+            data = eval(serialized, {}, locals)
+        except:
+            return None
         return data
 
 
@@ -202,7 +218,10 @@ class PersisterDictOfDC(Persister):
             if not ': ' in line: continue
             k, v_str = line.split(': ', 1)
             k = k.replace("'", "").replace('"', '')
-            data[k] = eval(v_str, {}, locals)
+            try:
+                data[k] = eval(v_str, {}, locals)
+            except:
+                return None
         return data
 
     def serialize(self, data):
@@ -229,7 +248,10 @@ class PersisterListOfDC(Persister):
         data = []
         for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
-            item = eval(line, {}, locals)
+            try:
+                item = eval(line, {}, locals)
+            except:
+                return None
             data.append(item)
         return data
 
@@ -241,3 +263,4 @@ class PersisterListOfDC(Persister):
 class ListOfDataclasses(PersisterListOfDC, list):
     def __init__(self, filename, dc_type):
         super().__init__(filename, dc_type, self)
+
