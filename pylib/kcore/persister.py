@@ -89,6 +89,7 @@ class Persister:
     def get_rw(self, default_value=None):
         local_data = self.get()
         if local_data is None:
+            if default_value is None: default_value = self.default_value
             self.cache = local_data = default_value
         yield local_data
 
