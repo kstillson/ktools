@@ -71,13 +71,13 @@ def test_persister_single_dc(tmp_path):
     time.sleep(0.1)  # Ensure enough time passes to see timestamps as different.
     with d1.get_rw() as d: d.f2 = 28
     assert d2.get().f2 == 28
-    
+
 
 # ---------- dict of dataclasses
 
 def test_dict_of_dataclasses(tmp_path):
     tempfile = str(tmp_path / "tempfile")
-    d1 = P.PersisterDictOfDC(tempfile, Dc1)
+    d1 = P.PersisterDictOfDC(filename=tempfile, rhs_type=Dc1)
     d2 = P.PersisterDictOfDC(tempfile, Dc1)
 
     with d1.get_rw() as d:
@@ -125,3 +125,35 @@ def test_list_of_dataclasses(tmp_path):
     assert snapshot[1].f2 == 22
     assert d1.get()[1].f2 == 99
     assert d2.get()[1].f2 == 99
+
+
+# ----- convenience classes
+
+def test_DictOfDataclasses(tmp_path):
+    tempfile = str(tmp_path / "tempfile")
+    tempfile = 'file1'
+    d1 = P.DictOfDataclasses(filename=None, rhs_type=Dc1)  # Filename deferred.
+    d2 = P.DictOfDataclasses(None, Dc1)
+
+    with d1.get_rw():
+        d1.filename = tempfile
+        d1['key1'] = Dc1('strA', 111)
+        d1['key2'] = Dc1('strB', 222)
+
+    d2.filename = tempfile
+    assert d2.get()['key2'].f2 == 222
+
+
+def test_ListOfDataclasses(tmp_path):
+    tempfile = str(tmp_path / "tempfile")
+    tempfile = 'file2'
+    d1 = P.ListOfDataclasses(tempfile, Dc1)
+    d2 = P.ListOfDataclasses(tempfile, Dc1)
+
+    with d1.get_rw():
+        d1.append(Dc1('strC', 33))
+        d1.append(Dc1('strD', 44))
+
+    assert len(d2) == 0                # get() not called yet.
+    assert d2.get()[1].f2 == 44
+

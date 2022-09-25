@@ -7,7 +7,7 @@ doesn't change much, it does change sometimes, and that needs to be persisted.
 Setting up a whole external database is way overkill in this case, never
 mind all the trouble of creating and maintaining the schema.
 
-Basically all this class does is this: 
+Basically all this class does is this:
 
 - when you tell it you're changing the data, it both serializes it to disk and
   caches a local in-memory copy.
@@ -19,20 +19,21 @@ Basically all this class does is this:
 Things are made a little more complicated by this additional goal: the
 serialized data format should be easily human-readable and human-modifyable.
 
-The base Persister class provides simple "loader" and "saver" methods that
-work reasonably for simple Python types (numbers, strings, lists, dicts, etc).
-But things get more complicated when @dataclass instances are involved,
-primarily because loader() needs to 'eval()' the serialized data in a context
-that knows about the @dataclass type.  Therefore, several derived classes are
-provided that specialize the loader() and saver() methods for some common
-arrangements: a stand-alone @dataclass, and lists and dicts of @dataclass's.
+The base Persister class provides simple "deserialize" and "serialize" methods
+that work reasonably for simple Python types (numbers, strings, lists, dicts,
+etc).  But things get more complicated when @dataclass instances are involved,
+primarily because deserialize() needs to 'eval()' the serialized data in a
+context that knows about the @dataclass type.  Therefore, several derived
+classes are provided that specialize the deserialize() and serialize() methods
+for some common arrangements: a stand-alone @dataclass, and lists and dicts of
+@dataclass's.
 
 There are simple get() and set() methods.  You don't need to call get() every
 time you reference the data, just when you need to check if the data has changed
 since the last time you called get().
 
 There are also @contextmanager methods for those who prefer that structure
-(although the get_ro one is a bit pointless).  
+(although the get_ro one is a bit pointless).
 
 And there are methods that provide either thread-based or file-based locking,
 if you want to be moderately sure that concurrent writes don't mess things up.
@@ -48,22 +49,28 @@ from contextlib import contextmanager
 class Persister:
     # ---------- primary API
 
-    def __init__(self, filename):
+    def __init__(self, filename=None, default_value=None):
+        '''filename can be passed as None, but must then be set either by directly
+           setting the field or calling load_from_file() or save_to_file().
+           and providing the filename there.'''
         self.filename = filename
+        self.default_value = default_value
+
+        self.cache = self.default_value
         self.file_lock = None
-        self.mtime = None
+        self.mtime = 0
         self.thread_lock = None
-        self.load_from_file()
+        self.load_from_file(filename)
 
     # ----- simple getter and setter
 
     def get(self):
-        return self.cache if self.is_cache_fresh() else self.load_from_file()
+        return self.cache if self.is_cache_fresh() else self.load_from_file(self.filename)
 
     # Passing None for data just saves the current cached data.
     def set(self, data=None):
         if data: self.cache = data
-        self.save_to_file()
+        self.save_to_file(self.filename)
 
     # ----- context manager getter and setter
 
@@ -79,45 +86,44 @@ class Persister:
     @contextmanager
     def get_rw(self):
         yield self.get()
-        self.save_to_file()
+        self.save_to_file(self.filename)
 
     # ---------- API with locking options
 
     @contextmanager
-    def get_rw_thread_locked(self):
+    def get_rw_locked_thread(self):
         import threading
         if not self.thread_lock: self.thread_lock = threading.thread_lock()
         with self.thread_lock:
             local_data = self.get_ro()
             yield local_data
-            self.save_to_file()
+            self.save_to_file(self.filename)
             self.cache = local_data
 
     @contextmanager
-    def get_rw_file_locked(self):
+    def get_rw_locked_file(self):
         import uncommon as UC
         if not self.file_lock: self.file_lock = UC.FileLock()
         with self.file_lock:
             local_data = self.get_ro()
             yield local_data
-            self.save_to_file()
+            self.save_to_file(self.filename)
 
 
-    # ---------- methods intended to be overwritten for more compexl data types.
+    # ---------- serialization
+    #            (often need to be overridden for more complex data types.)
 
-    def loader(self):
-        data = None
-        if not os.path.isfile(self.filename): return data
+    def deserialize(self, serialized):
+        if not serialized or not os.path.isfile(self.filename): return self.default_value
         with open(self.filename) as f: serialized = f.read()
-        data = eval(serialized, {}, {})
-        return data
+        return eval(serialized, {}, {})
 
-    def saver(self, data):
+    def serialize(self, data):
         out = "'%s'" % data if isinstance(data, str) else str(data)
-        with open(self.filename, 'w') as f: f.write(out + '\n')
+        return out + '\n'
 
 
-    # ---------- internals
+    # ---------- dealing with the saved file
 
     def get_file_mtime(self):
         try: return os.path.getmtime(self.filename)
@@ -126,14 +132,28 @@ class Persister:
     def is_cache_fresh(self):
         return self.mtime == self.get_file_mtime()
 
-    def load_from_file(self):
-        self.cache = self.loader()
+    def load_from_file(self, in_filename=None):
+        filename = in_filename or self.filename
+        print(f'@@lff {in_filename=} {self.filename=} {filename=}')
+        self.filename = filename
+        if not filename or not os.path.isfile(filename):
+            self.cache = self.default_value
+            return self.cache
+
+        with open(filename) as f: serialized = f.read()
+        self.cache = self.deserialize(serialized)
         self.mtime = self.get_file_mtime()
         return self.cache
 
-    def save_to_file(self):
-        self.saver(self.cache)
+    def save_to_file(self, in_filename=None):
+        filename = in_filename or self.filename
+        self.filename = filename
+        if not filename: return False
+
+        with open(self.filename, 'w') as f:
+            f.write(self.serialize(self.cache))
         self.mtime = self.get_file_mtime()
+        return True
 
 
 # ------------------------------------------------------------
@@ -143,30 +163,29 @@ class PersisterDC(Persister):
     def __init__(self, filename, dc_type):
         self.filename = filename
         self.dc_type = dc_type
-        super().__init__(filename)
+        super().__init__(filename, None)
 
-    def loader(self):
-        if not os.path.isfile(self.filename): return None
+    def deserialize(self, serialized):
+        if not serialized: return None
         locals = { self.dc_type.__name__: self.dc_type }
-        with open(self.filename) as f: serialized = f.read()
         data = eval(serialized, {}, locals)
         return data
 
-            
+
 # ------------------------------------------------------------
 # A Persister specialized for dictionaries of @dataclass instances.
 
 class PersisterDictOfDC(Persister):
-    def __init__(self, filename, rhs_type):
+    def __init__(self, filename, rhs_type, default_value={}):
         self.filename = filename
         self.rhs_type = rhs_type
-        super().__init__(filename)
+        super().__init__(filename, default_value)
 
-    def loader(self):
-        data = {}
-        if not os.path.isfile(self.filename): return data
+    def deserialize(self, serialized):
+        if not serialized: return self.default_value
         locals = { self.rhs_type.__name__: self.rhs_type }
-        for line in open(self.filename):
+        data = {}
+        for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
             if not ': ' in line: continue
             k, v_str = line.split(': ', 1)
@@ -174,31 +193,39 @@ class PersisterDictOfDC(Persister):
             data[k] = eval(v_str, {}, locals)
         return data
 
-    def saver(self, data):
-        with open(self.filename, 'w') as f:
-            f.write('\n'.join([f"'{k}': {str(v)}" for k, v in data.items()]))
-            f.write('\n')
+    def serialize(self, data):
+        out = '\n'.join([f"'{k}': {str(v)}" for k, v in data.items()])
+        return out + '\n'
 
-            
+
+class DictOfDataclasses(PersisterDictOfDC, dict):
+    def __init__(self, filename, rhs_type):
+        super().__init__(filename, rhs_type, self)
+
+
 # ------------------------------------------------------------
 # A Persister specialized for lists of @dataclass instances.
 
 class PersisterListOfDC(Persister):
-    def __init__(self, filename, dc_type):
+    def __init__(self, filename, dc_type, default_value=[]):
         self.dc_type = dc_type
-        super().__init__(filename)
+        super().__init__(filename, default_value)
 
-    def loader(self):
-        data = []
-        if not os.path.isfile(self.filename): return data
+    def deserialize(self, serialized):
+        if not serialized: return self.default_value
         locals = { self.dc_type.__name__: self.dc_type }
-        for line in open(self.filename):
+        data = []
+        for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
             item = eval(line, {}, locals)
             data.append(item)
         return data
 
-    def saver(self, data):
-        with open(self.filename, 'w') as f:
-            f.write('\n'.join([str(x) for x in data]))
-            f.write('\n')
+    def serialize(self, data):
+        out = '\n'.join([str(x) for x in data])
+        return out + '\n'
+
+
+class ListOfDataclasses(PersisterListOfDC, list):
+    def __init__(self, filename, dc_type):
+        super().__init__(filename, dc_type, self)
