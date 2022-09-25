@@ -45,6 +45,16 @@ def test_persister_simple_list(tmp_path):
     with d2.get_ro() as d: assert d[1] == 99
 
 
+def test_persister_simple_list_with_default(tmp_path):
+    tempfile = str(tmp_path / "tempfile")
+    d1 = P.Persister(tempfile, default_value=[])
+    d2 = P.Persister(tempfile)
+
+    with d1.get_rw() as d:
+        d.append(11)
+    assert d2.get()[0] == 11
+
+
 def test_persister_simple_list_get_rw_with_default(tmp_path):
     tempfile = str(tmp_path / "tempfile")
     d1 = P.Persister(tempfile)

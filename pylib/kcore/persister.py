@@ -52,7 +52,13 @@ class Persister:
     def __init__(self, filename=None, default_value=None):
         '''filename can be passed as None, but must then be set either by directly
            setting the field or calling load_from_file() or save_to_file().
-           and providing the filename there.'''
+           and providing the filename there.
+
+           default_value is so that if neither the internal cache nor the
+           saved file have contents, you can get a more useful starting point,
+           like an empty list, empty dict, or blank initialized class.
+        '''
+
         self.filename = filename
         self.default_value = default_value
 
