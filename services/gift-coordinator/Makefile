@@ -4,7 +4,7 @@ all:
 	@echo nothing to be done for :all
 
 clean:
-	@echo nothing to be done for :clean
+	rm -rf __pycache__
 
 install:
 	@echo nothing to be done for :install
