@@ -204,5 +204,6 @@ def test_encryption_addin(tmp_path):
 
     try:
         d3 = P.Persister(tempfile, password='incorrect-password')
+        assert '' == 'fail: expected exception'
     except ValueError as e:
         assert str(e) == 'incorrect password'

@@ -7,7 +7,7 @@ doesn't change much, it does change sometimes, and that needs to be persisted.
 Setting up a whole external database is way overkill in this case, never
 mind all the trouble of creating and maintaining the schema.
 
-Basically all this class does is this:
+Basically all this class does is:
 
 - when you tell it you're changing the data, it both serializes it to disk and
   caches a local in-memory copy.
@@ -17,13 +17,14 @@ Basically all this class does is this:
   it deserializes the file, updates the cache, and returns that.
 
 Things are made a little more complicated by this additional goal: the
-serialized data format should be easily human-readable and human-modifyable.
+serialized data format should be easily machine-readable, human-readable and
+human-modifyable (assuming it's not encrypted, which is also an option).
 
-The base Persister class provides simple "deserialize" and "serialize" methods
+The base Persister class provides simple "serialize" and "deserialize" methods
 that work reasonably for simple Python types (numbers, strings, lists, dicts,
 etc).  But things get more complicated when @dataclass instances are involved,
-primarily because deserialize() needs to eval() the serialized data in a
-context that knows about the @dataclass type.  Therefore, several derived
+primarily because deserialize() uses eval() to read the data, and needs to run
+in a context that knows about the @dataclass type.  Therefore, several derived
 classes are provided that specialize the deserialize() and serialize() methods
 for some common arrangements: a stand-alone @dataclass, and lists and dicts of
 @dataclass's.
@@ -32,18 +33,15 @@ There are simple get_data() and set_data() methods.  You don't need to call
 get_data() every time you reference the data, just when you need to check if
 the data has changed since the last time you called get_data().
 
-There are also @contextmanager methods for those who prefer that structure
-(although the get_ro one is a bit pointless).
+There are also @contextmanager methods for those who prefer that structure.
 
 And there are methods that provide either thread-based or file-based locking,
 if you want to be moderately sure that concurrent writes don't mess things up.
 However, these aren't thoroughly tested, and if you've really got a highly
 concurrent application with strong concurrency guarantee requirements, you
-should probably use a real database anyway.
+should probably use a real database anyway. '''
 
-'''
-
-import os
+import os, sys
 from contextlib import contextmanager
 
 import kcore.uncommon as UC
@@ -52,10 +50,11 @@ class Persister:
     # ---------- primary API
 
     def __init__(self, filename=None, default_value=None, password=None):
-        '''filename can be passed as None, but then must then be set either by
-           directly setting the field or calling load_from_file() or
-           save_to_file() and providing the filename there.  If you don't,
-           then the file will never be saved.
+        '''filename can be passed as None (e.g. if you don't know it yet because
+           this instance is created as a global variable and command-line flags
+           indicating the filename haven't been parsed yet.  But if you pass
+           filename=None, you must set the .filename field directly before any
+           file-based actions take place, or those actions will (silently) fail.
 
            default_value is so that if neither the internal cache nor the
            saved file have contents, you can get a more useful starting point,
@@ -71,20 +70,20 @@ class Persister:
 
         self.cache = self.default_value
         self.file_lock = None
-        self.mtime = 0
+        self.cache_mtime = 0
         self.thread_lock = None
-        self.load_from_file(filename)
+        if filename: self.load_from_file()
 
     # ----- simple getter and setter
 
     # Can't call it "get" as that would conflct with Dict.get() in derived classes.
     def get_data(self):
-        return self.cache if self.is_cache_fresh() else self.load_from_file(self.filename)
+        return self.cache if self.is_cache_fresh() else self.load_from_file()
 
-    # Passing None for data just saves the current cached data.
     def set_data(self, data=None):
+        '''Passing data=None just saves the current cached data.'''
         if data: self.cache = data
-        self.save_to_file(self.filename)
+        self.save_to_file()
 
     # ----- context manager getter and setter
 
@@ -92,21 +91,19 @@ class Persister:
     def get_ro(self):
         yield self.get_data()
 
-    # WARNING: only works for types where a pointer is returned, i.e. things
-    # like lists and dicts, not simple things like ints and strings.  For
-    # those atomic types, use set_data().
-    #
-    # default_value is there so that if neither the internal cache nor the
-    # saved file have contents, get_rw can yield some more useful starting
-    # point, like an empty list, empty dict, or initialized class.
     @contextmanager
     def get_rw(self):
+        '''Yield latest data, then save any changes upon exit.
+           WARNING: only works for types where a pointer is returned, i.e. things
+           like lists and dicts, not simple things like ints and strings.  For
+           those atomic types, use set_data().'''
+
         local_data = self.get_data()
         if local_data is None:
             self.cache = local_data = self.default_value
         yield local_data
 
-        self.save_to_file(self.filename)
+        self.save_to_file()
 
     # ---------- API with locking options
 
@@ -117,7 +114,7 @@ class Persister:
         with self.thread_lock:
             local_data = self.get_ro()
             yield local_data
-            self.save_to_file(self.filename)
+            self.save_to_file()
             self.cache = local_data
 
     @contextmanager
@@ -127,57 +124,56 @@ class Persister:
         with self.file_lock:
             local_data = self.get_ro()
             yield local_data
-            self.save_to_file(self.filename)
+            self.save_to_file()
 
 
-    # ---------- serialization
-    #            (often need to be overridden for more complex data types.)
+    # ---------- internal methods
+
+    # ----- serialization (often need to be overridden for more complex data types.)
 
     def deserialize(self, serialized):
-        if not serialized or not os.path.isfile(self.filename): return self.default_value
-        try:
-            return eval(serialized, {}, {})
-        except:
-            return None
+        if not serialized: return self.default_value
+        return eval(serialized, {}, {})
 
     def serialize(self, data):
         out = "'%s'" % data if isinstance(data, str) else str(data)
         return out + '\n'
 
 
-    # ---------- dealing with the saved file
+    # ----- dealing with the saved file
 
     def get_file_mtime(self):
         try: return os.path.getmtime(self.filename)
         except: return None
 
     def is_cache_fresh(self):
-        return self.mtime == self.get_file_mtime()
+        return self.cache_mtime == self.get_file_mtime()
 
-    def load_from_file(self, in_filename=None):
-        filename = in_filename or self.filename
-        self.filename = filename
-        if not filename or not os.path.isfile(filename):
-            self.cache = self.default_value
-            return self.cache
-
-        with open(filename) as f: serialized = f.read()
+    def load_from_file(self):
+        if self.filename == '-':
+            serialized = sys.stdin.read()
+        else:
+            if not self.filename or not os.path.isfile(self.filename):
+                self.cache = self.default_value
+                return self.cache
+            with open(self.filename) as f: serialized = f.read()
+        
         if self.password:
             serialized = UC.decrypt(serialized, self.password)
             if serialized.startswith('ERROR'): raise ValueError('incorrect password')
         self.cache = self.deserialize(serialized)
-        self.mtime = self.get_file_mtime()
+        self.cache_mtime = self.get_file_mtime()
         return self.cache
 
-    def save_to_file(self, in_filename=None):
-        filename = in_filename or self.filename
-        self.filename = filename
-        if not filename: return False
-
+    def save_to_file(self):
+        if not self.filename: return False
         serialized = self.serialize(self.cache)
         if self.password: serialized = UC.encrypt(serialized, self.password)
-        with open(self.filename, 'w') as f: f.write(serialized)
-        self.mtime = self.get_file_mtime()
+        if self.filename == '-':
+            print(serialized)
+        else:
+            with open(self.filename, 'w') as f: f.write(serialized)
+        self.cache_mtime = self.get_file_mtime()
         return True
 
 
@@ -204,15 +200,17 @@ class PersisterDC(Persister):
 # A Persister specialized for dictionaries of @dataclass instances.
 
 class PersisterDictOfDC(Persister):
-    def __init__(self, filename, rhs_type, default_value={}):
+    def __init__(self, filename, rhs_type, default_value=None, **kwargs):
+        if default_value is None: default_value = dict()
         self.filename = filename
         self.rhs_type = rhs_type
-        super().__init__(filename, default_value)
+        super().__init__(filename=filename, default_value=default_value, **kwargs)
 
     def deserialize(self, serialized):
         if not serialized: return self.default_value
         locals = { self.rhs_type.__name__: self.rhs_type }
-        data = {}
+        data = self.default_value
+        data.clear()
         for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
             if not ': ' in line: continue
@@ -230,17 +228,17 @@ class PersisterDictOfDC(Persister):
 
 
 class DictOfDataclasses(PersisterDictOfDC, dict):
-    def __init__(self, filename, rhs_type):
-        super().__init__(filename, rhs_type, self)
+    def __init__(self, filename, rhs_type, **kwargs):
+        super().__init__(filename=filename, rhs_type=rhs_type, default_value=self, **kwargs)
 
 
 # ------------------------------------------------------------
 # A Persister specialized for lists of @dataclass instances.
 
 class PersisterListOfDC(Persister):
-    def __init__(self, filename, dc_type, default_value=[]):
+    def __init__(self, filename, dc_type, default_value=[], **kwargs):
         self.dc_type = dc_type
-        super().__init__(filename, default_value)
+        super().__init__(filename=filename, default_value=default_value, **kwargs)
 
     def deserialize(self, serialized):
         if not serialized: return self.default_value
@@ -261,6 +259,6 @@ class PersisterListOfDC(Persister):
 
 
 class ListOfDataclasses(PersisterListOfDC, list):
-    def __init__(self, filename, dc_type):
-        super().__init__(filename, dc_type, self)
+    def __init__(self, filename, dc_type, **kwargs):
+        super().__init__(filename=filename, dc_type=dc_type, default_value=self, **kwargs)
 
