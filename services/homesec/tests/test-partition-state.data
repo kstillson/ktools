@@ -1,2 +1,2 @@
-PartitionState(partition='default', state='arm-auto', last_update=1652989497)
-PartitionState(partition='safe', state='arm-away', last_update=345)
+'default': PartitionState(partition='default', state='arm-auto', last_update=1652989497)
+'safe': PartitionState(partition='safe', state='arm-away', last_update=345)

@@ -2,6 +2,7 @@
 import context_homesec     # fix path to includes work as expected in tests
 
 import kcore.common as common
+import kcore.persister as P
 
 import pytest
 
@@ -26,25 +27,23 @@ def test_post_init(setup_test):
 
 def test_touch_data_getter(setup_test):
     D.TOUCH_DATA.filename = 'tests/test-touch.data'
-    D.TOUCH_DATA.cache = None
-    td = D.get_touch_data()
+    td = list(D.TOUCH_DATA.get_data().values())
     assert td[0].trigger == 'ken'
     assert td[1].last_update == 456
 
 
 def test_saved_list_setter(setup_test, tmp_path):
     filename = tmp_path / "touchdata"
-    D.TOUCH_DATA.filename = filename
-    D.TOUCH_DATA.cache = None
-    with D.saved_list(D.TOUCH_DATA) as tdata:
+    test_data = P.DictOfDataclasses(filename, D.TouchData)
+    with test_data.get_rw() as tdata:
         assert len(tdata) == 0
-        tdata.append(D.TouchData('user11', 11, 'home'))
-        tdata.append(D.TouchData('user22', 22, 'away'))
-    with D.saved_list(D.TOUCH_DATA) as tdata:
+        tdata['user11'] = D.TouchData('user11', 11, 'home')
+        tdata['user22'] = D.TouchData('user22', 22, 'away')
+    with test_data.get_rw() as tdata:
         assert len(tdata) == 2
-        tdata.pop(0)
-        tdata.append(D.TouchData('user33', 33, 'away'))
-    with D.saved_list(D.TOUCH_DATA) as tdata:
-        assert len(tdata) == 2
-        assert tdata[0].trigger == 'user22'
-        assert tdata[1].last_update == 33
+        tdata.pop('user11')
+        tdata['user33'] = D.TouchData('user33', 33, 'away')
+    tdata = list(test_data.get_data().values())
+    assert len(tdata) == 2
+    assert tdata[0].trigger == 'user22'
+    assert tdata[1].last_update == 33
