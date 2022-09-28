@@ -40,80 +40,76 @@ def start_session(initial_data={}):
 
 
 def get_session_data(session_id):
-    for cookie_data in data.get_cookie_data():
-        if cookie_data.session_id == session_id: return cookie_data.data
+    with data.COOKIE_DATA.get_ro() as d:
+        existing_session = d.get(session_id)
+        if existing_session: return existing_session.data
+
     # This really shouldn't happen, but let's try to recover by creating a new session.
     C.log_warning(f'Saw incoming session id {session_id} but could not find its data.')
-    return { 'SESSION_ID': session_id }
+    new_session_data = {'SESSION_ID': session_id}
+    save_session_data(new_session_data)
+    return new_session_data
 
 
 def save_session_data(session_data):
     session_id = session_data.get('SESSION_ID')
     if not session_id: return False
-    with data.saved_list(data.COOKIE_DATA) as cd_list:
-        for cd in cd_list:
-            if cd.session_id == session_id:
-                cd.last_update = now()
-                cd.data = session_data
-                return True
-        # Got to the end, so need to append this new session.
-        new_cd = data.CookieData(session_id, now(), session_data)
-        cd_list.append(new_cd)
+
+    with data.COOKIE_DATA.get_rw() as d:
+        existing_session = d.get(session_id)
+        if existing_session:
+            existing_session.data = session_data
+        else:
+            d[session_id] = data.CookieData(session_id, now(), session_data)
+        return True
 
 
 def del_session(session_data):
     session_id = session_data.get('SESSION_ID')
     if not session_id: return False
-    with data.saved_list(data.COOKIE_DATA) as cd_list:
-        for cnt, cd in enumerate(cd_list):
-            if cd.session_id == session_id:
-                cd_list.pop(cnt)
-                return True
-    return False
+    with data.COOKIE_DATA.get_rw() as d:
+        d.pop(session_id, None)
+    return True
 
 
 def update_session_data(session_data, key, new_value):
     session_data[key] = new_value
     save_session_data(session_data)
-        
+
 
 def clear_old_session_data():
     time_now = now()
-    with data.saved_list(data.COOKIE_DATA) as cd_list:
-        cd_list[:] = [x for x in cd_list if time_now - x.last_update < MAX_SESSION_AGE]
+    del_keys = []
+    for k, v in data.COOKIE_DATA.get_data().items():
+        if time_now - v.last_update >= MAX_SESSION_AGE:
+            del_keys.append(k)
+
+    with data.COOKIE_DATA.get_rw() as d:
+        for i in del_keys: d.pop(i)
 
 
 # ---------- gift data
 
-def get_gift_ideas(): return data.get_gift_data()
+def get_gift_ideas(): return data.GIFT_IDEAS.get_data().values()
 
 
-def get_gift_idea(key):
-    for gi in get_gift_ideas():
-        if gi.key == key: return gi
-    return None
+def get_gift_idea(key): return data.GIFT_IDEAS.get_data().get(key, None)
 
 
 def edit_gift_idea(gift_idea):
-    with data.saved_list(data.GIFT_IDEAS) as gi_list:
-        for cnt, gi in enumerate(gi_list):
-            if gi.key == gift_idea.key:
-                gi_list[cnt] = gift_idea
-                return True
-    return False
+    with data.GIFT_IDEAS.get_rw() as d:
+        d[gift_idea.key] = gift_idea
+    return True
 
 
 def add_gift_idea(gift_idea):
     gift_idea.key = gen_random_string(16)
-    with data.saved_list(data.GIFT_IDEAS) as gi_list:
-        gi_list.append(gift_idea)
-    return True
+    return edit_gift_idea(gift_idea)
 
 
 def del_gift_idea(key):
-    with data.saved_list(data.GIFT_IDEAS) as gi_list:
-        for gi in gi_list:
-            if gi.key == key:
-                gi.deleted = now()
-                return True
-    return False
+    with data.GIFT_IDEAS.get_rw() as d:
+        gi = d.get(key, None)
+        if not gi: return False
+        gi.deleted = now()
+        return True
