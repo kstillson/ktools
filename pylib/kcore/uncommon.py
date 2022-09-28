@@ -5,7 +5,6 @@ to keep common.py reasonably compact, or because the logic here won't work
 under Circuit Python, and I'd like to keep common.py fully working for CircuitPy.
 
 Highlights:
-  - Serialize/de-serialize helpers for dicts with RHS that are @dataclass's
   - A context manager (used with a "with" statement) for grabbing stdout/stderr
   - Helper to load files as modules (like "import" but with dynamically named files)
   - Simplified and a very-simplied front-ends to subprocess.popen
@@ -25,46 +24,6 @@ else: import io
 # ---------- control constants
 
 DEFAULT_SALT = 'its-bland-without-salt'
-
-
-# ---------- Collections of DataClasses
-
-class DictOfDataclasses(dict):
-    '''Intended for use when dict values are dataclass instances.
-       Adds methods to support human-readable serialization and deserialzation.
-    '''
-    def to_string(self):
-        dict2 = {k: str(v) for k, v in self.items()}
-        return '\n'.join([f"'{k}': {v}" for k, v in dict2.items()])
-
-    def from_string(self, s, dataclass_type):
-        locals = { dataclass_type.__name__: dataclass_type }
-        count = 0
-        for line in s.split('\n'):
-            if not line or line.startswith('#'): continue
-            if not ': ' in line: continue
-            k, v_str = line.split(': ', 1)
-            k = k.replace("'", "").replace('"', '')
-            self[k] = eval(v_str, {}, locals)
-            count += 1
-        return count
-
-
-class ListOfDataclasses(list):
-    '''Intended for use with lists of dataclass instances.
-       Adds methods to support human-readable serialization and deserialzation.'''
-    def to_string(self):
-        return '\n'.join([str(x) for x in self])
-
-    def from_string(self, s, dataclass_type):
-        locals = { dataclass_type.__name__: dataclass_type }
-        count = 0
-        for line in s.split('\n'):
-            if not line or line.startswith('#'): continue
-            item = eval(line, {}, locals)
-            self.append(item)
-            count += 1
-        return count
 
 
 # ---------- I/O
