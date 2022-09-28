@@ -1,9 +1,8 @@
 
+import context_km_svc     # fix path to includes work as expected in tests
+
 import sys
 
-import kcore.uncommon as UC
-
-import context_km_svc     # fix path to includes work as expected in tests
 import km_helper as K
 from km import Secret, Secrets
 
@@ -13,8 +12,8 @@ PASSWORD = 'test123'
 # ---------- helpers
 
 def check_db(filename, ref_dict):
-    secrets = Secrets()
-    secrets.load_from_encrypted_file(filename, PASSWORD)
+    print(f'@@ {filename=} {PASSWORD=}')
+    secrets = Secrets(filename=filename, rhs_type=Secret, password=PASSWORD)
     for expected_keyname, expected_secret in ref_dict.items():
         assert expected_keyname in secrets
         assert secrets.get(expected_keyname).secret == expected_secret
@@ -31,11 +30,7 @@ def test_basics(tmp_path):
 
     # generate test key and check it
 
-    with UC.Capture() as cap:
-        assert K.main(['--testkey']) == 0
-        testkey = cap.out
-        assert cap.err == ''
-    with open(secrets_file, 'w') as f: f.write(testkey)
+    assert K.main(stnd_args + ['--testkey']) == 0
     check_db(secrets_file, {'testkey': 'mysecret'})
 
     # add a key

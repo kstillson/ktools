@@ -80,7 +80,7 @@ from typing import List
 
 import kcore.auth as A
 import kcore.common as C
-import kcore.uncommon as UC
+import kcore.persister as P
 import kcore.varz as V
 import kcore.webserver as W
 
@@ -102,10 +102,10 @@ class Secret:
     comment: str = None
 
 
-class Secrets(UC.DictOfDataclasses):
+class Secrets(P.DictOfDataclasses):
     '''Dict from keyname to instance of Secret'''
 
-    def ready(self): return len(self) > 0
+    def ready(self): return len(self.cache) > 0
 
     def reset(self):
         self.clear()
@@ -113,22 +113,11 @@ class Secrets(UC.DictOfDataclasses):
         V.bump('resets')
         V.set('loaded-keys', 0)
 
-    def load_from_encrypted_file(self, filename, password):
-        '''returns error message or None if all ok.'''
-        encrypted = C.read_file(filename)
-        if not encrypted: return f'{filename} cannot be read or is empty'
-        decrypted = UC.decrypt(encrypted, password)
-        if decrypted.startswith('ERROR'): return decrypted
-        cnt = self.from_string(decrypted, Secret)
-        if cnt < 0: return f'Error parsing decrypted secrets from {filename}'
-        V.set('loaded-keys', len(self))
-        return None
-
 
 # ---------- global state
 
 ARGS = {}
-SECRETS = Secrets()
+SECRETS = Secrets(filename=None, rhs_type=Secret)
 SECRETS_PASSWORD = None
 
 
@@ -162,13 +151,20 @@ def km_healthz_handler(request):
 
 def km_load_handler(request):
     SECRETS.reset()
-    err = SECRETS.load_from_encrypted_file(ARGS.datafile, request.post_params.get('password'))
-    if err or not SECRETS.ready():
-        C.log_alert(f'unable to load secrets from {ARGS.datafile}: {err}')
-        V.bump('reloads-fails')
-        return 'error'
+    
     global SECRETS_PASSWORD
     SECRETS_PASSWORD = request.post_params.get('password')
+
+    SECRETS.password = SECRETS_PASSWORD
+    SECRETS.filename = ARGS.datafile
+    
+    s = SECRETS.get_data()
+    if not SECRETS.ready():
+        C.log_alert(f'unable to load secrets from {ARGS.datafile}')
+        V.bump('reloads-fails')
+        return 'error'
+    print(f'@@@ {s=}', file=sys.stderr)
+    V.set('loaded-keys', len(s))
     V.bump('reloads-ok')
     C.log('LOADED KEYS OK- READY')
     return 'ok'
@@ -208,6 +204,7 @@ def km_default_handler(request):
     token = request.get_params.get('a')
 
     secret = SECRETS.get(keyname)
+    print(f'\n@@@2 {SECRETS.__dict__=} {secret=} {keyname=} {SECRETS.items()=} {SECRETS.cache.items()=} \n', file=sys.stderr)
     if not secret:
         return ouch('no such key', f'attempt to get non-existent key: {keyname}', 'keyfail-notfound')
 
@@ -266,7 +263,6 @@ def main(argv=[]):
       '/load':         km_load_handler,
       '/qqq':          km_reset_handler,
       '/quitquitquit': km_reset_handler,
-      '/T': lambda r:  str(vars(SECRETS)),
       '/':             km_root_handler,
       None:            km_default_handler,
   }
