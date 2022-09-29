@@ -13,7 +13,7 @@ CONSTANTS = data.CONSTANTS
 
 def get_all_touches():
   '''Return list of TouchData with last touch times for all triggers.'''
-  touches = data.get_touch_data()
+  touches = data.TOUCH_DATA.get_data().values()
   return sorted(touches, key=lambda x: x.last_update)
 
 
@@ -32,9 +32,7 @@ def get_friendly_touches():
 
 def get_state(partition='default'):
   '''return current partition state (as string) a partition'''
-  for p in data.get_partition_state_data():
-    if p.partition == partition: return p.state
-  return None
+  return partition_state(partition)
 
 
 def get_state_rules(partition, transition, state):
@@ -90,10 +88,8 @@ def now(): return int(time.time())   # Epoch seconds as int.
 
 
 def partition_state(partition):
-  '''Return current state (as string) for a partition.'''
-  for ps in data.get_partition_state_data():
-    if ps.partition == partition: return ps.state
-  return None
+  p = data.PARTITION_STATE.get_data().get(partition, None)
+  return p.state if p else None
 
 
 def partition_state_resolve_auto(partition):
@@ -108,7 +104,7 @@ def partition_state_resolve_auto(partition):
 def partition_states():
   '''Return a list of PartitionState for all partitions, but with state field resolved if it's arm-auto.'''
   answer = []
-  for ps in data.get_partition_state_data():
+  for ps in data.PARTITION_STATE.get_data().values():
     new_state = resolve_auto(ps.state)
     if new_state != ps.state:
       ps.state = '%s(auto)' % new_state
@@ -139,40 +135,41 @@ def hash_user_password(username, password):
 # ---------- setters
 
 def set_partition_state(partition, new_state):
-  with data.saved_list(data.PARTITION_STATE) as pdata:
-    for ps in pdata:
-      if ps.partition == partition:
-        ps.state = new_state
-        ps.last_update = now()
-        return True
-      # Don't allow us to get confused about 'resolved' auto states:
-      if 'auto' in ps.state: ps.state = 'arm-auto'
-    # Not found, so make a new one.
-    pdata.append(data.PartitionState(partition, new_state, now()))
-    return False
+  with data.PARTITION_STATE.get_rw() as d:
+    target = d.get(partition, None)
+    if not target:
+      # Not found, so create a new one.
+      new_state.last_update = now()
+      d[partition] = data.PartitionState(partition, new_state, now())
+      return False
+
+    target.state = new_state
+    target.last_update = now()
+    return True
 
 
 def touch(trigger_name, value=''):
   '''Update a given trigger_name's last touch time to now.
      'value' is generally only used if the trigger is the name of a user, and
-     the user's "at home" state is being updated to "home" or "away".
-  '''
+     the user's "at home" state is being updated to "home" or "away".  '''
   time_now = now()
-  with data.saved_list(data.TOUCH_DATA) as tdata:
-    for t in tdata:
-      if t.trigger == trigger_name:
-        t.last_update = time_now
-        t.last_update_nice = data.nice_time(time_now)
-        if value: t.value = value
-        return True
-    # Not found, so make a new one.
-    tdata.append(data.TouchData(trigger_name, now(), value))
+  with data.TOUCH_DATA.get_rw() as d:
+    target = d.get(trigger_name, None)
+    if not target:
+      # Not found, so create a new one.
+      d[trigger_name] = data.TouchData(trigger_name, now(), value)
+      return False
 
+    target.last_update = time_now
+    target.last_update_nice = data.nice_time(time_now)
+    if value: target.value = value
+    return True
+
+  
 def touches_with_value(value):
   '''Return a list of TouchData who's "value" field matches the specified query.
-     Used, for example, to return a list of user's who are "home" or "away".
-  '''
+     Used, for example, to return a list of user's who are "home" or "away".  '''
   out = []
-  for t in data.get_touch_data():
+  for t in data.TOUCH_DATA.get_data().values():
     if t.value == value: out.append(t)
   return len(out)

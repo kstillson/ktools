@@ -22,7 +22,7 @@ optionally a --comment to associate with the entry.
 
 '''
 
-import argparse, os, sys
+import argparse, os, shutil, sys
 
 # kcore stuff
 import kcore.auth as A
@@ -41,17 +41,10 @@ def require(args, argname):
     return val
 
 
-def save_db(secrets, password, db_filename):
-    plaintext = secrets.to_string()
-    encrypted = UC.encrypt(plaintext, password)
+def backup_db(db_filename):
+    if not db_filename: return
     backup_filename = f'{db_filename}.prev'
-    if os.path.isfile(backup_filename): os.unlink(backup_filename)
-    if os.path.isfile(db_filename): os.rename(db_filename, backup_filename)
-    if db_filename == '-':
-        print(encrypted)
-    else:
-        with open(db_filename, 'w') as f: f.write(encrypted)
-    return len(secrets)
+    shutil.copyfile(db_filename, backup_filename)
 
 
 # ---------- attempt KM restart
@@ -94,7 +87,9 @@ def parse_args(argv):
 
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
-  secrets = Secrets()
+
+  password = UC.resolve_special_arg(args, 'password', required=False)
+  secrets = Secrets(filename=args.datafile, rhs_type=Secret, password=password)
 
   # ----- alternate run modes
 
@@ -103,27 +98,22 @@ def main(argv=[]):
       return 0 if status.ok else 1
 
   if args.testkey:
-      secrets['testkey'] = Secret(
-          secret='mysecret', acl=['*@*'], comment='test key')
-      save_db(secrets, 'test123', '-')
+      with secrets.get_rw():
+          secrets['testkey'] = Secret(secret='mysecret', acl=['*@*'], comment='test key')
       return 0
 
   # ----- remaining modes require decrypted database contents.
 
   keyname = require(args, 'keyname')
-  db_filename = require(args, 'datafile')
-  password = UC.resolve_special_arg(args, 'password')
 
-  err = secrets.load_from_encrypted_file(db_filename, password)
-  if err: sys.exit(f'Unable to load secrets file: {err}')
-  if len(secrets) == 0: print(f'WARNING- No keys loaded from {db_filename}; starting fresh.')
+  if len(secrets) == 0: print(f'WARNING- No keys loaded from {secrets.filename}; starting fresh.')
 
   if args.remove:
       if keyname not in secrets: sys.exit(f'key to remove ({keyname}) not found in database')
-      secrets.pop(keyname)
-      cnt = save_db(secrets, password, db_filename)
-      print(f'ok: {db_filename} now has {cnt} entries.')
-      return 0
+      with secrets.get_rw():
+          secrets.pop(keyname)
+          print(f'ok: {secrets.filename} now has {len(secrets.cache)} entries.')
+          return 0
 
   # ----- standard run mode: add a secret
 
@@ -133,9 +123,9 @@ def main(argv=[]):
 
   acl = list(map(str.split, args.acl.split(',')))
   entry = Secret(secret=new_secret, acl=acl, comment=args.comment)
-  secrets[keyname] = entry
-  cnt = save_db(secrets, password, db_filename)
-  print(f'ok: {db_filename} now has {cnt} entries.')
+  with secrets.get_rw():
+      secrets[keyname] = entry
+  print(f'ok: {secrets.filename} now has {len(secrets.cache)} entries.')
   return 0
 
 

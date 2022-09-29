@@ -33,6 +33,8 @@ def test_basic_opration(tmp_path):
     assert 'not ready' in resp.text
 
     # let's try to unlock
+    print('@@1--')
+    print('@@1--', file=sys.stderr)
     resp = C.web_get_e(baseurl + '/load', cafile='tests/server-cn=localhost.pem',
                      post_dict={'password': 'test123'})
     assert resp.text == 'ok'
@@ -41,6 +43,8 @@ def test_basic_opration(tmp_path):
     assert resp.text == '1'
 
     # try a successful key retreival
+    print('@@2--')
+    print('@@2--', file=sys.stderr)
     secret = kmc.query_km('testkey',
                           km_host_port=f'localhost:{random_high_port}',
                           km_cert='tests/server-cn=localhost.pem',
