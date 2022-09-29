@@ -1,5 +1,5 @@
 
-'''Example SCENES dictionary.  You'll want to support your own.
+'''Example SCENES dictionary.  You'll want to customize your own.
 
 A scene is simply a fake device name that is replaced by a list of real
 devices, or other scenes.

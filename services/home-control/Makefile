@@ -6,7 +6,7 @@ all: common_all
 
 # ----------
 
-PLAIN_TARGETS := $(wildcard *.py *.html *.md)
+PLAIN_TARGETS := $(wildcard *.py *.html)
 
 USER := $(shell whoami)
 INSTALL_DIR ?= $$HOME/ktools/home-control

@@ -179,7 +179,8 @@ def reset():
   DEVICES = PLUGINS = SCENES =  SETTINGS = None
 
 
-def file_finder(list_of_base_dirs, privdir, list_of_globs):
+def file_finder(primary_base_dirs, privdir, list_of_globs):
+  list_of_base_dirs = primary_base_dirs + [os.environ.get('HC_DATA_DIR'), os.path.dirname(__file__), os.path.join(site.getusersitepackages(), 'home_control')]
   found = []
   for d0 in list_of_base_dirs:
     if not d0: continue
@@ -193,9 +194,7 @@ def file_finder(list_of_base_dirs, privdir, list_of_globs):
 
 def load_plugins(settings):
   '''returns dict of plugin prefix strings to plugin module instances.'''
-  plugin_files = file_finder(
-    settings['plugins_dir'] + [os.path.dirname(__file__), os.path.join(site.getusersitepackages(), 'home_control')],
-    settings['private_dir'], settings['plugins'])
+  plugin_files = file_finder(settings['plugins_dir'], settings['private_dir'], settings['plugins'])
   if SETTINGS['debug']: print(f'DEBUG: plugin_files={plugin_files}')
   plugins = {}
   for i in plugin_files:
@@ -213,8 +212,7 @@ def load_plugins(settings):
 
 
 def load_data(settings):
-  datafiles = file_finder(settings['data_dir'] + [os.environ.get('HC_DATA_DIR')],
-                          settings['private_dir'], settings['datafiles'])
+  datafiles = file_finder(settings['data_dir'], settings['private_dir'], settings['datafiles'])
   scenes = {}
   devices = {}
   for f in datafiles:

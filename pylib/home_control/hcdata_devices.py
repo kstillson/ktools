@@ -1,5 +1,5 @@
 
-'''Example DEVICES dictionary.  You'll want to supply your own.
+'''Example DEVICES dictionary.  You'll want to customize your own.
 
 In its simplest form, the DEVICES dict maps from device names (which can be
 arbitrary strings, although often match up to physical device DNS names) to
