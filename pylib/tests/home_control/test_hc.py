@@ -5,7 +5,7 @@ import context_hc  # fixes path
 import kcore.varz as V   # this is where the test plugin stores it stuff.
 import hc
 
-SETTINGS = {
+TEST_SETTINGS = {
     'data_dir': ['testdata/home_control'],
     'debug': True,
     'plugins': ['plugin_test.py'],  # skip the other plugins...
@@ -26,9 +26,9 @@ PRIV_SCENE = { 'priv-scene' : [ 'priv-dev' ] }
 def init(devices, scenes): devices.update(PRIV_DEV); scenes.update(PRIV_SCENE); return devices, scenes
 ''')
 
-    # -- Register our SETTINGS
+    # -- Register our settings.
     hc.reset()  # clear out any other test's initialization...
-    hc.control('doesnt', 'matter', SETTINGS)
+    hc.control('doesnt', 'matter', TEST_SETTINGS)
 
     yield  # ----- setup // teardown
     

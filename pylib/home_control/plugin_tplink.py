@@ -6,18 +6,14 @@ This is primarily a TP-Link plug-in for the home-control system, but can also
 be used as a direct executable if scenes, device management and command
 normalization aren't needed.
 
-Command normalization is an attempt to deal with the fact that different
-TP-Link devices need different commands to do functionally the same thing.
-For example, switches and non-dimmable plugs both accept the 'on' command, but
-smart-bulbs require 'bulb-on'.  If calling this module directly, you're going
-to have to figure all that out for yourself and only send appropriate commands
-to devices.  In a "hc" scene, you're sending the same command to multiple
-devices, so if they use different commands internally, some translation is
-necessary.  For "hc", this is driven by the plugin-name parameter.  Commands
-will be automatically translated to the appropriate subset for smart-bulbs
-(when plugin-name is "TPLINK-BULB"), smart-plugs ("TPLINK-PLUG") and dimmable
-switches ("TPLINK").  Commands that support normalization, and which are
-therefore safe to use in scenes that mix devices of different types, are:
+In a "hc" scene, you're sending the same command to multiple devices, so if
+they use different commands internally, some translation is necessary.  For
+"hc", this is driven by the plugin-name parameter.  Commands will be
+automatically translated ("normalized") to the appropriate subset for
+smart-bulbs (when plugin-name is "TPLINK-BULB"), smart-plugs ("TPLINK-PLUG")
+and dimmable switches ("TPLINK-SWITCH").  Commands that support normalization,
+and which are therefore safe to use in scenes that mix devices of different
+types, are:
 
   on, off, dim, med, full, and dim:@@
   bulb-on, bulb-on-slow, bulb-off, bulb-off-slow,
@@ -142,31 +138,27 @@ CMD_LOOKUP = {
 }
 
 
-def normalize(plugin_type, hostname_in, command_in):
+def normalize_command(plugin_type, command_in):
   command = command_in
-  # Remove any hostname hints
-  hostname = hostname_in.replace('BULB-tp-', 'tp-')
-  hostname = hostname.replace('PLUG-tp-', 'tp-')
 
   # And map commands according to plugin-type
-  if plugin_type in ['TPLINK', 'switch']:
+  if plugin_type == 'TPLINK-SWITCH':
     command = command.replace('bulb-', '').replace('-slow', '').replace('dim:0', 'off')
 
-  elif plugin_type in ['TPLINK-PLUG', 'plug']:
+  elif plugin_type == 'TPLINK-PLUG':
     command = command.replace('bulb-', '').replace('-slow', '').replace('dim:0', 'off')
     if command.startswith('dim'): command = 'on'
     if command in ['med', 'full']: command = 'on'
 
-  elif plugin_type in ['TPLINK-BULB', 'bulb']:
+  elif plugin_type == 'TPLINK-BULB':
     if not command.startswith('bulb-'): command = 'bulb-' + command
 
   else:
     print(f'ERROR- unknown plugin name: {plugin_type}; command normalization skipped', file=sys.stderr)
 
   if SETTINGS['debug']:
-    if hostname != hostname_in: print(f'DEBUG: hostname "{hostname_in}" normalized to "{hostname}"')
     if command != command_in: print(f'DEBUG: command "{command_in}" normalized to "{command}"')
-  return hostname, command
+  return command
 
 
 # ---------- hc plugin API entry points
@@ -175,13 +167,13 @@ def normalize(plugin_type, hostname_in, command_in):
 def init(settings):
   global SETTINGS
   SETTINGS = settings
-  return ['TPLINK', 'TPLINK-BULB', 'TPLINK-PLUG']
+  return ['TPLINK-SWITCH', 'TPLINK-BULB', 'TPLINK-PLUG']
 
 
 def control(plugin_name, plugin_params, device_name, dev_command):
   plugin_params = plugin_params.replace('%d', device_name).replace('%c', dev_command)
   hostname, command = plugin_params.split(':', 1)
-  hostname, command = normalize(plugin_name, hostname, command)
+  command = normalize_command(plugin_name, command)
   return tplink_send(hostname, command)
 
 
@@ -236,7 +228,6 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param=None):
 # ---------- command line main
 
 def main():
-  global SETTINGS
   ap = argparse.ArgumentParser(description='tplink command sender')
   ap.add_argument('--debug', '-d', action='store_true', help='wait for response, print extra diagnostics')
   ap.add_argument('--json', '-j', action='store_true', help='send command as raw json (see https://github.com/softScheck/tplink-smartplug/blob/master/tplink-smarthome-commands.txt)')
@@ -247,16 +238,17 @@ def main():
   ap.add_argument('hostname', help='device to control (dns or ip)')
   ap.add_argument('command', nargs='?', default='on', help='command to send')
   args = ap.parse_args()
-  SETTINGS['debug'] = args.debug
-  SETTINGS['test'] = args.test
-  SETTINGS['raw'] = args.raw
-  SETTINGS['timeout'] = args.timeout
+
+  # Copy appropriate items from args to SETTINGS
+  global SETTINGS
+  for i in ['debug', 'raw', 'test', 'timeout']: SETTINGS[i] = getattr(args, i)
+
+  if args.normalize:
+    plugin_type = f'TPLINK-{args.normalize.upper()}'
+    args.command = normalize_command(plugin_type, args.command)
 
   if args.json:
     return tplink_send_raw(args.hostname, args.command)
-
-  if args.normalize:
-    args.hostname, args.command = normalize(args.normalize, args.hostname, args.command)
 
   return tplink_send(args.hostname, args.command)
 

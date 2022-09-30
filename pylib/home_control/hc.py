@@ -156,7 +156,6 @@ INITIAL_SETTINGS = [
 
 def init_settings(baseline_settings):
   global SETTINGS
-
   SETTINGS = baseline_settings or SETTINGS or {}  # use our caller's instance so they can see modifications made later.  e.g. this is used by test_hc to get SETTINGS['TEST_VALS'], which is added by plugin_test.init()
 
   # Copy over anything needed from default settings
@@ -179,10 +178,9 @@ def reset():
   DEVICES = PLUGINS = SCENES =  SETTINGS = None
 
 
-def file_finder(primary_base_dirs, privdir, list_of_globs):
-  list_of_base_dirs = primary_base_dirs + [os.environ.get('HC_DATA_DIR'), os.path.dirname(__file__), os.path.join(site.getusersitepackages(), 'home_control')]
+def file_finder2(list_of_dirs, privdir, list_of_globs):
   found = []
-  for d0 in list_of_base_dirs:
+  for d0 in list_of_dirs:
     if not d0: continue
     for d in [d0, os.path.join(d0, privdir)]:
       for g in list_of_globs:
@@ -190,6 +188,15 @@ def file_finder(primary_base_dirs, privdir, list_of_globs):
         if SETTINGS['debug']: print(f'DEBUG: searching {d} for {g}, found: {f}')
         found.extend(f)
   return found
+
+
+def file_finder(primary_base_dirs, privdir, list_of_globs):
+  try1 = file_finder2(primary_base_dirs, privdir, list_of_globs)
+  if try1: return try1
+  srch2 = [os.environ.get('HC_DATA_DIR'),
+           os.path.dirname(__file__),
+           os.path.join(site.getusersitepackages(), 'home_control')]
+  return file_finder2(srch2, privdir, list_of_globs)
 
 
 def load_plugins(settings):
@@ -376,13 +383,13 @@ def parse_args(argv):
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
 
-  # Translate args to settings
-  settings = {}
-  for key, value in vars(args).items(): settings[key] = value
-  settings['cli'] = True
+  # Translate args to arg_settings
+  arg_settings = {}
+  for key, value in vars(args).items(): arg_settings[key] = value
+  arg_settings['cli'] = True
 
-  # and pass to the library API
-  rslt = control(args.target, args.command, settings)
+  # and pass to the library API (side effect: arg_settings -> global SETTINGS)
+  rslt = control(args.target, args.command, arg_settings)
 
   # Pretty print the results.
   if not rslt[0] or not SETTINGS['quiet']:

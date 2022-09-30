@@ -11,10 +11,7 @@ plugin names for itself; all registered names get routed to that same plugin.
 The plugin is told which plugin name led to a particular invocation, so the
 plugin can provide diferent flavors of operation based on plugin name.  For
 example, in the configuration below, the TpLink plugin supports smart plugs,
-smart bulbs, and smart switches (the default).  Device names that start with
-'BULB-tp-*' are routed to the TpLink plugin under the plugin name
-'TPLINK-BULB', whereas devices that just start with "tp-*" are sent to the
-plugin name 'TPLINK' and will be processed as commands for switches.
+smart bulbs, and smart switches.
 
 In addition, plugin calls can provide parameters-- whatever is to the right of
 the first ":" after tha plugin name, on the RHS of the dict.  The special
@@ -32,69 +29,95 @@ even different plugins entirely, if you want), based on the command.  As you
 can see below, this is most useful when you want to translate different
 commands into different web get-requests, and don't want to hard-code the
 translation table into the plugin.
-
 '''
 
 
 DEVICES = {
 
-# ---------- tplink generics
+    # ---------- tplink devices
 
-    # The 'BULB-' and 'PLUG-' prefixes are plugin type 'hints' that allow us
-    # to differenciate TP-Link device types by artificially introducing the
-    # prefix into the device names.  The plugin will strip out these hint
-    # prefixes before using the device-name as an actual hostname.
+    # Note that my hostnames are the same as my device string names, except the hostnames
+    # have a leading "tp-", which is added here.
 
-  'BULB-tp-*'         : 'TPLINK-BULB:%d:%c',
-  'PLUG-tp-*'         : 'TPLINK-PLUG:%d:%c',
-  'tp-*'              : 'TPLINK:%d:%c',
+    'bedroom-entrance'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'bedroom-light'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'bendy'			: 'TPLINK-PLUG:tp-%d:%c',
+    'breakfast-nook'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'color-moon'		: 'TPLINK-BULB:tp-%d:%c',
+    'color-sofa-left'		: 'TPLINK-BULB:tp-%d:%c',
+    'color-sofa-right'		: 'TPLINK-BULB:tp-%d:%c',
+    'color-stairs'		: 'TPLINK-BULB:tp-%d:%c',
+    'crawlspace'		: 'TPLINK-PLUG:tp-%d:%c',
+    'dining-chandelier'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'door-entry'		: 'TPLINK-BULB:tp-%d:%c',
+    'family-room-left'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'family-room-right'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'garage'			: 'TPLINK-BULB:tp-%d:%c',
+    'garage-L'			: 'TPLINK-PLUG:tp-%d:%c',
+    'garage-R'			: 'TPLINK-PLUG:tp-%d:%c',
+    'kitchen'			: 'TPLINK-SWITCH:tp-%d:%c',
+    'kitchen-pendants'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'landscaping'		: 'TPLINK-PLUG:tp-%d:%c',
+    'lantern'			: 'TPLINK-BULB:tp-%d:%c',
+    'lounge'			: 'TPLINK-SWITCH:tp-%d:%c',
+    'lounge-chandelier'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'mobile-bulb'		: 'TPLINK-BULB:tp-%d:%c',
+    'office'			: 'TPLINK-SWITCH:tp-%d:%c',
+    'patio'			: 'TPLINK-PLUG:tp-%d:%c',
+    'rear-flood'		: 'TPLINK-PLUG:tp-%d:%c',
+    'siren1'			: 'TPLINK-PLUG:tp-%d:%c',
+    'siren2'			: 'TPLINK-PLUG:tp-%d:%c',
+    'siren3'			: 'TPLINK-PLUG:tp-%d:%c',
+    'space-heater'		: 'TPLINK-PLUG:tp-%d:%c',
+    'tree'			: 'TPLINK-PLUG:tp-%d:%c',
+    'window-lights'		: 'TPLINK-SWITCH:tp-%d:%c',
 
-# ---------- tplink individual device overrides and aliases
+    # ---------- tplink individual device overrides and aliases
 
-  'tp-office:dim'     : 'TPLINK:tp-office:dim:40',
-    
-# ---------- delay trigger
+    'office:dim'     : 'TPLINK-SWITCH:tp-office:dim:40',
 
-  'delay'             : 'DELAY:%c',
+    # ---------- delay trigger
 
-# ---------- web-based
+    'delay'             : 'DELAY:%c',
 
-# End-point names for web-based individual controls
-  # Accent color lights (controlled by homesec)
-  'accent-party:off'   : 'WEBS:home.point0.net/p0',
-  'accent-party:on'    : 'WEBS:home.point0.net/p1',
-  'tree:off'           : 'WEB:neotree2/0',
-  'tree:on'            : 'WEB:neotree2/1',
-  #
-  # Outside lighting controller: pout*
-  ## 'out-all:off'        : 'WEB:pout:8080/a0', 'WEB:pout2:8080/a0',
-  ## 'out-all:on'         : 'WEB:pout:8080/a1', 'WEB:pout2:8080/a1',
-  'out-monument:off'   : 'WEB:pout:8080/10',
-  'out-monument:on'    : 'WEB:pout:8080/11',
-  'out-sconce:off'     : 'WEB:pout:8080/20',
-  'out-sconce:on'      : 'WEB:pout:8080/21',
-  'out-front-path:off' : 'WEB:pout:8080/30',
-  'out-front-path:on'  : 'WEB:pout:8080/31',
-  'out-front-moon:off' : 'WEB:pout:8080/40',
-  'out-front-moon:on'  : 'WEB:pout:8080/41',
-  'out-front-up:off'   : 'WEB:pout:8080/50',
-  'out-front-up:on'    : 'WEB:pout:8080/51',
-  'out-maple:off'      : 'WEB:pout:8080/70',
-  'out-maple:on'       : 'WEB:pout:8080/71',
-  'out-magnolia:off'   : 'WEB:pout2:8080/10',
-  'out-magnolia:on'    : 'WEB:pout2:8080/11',
-  'out-holly:off'      : 'WEB:pout2:8080/20',
-  'out-holly:on'       : 'WEB:pout2:8080/21',
-  'out-arch:off'       : 'WEB:pout2:8080/30',
-  'out-arch:on'        : 'WEB:pout2:8080/31',
-  'out-back-moon:off'  : 'WEB:pout2:8080/40',
+    # ---------- web-based
 
-  # Effects: twinkle (firefly animations)
-  'twinkle:off'        : 'WEB:twinkle/0',
-  'twinkle:on'         : 'WEB:twinkle/1',
-  # Effects: lightning
-  'lightning:off'      : 'WEB:lightning/0',
-  'lightning:on'       : 'WEB:lightning/f',
+    # End-point names for web-based individual controls
+    # Accent color lights (controlled by homesec)
+    'accent-party:off'   : 'WEBS:home.point0.net/p0',
+    'accent-party:on'    : 'WEBS:home.point0.net/p1',
+    'tree:off'           : 'WEB:neotree2/0',
+    'tree:on'            : 'WEB:neotree2/1',
+    #
+    # Outside lighting controller: pout*
+    ## 'out-all:off'        : 'WEB:pout:8080/a0', 'WEB:pout2:8080/a0',
+    ## 'out-all:on'         : 'WEB:pout:8080/a1', 'WEB:pout2:8080/a1',
+    'out-monument:off'   : 'WEB:pout:8080/10',
+    'out-monument:on'    : 'WEB:pout:8080/11',
+    'out-sconce:off'     : 'WEB:pout:8080/20',
+    'out-sconce:on'      : 'WEB:pout:8080/21',
+    'out-front-path:off' : 'WEB:pout:8080/30',
+    'out-front-path:on'  : 'WEB:pout:8080/31',
+    'out-front-moon:off' : 'WEB:pout:8080/40',
+    'out-front-moon:on'  : 'WEB:pout:8080/41',
+    'out-front-up:off'   : 'WEB:pout:8080/50',
+    'out-front-up:on'    : 'WEB:pout:8080/51',
+    'out-maple:off'      : 'WEB:pout:8080/70',
+    'out-maple:on'       : 'WEB:pout:8080/71',
+    'out-magnolia:off'   : 'WEB:pout2:8080/10',
+    'out-magnolia:on'    : 'WEB:pout2:8080/11',
+    'out-holly:off'      : 'WEB:pout2:8080/20',
+    'out-holly:on'       : 'WEB:pout2:8080/21',
+    'out-arch:off'       : 'WEB:pout2:8080/30',
+    'out-arch:on'        : 'WEB:pout2:8080/31',
+    'out-back-moon:off'  : 'WEB:pout2:8080/40',
+
+    # Effects: twinkle (firefly animations)
+    'twinkle:off'        : 'WEB:twinkle/0',
+    'twinkle:on'         : 'WEB:twinkle/1',
+    # Effects: lightning
+    'lightning:off'      : 'WEB:lightning/0',
+    'lightning:on'       : 'WEB:lightning/f',
 }
 
 
