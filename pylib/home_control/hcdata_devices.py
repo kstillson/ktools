@@ -86,8 +86,8 @@ DEVICES = {
     # Accent color lights (controlled by homesec)
     'accent-party:off'   : 'WEBS:home.point0.net/p0',
     'accent-party:on'    : 'WEBS:home.point0.net/p1',
-    'tree:off'           : 'WEB:neotree2/0',
-    'tree:on'            : 'WEB:neotree2/1',
+    'neotree:off'        : 'WEB:neotree2/0',
+    'neotree:on'         : 'WEB:neotree2/1',
     #
     # Outside lighting controller: pout*
     ## 'out-all:off'        : 'WEB:pout:8080/a0', 'WEB:pout2:8080/a0',
