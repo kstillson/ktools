@@ -120,7 +120,7 @@ import kcore.varz as V
 DEVICES =  None   # dict from device name to device-action-name and plugin params
 PLUGINS =  None   # dict from device-action-names to plugin module instances
 SCENES =   None   # dict from scene name to action list
-SETTINGS = None   # dict from setting name to value
+SETTINGS = {}     # dict from setting name to value
 
 # ---------- settings abstraction
 
