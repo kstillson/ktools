@@ -7,8 +7,8 @@ import hc
 
 TEST_SETTINGS = {
     'data_dir': ['testdata/home_control'],
-    'debug': True,
-    'plugins': ['plugin_test.py'],  # skip the other plugins...
+    'debug':    True,
+    'plugins':  ['plugin_test.py'],  # skip the other plugins...
 }
 
 @pytest.fixture(scope='session')

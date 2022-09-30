@@ -1,7 +1,7 @@
 
 '''Dummy device to activate the TEST plugin.
 
-Please leave this in-place, it's used by unit testing.'''
+Please leave this in-place, it's used by unit testing and Docker self-testing.'''
 
 DEVICES = {
     'test-device': 'TEST:%d:%c'

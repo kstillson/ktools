@@ -5,7 +5,7 @@ import context_hc  # fixes path
 import kcore.varz as V   # this is where the test plugin stores it stuff.
 import hc
 
-SETTINGS = {
+TEST_SETTINGS = {
     'data_dir': ['testdata/home_control'],
     'debug': True,
     'plugins': ['plugin_test.py'],  # skip the other plugins...
@@ -26,16 +26,16 @@ PRIV_SCENE = { 'priv-scene' : [ 'priv-dev' ] }
 def init(devices, scenes): devices.update(PRIV_DEV); scenes.update(PRIV_SCENE); return devices, scenes
 ''')
 
-    # -- Register our SETTINGS
+    # -- Register our settings.
     hc.reset()  # clear out any other test's initialization...
-    hc.control('doesnt', 'matter', SETTINGS)
+    hc.control('doesnt', 'matter', TEST_SETTINGS)
 
     yield  # ----- setup // teardown
-    
+
     # -- clean-up private.d dir
     shutil.rmtree(priv_dir)
-    
-    
+
+
 # ---------- general purpose helpers
 
 def flatten(lol):   # lol = list of lists  ;-)
@@ -58,7 +58,7 @@ def check(control_output, expect_in_output, key=None, expected_value=None):
     assert expect_in_output in output
     if key: checkval(key, expected_value)
 
-    
+
 def check_each(control_output, expect_in_each_output, key=None, expected_value=None):
     overall_ok, outputs = control_output
     flattened_outputs = flatten(outputs)
@@ -66,7 +66,7 @@ def check_each(control_output, expect_in_each_output, key=None, expected_value=N
         for out in flattened_outputs: assert expect_in_each_output in out
     if key: checkval(key, expected_value)
 
-    
+
 # ---------- the tests
 
 def test_direct_device_control(init):
@@ -81,14 +81,17 @@ def test_direct_device_control(init):
     # Command-specific device lookup for device2
     check(hc.control('device2', 'off'),  'ok', 'host2', 'special-off')
 
+    # Successful substring match (returns single match)
+    check(hc.control('ice1', 'q'),  'ok', 'host1', 'q')
+
+    # Unsuccessful substring match (no matches)
+    check(hc.control('qweqwe'),  'Dont know what to do with target qweqwe')
+
+    # Unsuccessful substring match (returns too many matches)
+    check(hc.control('device'),  'Dont know what to do with target device')
+
     # Invalid command (i.e. plugin rejected)
     check(hc.control('device2', 'BAD'),  'bad value', 'host2', 'special-off')
-
-    # Basic wildcard match
-    check(hc.control('wild1-x', 'funky'),  'ok', 'wild1-x', 'funky')
-
-    # Command-specific wildcard overrides a general one
-    check(hc.control('wild1-x', 'off'),  'ok', 'wild1-x', 'special-off')
 
     # Known device that runs an unknown plugin
     check(hc.control('deviceX'),  'INVALID not found')
@@ -109,18 +112,20 @@ def test_scenes(init):
     check_each(hc.control('scene1', 'cmd2'),       'ok', 'host1', 'cmd2')
     checkval('host2', 'cmd2')
 
-    # recursive and a command-specific wildcard with a scene-overriden command
-    check_each(hc.control('scene2', 'cmd3'),       'ok', 'host1', 'cmd3')
-    checkval('host2', 'cmd3')
-    checkval('wildq', 'special-off')
-
     # check that command-specific scene overrides a plain one
     check_each(hc.control('scene2', 'x'), 'ok')
     checkval('host1', 'x1')
     checkval('host2', 'x1')
-    checkval('wildq', 'special-off')
-    checkval('wild1-2', 'x')
-        
+
+    # Successful substring match (returns single match)
+    check_each(hc.control('ial2', 'q1'),           'ok', 'host1', 'off')
+
+    # Unsuccessful substring match (no matches)
+    check_each(hc.control('ewqewq'),  'Dont know what to do with target ewqewq')
+
+    # Unsuccessful substring match (returns too many matches)
+    check_each(hc.control('scene'),  'Dont know what to do with target scene')
+
     # check partially successful scene
     ok, outputs = hc.control('scene3', 'cmd4')
     assert not ok

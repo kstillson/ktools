@@ -55,7 +55,7 @@
         case "2": send("main", "med"); break;
         case "9": send("all", "full"); break;
         case "a": send("away", "go"); break;
-        case "B": send("PLUG-tp-bendy"); break;
+        case "B": send("bendy"); break;
         case "b": send("bedtime", "go"); break;
         case "C": send("cooking", "go"); break;
         case "c": send("comp", "go"); break;
@@ -64,7 +64,7 @@
         case "m": send("main"); break;
         case "O": send("outside"); break;
         case "p": send("party"); break;
-        case "l": send("PLUG-tp-landscaping"); break;
+        case "l": send("landscaping"); break;
         case "t": send("tv", "go"); break;
 
             // other
@@ -174,46 +174,46 @@
       </tr><tr>
         <td colspan='9' class="l">Rooms &nbsp; <button id="col-rooms-button" class="bb-sm toggle init-off" onclick='toggle("col-rooms")'>-</button> </td></tr>
       </tr><tr class="col-rooms">
-	<td><button class="bb" onclick='send("tp-bedroom-entrance")'>door</button></td>
-	<td><button class="bb" onclick='send("tp-bedroom-light")'>main</button></td>
+	<td><button class="bb" onclick='send("bedroom-entrance")'>door</button></td>
+	<td><button class="bb" onclick='send("bedroom-light")'>main</button></td>
       </tr><tr class="col-rooms">
         <td colspan='9' class="l">Lounge</td></tr>
       <tr class="col-rooms">
-        <td><button class="bb" onclick='send("tp-lounge")'>lounge</button></td>
-	<td><button class="bb" onclick='send("tp-window-lights")'>wind</button></td>
-	<td><button class="bb" onclick='send("PLUG-tp-bendy")'>bendy</button></td>
+        <td><button class="bb" onclick='send("lounge")'>lounge</button></td>
+	<td><button class="bb" onclick='send("window-lights")'>wind</button></td>
+	<td><button class="bb" onclick='send("bendy")'>bendy</button></td>
       </tr><tr class="col-rooms">
         <td colspan='9' class="l">Office</td>
       </tr><tr class="col-rooms">
-	<td><button class="bb" onclick='send("tp-office")'>chand</button></td>
+	<td><button class="bb" onclick='send("office")'>chand</button></td>
       </tr><tr class="col-rooms">
         <td colspan='9' class="l">Kitchen</td>
       </tr><tr class="col-rooms">
-	<td><button class="bb" onclick='send("tp-kitchen")'>kitchen</button></td>
-	<td><button class="bb" onclick='send("tp-kitchen-pendants")'>pendants</button></td>
-	<td><button class="bb" onclick='send("tp-breakfast-nook")'>nook</button></td>
+	<td><button class="bb" onclick='send("kitchen")'>kitchen</button></td>
+	<td><button class="bb" onclick='send("kitchen-pendants")'>pendants</button></td>
+	<td><button class="bb" onclick='send("breakfast-nook")'>nook</button></td>
       </tr><tr class="col-rooms">
         <td colspan='9' class="l">Family room</td>
       </tr><tr class="col-rooms">
-	<td><button class="bb" onclick='send("tp-dining-chandelier")'>chand</button></td>
-	<td><button class="bb" onclick='send("tp-family-room-left")'>fam-L</button></td>
-	<td><button class="bb" onclick='send("tp-family-room-right")'>fam-R</button></td>
+	<td><button class="bb" onclick='send("dining-chandelier")'>chand</button></td>
+	<td><button class="bb" onclick='send("family-room-left")'>fam-L</button></td>
+	<td><button class="bb" onclick='send("family-room-right")'>fam-R</button></td>
       </tr><tr class="col-rooms">
         <td colspan='9' class="l">Garage</td>
       </tr><tr>
         <td colspan='9' class="l">Outside &nbsp; <button id="col-out-button" class="bb-sm toggle init-off" onclick='toggle("col-out")'>-</button> </td></tr>
       </tr><tr class="col-out">
-	<td><button class="bb" onclick='send("BULB-tp-lantern")'>lantern</button></td>
-	<td><button class="bb" onclick='send("BULB-tp-door-entry")'>entry</button></td>
-	<td><button class="bb" onclick='send("tp-patio")'>patio</button></td>
+	<td><button class="bb" onclick='send("lantern")'>lantern</button></td>
+	<td><button class="bb" onclick='send("door-entry")'>entry</button></td>
+	<td><button class="bb" onclick='send("patio")'>patio</button></td>
       </tr><tr class="col-out">
-	<td><button class="bb" onclick='send("tp-rear-flood", "-")'>flood</button></td>
-	<td><button class="bb" onclick='send("BULB-tp-garage")'>garage</button></td>
-	<td><button class="bb" onclick='send("PLUG-tp-landscaping")'>landscaping</button></td>
+	<td><button class="bb" onclick='send("rear-flood", "-")'>flood</button></td>
+	<td><button class="bb" onclick='send("garage")'>garage</button></td>
+	<td><button class="bb" onclick='send("landscaping")'>landscaping</button></td>
       </tr><tr class="col-out">
-	<td><button class="bb" onclick='send("PLUG-garage-L")'>gd-L</button></td>
-	<td><button class="bb" onclick='send("PLUG-garage-R")'>gd-R</button></td>
-	<td><button class="bb" onclick='send("BULB-tp-mobile-bulb")'>mobile</button></td>
+	<td><button class="bb" onclick='send("garage-L")'>gd-L</button></td>
+	<td><button class="bb" onclick='send("garage-R")'>gd-R</button></td>
+	<td><button class="bb" onclick='send("mobile-bulb")'>mobile</button></td>
       </tr><tr class="col-out">
         <td colspan='9' class="l">Landscaping</td>
       </tr><tr class="col-out">
@@ -232,16 +232,16 @@
       </tr><tr>
         <td colspan='9' class="l">Special &nbsp; <button id="col-spcl-button" class="bb-sm toggle init-off" onclick='toggle("col-spcl")'>-</button> </td></tr>
       </tr><tr class="col-spcl">
-	<td><button class="bb" onclick='send("PLUG-tp-space-heater")'>heater</button></td>
-	<td><button class="bb" onclick='send("PLUG-tp-homesec1")'>homesec1</button></td>
+	<td><button class="bb" onclick='send("space-heater")'>heater</button></td>
+	<td><button class="bb" onclick='send("homesec1")'>homesec1</button></td>
       </tr><tr class="col-spcl">
 	<td><button class="bb" onclick='send("party", "go")'>PARTY</button></td>
-	<td><button class="bb" onclick='send("tree", "-")'>neotree</button></td>
-	<td><button class="bb" onclick='send("PLUG-tp-tree")'>tp-tree</button></td>
+	<td><button class="bb" onclick='send("neotree", "-")'>neotree</button></td>
+	<td><button class="bb" onclick='send("tree")'>tree</button></td>
       </tr><tr class="col-spcl">
-	<td><button class="bb" onclick='send("PLUG-siren1")'>siren1</button></td>
-	<td><button class="bb" onclick='send("PLUG-siren2")'>siren2</button></td>
-	<td><button class="bb" onclick='send("PLUG-siren3")'>siren3</button></td>
+	<td><button class="bb" onclick='send("siren1")'>siren1</button></td>
+	<td><button class="bb" onclick='send("siren2")'>siren2</button></td>
+	<td><button class="bb" onclick='send("siren3")'>siren3</button></td>
       </tr><tr class="col-spcl">
 	<td><button class="bb" onclick='send("gh1", "on")'>gh1</button></td>
 	<td><button class="bb" onclick='send("gh0", "on")'>gh0</button></td>
