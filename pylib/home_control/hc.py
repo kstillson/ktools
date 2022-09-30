@@ -140,6 +140,7 @@ INITIAL_SETTINGS = [
   Setting('datafiles',   ['hcdata*.py'], 'glob-list of files (within data_dir) to load devices and scenes from', '-D'),
   Setting('debug',       False,          'print debugging info', '-d'),
   Setting('fast',        False,          'use send-and-forget mode.  quicker run, always assumes success (retries disabled)', '-f'),
+  Setting('nosub',       False,          'do not auto-search for substring matches against device and scene names', '-n'),
   Setting('plugin_args', [],             'plugin-specific settings in the form key=value', '-p'),
   Setting('plugins_dir', ['.'],          'base directories in which to search for plugin files (see also private_dir)'),
   Setting('plugins',     ['plugin_*.py'],'glob-list of files to load as plugins'),
@@ -247,6 +248,7 @@ def find_target(search_dict, target, command):
   if target in search_dict: return target
 
   # Finally, try for a substring match
+  if SETTINGS['nosub']: return None
   matches = []
   for k, v in search_dict.items():
     if target in k: matches.append(k)
