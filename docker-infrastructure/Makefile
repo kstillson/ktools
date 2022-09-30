@@ -16,7 +16,10 @@ include ../etc/Makefile-common
 
 # ---------- addl files
 
-install: $(INSTALL_DIR)/d-cowscan.ignore
+install: $(INSTALL_DIR) $(INSTALL_DIR)/d-cowscan.ignore
+
+$(INSTALL_DIR):
+	mkdir -p $@
 
 $(INSTALL_DIR)/d-cowscan.ignore: private.d/d-cowscan.ignore
 	sudo cp $^ $@

@@ -18,6 +18,7 @@ all: prep
 $(TOP_TARGETS): $(SUBDIRS)
 
 $(SUBDIRS):
+	@printf "\nstarting subdir $(GREEN) $@ $(RESET)\n"
 	$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
 
 # Always run top-level rules, as subdirs might have their own phony targets.
@@ -43,6 +44,8 @@ prep:  prep-stamp
 
 prep-stamp:
 	../etc/check-package-deps.sh docker
+	python3 -m kcore.docker_lib || { echo ""; read -p "kcore/pylib needs to be installed for user/$$USER so tests can be run via kcore.docker_lib.  okay to do that now (y/n)? " ok && if [[ "$$ok" == "y" ]]; then SUBDIRS=pylib make -C .. install; else exit -1; fi; }
+	sudo ls /root/bin/d-build || { echo ""; read -p 'parts of kcore *also* needs to be installed for user/root to build docker containers.  okay to do that now (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo SUBDIRS="pylib docker-infrastructure" make -C .. install; else exit -1; fi; }
 	sudo docker network rm docker2 >&/dev/null || true
 	sudo docker network create -d bridge --gateway 192.168.3.1 --subnet 192.168.3.0/24 --opt com.docker.network.bridge.name=docker2 docker2
 	touch prep-stamp

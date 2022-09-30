@@ -30,6 +30,7 @@ all:	prep
 $(TOP_TARGETS): $(SUBDIRS)
 
 $(SUBDIRS):
+	@printf "\nstarting subdir $(GREEN) $@ $(RESET)\n"
 	$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
 
 # Always run top-level rules, as subdirs might have their own phony targets.

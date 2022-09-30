@@ -7,7 +7,7 @@ KMC_RM=0
 chgrp -R hs /home/hs
 
 # fix perms
-chmod -R go+rX /etc/passwd /etc/group /etc/init /usr/lib/python3.9/site-packages
+chmod -R go+rX /etc/passwd /etc/group /etc/init /usr/lib/python3.9/site-packages/kcore /usr/lib/python3.9/site-packages/ktools
 
 # lib visibility
 ln -s /usr/lib/python3.9/site-packages/ktools/ratelimiter.py /usr/local/bin/ratelimiter
