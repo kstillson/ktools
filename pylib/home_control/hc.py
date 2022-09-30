@@ -406,7 +406,8 @@ def main(argv=[]):
       width = os.get_terminal_size().columns
     except OSError:
       width = 80
-    pprint.pprint(rslt, indent=2, width=width, compact=True)
+    pprint.pprint(rslt, indent=2, width=width, compact=True,
+                  stream=sys.stdout if rslt[0] else sys.stderr)
 
   # if there are any lingering threads, finish them up before exiting.
   if SETTINGS['_threads']: print('waiting for pending threads to finish...')
