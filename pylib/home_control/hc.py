@@ -156,6 +156,8 @@ INITIAL_SETTINGS = [
 
 def init_settings(baseline_settings):
   global SETTINGS
+  if SETTINGS is baseline_settings: return
+
   SETTINGS = baseline_settings or SETTINGS or {}  # use our caller's instance so they can see modifications made later.  e.g. this is used by test_hc to get SETTINGS['TEST_VALS'], which is added by plugin_test.init()
 
   # Copy over anything needed from default settings
@@ -234,35 +236,77 @@ def load_data(settings):
 
 # ---------- primary logic
 
-WILDCARD_DEVICES = None
-
-def find_device_action(target, command):
+def find_target(search_dict, target, command):
   if not target: return None
-
-  # Lazy init of list of wildcard-based matches
-  global WILDCARD_DEVICES
-  if WILDCARD_DEVICES is None:
-    WILDCARD_DEVICES = []
-    for dev in DEVICES:
-      if '*' in dev: WILDCARD_DEVICES.append(dev)
 
   # Try a command-specific match.
   dev_command = f'{target}:{command}'
-  if dev_command in DEVICES: return DEVICES[dev_command]
+  if dev_command in search_dict: return dev_command
 
-  # Try a direct device name match
-  if target in DEVICES: return DEVICES[target]
+  # Try a direct name match
+  if target in search_dict: return target
 
-  # Try for wildcard command-specific match
-  for candidate in WILDCARD_DEVICES:
-    if ':' not in candidate: continue
-    if fnmatch.fnmatch(dev_command, candidate): return DEVICES[candidate]
+  # Finally, try for a substring match
+  matches = []
+  for k, v in search_dict.items():
+    if target in k: matches.append(k)
 
-  # And finally try for a wildcard direct match
-  for candidate in WILDCARD_DEVICES:
-    if fnmatch.fnmatch(target, candidate): return DEVICES[candidate]
+  if len(matches) == 1:
+    if SETTINGS['debug']: print(f'DEBUG: successful substring match {target} -> {matches[0]}')
+    return matches[0]
 
-  return None  # Couldn't find a matching device.
+  elif len(matches) > 1 and (SETTINGS.get('cli') or SETTINGS['debug']):
+    print(f'Multiple substring matches for {target}; ignoring.  {matches}')
+
+  return None  # Couldn't find a matching target.
+
+
+def run_scene_expansion(scene_action_list, command):
+  q = UC.ParallelQueue(single_threaded=SETTINGS['debug'])
+  for i in scene_action_list:
+    if ':' in i:
+      target_i, command_i = i.split(':', 1)
+    else:
+      target_i = i
+      command_i = command
+    q.add(control, target_i, command_i, SETTINGS, False)
+
+  overall_okay = True
+  outputs = []
+  queue_out = q.join(timeout=int(SETTINGS['timeout']))
+  for i, i_out in enumerate(queue_out):
+    if i_out and len(i_out) == 2:
+      ok, answer = i_out
+    else:
+      ok, answer = False, f'{scene_action_list[i]} -> timeout'
+    if SETTINGS['debug']: print(f'DEBUG: {scene_action_list[i]} -> ok={ok}, answer={answer}')
+    if not ok: overall_okay = False
+    outputs.append(answer)
+
+  return overall_okay, outputs
+
+
+def send_device_command(target, command, device_action):
+  plugin_name, plugin_params = device_action.split(':', 1)
+  plugin_module = PLUGINS.get(plugin_name)
+  if not plugin_module: return False, f'plugin {plugin_name} not found'
+  if SETTINGS['test']:
+    return True, f'TEST mode: would send {target}->{command} to plugin {plugin_name}(plugin_params={plugin_params})'
+  ok, answer = plugin_module.control(plugin_name, plugin_params, target, command)
+
+  # --- Retry logic.
+  if not ok and SETTINGS['retry'] > 0:
+    retries = 0
+    while retries < SETTINGS['retry']:
+      retries += 1
+      msg = f'DEBUG: initial attempt failed; retry #{retries} of {SETTINGS["retry"]} after {SETTINGS["retry_delay"]} seconds; {answer}'
+      if SETTINGS['debug'] or (SETTINGS.get('cli') and not SETTINGS['quiet']): print(msg)
+      V.bump('retries')
+      time.sleep(SETTINGS['retry_delay'])
+      ok, answer = plugin_module.control(plugin_name, plugin_params, target, command)
+    answer += f'  [{retries} retries]'
+
+  return ok, answer
 
 
 # ---------- primary API entry
@@ -303,58 +347,22 @@ def control(target, command='on', settings=None, top_level_call=True):
     V.bump('cmd-count-%s' % command)
 
   # ----- Check if this is a scene, and if so run its expansion.
-  scene_list = SCENES.get(f'{target}:{command}')
-  if not scene_list: scene_list = SCENES.get(target)
-  if scene_list:
-    if SETTINGS['debug']: print(f'DEBUG: scene {target}:{command} -> {scene_list}')
-
-    q = UC.ParallelQueue(single_threaded=SETTINGS['debug'])
-    for i in scene_list:
-      if ':' in i:
-        target_i, command_i = i.split(':', 1)
-      else:
-        target_i = i
-        command_i = command
-      q.add(control, target_i, command_i, settings, False)
-
-    overall_okay = True
-    outputs = []
-    queue_out = q.join(timeout=int(SETTINGS['timeout']))
-    for i, i_out in enumerate(queue_out):
-      if i_out and len(i_out) == 2:
-        ok, answer = i_out
-      else:
-        ok, answer = False, f'{scene_list[i]} -> timeout'
-      if SETTINGS['debug']: print(f'DEBUG: {scene_list[i]} -> ok={ok}, answer={answer}')
-      if not ok: overall_okay = False
-      outputs.append(answer)
-
+  new_target = find_target(SCENES, target, command)
+  if new_target:
+    target = new_target
+    scene_action_list = SCENES[target]
+    if SETTINGS['debug']: print(f'DEBUG: scene {target}:{command} -> {scene_action_list}')
+    overall_okay, outputs = run_scene_expansion(scene_action_list, command)
     if top_level_call: V.bump('scenes-success' if overall_okay else 'scenes-not-full-success')
     return overall_okay, outputs
 
   # ----- Check if this is a simple device action, and take it if so.
-  device_action = find_device_action(target, command)
-  if device_action:
+  new_device = find_target(DEVICES, target, command)
+  if new_device:
+    target = new_device
+    device_action = DEVICES[target]
     if SETTINGS['debug']: print(f'DEBUG: control device {target} -> {command}')
-    plugin_name, plugin_params = device_action.split(':', 1)
-    plugin_module = PLUGINS.get(plugin_name)
-    if not plugin_module: return False, f'plugin {plugin_name} not found'
-    if SETTINGS['test']:
-      return True, f'TEST mode: would send {target}->{command} to plugin {plugin_name}(plugin_params={plugin_params})'
-    ok, answer = plugin_module.control(plugin_name, plugin_params, target, command)
-
-    # --- Retry logic.
-    if not ok and SETTINGS['retry'] > 0:
-      retries = 0
-      while retries < SETTINGS['retry']:
-        retries += 1
-        msg = f'DEBUG: initial attempt failed; retry #{retries} of {SETTINGS["retry"]} after {SETTINGS["retry_delay"]} seconds; {answer}'
-        if SETTINGS['debug'] or (SETTINGS['cli'] and not SETTINGS['quiet']): print(msg)
-        V.bump('retries')
-        time.sleep(SETTINGS['retry_delay'])
-        ok, answer = plugin_module.control(plugin_name, plugin_params, target, command)
-      answer += f'  [{retries} retries]'
-
+    ok, answer = send_device_command(target, command, device_action)
     V.bump('device-success' if ok else 'device-fail')
     return ok, answer
 
