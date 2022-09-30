@@ -77,11 +77,11 @@ fi
 
 # -- Tell the user what needs to be done, and offer to do it for them.
 
-cmd="sudo apt-get install $(tr '\n' ' ' < $OUT)"
+cmd="sudo apt-get update; sudo apt-get install $(tr '\n' ' ' < $OUT)"
 printf "\nYou probably want to run the following command:\n\n   ${cmd}\n\n"
 read -p 'Shall I do this for you now (y/n)? ' ok
 if [[ "$ok" == "y" ]]; then
-    $cmd
+    bash -c "$cmd"
     rm $OUT
     printf "\n\n${GREEN}OK ${RESET}, hopefully deps are good now; let's try continuing...\n\n"
     exit 0
