@@ -24,6 +24,7 @@ def main(argv=[]):
   pswd = UC.resolve_special_arg(args, 'password')
   salt = UC.resolve_special_arg(args, 'salt', required=False)
   data = C.read_file(args.infile)
+  if not data: sys.exit(f'unable to open input file {args.infile}')
   if data.startswith('ERROR'): sys.exit(data)
 
   output = UC.symmetric_crypt(data, pswd, salt)
