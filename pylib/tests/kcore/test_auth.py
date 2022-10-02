@@ -2,7 +2,8 @@
 import context_kcore     # fix path to includes work as expected in tests
 
 import os, socket, time
-import kcore.uncommon as Cap
+import kcore.common as C
+import kcore.uncommon as UC
 
 import kcore.auth as A
 
@@ -12,7 +13,7 @@ A.DEBUG = True
 
 # Run a provided list of args against kcore.auth main and return stdout.
 def cli(args, expect_status=0, expect_stderr=''):
-    with Cap.Capture() as cap:
+    with UC.Capture() as cap:
         assert A.main(args) == expect_status
         if not expect_stderr is None:
             if expect_stderr == '': assert cap.err == expect_stderr
@@ -48,7 +49,7 @@ def test_basic_operation():
 
     # server side - check token
     rslt = A.verify_token(token=token, command=use_command,
-                          client_addr=use_client_addr, db_passwd=use_dbpasswd)
+                          client_addr=use_client_addr, db_filename=None, db_passwd=use_dbpasswd)
     assert rslt.ok
     assert rslt.status == 'ok'
     assert rslt.username == use_username
@@ -56,7 +57,7 @@ def test_basic_operation():
 
     # ---------- confirm replay prevention
 
-    rslt = A.verify_token(token, use_command, use_client_addr, use_dbpasswd)
+    rslt = A.verify_token(token, use_command, use_client_addr, db_filename=None, db_passwd=use_dbpasswd)
     assert not rslt.ok
     assert 'not later' in rslt.status
     assert rslt.username == use_username
@@ -108,6 +109,8 @@ def test_puid_only():
 # Let's confirm the sequence we claim works in the doc..
 def test_cli():
     A.DEBUG = False
+    C.init_log(logfile='-', filter_level_logfile=C.INFO)  # Make sure we don't echo debug logs to stderr; will mess up capture test.
+
     shared_secret = cli(['-g', '-u', 'user1', '-p', 'pass1'])
     assert socket.gethostname() in shared_secret
 

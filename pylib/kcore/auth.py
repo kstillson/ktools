@@ -439,9 +439,12 @@ def verify_token_given_shared_secret(
 
 
 def get_shared_secret_from_db(db_passwd, db_filename, token_hostname, client_addr=None, username=''):
-  REGISTRATION_DB.filename = db_filename or DEFAULT_DB_FILENAME
+  REGISTRATION_DB.filename = db_filename
   REGISTRATION_DB.password = db_passwd
   reg = REGISTRATION_DB.get_data()
+  if not reg:
+    debug_msg(f'failed to load registration db {REGISTRATION.__dict__=}')
+    return None
   lookup = reg.get(f'{token_hostname}:{username}')
   if lookup:
     debug_msg(f'returning token hostname match: {token_hostname}')
@@ -463,7 +466,7 @@ def register(shared_secret, db_passwd, db_filename=DEFAULT_DB_FILENAME,
   if shared_secret.version_tag != TOKEN_VERSION: return False
   if server_override_hostname: shared_secret.server_override_hostname = server_override_hostname
 
-  REGISTRATION_DB.filename = db_filename or DEFAULT_DB_FILENAME
+  REGISTRATION_DB.filename = db_filename
   REGISTRATION_DB.password = db_passwd
   with REGISTRATION_DB.get_rw() as db:
     db[shared_secret.lookup_key()] = shared_secret
