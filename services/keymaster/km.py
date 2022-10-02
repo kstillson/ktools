@@ -109,6 +109,7 @@ class Secrets(P.DictOfDataclasses):
 
     def reset(self):
         self.clear()
+        self.cache_mtime = 0  # will need to reload from file next time.
         C.log('RESET: keys cleared')
         V.bump('resets')
         V.set('loaded-keys', 0)
@@ -161,9 +162,10 @@ def km_load_handler(request):
     s = SECRETS.get_data()
     if not SECRETS.ready():
         C.log_alert(f'unable to load secrets from {ARGS.datafile}')
+        C.log_debug(f'SECRETS={s.__dict__}')
         V.bump('reloads-fails')
         return 'error'
-    print(f'@@@ {s=}', file=sys.stderr)
+    C.log_debug(f'load handler: secrets={s}')
     V.set('loaded-keys', len(s))
     V.bump('reloads-ok')
     C.log('LOADED KEYS OK- READY')
@@ -204,7 +206,7 @@ def km_default_handler(request):
     token = request.get_params.get('a')
 
     secret = SECRETS.get(keyname)
-    print(f'\n@@@2 {SECRETS.__dict__=} {secret=} {keyname=} {SECRETS.items()=} {SECRETS.cache.items()=} \n', file=sys.stderr)
+    C.log_debug(f'default handler debug results: {SECRETS.__dict__=} {secret=} {keyname=} {SECRETS.items()=} {SECRETS.cache.items()=}')
     if not secret:
         return ouch('no such key', f'attempt to get non-existent key: {keyname}', 'keyfail-notfound')
 
