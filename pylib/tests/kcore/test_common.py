@@ -74,9 +74,6 @@ def test_logging(tmp_path):
 
     # Check log messages go to stderr if init_log() not yet called.
     C.FORCE_TIME = 'TIME0'
-    check_logging(lambda: C.log('test0'), expect_error_count=0,
-                  logfile_name=None, expect_logfile=None,
-                  expect_stdout='', expect_stderr=': TIME0: INFO: test0\n')
     
     # Basic test with all defaults except log filename.
     ok = C.init_log(logfile=tempname, force_time='TIME', clear=True)
