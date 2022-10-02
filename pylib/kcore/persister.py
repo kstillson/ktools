@@ -41,9 +41,10 @@ However, these aren't thoroughly tested, and if you've really got a highly
 concurrent application with strong concurrency guarantee requirements, you
 should probably use a real database anyway. '''
 
-import os, sys
+import copy, os, sys
 from contextlib import contextmanager
 
+import kcore.common as C
 import kcore.uncommon as UC
 
 class Persister:
@@ -68,7 +69,7 @@ class Persister:
         self.default_value = default_value
         self.password = password
 
-        self.cache = self.default_value
+        self.cache = self.get_default_value()
         self.file_lock = None
         self.cache_mtime = 0
         self.thread_lock = None
@@ -78,7 +79,12 @@ class Persister:
 
     # Can't call it "get" as that would conflct with Dict.get() in derived classes.
     def get_data(self):
-        return self.cache if self.is_cache_fresh() else self.load_from_file()
+        if self.is_cache_fresh(): return self.cache
+        ok = self.load_from_file()
+        if not ok:
+            C.log_debug(f'filename={self.filename} load from file failed; returning default value')
+            self.cache = self.get_default_value()
+        return self.cache
 
     def set_data(self, data=None):
         '''Passing data=None just saves the current cached data.'''
@@ -99,8 +105,6 @@ class Persister:
            those atomic types, use set_data().'''
 
         local_data = self.get_data()
-        if local_data is None:
-            self.cache = local_data = self.default_value
         yield local_data
 
         self.save_to_file()
@@ -112,19 +116,23 @@ class Persister:
         import threading
         if not self.thread_lock: self.thread_lock = threading.thread_lock()
         with self.thread_lock:
+            C.log_debug(f'start filename={self.filename} thread lock')
             local_data = self.get_ro()
             yield local_data
             self.save_to_file()
             self.cache = local_data
+            C.log_debug(f'end filename={self.filename} thread lock')
 
     @contextmanager
     def get_rw_locked_file(self):
         import uncommon as UC
         if not self.file_lock: self.file_lock = UC.FileLock()
         with self.file_lock:
+            C.log_debug(f'start filename={self.filename}.lock file lock')
             local_data = self.get_ro()
             yield local_data
             self.save_to_file()
+            C.log_debug(f'end filename={self.filename}.lock file lock')
 
 
     # ---------- internal methods
@@ -132,7 +140,10 @@ class Persister:
     # ----- serialization (often need to be overridden for more complex data types.)
 
     def deserialize(self, serialized):
-        if not serialized: return self.default_value
+        if not serialized:
+            C.log_debug(f'filename={self.filename}: cannot deserialize; no serialized data provided')
+            return None
+        # NB: no try..except; if eval fails, pass exception up to caller for easier debugging.
         return eval(serialized, {}, {})
 
     def serialize(self, data):
@@ -140,33 +151,54 @@ class Persister:
         return out + '\n'
 
 
+    # ----- other
+
+    # Designed to be overriden in some special cases, like when a mix-in derived class
+    # always needs self.cache to be set to self.
+    def get_default_value(self):
+        return copy.copy(self.default_value)
+
+
     # ----- dealing with the saved file
 
     def get_file_mtime(self):
         try: return os.path.getmtime(self.filename)
-        except: return None
+        except:
+            C.log_debug(f'filename={self.filename} not found; returning None as mtime.')
+            return None
 
     def is_cache_fresh(self):
-        return self.cache_mtime == self.get_file_mtime()
+        file_mtime = self.get_file_mtime()
+        is_fresh = self.cache_mtime == file_mtime
+        C.log_debug(f'is filename={self.filename} fresh? {is_fresh}  file_mtime={file_mtime} cache_mtime={self.cache_mtime}')
+        return is_fresh
 
     def load_from_file(self):
         if self.filename == '-':
             serialized = sys.stdin.read()
         else:
             if not self.filename or not os.path.isfile(self.filename):
-                self.cache = self.default_value
-                return self.cache
+                C.log_debug(f'filename={self.filename} file not found.')
+                return False
             with open(self.filename) as f: serialized = f.read()
-        
+
         if self.password:
+            if not serialized:
+                C.log_debug(f'filename={self.filename} loaded empty; cannot decrypt.')
+                return False
+            tmp = serialized
             serialized = UC.decrypt(serialized, self.password)
-            if serialized.startswith('ERROR'): raise ValueError('incorrect password')
+            if serialized.startswith('ERROR'): raise ValueError(serialized)
+
         self.cache = self.deserialize(serialized)
+        if self.cache is None: return False
         self.cache_mtime = self.get_file_mtime()
-        return self.cache
+        return True
 
     def save_to_file(self):
-        if not self.filename: return False
+        if not self.filename:
+            C.log_debug('save_to_file: filename not set; skipping.')
+            return False
         serialized = self.serialize(self.cache)
         if self.password: serialized = UC.encrypt(serialized, self.password)
         if self.filename == '-':
@@ -189,11 +221,7 @@ class PersisterDC(Persister):
     def deserialize(self, serialized):
         if not serialized: return None
         locals = { self.dc_type.__name__: self.dc_type }
-        try:
-            data = eval(serialized, {}, locals)
-        except:
-            return None
-        return data
+        return eval(serialized, {}, locals)
 
 
 # ------------------------------------------------------------
@@ -207,19 +235,16 @@ class PersisterDictOfDC(Persister):
         super().__init__(filename=filename, default_value=default_value, **kwargs)
 
     def deserialize(self, serialized):
-        if not serialized: return self.default_value
+        if serialized is None: return None
         locals = { self.rhs_type.__name__: self.rhs_type }
-        data = self.default_value
+        data = self.get_default_value()
         data.clear()
         for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
             if not ': ' in line: continue
             k, v_str = line.split(': ', 1)
             k = k.replace("'", "").replace('"', '')
-            try:
-                data[k] = eval(v_str, {}, locals)
-            except:
-                return None
+            data[k] = eval(v_str, {}, locals)
         return data
 
     def serialize(self, data):
@@ -231,6 +256,8 @@ class DictOfDataclasses(PersisterDictOfDC, dict):
     def __init__(self, filename, rhs_type, **kwargs):
         super().__init__(filename=filename, rhs_type=rhs_type, default_value=self, **kwargs)
 
+    def get_default_value(self): return self
+
 
 # ------------------------------------------------------------
 # A Persister specialized for lists of @dataclass instances.
@@ -241,16 +268,12 @@ class PersisterListOfDC(Persister):
         super().__init__(filename=filename, default_value=default_value, **kwargs)
 
     def deserialize(self, serialized):
-        if not serialized: return self.default_value
+        if serialized is None: return None
         locals = { self.dc_type.__name__: self.dc_type }
-        data = []
+        data = self.get_default_value()
         for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
-            try:
-                item = eval(line, {}, locals)
-            except:
-                return None
-            data.append(item)
+            data.append(eval(line, {}, locals))
         return data
 
     def serialize(self, data):
@@ -262,3 +285,4 @@ class ListOfDataclasses(PersisterListOfDC, list):
     def __init__(self, filename, dc_type, **kwargs):
         super().__init__(filename=filename, dc_type=dc_type, default_value=self, **kwargs)
 
+    def get_default_value(self): return self

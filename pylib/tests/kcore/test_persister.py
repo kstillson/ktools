@@ -179,9 +179,9 @@ def test_ListOfDataclasses(tmp_path):
     d1 = P.ListOfDataclasses(tempfile, Dc1)
     d2 = P.ListOfDataclasses(tempfile, Dc1)
 
-    with d1.get_rw():
-        d1.append(Dc1('strC', 33))
-        d1.append(Dc1('strD', 44))
+    with d1.get_rw() as d:
+        d.append(Dc1('strC', 33))
+        d.append(Dc1('strD', 44))
 
     assert len(d2) == 0                # get_data() not called yet.
     assert d2.get_data()[1].f2 == 44
@@ -206,4 +206,4 @@ def test_encryption_addin(tmp_path):
         d3 = P.Persister(tempfile, password='incorrect-password')
         assert '' == 'fail: expected exception'
     except ValueError as e:
-        assert str(e) == 'incorrect password'
+        assert 'invalid password' in str(e)
