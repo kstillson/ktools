@@ -213,17 +213,22 @@ class Persister:
 # A Persister specialized for storing a @dataclass instance.
 
 class PersisterDC(Persister):
-    '''Specialization of Persister for @dataclass types
+    '''Specialization of Persister for @dataclass types.
 
        The serializer generates output of the format:
          field1 = 'value 1'
          field2 = 321
 
        This is intended to match the format commonly seen in config files.
+       The deserializer is designed to be tolerant of other things often found
+       in config files, like comments (# or ;), blank lines, indentation, etc.
 
-       The deserializer is designed to be tolerant of other things often
-       found in config files, like comments (# or ;), blank lines,
-       indentation, etc.  '''
+       If you encourage users to manually edit the serialized file (e.g.
+       adding comments), you should use this class in read-only mode
+       (i.e. never call set_data(), save_to_file(), get_rw() or similar, as
+       doing so would wipe-out the user's comments.
+
+    '''
 
     def __init__(self, filename, dc_type):
         self.filename = filename
