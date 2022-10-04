@@ -443,7 +443,7 @@ def get_shared_secret_from_db(db_passwd, db_filename, token_hostname, client_add
   REGISTRATION_DB.password = db_passwd
   reg = REGISTRATION_DB.get_data()
   if not reg:
-    debug_msg(f'failed to load registration db {REGISTRATION.__dict__=}')
+    debug_msg(f'failed to load registration db: {REGISTRATION.__dict__}')
     return None
   lookup = reg.get(f'{token_hostname}:{username}')
   if lookup:

@@ -68,7 +68,7 @@ def query_km(keyname, username='', password='',
     authn_token = kcore.auth.generate_token(
       command=keyname, username=username, user_password=password,
       override_hostname=override_hostname)
-    if DEBUG: print(f'DEBUG: query_km token regeneration: keyname={keyname} username={username} password={password} {override_hostname=} PUID={os.environ.get("PUID")} authn_token={authn_token}', file=sys.stderr)
+    if DEBUG: print(f'DEBUG: query_km token regeneration: keyname={keyname} username={username} password={password} override_hostname={override_hostname} PUID={os.environ.get("PUID")} authn_token={authn_token}', file=sys.stderr)
 
     protocol = 'http' if km_cert is None else 'https'
     url = '%s://%s/%s?a=%s' % (protocol, km_host_port, keyname, authn_token)
