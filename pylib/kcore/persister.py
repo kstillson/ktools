@@ -213,13 +213,58 @@ class Persister:
 # A Persister specialized for storing a @dataclass instance.
 
 class PersisterDC(Persister):
+    '''Specialization of Persister for @dataclass types.
+
+       The serializer generates output of the format:
+         field1 = 'value 1'
+         field2 = 321
+
+       This is intended to match the format commonly seen in config files.
+       The deserializer is designed to be tolerant of other things often found
+       in config files, like comments (# or ;), blank lines, indentation, etc.
+
+       If you encourage users to manually edit the serialized file (e.g.
+       adding comments), you should use this class in read-only mode
+       (i.e. never call set_data(), save_to_file(), get_rw() or similar, as
+       doing so would wipe-out the user's comments.
+
+    '''
+
     def __init__(self, filename, dc_type):
         self.filename = filename
         self.dc_type = dc_type
         super().__init__(filename, None)
 
+    def serialize(self, data):
+        s = ''
+        for k, v in data.__dict__.items():
+            if isinstance(v, str): v = f"'{v}'"
+            s += f'{k} = {v}\n'
+        return s
+
     def deserialize(self, serialized):
         if not serialized: return None
+        tmp = []
+        for line in serialized.split('\n'):
+            line = line.strip()
+            # Strip out entire-line comments, blanks, and junk without a '='
+            if not line or line.startswith('#') or line.startswith(';') or not '=' in line:
+                continue
+            k, v = line.split('=', 1)
+            # Remove any trailing comments.
+            pos = v.rfind('#')
+            if pos > 0 and v.find("'", pos) == -1: v = v[:pos - 1]
+            pos = v.rfind(';')
+            if pos > 0 and v.find("'", pos) == -1: v = v[:pos - 1]
+            # Strip any remaining leading or trailing spaces.
+            k = k.strip()
+            v = v.strip()
+            # Fix unquoted strings.
+            if k not in self.dc_type.__dataclass_fields__: raise ValueError(f'field "{k}" not defined in @dataclass {self.dc_type.__name__}')
+            if self.dc_type.__dataclass_fields__.get(k).type is str and not v.startswith("'"):
+                v = f"'{v}'"
+            tmp.append(f'{k}={v}')
+        serialized = f'{self.dc_type.__name__}({", ".join(tmp)})'
         locals = { self.dc_type.__name__: self.dc_type }
         return eval(serialized, {}, locals)
 
