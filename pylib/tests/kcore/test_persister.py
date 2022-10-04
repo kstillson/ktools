@@ -15,6 +15,12 @@ class Dc1:
     f1: str
     f2: int
 
+@dataclass
+class Dc2:
+    f2: int
+    f1: str
+    f3: str = 'f3-default'
+
 
 # ---------- baseclass Persister
 
@@ -90,6 +96,32 @@ def test_persister_single_dc(tmp_path):
     time.sleep(0.1)  # Ensure enough time passes to see timestamps as different.
     with d1.get_rw() as d: d.f2 = 28
     assert d2.get_data().f2 == 28
+
+
+def test_single_dc_tolerant_deserialization():
+    p = P.PersisterDC(None, Dc2)
+    s = '''# comment that looks like = assignment
+  ; indented comment
+ junk line with no equals sign.
+f3 = val3   # unquoted string and trailing comment with spaces before it
+
+  f2= 12  ; another trailing comment
+f1=   ' quoted with internal # and leading and trailing spaces '  # and a trailing comment  '''
+
+    d = p.deserialize(s)
+    assert d.f1 == ' quoted with internal # and leading and trailing spaces '
+    assert d.f2 == 12
+    assert d.f3 == 'val3'
+
+
+def test_single_dc_invalid_field():
+    p = P.PersisterDC(None, Dc2)
+    s = 'invalid_field = hithere'
+    try:
+        d = p.deserialize(s)
+        assert '' == 'expected ValueError :-('
+    except ValueError as e:
+        assert '"invalid_field" not defined' in str(e)
 
 
 # ---------- dict of dataclasses
