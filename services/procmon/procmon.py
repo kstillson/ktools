@@ -364,8 +364,8 @@ def render_other_errors_to_table(title, cow_errors, other_errors):
     for ce in cow_errors: rows.append(['cow scan', ce])
   else: rows.append(['cow scan', 'all ok'])
   if other_errors:
-    for fe in other_errors: rows.append(['FS scan', fe])
-  else: rows.append(['FS scan', 'all ok'])
+    for fe in other_errors: rows.append(['Other scans', fe])
+  else: rows.append(['Other scans', 'all ok'])
   return H.list_to_table(rows, title=title)
 
 
