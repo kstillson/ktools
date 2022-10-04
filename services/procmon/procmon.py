@@ -89,6 +89,7 @@ from typing import List
 
 import kcore.common as C
 import kcore.html as H
+import kcore.uncommon as UC
 import kcore.varz as V
 import kcore.webserver as W
 
@@ -136,7 +137,7 @@ class ProcessData:
 def get_docker_map():
   '''returns dict: cid:str -> container_name:str'''
   cid_map = {}
-  for i in popen(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
+  for i in UC.popener(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
     if not i: continue
     if not ' ' in i:
       C.log_error(f'unexpected output from d-map: {i}')
@@ -146,24 +147,7 @@ def get_docker_map():
   return cid_map
 
 
-def _load_file_as_module(filename, desired_module_name=None):
-  if not desired_module_name: desired_module_name = filename.replace('.py', '')
-  import importlib.machinery, importlib.util
-  loader = importlib.machinery.SourceFileLoader(desired_module_name, filename)
-  spec = importlib.util.spec_from_loader(desired_module_name, loader)
-  new_module = importlib.util.module_from_spec(spec)
-  loader.exec_module(new_module)
-  return new_module
-
-
 def now(): return int(time.time())
-
-
-def popen(cmd, input=None):
-  p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  out, err = p.communicate(input)
-  if p.returncode != 0: return f'ERROR: status {p.returncode} error output: {err}'
-  return out.decode('utf-8')
 
 
 def is_file_populated(filename):
@@ -179,7 +163,7 @@ class Scanner(object):
   def __init__(self):
     self.cow_errors = []         # List of error msg strings
     self.expected = set()        # set of pids
-    self.fs_errors = []          # List of error msg strings
+    self.other_errors = []       # List of error msg strings
     self.missing = []            # List of WL.WL entries
     self.pd_db = {}              # map from pid to ProcessData instance
     self.unexpected = set()      # set of pids
@@ -197,8 +181,9 @@ class Scanner(object):
     DOCKER_MAP = get_docker_map() if not ARGS.nodmap else {}
 
     self.add_process(1, '/')
-    if not ARGS.nocow: self.scan_cow()
-    if not ARGS.noro:  self.scan_ro()
+    if not ARGS.nocow:    self.scan_cow()
+    if not ARGS.noro:     self.scan_ro()
+    if not ARGS.nodupchk: self.scan_dup_uids()
 
     # Check for missing processes.
     for entry in WL.WHITELIST:
@@ -219,14 +204,24 @@ class Scanner(object):
       with open(ARGS.output, 'w') as f: f.write(str(WL.WHITELIST).replace(' WL', '\n WL'))
 
   def scan_cow(self):
-    for i in popen(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
+    for i in UC.popener(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
       if 'all ok' in i: continue
       self.cow_errors.append(i)
+
+  def scan_dup_uids(self):
+    c_uids = {}   # maps usernames to set of container names
+    for pd in self.pd_db.values():
+      if not pd.container_name: continue
+      if 'root' in pd.username: continue
+      if not pd.username in c_uids: c_uids[pd.username] = set()
+      c_uids[pd.username].add(pd.container_name)
+    for username in c_uids:
+      if len(c_uids[username]) > 1: self.other_errors.append(f'{username} appears in multiple containers: {c_uids[username]}')
 
   def scan_ro(self):
     stat = os.statvfs('/')
     ro = bool(stat.f_flag & os.ST_RDONLY)
-    if not ro: self.fs_errors.append('root not mounted read only')
+    if not ro: self.other_errors.append('root not mounted read only')
 
 
   # ----- psutil -> ProcessData
@@ -319,7 +314,7 @@ class Scanner(object):
     pset.add(pd.pid)
 
   def is_all_ok(self):
-    return len(self.missing) == 0 and len(self.expected) > 10 and len(self.unexpected) == 0 and len(self.cow_errors) == 0 and len(self.fs_errors) == 0
+    return len(self.missing) == 0 and len(self.expected) > 10 and len(self.unexpected) == 0 and len(self.cow_errors) == 0 and len(self.other_errors) == 0
 
   # -----
 
@@ -335,7 +330,7 @@ class Scanner(object):
       pd = self.pd_db[pid]
       out.append('unexpected: %s' % self.proctree_to_string(pd) if expand_trees else pd.desc)
     for ce in self.cow_errors: out.append('COW: %s' % ce)
-    for ce in self.fs_errors: out.append('FS: %s' % ce)
+    for ce in self.other_errors: out.append('FS: %s' % ce)
     for m in self.missing: out.append('missing: %s' % m)
     return sorted(out)
 
@@ -363,13 +358,13 @@ class Scanner(object):
 
 # ---------- handler helpers
 
-def render_file_errors_to_table(title, cow_errors, fs_errors):
+def render_other_errors_to_table(title, cow_errors, other_errors):
   rows = []
   if cow_errors:
     for ce in cow_errors: rows.append(['cow scan', ce])
   else: rows.append(['cow scan', 'all ok'])
-  if fs_errors:
-    for fe in fs_errors: rows.append(['FS scan', fe])
+  if other_errors:
+    for fe in other_errors: rows.append(['FS scan', fe])
   else: rows.append(['FS scan', 'all ok'])
   return H.list_to_table(rows, title=title)
 
@@ -402,7 +397,7 @@ def root_handler(request):
   out += render_queue_to_table('queue')
   out += varz_to_table(['last_scan', 'scans'])
   out += SCANNER.render_pset_to_table('unexpected', SCANNER.unexpected)
-  out += render_file_errors_to_table('file errors', SCANNER.cow_errors, SCANNER.fs_errors)
+  out += render_other_errors_to_table('other errors', SCANNER.cow_errors, SCANNER.other_errors)
   out += render_missing_to_table(SCANNER.missing)
   out += SCANNER.render_pset_to_table('greylisted', SCANNER.greylisted)
   out += SCANNER.render_pset_to_table('expected', SCANNER.expected)
@@ -427,11 +422,11 @@ def healthz_handler(request):
 
 
 def panic_handler(request):
-  return popen(['/usr/bin/sudo', '/usr/local/bin/panic'])
+  return UC.popener(['/usr/bin/sudo', '/usr/local/bin/panic'])
 
 
 def pstree_handler(request):
-  return popen(['/bin/ps', 'aux', '--forest'])
+  return UC.popener(['/bin/ps', 'aux', '--forest'])
 
 
 def scan_handler(request):
@@ -452,12 +447,13 @@ def zap_handler(request):
 # ---------- main
 
 def parse_args(argv):
-  parser = argparse.ArgumentParser(description='process scanner.')
+  parser = UC.argparse_epilog(description='process scanner')
   parser.add_argument('--debug',   '-D',   action='store_true', help='output debugging data to stdout (works best with -t)')
   parser.add_argument('--delay',   '-d',   type=int, default=120, help='delay between automatic rescans (seconds)')
   parser.add_argument('--logfile', '-l',   default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
   parser.add_argument('--nocow',           action='store_true', help='skip COW scan (used for testing)')
   parser.add_argument('--nodmap',          action='store_true', help='skip getting the map from container ids to names.  Mainly for testing (avoids a sudo call), as makes whitelist entries based on container names useless.')
+  parser.add_argument('--nodupchk',        action='store_true', help='skip checking if the same uid (other than root) is used in multiple containers.')
   parser.add_argument('--noro',            action='store_true', help='skip root-read-only check (used for testing)')
   parser.add_argument('--no-scan-handler', action='store_true', help='do not allow use of demand /scan')
   parser.add_argument('--no-zap-handler',  action='store_true', help='do not allow clearing the alert queue via /zap')
@@ -476,7 +472,7 @@ def main(argv=[]):
              filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER)
 
   global WL
-  WL = _load_file_as_module(ARGS.whitelist)
+  WL = UC.load_file_as_module(ARGS.whitelist)
   for entry in WL.WHITELIST: entry.pattern = re.compile(entry.regex)
   for entry in WL.GREYLIST: entry.pattern = re.compile(entry.regex)
 
