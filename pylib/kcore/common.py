@@ -150,7 +150,7 @@ LOG_QUEUE_LEN_MAX = 40
 # initial state set so that calls to log() will output to stderr BEFORE init_log() is called.
 FILTER_LEVEL_LOGFILE = NEVER   # default becomes INFO  once init_log() is called, if not otherwise set.
 FILTER_LEVEL_STDOUT = NEVER    # default stays   NEVER once init_log() is called, if not otherwise set.
-FILTER_LEVEL_STDERR = DEBUG    # default becomes ERROR once init_log() is called, if not otherwise set.
+FILTER_LEVEL_STDERR = INFO     # default becomes ERROR once init_log() is called, if not otherwise set.
 FILTER_LEVEL_SYSLOG = NEVER    # default becomes CRITICAL once init_log() is called, if not otherwise set.
 FILTER_LEVEL_MIN = DEBUG
 
