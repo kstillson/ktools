@@ -79,11 +79,14 @@ class Persister:
 
     # Can't call it "get" as that would conflct with Dict.get() in derived classes.
     def get_data(self):
-        if self.is_cache_fresh(): return self.cache
+        if self.is_cache_fresh():
+            C.log_debug(f'cache is fresh, returning: {len(self.cache)} records.')
+            return self.cache
         ok = self.load_from_file()
         if not ok:
             C.log_debug(f'filename={self.filename} load from file failed; returning default value')
             self.cache = self.get_default_value()
+        C.log_debug(f'loaded {len(self.cache)} records from {self.filename}.')
         return self.cache
 
     def set_data(self, data=None):
@@ -182,6 +185,7 @@ class Persister:
                 return False
             with open(self.filename) as f: serialized = f.read()
 
+        C.log_debug(f'@@ loaded file contents: {serialized}')
         if self.password:
             if not serialized:
                 C.log_debug(f'filename={self.filename} loaded empty; cannot decrypt.')
@@ -189,10 +193,12 @@ class Persister:
             tmp = serialized
             serialized = UC.decrypt(serialized, self.password)
             if serialized.startswith('ERROR'): raise ValueError(serialized)
+            C.log_debug(f'decrypted contents of {self.filename}.')
 
         self.cache = self.deserialize(serialized)
         if self.cache is None: return False
         self.cache_mtime = self.get_file_mtime()
+        C.log_debug(f'deserialization success {self.filename}; loaded {len(self.cache)} record(s).')
         return True
 
     def save_to_file(self):
@@ -206,6 +212,7 @@ class Persister:
         else:
             with open(self.filename, 'w') as f: f.write(serialized)
         self.cache_mtime = self.get_file_mtime()
+        C.log_debug(f'serialized {len(self.cache)} record(s) to {self.filename}; ok.')
         return True
 
 

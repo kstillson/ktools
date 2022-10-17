@@ -48,8 +48,12 @@ def get_cookie_named(name, request):
 
 def get_session_data(request):
     session_id = get_cookie_named(SESSION_COOKIE_NAME, request)
-    if not session_id: return None
-    return model.get_session_data(session_id)
+    if not session_id:
+        if DEBUG: C.log_debug('no session id from cookie')
+        return None
+    session_data = model.get_session_data(session_id)
+    if DEBUG: C.log_debug(f'session id from cookie: {session_id} retrieved session data {session_data}')
+    return session_data
 
 
 # ---------- template system
@@ -114,6 +118,10 @@ def edit_view(request):
     return done('edit', f'edit save by {session_data.get("user")} for key={key}, gi={gi}', ok)
     
     
+def export_view(request):
+    return model.data.GIFT_IDEAS.serialize(model.data.GIFT_IDEAS)
+
+    
 def healthz_view(request):
     return 'ok'
 
@@ -147,15 +155,18 @@ def root_view(request):
     if not session_data or not session_data.get('user'): return login_form_view(request)
 
     all = request.get_params.get('all') == '1'
+    if all: C.log('add data (including deleted) requested by get param')
     
     out = f'<br/>hello {session_data["user"]} &nbsp; &nbsp; [ <a href="./logout">logout</a> ]<p>'
 
     tab = []
     for gi in model.get_gift_ideas():
+        if DEBUG: C.log_debug(f'processing gift idea: {gi}')
         # Filtering.
         if session_data['hide_mine'] and gi.recip == session_data['user']: continue
         if session_data['hide_taken'] and gi.taken == 'taken': continue
         if gi.deleted and not all: continue
+        if DEBUG: C.log_debug(f'gift idea survived filtering: {gi}')
 
         notes = gi.notes
         url = gi.url
