@@ -102,7 +102,7 @@ WHITELIST = [
     WL('rclonedock','root',        False, False, '/bin/bash /etc/init'),
     WL('rclonedock','root',        False, False, 'fgrep -v non'),
     WL('rclonedock','root',        False, False, '/root/bin/rclone (sync|copy)'),
-    WL('rpsdock',   'droot',       False, False, '(/usr/bin/python2 )?/root/.rps/rps'),
+    WL('rpsdock',   'droot',       False, False, '(/usr/bin/python. )?/root/.rps/rps'),
     WL('rpsdock',   'droot',       False, True,  '/bin/sh /etc/init'),
     WL('rpsdock',   'droot',       False, True,  '/tmp/tmp'),
     WL('rpsdock',   'droot',       False, True,  'sleep'),
