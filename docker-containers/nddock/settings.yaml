@@ -18,5 +18,5 @@ mount_ro:
   - /proc: /host/proc
   - /sys: /host/sys
 
-extra_docker: "-e DO_NOT_TRACK=1 -e PGID=1024 --userns=host --cap-add SYS_PTRACE --security-opt apparmor=unconfined -e NETDATA_CLAIM_TOKEN=MagwFXr2rLmvd35FteuXsASPGYdilFWKnonw8ib8SeBzAseXKg8ryICzdr2wuXPm4p0KZvUsriP2Xxk9ZKE_l-c9mY3Dzy0PqKwnEkqRnF-VWIuWVilNQ_N_gvc4WOWBtykwmH0 -e NETDATA_CLAIM_URL=https://app.netdata.cloud"
+extra_docker: "--env DO_NOT_TRACK=1 --env PGID=1024 --userns=host --cap-add SYS_PTRACE --security-opt apparmor=unconfined --env NETDATA_CLAIM_TOKEN=MagwFXr2rLmvd35FteuXsASPGYdilFWKnonw8ib8SeBzAseXKg8ryICzdr2wuXPm4p0KZvUsriP2Xxk9ZKE_l-c9mY3Dzy0PqKwnEkqRnF-VWIuWVilNQ_N_gvc4WOWBtykwmH0 --env NETDATA_CLAIM_URL=https://app.netdata.cloud"
 
