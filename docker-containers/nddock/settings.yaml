@@ -1,0 +1,22 @@
+
+ports:
+  - 19999:19999
+
+# Log is too verbose to send to syslog. 
+log: JSON
+
+mount_persistent:
+  - netdatacache: /var/cache/netdata
+  - netdataconfig: /etc/netdata
+  - netdatalib: /var/lib/netdata
+  - /var/run/docker.sock: /var/run/docker.sock
+
+mount_ro:
+  - /etc/group: /host/etc/group
+  - /etc/os-release: /host/etc/os-release
+  - /etc/passwd: /host/etc/passwd
+  - /proc: /host/proc
+  - /sys: /host/sys
+
+extra_docker: "-e DO_NOT_TRACK=1 -e PGID=1024 --userns=host --cap-add SYS_PTRACE --security-opt apparmor=unconfined -e NETDATA_CLAIM_TOKEN=MagwFXr2rLmvd35FteuXsASPGYdilFWKnonw8ib8SeBzAseXKg8ryICzdr2wuXPm4p0KZvUsriP2Xxk9ZKE_l-c9mY3Dzy0PqKwnEkqRnF-VWIuWVilNQ_N_gvc4WOWBtykwmH0 -e NETDATA_CLAIM_URL=https://app.netdata.cloud"
+

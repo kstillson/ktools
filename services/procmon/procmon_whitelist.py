@@ -93,6 +93,8 @@ WHITELIST = [
     WL('keymaster', 'dkm',         False, False, '/usr/bin/python3 /home/km/km.py'),
     WL('lsyncdock', 'droot',       True,  True,  '/usr/bin/lsyncd -nodaemon /etc/lsyncd/lsyncd.conf.lua'),
     WL('nagdock',   'dnagios',     True,  True,  '/usr/sbin/nagios'),
+    WL('nddock',    '201',         True,  False, '/usr/sbin/netdata.*'),
+    WL('nddock',    'root',        False, False, '/bin/bash'),
     WL('privdock',  'dweb2',       False, False, '/usr/sbin/httpd'),
     WL('rclonedock','droot',       False, False, '/bin/bash /etc/init'),
     WL('rclonedock','droot',       False, False, '/usr/bin/encfs --extpass /usr/local/bin/kmc encfs-default /root/gdrive /root/gdrive-efs'),
