@@ -55,7 +55,7 @@ DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"   # Where dnsmasq conf
 GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools"  # List of git dirs this script manages.
 KMD_P="$HOME/dev/ktools/private.d/km.data.pcrypt"  # Location of encrypted keymaster secrets file
 LIST_LINUX="a1 blue jack mc2 "  # list of non-RPi linux hosts
-LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pibr pout trellis1 twinkle"  # list of RPi linux hosts
+LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pi2-wifi pibr pout trellis1 twinkle"  # list of RPi linux hosts
 LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"  # Location of dnsmasq leases (output/generated) file.
 PROCQ="/var/procmon/queue"  # Location of ../services/procmon output file
 RSNAP_CONF="/root/docker-dev/rsnapdock/files/etc/rsnapshot.conf"  # Location of rsnapshot config input file
@@ -306,7 +306,7 @@ function git_update_pis() {
     set +e
     t=$(gettemp git-updates.out)
     RP_FLAGS="${RP_FLAGS_BASE} --output $t"
-    hosts=$(list_pis | without hs-front,pi1,lightning)
+    hosts=$(list_pis | without hs-front,pi1,pi2-wifi,lightning)
     echo "pulling git updates..."
     RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi

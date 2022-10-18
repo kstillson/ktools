@@ -1,12 +1,11 @@
 
 TODO(doc)
 
-TODO: user must manually generate and populate these:
-  files/root/.ssh/private.d/known_hosts
+TODO: 1-time initial setup; user must manually generate and populate these:
   files/root/.ssh/private.d/id_rsa
   files/root/.ssh/private.d/id_rsa.pub
 
-user may want to populate:
+user may want to populate (e.g., if using ssh config host aliases)
   files/root/.ssh/private.d/config
 
 
