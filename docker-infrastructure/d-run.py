@@ -97,7 +97,7 @@ def add_mounts(cmnd, mapper, readonly, name, mount_list):
 def add_ports(cmnd, ports_list, enable_ipv6):
     for pair in ports_list:
         if not enable_ipv6 and not '.' in pair: pair = '0.0.0.0:' + pair
-        cmnd.extend(['-p', pair])
+        cmnd.extend(['--publish', pair])
     return cmnd
 
 
