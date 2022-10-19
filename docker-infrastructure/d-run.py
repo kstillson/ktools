@@ -13,6 +13,7 @@ foreground: 1   (note: ignored when --vol-alt, which requires background launche
 image: name of image to run
 ip: string{'-' to let docker assign|ip address|hostname}
 log: string{N|J|S|custom spec}
+name: string (flag overrides this, this overrides directory name)
 network: string{NONE|name of network to use.}
 port: list of ports to forward: host:container
 
@@ -291,7 +292,7 @@ def gen_command(args, settings):
           or (settings.get('foreground',0) == 1  and not args.vol_alt))
     if not fg: cmnd.append('-d')
     settings['basename'] = basename = settings['settings_leaf_dir']
-    settings['name'] = name = (args.name_prefix or '') + (args.name or basename)
+    settings['name'] = name = (args.name_prefix or '') + (args.name or settings.get('name') or basename)
     cmnd.extend(['--name', name])
 
     hostname = args.hostname or name
