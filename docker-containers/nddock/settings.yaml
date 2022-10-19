@@ -1,3 +1,20 @@
+#
+# :: SECURITY WARNING ::
+#
+# The combination of --userns=host and mounting /var/run/docker.sock as +w
+# gives a reasonably easy method for root in this container to take over root
+# in the real host.  Most of the processes in the container run as non-root,
+# but none-the-less, this container is more for logical separation and
+# maintenance.  With all these settings that bypass normal container
+# isolation, you should not assume much security isolation is provided.
+#
+# And you really do NOT want to expose the internal webserver (port 19999) to
+# any untrusted networks (and certainly not to to the Internet!).
+
+# Enable the following if you need to override them for your setup:
+# name: host-specific-name
+# network: bridge
+# ip: '-'
 
 ports:
   - 19999:19999
@@ -18,5 +35,4 @@ mount_ro:
   - /proc: /host/proc
   - /sys: /host/sys
 
-extra_docker: "--env DO_NOT_TRACK=1 --env PGID=1024 --userns=host --cap-add SYS_PTRACE --security-opt apparmor=unconfined --env NETDATA_CLAIM_TOKEN=MagwFXr2rLmvd35FteuXsASPGYdilFWKnonw8ib8SeBzAseXKg8ryICzdr2wuXPm4p0KZvUsriP2Xxk9ZKE_l-c9mY3Dzy0PqKwnEkqRnF-VWIuWVilNQ_N_gvc4WOWBtykwmH0 --env NETDATA_CLAIM_URL=https://app.netdata.cloud"
-
+extra_docker: "--cap-add SYS_PTRACE --env DO_NOT_TRACK=1 --env NETDATA_CLAIM_TOKEN=MagwFXr2rLmvd35FteuXsASPGYdilFWKnonw8ib8SeBzAseXKg8ryICzdr2wuXPm4p0KZvUsriP2Xxk9ZKE_l-c9mY3Dzy0PqKwnEkqRnF-VWIuWVilNQ_N_gvc4WOWBtykwmH0 --env NETDATA_CLAIM_URL=https://app.netdata.cloud --env PGID=1024 --security-opt apparmor=unconfined --userns=host"
