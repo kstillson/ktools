@@ -2,6 +2,7 @@ from procmon_wl_type import WL
 
 #      Container    user           child? rqrd?  regex
 WHITELIST = [
+    WL('*',         'root',        False, False, '/var/run/docker/runtime-runc/moby --log'),
     WL('/',         '*',           False, False, '/lib/systemd/systemd --(system|user)'),
     WL('/',         '*',           False, False, '\(sd-pam\)'),
     WL('/',         'blue-backup', False, False, 'rsync '),
