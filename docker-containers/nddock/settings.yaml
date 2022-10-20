@@ -16,6 +16,8 @@
 # network: bridge
 # ip: '-'
 
+hostname: "HOSTNAME-ndd"
+
 ports:
   - 19999:19999
 
@@ -35,4 +37,6 @@ mount_ro:
   - /proc: /host/proc
   - /sys: /host/sys
 
-extra_docker: "--cap-add SYS_PTRACE --env DO_NOT_TRACK=1 --env NETDATA_CLAIM_TOKEN=MagwFXr2rLmvd35FteuXsASPGYdilFWKnonw8ib8SeBzAseXKg8ryICzdr2wuXPm4p0KZvUsriP2Xxk9ZKE_l-c9mY3Dzy0PqKwnEkqRnF-VWIuWVilNQ_N_gvc4WOWBtykwmH0 --env NETDATA_CLAIM_URL=https://app.netdata.cloud --env PGID=1024 --security-opt apparmor=unconfined --userns=host"
+# You may wish to add your $NETDATA_CLAIM_TOKEN and/or $NETDATA_CLAIM_URL
+#
+extra_docker: "--cap-add SYS_PTRACE --env DO_NOT_TRACK=1 --env PGID=1024 --security-opt apparmor=unconfined --userns=host"

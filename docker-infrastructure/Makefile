@@ -10,16 +10,11 @@ all: common_all
 
 PY_TARGETS := d-cowscan d-run
 SH_TARGETS := d d-build d-map
-# only useful by and for root:
+CUSTOM_TARGETS := d-cowscan.ignore
 INSTALL_DIR ?= /root/bin
 include ../etc/Makefile-common
 
 # ---------- addl files
-
-install: $(INSTALL_DIR) $(INSTALL_DIR)/d-cowscan.ignore
-
-$(INSTALL_DIR):
-	mkdir -p $@
 
 $(INSTALL_DIR)/d-cowscan.ignore: private.d/d-cowscan.ignore
 	sudo cp $^ $@

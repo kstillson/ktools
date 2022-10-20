@@ -124,9 +124,11 @@ def launch_test_container(args, extra_run_args, out):
     cmnd = ['/root/bin/d-run', '--log', 'json-file', '--tag', args.tag, '--print-cmd']
     if args.name: cmnd.extend(['--name', args.name])
     if extra_run_args: cmnd.extend(extra_run_args)
+    test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
     if not args.prod:
-        cmnd.extend(['--name_prefix', 'test-', '--network', 'docker2',
-                     '--rm', '--subnet', '3', '-v'])
+        cmnd.extend(['--name_prefix', 'test-', '--network', test_net, '--rm', '-v'])
+    if test_net == 'docker2':  ## TODO(defer): kds specific
+        cmnd.extend(['--subnet', '3'])
     emit(' '.join(cmnd))
     rslt = UC.popen(cmnd, stdout=out, stderr=out)
     if not rslt.ok: sys.exit(rslt.out)

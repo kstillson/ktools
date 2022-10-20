@@ -10,6 +10,7 @@ extra_init: string
 debug_extra_init: string
 extra_docker: string
 foreground: 1   (note: ignored when --vol-alt, which requires background launches)
+hostname: string
 image: name of image to run
 ip: string{'-' to let docker assign|ip address|hostname}
 log: string{N|J|S|custom spec}
@@ -28,6 +29,10 @@ mount_persistent_test_ro           "                                 mount real 
 mount_ro                           list of ro bind-mount maps s->d   same as normal
 mount_test_only                    ignored                           list of bind-mount maps s->d
    relative paths are relative to  /rw/dv/{name}/...                 /rw/dv/TMP/{name}/...
+
+Most settings can come from multiple sources, the priority order is:
+  command-line flag, then settings file, then environment variable, then hard-coded "fallback" value.
+
 '''
 
 import argparse, os, shutil, socket, subprocess, sys, yaml
@@ -35,9 +40,34 @@ from pathlib import Path
 
 import kcore.auth
 
+# ---------- control constants
 
-DEFAULT_TAG = 'live'
-FALLBACK_IP = '192.168.2.99'   # Try this is all other methods fail.
+HOSTNAME_VAR = 'KTOOLS_DRUN_HOSTNAME'
+HOSTNAME_FALLBACK = None  # will use container name
+
+IP_VAR = 'KTOOLS_DRUN_IP'
+IP_FALLBACK = '-'
+
+LOG_VAR = 'KTOOLS_DRUN_LOG'
+LOG_FALLBACK = 'json'
+
+NAME_VAR = 'KTOOLS_DRUN_NAME'
+# fallback is dynamically computed name of the directory containing the settings file.
+
+NETWORK_VAR = 'KTOOLS_DRUN_NETWORK'
+NETWORK_FALLBACK = 'bridge'
+
+REPO_DEFAULT = 'ktools'
+
+REPO2_VAR = 'KTOOLS_DRUN_REPO2'
+REPO2_FALLBACK = None
+
+TAG_VAR = 'KTOOLS_DRUN_TAG'
+TAG_FALLBACK = 'live'
+
+TEST_NETWORK_VAR = 'KTOOLS_DRUN_TEST_NETWORK'
+TEST_NETWORK_FALLBACK = 'bridge'
+
 
 # ----------------------------------------
 # General purpose subroutines
@@ -50,24 +80,22 @@ def err(msg):
 # ----------------------------------------
 # 2nd level helpers
 
-# TODO(!): this is currently specialized for Ken's environment on jack or a1;
-# it'll fail looking up hostname 'syslogdock' on other systems.  needs to be
-# generalized.
 def expand_log_shorthand(log, name):
     ctrl = log.lower()
     if ctrl in ['n', 'none', 'z']:
         return ['--log-driver=none']
-    elif ctrl in ['s', 'syslog']:
-        if socket.gethostname().startswith('a2'):
-            slog = 'syslog-address=tcp://localhost:5514'
+    elif ctrl == 's' or ctrl.startswith('s:') or ctrl.startswith('syslog'):
+        if ':' in ctrl:
+            ctrl, slog_addr = ctrl.split(':', 1)
         else:
-            slog = 'syslog-address=udp://%s:1514' % socket.gethostbyname('syslogdock')
-        return ['--log-driver=syslog',
+            slog_addr = None
+        args = ['--log-driver=syslog',
                 '--log-opt', 'mode=non-blocking',
                 '--log-opt', 'max-buffer-size=4m',
-                '--log-opt', slog,
                 '--log-opt', 'syslog-facility=local3',
-                '--log-opt', 'tag=%s' % name]
+                '--log-opt', 'tag={name}']
+        if slog_addr: args.append(['--log-opt', f'syslog-address={slog_addr}'])
+        return args
     elif ctrl in ['j', 'json']:
         return ['--log-driver=json-file',
                 '--log-opt', 'max-size=5m',
@@ -114,6 +142,7 @@ def clone_dir(src, dest):
 
 
 def does_image_exist(repo_name, image_name, tag_name):
+    if not repo_name: return False
     out = subprocess.check_output(['/usr/bin/docker', 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
     return out != b''
 
@@ -162,7 +191,7 @@ def get_ip(hostname):
 
 
 def get_ip_to_use(args, settings):
-    ip = args.ip or settings.get('ip', None) or ''
+    ip = args.ip or settings.get('ip', None) or os.environ.get(IP_VAR) or IP_FALLBACK
     if ip in ['-', '0']: return None
 
     # If we don't see 3 dots, this must be a hostname we're intended to look up.
@@ -215,9 +244,9 @@ def parse_args():
     ap.add_argument('--cd', default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
     ap.add_argument('--image', '-i', default=None, help='Name of image to use; default of None will use container name.')
     ap.add_argument('--latest', '-l', action='store_true', help='Shorthand for --tag=latest')
-    ap.add_argument('--repo', default='ktools', help='repo prefix for image name.')
-    ap.add_argument('--repo2', default='kstillson', help='backup repo prefix to try if image:tag does not exist in --repo.')
-    ap.add_argument('--tag', '-T', default=DEFAULT_TAG, help='tag or hash of image version to use.  set to "" to use "latest"')
+    ap.add_argument('--repo', default=REPO_DEFAULT, help=f'repo prefix for image name.  default="{REPO_DEFAULT}"')
+    ap.add_argument('--repo2', default=None, help=f'backup repo prefix to try if image:tag does not exist in --repo.  Flags override ${REPO2_VAR}, default="{REPO2_FALLBACK}"')
+    ap.add_argument('--tag', '-T', default=None, help=f'tag or hash of image version to use.  Flags override settings and ${TAG_VAR}), default is "{TAG_FALLBACK}".')
 
     # Flags that provide context about the mode we're launching the container in.
     ap.add_argument('--dev', '-D', action='store_true', help='Activate development mode (equiv to: --fg --log=NONE --name_prefix=dev- --network=docker2 --rm --subnet=3 --latest --vol-alt).')
@@ -230,11 +259,11 @@ def parse_args():
     ap.add_argument('--extra-docker', default=None, help='Any additional flags to pass to the docker command.')
     ap.add_argument('--extra-init', default=None, help='Any additional flags to pass the the init command.')
     ap.add_argument('--fg', action='store_true', help='Run the container in the foreground')
-    ap.add_argument('--hostname', '-H', default=None, help='use a particular hostname.  default of None will use a hostname that matches the container name.')
-    ap.add_argument('--ip', default=None, help='assign a particular IP address.  default of None will dns resolve the hostname and use that IP.  dns lookup failure or a value of "-" will let docker dhcp assign the IP.')
-    ap.add_argument('--log', '-L', default=None, help='If specified, override the log driver in the settings file and use this.')
-    ap.add_argument('--name', '-n', default=None, help='use a specified container name.  default of None will use the name of the directory that contains the settings file')
-    ap.add_argument('--network', '-N', default=None, help='Name of docker network to use. defaults to "docker1"')
+    ap.add_argument('--hostname', '-H', default=None, help=f'use a particular hostname.  Flag overrides ${HOSTNAME_VAR}, default is "{HOSTNAME_FALLBACK}".  Blank/none will use the contain name. Supports replacement of string HOSTNAME with the hosts name .')
+    ap.add_argument('--ip', default=None, help=f'assign a particular IP address.  Flags override settings and ${IP_VAR}, default of "-" (or a dns lookup failure) will dns resolve the hostname and use that IP.')
+    ap.add_argument('--log', '-L', default=None, help=f'Log drier to use.  Flags override ${LOG_VAR}.  Allowed: n/none, s/syslog[:url] (e.g. s:udp://sysloghost:514), j/json, or any other value to pass blindly on to Docker.  Default value is "{LOG_FALLBACK}".')
+    ap.add_argument('--name', '-n', default=None, help=f'use a specified container name.  flags override settings ${IP_VAR}, default of None will use the name of the directory that contains the settings file')
+    ap.add_argument('--network', '-N', default=None, help=f'Name of docker network to use.  flags override settings and ${NAME_VAR}. Default is "{NETWORK_FALLBACK}"')
     ap.add_argument('--ports', '-p', default=None, nargs='*', help='Port to map, host:container (can specify flag multiple times')
     ap.add_argument('--rm', action='store_true', help='Ask docker to auto-remove the container when it stops.')
     ap.add_argument('--puid', default='auto', help='Use give value for $PUID rather than auto-generating.  Remember you probably want this to be container-specific.  Set blank to skip assignment.  See kcore/auth.py for details.')
@@ -252,21 +281,22 @@ def parse_args():
     ap.add_argument('--test', '-t', action='store_true', help='Just print the command that would be run rather than running it.')
 
     args = ap.parse_args()
-    if args.latest and args.tag==DEFAULT_TAG: args.tag = 'latest'
+    if args.latest: args.tag = 'latest'
     if args.test_in_place:
         args.fg = True
-        if not args.log: args.log = 'NONE'
         args.rm = True
-        if args.tag == DEFAULT_TAG: args.tag = 'latest'
+        if not args.log: args.log = 'NONE'
+        if not args.tag: args.tag = 'latest'
     elif args.dev or args.dev_test:
         args.fg = True
         if not args.log: args.log = 'NONE'
         if not args.name_prefix: args.name_prefix = 'test-' if args.dev_test else 'dev-'
-        if not args.network: args.network = 'docker2'
+        if not args.network: args.network = os.environ.get(TEST_NETWORK_VAR) or TEST_NETWORK_FALLBACK
         args.rm = True
         if not args.subnet: args.subnet = '3'
-        if args.tag == DEFAULT_TAG: args.tag = 'latest'
+        if not args.tag: args.tag = 'latest'
         args.vol_alt = True
+
     return args
 
 
@@ -292,14 +322,15 @@ def gen_command(args, settings):
           or (settings.get('foreground',0) == 1  and not args.vol_alt))
     if not fg: cmnd.append('-d')
     settings['basename'] = basename = settings['settings_leaf_dir']
-    settings['name'] = name = (args.name_prefix or '') + (args.name or settings.get('name') or basename)
+    settings['name'] = name = (args.name_prefix or '') + (args.name or settings.get('name') or os.environ.get(NAME_VAR) or basename)
     cmnd.extend(['--name', name])
 
-    hostname = args.hostname or name
+    hostname = args.hostname or settings.get('hostname') or os.environ.get(HOSTNAME_VAR) or HOSTNAME_FALLBACK or name
+    hostname = hostname.replace('HOSTNAME', socket.gethostname())
     settings['hostname'] = hostname
     cmnd.extend(['--hostname', hostname])
 
-    network = args.network or settings.get('network', None) or 'docker1'
+    network = args.network or settings.get('network', None) or os.environ.get(NETWORK_VAR) or NETWORK_FALLBACK
     if network != 'NONE':
         cmnd.extend(['--network', network])
         ip = get_ip_to_use(args, settings)
@@ -335,10 +366,12 @@ def gen_command(args, settings):
     if args.vol_alt:
         add_mounts(cmnd, None, False, basename, settings.get('mount_test_only'))
 
+    tag_name = args.tag or os.environ.get(TAG_VAR) or TAG_FALLBACK
+
     if 'ports' in settings:
         if args.dev or args.dev_test:
             print('skipping settings port mapping because in dev mode.')
-        elif args.tag != 'live':
+        elif tag_name != 'live':
             print('skipping settings port mapping because tag != "live"')
         else:
             add_ports(cmnd, settings.get('ports'), args.ipv6)
@@ -352,9 +385,8 @@ def gen_command(args, settings):
     else:
         repo_name = args.repo
         image_name = args.image or basename
-        tag_name = args.tag or 'latest'
         if not does_image_exist(repo_name, image_name, tag_name):
-            repo_name = args.repo2
+            repo_name = args.repo2 or os.environ.get(REPO2_VAR) or REPO2_FALLBACK
             if not does_image_exist(repo_name, image_name, tag_name):
                 err(f'This probably wont work; {image_name}:{tag_name} does not exist in either {args.repo} or {args.repo2}')
         image = f'{repo_name}/{image_name}:{tag_name}'
