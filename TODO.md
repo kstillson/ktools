@@ -18,6 +18,7 @@
     - set up /rw/dv/...
     - sshdock/gitdock need generated host-keys
     - idempotent setup of docker networks
+  - settings file have hard-coded TZ; take this from a var
 
 # new project name?
 
@@ -29,4 +30,3 @@
 # other general thoughts
 
   - Makefile: add BUILD_SUDO_OK, etc/check-sudo-ok
-
