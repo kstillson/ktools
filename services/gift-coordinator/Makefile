@@ -3,6 +3,9 @@
 all:
 	@echo nothing to be done for :all
 
+comp:
+	@echo nothing to be done for :comp
+
 clean:
 	rm -rf __pycache__
 
