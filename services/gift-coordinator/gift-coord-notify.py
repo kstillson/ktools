@@ -85,12 +85,15 @@ def main():
     return 0
 
   # Filter ideas created before the last time we sent a notification.
-  already_notified = []
+  skip = {}
   for key, gi in gift_ideas.items():
-    if gi.entered_on < last_sent: already_notified.append(key)
-  for key in already_notified:
+    if gi.entered_on < last_sent: skip[key] = 'already_notified'
+    elif gi.deleted > 0: skip[key] = 'deleted'
+    elif gi.taken != 'available': skip[key] = f'status {gi.taken}'
+  for key in skip:
+    if TEST: print(f'{key} filtered because {skip[key]}')
     gift_ideas.pop(key)
-  if TEST: print(f'{len(already_notified)} ideas filtered as already sent; {len(gift_ideas)} remain.')
+  if TEST: print(f'{len(gift_ideas)} ideas remain unfiltered.')
   if not gift_ideas: return 0
 
   # Send notifications, filtering out notifications to the person the gift is for.
