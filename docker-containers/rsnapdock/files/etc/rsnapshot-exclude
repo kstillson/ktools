@@ -11,6 +11,8 @@ dlnadock/var_cache_minidlna
 home/*/.ssh/id_rsa
 home/kal/share/efs
 home/ken/share/efs
+home/pi/media1
+home/pi/mnt/encfs
 home/rsnapshot/***
 mlocate.db
 root/.ssh/id_rsa
