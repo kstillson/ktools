@@ -133,6 +133,13 @@ handler finding and management, default handlers, and the like.
 webserver.py basically layers the fully-featured (and thus circpy-unfriendly)
 bits on-top: networking, threading, TLS, and logging.
 
+
+## varz_prom.py
+
+A thin wrapper around varz.py that adds automatic exporting of /varz values
+to prometheus_client, to provied a "/metrics" handler.
+
+
 - - -
 
 # Other notes
