@@ -12,7 +12,7 @@ extra_docker: string
 foreground: 1   (note: ignored when --vol-alt, which requires background launches)
 hostname: string
 image: name of image to run
-ip: string{'-' to let docker assign|ip address|hostname}
+ip: string {'-' for dns-based, '' to let docker assign}
 log: string{N|J|S|custom spec}
 name: string (flag overrides this, this overrides directory name)
 network: string{NONE|name of network to use.}
@@ -192,27 +192,30 @@ def get_ip(hostname):
 
 def get_ip_to_use(args, settings):
     ip = args.ip or settings.get('ip', None) or os.environ.get(IP_VAR) or IP_FALLBACK
-    if ip in ['-', '0']: return None
+    if ip in ['', '0']: return None
 
     # If we don't see 3 dots, this must be a hostname we're intended to look up.
     if ip.count('.') != 3:
-        lookup_host = ip or settings['hostname']
-        ip = get_ip(lookup_host)
+        lookup_host1 = ip if ip != '-' else settings['hostname']
+        ip = get_ip(lookup_host1)
         if not ip:
-            lookup_host = ip or settings['basename']
-            ip = get_ip(lookup_host)
+            lookup_host2 = settings['basename']
+            ip = get_ip(lookup_host2)
         if not ip and args.name_prefix:
-            ip = get_ip(lookup_host.replace(args.name_prefix, ''))
+            lookup_host3 = lookup_host2.replace(args.name_prefix, '')
+            ip = get_ip(lookup_host3)
             if not ip:
-                err('unable to get ip for hostname [%s]; trying fallback ip %s.' % (lookup_host, FALLBACK_IP))
-                ip = FALLBACK_IP
+                err(f'unable to find ip for hostname (tried {lookup_host1}/{lookup_host2}/{lookup_host3}); will let Docker pick IP.')
+                ip = None
     if args.subnet:
         if not ip or ip.count('.') != 3:
             err('unable to process --subnet flag; IP is being selected by docker.')
         else:
+            orig_ip = ip
             temp = ip.split('.')
             temp[2] = args.subnet
             ip = '.'.join(temp)
+            if orig_ip != ip: print(f'subnet setting changed IP from {orig_ip} to {ip}')
     return ip
 
 
@@ -260,7 +263,7 @@ def parse_args():
     ap.add_argument('--extra-init', default=None, help='Any additional flags to pass the the init command.')
     ap.add_argument('--fg', action='store_true', help='Run the container in the foreground')
     ap.add_argument('--hostname', '-H', default=None, help=f'use a particular hostname.  Flag overrides ${HOSTNAME_VAR}, default is "{HOSTNAME_FALLBACK}".  Blank/none will use the contain name. Supports replacement of string HOSTNAME with the hosts name .')
-    ap.add_argument('--ip', default=None, help=f'assign a particular IP address.  Flags override settings and ${IP_VAR}, default of "-" (or a dns lookup failure) will dns resolve the hostname and use that IP.')
+    ap.add_argument('--ip', default=None, help=f'assign a particular IP address.  Flags override settings and ${IP_VAR}, default is {IP_FALLBACK}.  Use "-" to look up hostname in dns and use returned value.  Use "" (or dns lookup failure) to let docker pick.')
     ap.add_argument('--log', '-L', default=None, help=f'Log drier to use.  Flags override ${LOG_VAR}.  Allowed: n/none, s/syslog[:url] (e.g. s:udp://sysloghost:514), j/json, or any other value to pass blindly on to Docker.  Default value is "{LOG_FALLBACK}".')
     ap.add_argument('--name', '-n', default=None, help=f'use a specified container name.  flags override settings ${IP_VAR}, default of None will use the name of the directory that contains the settings file')
     ap.add_argument('--network', '-N', default=None, help=f'Name of docker network to use.  flags override settings and ${NAME_VAR}. Default is "{NETWORK_FALLBACK}"')
