@@ -108,15 +108,8 @@ def _get_prom_instance(varz_name, factory):
 
 def _metrics_handler(request):
     # This is an adaptor that matches the kcore handler API, but makes use of
-    # prometheus_client.exposition.py:_bake_output() to perform the work.
+    # prometheus_client.exposition.py to perform the work.
     # Essentially this is a translation of prometheus_client.exposition.do_GET().
-    #
-    # Yes, this is slimy and somewhat fragile, as you're not supposed to
-    # directly call PCE's leading underscore methods, as their signature might
-    # change.  But we can't call PC.exposition.do_GET because our instance of
-    # BaseHTTPRequestHandler has been lost by the time this handler method is
-    # called, and besides, the way kcore.webserver handlers output generation
-    # is rather incompatible.
 
     # ----- auto_healthz
 
@@ -131,15 +124,10 @@ def _metrics_handler(request):
 
     # ----- Have prometheus_client.exposition generate the actual output.
 
+    pc_encoder, content_type = PCE.choose_encoder(request.headers.get('Accept'))
     registry = PC.REGISTRY
-    accept_header = request.headers.get('Accept')
-    params = request.get_params
+    if 'name[]' in request.get_params:
+        registry = registry.restricted_registry(request.get_params['name[]'])
+    output = pc_encoder(registry).decode('utf-8')
 
-    status, header_tuple, output = PCE._bake_output(registry, accept_header, params)
-
-    # ----- Populate a Response object for our output.
-
-    code = int(status.split(' ', 1)[0])
-    headers = { header_tuple[0]: header_tuple[1] }
-    return WB.Response(output.decode('utf-8'), code, headers)
-
+    return WB.Response(output, msg_type=content_type)
