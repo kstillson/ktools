@@ -42,9 +42,9 @@ def test_varz_basics():
     V.set('text1', 'value0')
     V.stamp('stamp1')
 
-    assert C.read_web(url('/varz?counter1')) == '11'
-    assert C.read_web(url('/varz?text1')) == 'value0'
-    assert '<td>stamp1</td>' in C.read_web(url('/varz'))
+    assert C.read_web(url('varz?counter1')) == '11'
+    assert C.read_web(url('varz?text1')) == 'value0'
+    assert '<td>stamp1</td>' in C.read_web(url('varz'))
     
 
 def test_prometheus_metrics():
