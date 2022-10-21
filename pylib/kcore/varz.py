@@ -14,10 +14,10 @@ Avoid putting sensitive data into varz, as it's not access controlled.
 
 import time
 
-# ----------------------------------------
-# varz abstraction
+# ---------- internal state
 
 VARZ = {}
+
 
 # ---------- getters
 
@@ -49,3 +49,11 @@ def reset(counter_name=None):
     global VARZ
     if counter_name: VARZ[counter_name] = None
     else: VARZ = {}
+
+    
+def init(*unused_args, **unused_kwargs):
+    '''This is a no-op placeholder.  Initialization isn't needed for ths version
+       of this module, but it is in the varz_prom version, and I'm trying to keep
+       the API's interchangable.  No need to call this and no harm if you do.''' 
+    return True
+
