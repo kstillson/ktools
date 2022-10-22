@@ -42,7 +42,7 @@ SHELL := /bin/bash
 # Output variables: overall targets, plain, and in staging and target dirs.
 PY_SOURCES := $(patsubst %,%.py,$(PY_TARGETS))
 SH_SOURCES := $(patsubst %,%.sh,$(SH_TARGETS))
-SOURCES := $(PY_SOURCES) $(SH_SOURCES) $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
+SOURCES := $(PY_SOURCES) $(SH_SOURCES) $(PLAIN_TARGETS)
 TARGETS := $(PY_TARGETS) $(SH_TARGETS) $(PLAIN_TARGETS) $(CUSTOM_TARGETS)
 INSTALL_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(TARGETS))
 INSTALL_PY_TARGETS := $(patsubst %,$(INSTALL_DIR)/%,$(PY_TARGETS))
