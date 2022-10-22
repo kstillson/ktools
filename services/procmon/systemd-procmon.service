@@ -12,6 +12,7 @@ Restart=always
 User=nobody
 # group adm for acces to /root/... dirs
 Group=adm
+Environment=KTOOLS_VARZ_PROM=1
 
 [Install]
 WantedBy=multi-user.target
