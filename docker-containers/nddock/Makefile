@@ -1,4 +1,10 @@
 
+# ---------- local overrides
+
+# No tests yet, nothing to do.
+test:
+
+
 # ---------- pass-throughs
 
 include ../../etc/Makefile-docker
@@ -7,6 +13,5 @@ all: docker-all
 comp:  # n/a
 clean: docker-clean
 install: docker-install
-test: docker-test
 uninstall: docker-uninstall
 update: docker-update

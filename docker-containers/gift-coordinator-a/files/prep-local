@@ -5,6 +5,6 @@ SUID_DONT_DELETE_REGEX="fusermount"
 
 # ---------- fix ownership / permissions
 
+chmod 755 /etc/init /home
 chgrp -R santa /home/santa
 chmod -R g+rX /home
-
