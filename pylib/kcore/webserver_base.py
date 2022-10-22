@@ -187,6 +187,12 @@ class WebServerBase:
             }
         else: self.standard_handlers = {}
 
+        # If Prometheus support for varz is enabled, register our instance with varz,
+        # so it can access our /healthz handler, and add a standard /metrics handlers.
+        if os.environ.get('KTOOLS_VARZ_PROM') == '1':
+            V.WEBSERVER = self
+            if use_standard_handlers: self.add_handler('/metrics', V.metrics_handler)
+
 
     def add_handlers(self, handlers):
         if not handlers: return
