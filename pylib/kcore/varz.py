@@ -12,14 +12,20 @@ digging into logs.
 Avoid putting sensitive data into varz, as it's not access controlled.
 
 If the environment variable $KTOOLS_VARZ_PROM == "1", then this module will
-also export varz (and optionally /healthz) as Prometheus /metrics.  This
-requires the prometheus_client library to be installed, and the init_prom()
-method to be called.
+also export varz (and optionally /healthz) as Prometheus /metrics.
 
 '''
 
 import os, re, sys, time
 
+# varz is intended to be a very low level module, so don't included the
+# complicated Prometheus deps unless really necessary.  Also worth noting that
+# the inclusion of webserver_base is technically a leveling violation (varz is
+# supposed to be lower level than webserver, and this is technically an import
+# cycle, which fortunately Python resolves for us).  This could be resolved by
+# refactoring the WB.Response class into an even lower-level file (as that's
+# all we need from WB), but the web-server is already spread amoungst too many
+# files, and splitting it further just for this doesn't seem justified.
 if os.environ.get('KTOOLS_VARZ_PROM') == '1':
     USE_PROM = True
     import prometheus_client as PC
@@ -35,8 +41,8 @@ PROGRAM_NAME = os.path.basename(sys.argv[0])
 VARZ = {}
 
 # Prometheus related
-HEALTHZ_HANDLER = None     # set by init_prom()
 PROM_INSTANCES = {}        # Maps from varz name to prometheus metric instances.
+WEBSERVER = None           # Populated by webserver_base:__init__ if $KTOOLS_VARZ_PROM is set.
 
 
 # ---------- getters
@@ -81,21 +87,6 @@ def reset(counter_name=None):
     else: VARZ = {}
 
 
-# ---------- Prometheus specific
-
-def init_prom(webserver, auto_healthz=True):
-    '''To register a /metrics handler, pass in an already constructed
-       kcore.webserver instance.  To also instrument /healthz, make sure any
-       custom /healthz handler is registered before calling.'''
-    if not USE_PROM: return
-    webserver.add_handler('/metrics', _metrics_handler)
-    if auto_healthz:
-        hd = webserver._find_handler('/healthz')
-        if hd:
-            global HEALTHZ_HANDLER
-            HEALTHZ_HANDLER = hd.func
-
-
 # ==========  INTERNALS
 
 def _get_prom_instance(varz_name, factory):
@@ -106,21 +97,26 @@ def _get_prom_instance(varz_name, factory):
     return PROM_INSTANCES[prom_name].labels(PROGRAM_NAME)
 
 
-def _metrics_handler(request):
+def metrics_handler(request):
     # This is an adaptor that matches the kcore handler API, but makes use of
     # prometheus_client.exposition.py to perform the work.
     # Essentially this is a translation of prometheus_client.exposition.do_GET().
 
     # ----- auto_healthz
 
-    # If we know the webserver's /healthz handler, call it now, and translate
-    # it's output into metrics data.
-    if HEALTHZ_HANDLER:
-        out = HEALTHZ_HANDLER(request)
-        if isinstance(out, WB.Response): out = out.text
-        _get_prom_instance('healthz', PC.Info).info({'value': out})
-        status = 0 if (out.startswith('ok') or 'all ok' in out) else 1
-        _get_prom_instance('healthz_status', PC.Gauge).set(status)
+    # If the webserver registered itself with our singleton, try to call its
+    # /healthz handler, and translate the results into metrics.
+    if WEBSERVER:
+        # The API for _find_handler is more convenient than find_and_run_handler,
+        # as we don't need a fake request.  We also shouldn't cache the results
+        # of finding the handler, as the user might change the handler map.
+        hh = WEBSERVER._find_handler('/healthz')
+        if hh:
+            out = hh.func(request)
+            if isinstance(out, WB.Response): out = out.text
+            _get_prom_instance('healthz', PC.Info).info({'value': out})
+            status = 0 if (out.startswith('ok') or 'all ok' in out) else 1
+            _get_prom_instance('healthz_status', PC.Gauge).set(status)
 
     # ----- Have prometheus_client.exposition generate the actual output.
 

@@ -55,7 +55,6 @@ def test_prometheus_metrics():
         return
     
     ws = start()
-    V.init_prom(ws)
     V.reset()
 
     V.set('counter1', 3)
