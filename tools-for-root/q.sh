@@ -54,7 +54,7 @@ LIST_LINUX="${KTOOLS_Q_LIST_LINUX}"                                         # li
 LIST_PIS="${KTOOLS_Q_LIST_PIS}"                                             # list of RPi linux hosts
 LEASES="${KTOOLS_Q_LEASES:-/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases}"  # Location of dnsmasq leases (output/generated) file.
 PROCMON=${PROCMON:-localhost:8080}                                          # host:port of the procmon instance to work with.
-PROCQ="{KTOOLS_Q_PROCQ:-/var/procmon/queue}"                                # Location of ../services/procmon output file
+PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                               # Location of ../services/procmon output file
 RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${DOCKBASE}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
 
 # ---------- colorizers
