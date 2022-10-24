@@ -1,0 +1,12 @@
+
+ports:
+  - 9090:9090
+
+log: json
+
+mount_persistent:
+  - data: /prometheus
+
+mount_ro:
+  - /rw/dv/prometheus/etc_prometheus/prometheus.yml: /etc/prometheus/prometheus.yml
+
