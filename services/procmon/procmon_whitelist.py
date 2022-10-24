@@ -97,6 +97,7 @@ WHITELIST = [
     WL('nddock',    '201',         True,  False, '/usr/sbin/netdata.*'),
     WL('nddock',    'root',        False, False, '/bin/bash'),
     WL('privdock',  'dweb2',       False, False, '/usr/sbin/httpd'),
+    WL('prometheus','265534',      False, True,  '/bin/prometheus --config.file=/etc/prometheus/prometheus.yml'),    
     WL('rclonedock','droot',       False, False, '/bin/bash /etc/init'),
     WL('rclonedock','droot',       False, False, '/usr/bin/encfs --extpass /usr/local/bin/kmc encfs-default /root/gdrive /root/gdrive-efs'),
     WL('rclonedock','droot',       False, False, '/usr/bin/script --append --flush --return --command /etc/init'),
