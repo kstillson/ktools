@@ -30,7 +30,7 @@ set -e
 # ---------- flag defaults
 
 DEBUG=0          # don't delete tempfiles
-EXCLUDE=""       # csv list of hosts to exclude
+EXCLUDE="${KTOOLS_Q_EXCLUDE:-}"  # csv list of hosts to exclude
 HOST_SUBST="@"   # replace this substring with hostnames in some commands
 PARA=1           # run commands for multiple hosts in parallel
 TEST=0           # for commands that would make changes, print them rather than running them
@@ -38,27 +38,24 @@ TIMEOUT=90       # default ssh connect timeout
 VERBOSE=0        # print commands as they are run
 
 # ---------- control constants
+# Anything with "LIST_" in the name here should be space separated values (ssv).
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 # default flags to run_para command (see ../pylib_tools):
 RP_FLAGS_BASE="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
 RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
-
-# ---------- hard-coded control constants
-# (almost certainly wrong for anyone else but the author...)
-
-if [[ "$MY_HOSTNAME" == "jack" ]]; then KMHOST="keymaster:4444"; else KMHOST="jack:4444"; fi
-KM="https://${KMHOST}"
-
-DD="/root/docker-dev/dnsdock/files/etc/dnsmasq/private.d"   # Where dnsmasq config files are stored.
-GIT_DIRS="/root/arps /root/docker-dev /root/dev/dots-rc /root/dev/homectrl /root/dev/ktools"  # List of git dirs this script manages.
-KMD_P="$HOME/dev/ktools/private.d/km.data.pcrypt"  # Location of encrypted keymaster secrets file
-LIST_LINUX="a1 blue jack mc2 "  # list of non-RPi linux hosts
-LIST_PIS="hs-mud hs-family hs-lounge hs-front lightning pi1 pi2-wifi pibr pout trellis1 twinkle"  # list of RPi linux hosts
-LEASES="/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases"  # Location of dnsmasq leases (output/generated) file.
-PROCQ="/var/procmon/queue"  # Location of ../services/procmon output file
-RSNAP_CONF="/root/docker-dev/rsnapdock/files/etc/rsnapshot.conf"  # Location of rsnapshot config input file
+DOCKBASE="${DOCKER_BASE_DIR:-/root/docker-dev}"                             # Directory containing docker source dirs.
+DD="${KTOOLS_Q_DD:-${DOCKBASE}/dnsdock/files/etc/dnsmasq/private.d}"        # Where dnsmasq config files are stored.
+GIT_DIRS="${KTOOLS_Q_GIT_DIRS}"                                             # List of git dirs this script manages.
+KM="https://${KMHOST:-localhost:4444}"
+KMD_P="${KTOOLS_Q_KMD_P:-$HOME/dev/ktools/private.d/km.data.pcrypt}"        # Location of encrypted keymaster secrets file
+LIST_LINUX="${KTOOLS_Q_LIST_LINUX}"                                         # list of non-RPi linux hosts
+LIST_PIS="${KTOOLS_Q_LIST_PIS}"                                             # list of RPi linux hosts
+LEASES="${KTOOLS_Q_LEASES:-/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases}"  # Location of dnsmasq leases (output/generated) file.
+PROCMON=${PROCMON:-localhost:8080}                                          # host:port of the procmon instance to work with.
+PROCQ="{KTOOLS_Q_PROCQ:-/var/procmon/queue}"                                # Location of ../services/procmon output file
+RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${DOCKBASE}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
 
 # ---------- colorizers
 
@@ -504,7 +501,7 @@ function dns_update() {
     if [[ "$TEST" == 1 ]]; then emit "test mode; not updating dnsmasq"; return; fi
     emit "updating dnsmasq"
     /root/bin/d u dnsdock
-    cd /root/docker-dev/dnsdock
+    cd ${DOCKBASE}/dnsdock
     git C
     emit "done"
 }
@@ -538,7 +535,7 @@ function dns_update_rmmac() {
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
 function procmon_clear_cow() {
-    for f in $(curl -sS jack:8080/healthz | grep COW | sed -e 's/COW: unexpected file: //'); do
+    for f in $(curl -sS ${PROCMON}/healthz | grep COW | sed -e 's/COW: unexpected file: //'); do
         emitC blue "$f"
         docker=${f%%:*}
         relfile=${f#*:}
@@ -935,9 +932,9 @@ function main() {
             keymaster_reload; /usr/local/bin/panic reset ;;
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
         procmon-query | pq)                                               ## check procmon status
-            curl -sS jack:8080/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;
+            curl -sS ${PROCMON}/healthz; echo ''; if [[ -s $PROCQ ]]; then cat $PROCQ; fi ;;
         procmon-rescan | pr)                                              ## procmon re-scan and show status
-            curl -sS jack:8080/scan >/dev/null ; curl -sS jack:8080/healthz; echo '' ;;
+            curl -sS ${PROCMON}/scan >/dev/null ; curl -sS ${PROCMON}/healthz; echo '' ;;
         procmon-zap | homesec-reset | hr | pz)                            ## clear procmon queue
             runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
