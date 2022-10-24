@@ -4,11 +4,14 @@ FROM docker.io/alpine:3.15
 
 RUN umask 022 && \
     apk upgrade -U && \
-    apk add --no-cache bash python3 py3-cryptography py3-pip tzdata && \
+    apk add --no-cache bash python3 py3-cryptography py3-pip py3-prometheus-client tzdata && \
     rm -rf /var/cache/apk/*
 
 # Needs apk tzdata:
 ENV TZ America/New_York
+
+# Enable auto varz -> Prometheus
+ENV KTOOLS_VARZ_PROM 1
 
 COPY files /
 
