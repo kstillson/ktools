@@ -22,7 +22,7 @@ WHITELIST = [
     WL('/',         'root',        False, False, '/bin/(ba)?sh( -c)? */root/bin/d-run --cd rclonedock --fg --settings'),
     WL('/',         'root',        False, False, '/bin/login'),
     WL('/',         'root',        False, False, '/bin/systemd-tty-ask-password-agent'),
-    WL('/',         'root',        False, False, '/sbin/agetty .*noclear tty1 linux'),
+    WL('/',         'root',        False, False, '/sbin/agetty '),
     WL('/',         'root',        False, False, '/sbin/fstrim --fstab'),
     WL('/',         'root',        False, False, '/sbin/init'),
     WL('/',         'root',        False, False, '/usr/bin/containerd'),
