@@ -1,6 +1,6 @@
 '''This is part of circuitpy_sim.  See README-circuitpy.md for details.'''
 
-import threading, time, sys
+import os, threading, time, sys
 import kcore.common as C
 
 GRAPHICS = True
@@ -44,7 +44,11 @@ def sep_rgb(rgb):
 
 class NeoPixel:
     def __init__(self, pin, num_pixels, **kwargs):
+        global GRAPHICS
         if LOG_LEVEL_SETUP: C.log(f'NeoPixel: new array of {num_pixels} dots', LOG_LEVEL_SETUP)
+        if not os.environ.get('DISPLAY'):
+            GRAPHICS = False
+            if LOG_LEVEL_SETUP: C.log(f'NeoPixel: graphics disabled as $DISPLAY not set', LOG_LEVEL_SETUP)
         self.n = num_pixels
         self.kwargs = kwargs
         self.brightness = 1.0

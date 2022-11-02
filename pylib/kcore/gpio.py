@@ -57,10 +57,11 @@ SIM_LEDS = {}     # bcm pin# (int) -> Bool
 
 # ---------- init and cleanup
 
-def init(simulation=False):
-    if simulation:
+def init(simulation=None):
+    if simulation is not None:
         global SIMULATION
-        SIMULATION = True
+        SIMULATION = simulation
+    if SIMULATION:
         return simout('gpio initialized in simulation mode')
     if not CIRCUITPYTHON:
         atexit.register(rpi_atexit)
