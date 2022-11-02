@@ -193,7 +193,7 @@ def get_ip(hostname):
 
 def get_ip_to_use(args, settings):
     ip = args.ip or settings.get('ip', None) or os.environ.get(IP_VAR) or IP_FALLBACK
-    if ip in ['', '0']: return None
+    if ip in ['', '-', '0']: return None
 
     # If we don't see 3 dots, this must be a hostname we're intended to look up.
     if ip.count('.') != 3:
@@ -245,44 +245,45 @@ def parse_args():
     ap = argparse.ArgumentParser(description='docker container launcher')
 
     # Flags that help d-run select which container to launch.
-    ap.add_argument('--cd', default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
-    ap.add_argument('--image', '-i', default=None, help='Name of image to use; default of None will use container name.')
+    ap.add_argument('--cd',           default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
+    ap.add_argument('--image',  '-i', default=None, help='Name of image to use; default of None will use container name.')
     ap.add_argument('--latest', '-l', action='store_true', help='Shorthand for --tag=latest')
-    ap.add_argument('--repo', default=REPO_DEFAULT, help=f'repo prefix for image name.  default="{REPO_DEFAULT}"')
-    ap.add_argument('--repo2', default=None, help=f'backup repo prefix to try if image:tag does not exist in --repo.  Flags override ${REPO2_VAR}, default="{REPO2_FALLBACK}"')
-    ap.add_argument('--tag', '-T', default=None, help=f'tag or hash of image version to use.  Flags override settings and ${TAG_VAR}), default is "{TAG_FALLBACK}".')
+    ap.add_argument('--repo',         default=REPO_DEFAULT, help=f'repo prefix for image name.  default="{REPO_DEFAULT}"')
+    ap.add_argument('--repo2',        default=None, help=f'backup repo prefix to try if image:tag does not exist in --repo.  Flags override ${REPO2_VAR}, default="{REPO2_FALLBACK}"')
+    ap.add_argument('--tag',    '-T', default=None, help=f'tag or hash of image version to use.  Flags override settings and ${TAG_VAR}), default is "{TAG_FALLBACK}".')
 
     # Flags that provide context about the mode we're launching the container in.
-    ap.add_argument('--dev', '-D', action='store_true', help='Activate development mode (equiv to: --fg --log=NONE --name_prefix=dev- --network=docker2 --rm --subnet=3 --latest --vol-alt).')
-    ap.add_argument('--dev-test', '-DT', action='store_true', help='Same as --dev but use --name_prefix=test-')
-    ap.add_argument('--settings', '-s', default=None, help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
-    ap.add_argument('--test-in-place', '-P', action='store_true', help='Run dev version in real container (equiv to: --fg --log=NONE --rm --latest).')
+    ap.add_argument('--dev',           '-D',  action='store_true', help='Activate development mode (equiv to: --fg --log=NONE --name_prefix=dev- --network=docker2 --rm --subnet=3 --latest --vol-alt).')
+    ap.add_argument('--dev-test',      '-DT', action='store_true', help='Same as --dev but use --name_prefix=test-')
+    ap.add_argument('--settings',      '-s',  default=None, help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
+    ap.add_argument('--test-in-place', '-P',  action='store_true', help='Run dev version in real container (equiv to: --fg --log=NONE --rm --latest).')
 
     # Flags that override or are merged with individual settings to fine-tune individual flags passed to the container launch.
-    ap.add_argument('--cmd', default=None, help='Specify the inside-container command or args to run.')
-    ap.add_argument('--extra-docker', default=None, help='Any additional flags to pass to the docker command.')
-    ap.add_argument('--extra-init', default=None, help='Any additional flags to pass the the init command.')
-    ap.add_argument('--fg', action='store_true', help='Run the container in the foreground')
+    ap.add_argument('--cmd',            default=None, help='Specify the inside-container command or args to run.')
+    ap.add_argument('--extra-docker',   default=None, help='Any additional flags to pass to the docker command.')
+    ap.add_argument('--extra-init',     default=None, help='Any additional flags to pass the the init command.')
+    ap.add_argument('--env',      '-e', default=[], nargs='*', help='Any additional environment variables to set in the container')
+    ap.add_argument('--fg',             action='store_true', help='Run the container in the foreground')
     ap.add_argument('--hostname', '-H', default=None, help=f'use a particular hostname.  Flag overrides ${HOSTNAME_VAR}, default is "{HOSTNAME_FALLBACK}".  Blank/none will use the contain name. Supports replacement of string HOSTNAME with the hosts name .')
-    ap.add_argument('--ip', default=None, help=f'assign a particular IP address.  Flags override settings and ${IP_VAR}, default is {IP_FALLBACK}.  Use "-" to look up hostname in dns and use returned value.  Use "" (or dns lookup failure) to let docker pick.')
-    ap.add_argument('--log', '-L', default=None, help=f'Log drier to use.  Flags override ${LOG_VAR}.  Allowed: n/none, s/syslog[:url] (e.g. s:udp://sysloghost:514), j/json, or any other value to pass blindly on to Docker.  Default value is "{LOG_FALLBACK}".')
-    ap.add_argument('--name', '-n', default=None, help=f'use a specified container name.  flags override settings ${IP_VAR}, default of None will use the name of the directory that contains the settings file')
-    ap.add_argument('--network', '-N', default=None, help=f'Name of docker network to use.  flags override settings and ${NAME_VAR}. Default is "{NETWORK_FALLBACK}"')
-    ap.add_argument('--ports', '-p', default=None, nargs='*', help='Port to map, host:container (can specify flag multiple times')
-    ap.add_argument('--rm', action='store_true', help='Ask docker to auto-remove the container when it stops.')
-    ap.add_argument('--puid', default='auto', help='Use give value for $PUID rather than auto-generating.  Remember you probably want this to be container-specific.  Set blank to skip assignment.  See kcore/auth.py for details.')
-    ap.add_argument('--subnet', default=None, help='If specified, use existing logic to determine IP number, but then map that number to this subnet.')
-    ap.add_argument('--ipv6', '-6', action='store_true', help='If not specified, make port bindings specific to IPv4 only.')
+    ap.add_argument('--ip',             default=None, help=f'assign a particular IP address.  Flags override settings and ${IP_VAR}, default is {IP_FALLBACK}.  Use "-" to look up hostname in dns and use returned value.  Use "" (or dns lookup failure) to let docker pick.')
+    ap.add_argument('--log',      '-L', default=None, help=f'Log drier to use.  Flags override ${LOG_VAR}.  Allowed: n/none, s/syslog[:url] (e.g. s:udp://sysloghost:514), j/json, or any other value to pass blindly on to Docker.  Default value is "{LOG_FALLBACK}".')
+    ap.add_argument('--name',     '-n', default=None, help=f'use a specified container name.  flags override settings ${IP_VAR}, default of None will use the name of the directory that contains the settings file')
+    ap.add_argument('--network',  '-N', default=None, help=f'Name of docker network to use.  flags override settings and ${NAME_VAR}. Default is "{NETWORK_FALLBACK}"')
+    ap.add_argument('--ports',    '-p', default=None, nargs='*', help='Port to map, host:container (can specify flag multiple times')
+    ap.add_argument('--rm',             action='store_true', help='Ask docker to auto-remove the container when it stops.')
+    ap.add_argument('--puid',           default='auto', help='Use give value for $PUID rather than auto-generating.  Remember you probably want this to be container-specific.  Set blank to skip assignment.  See kcore/auth.py for details.')
+    ap.add_argument('--subnet',         default=None, help='If specified, use existing logic to determine IP number, but then map that number to this subnet.')
+    ap.add_argument('--ipv6',     '-6', action='store_true', help='If not specified, make port bindings specific to IPv4 only.')
 
     # Flags that tweak the way d-run works.
-    ap.add_argument('--fail-on-exists', action='store_true', help='fail if a container with this name already exists.  default will auto-remove the conflicting container instance (which only works if its shut down).')
-    ap.add_argument('--name_prefix', default='', help='If specified, use normal logic to determine the container name, but prefix it with this string.')
-    ap.add_argument('--print-cmd', action='store_true', help='Print launch command before executing it.')
-    ap.add_argument('--vol-alt', '-v', action='store_true', help='Mount non-read-only volumes in alternate locations.  Also send send debug_extra_init settings.  This is a subset of --dev, and --dev is probably what you want.')
+    ap.add_argument('--fail-on-exists',     action='store_true', help='fail if a container with this name already exists.  default will auto-remove the conflicting container instance (which only works if its shut down).')
+    ap.add_argument('--name_prefix',        default='', help='If specified, use normal logic to determine the container name, but prefix it with this string.')
+    ap.add_argument('--print-cmd',          action='store_true', help='Print launch command before executing it.')
+    ap.add_argument('--vol-alt',      '-v', action='store_true', help='Mount non-read-only volumes in alternate locations.  Also send send debug_extra_init settings.  This is a subset of --dev, and --dev is probably what you want.')
 
     # Flags that activate an entirely different mode of operation from the usual.
-    ap.add_argument('--shell', '-S', action='store_true', help='If activated, override the normal entrypoint and use foreground interactive tty-enabled bash.')
-    ap.add_argument('--test', '-t', action='store_true', help='Just print the command that would be run rather than running it.')
+    ap.add_argument('--shell',   '-S', action='store_true', help='If activated, override the normal entrypoint and use foreground interactive tty-enabled bash.')
+    ap.add_argument('--test',    '-t', action='store_true', help='Just print the command that would be run rather than running it.')
 
     args = ap.parse_args()
     if args.latest: args.tag = 'latest'
@@ -342,7 +343,9 @@ def gen_command(args, settings):
     else:
         cmnd.extend(['--network', 'none'])
 
-    for i in settings.get('env'): cmnd.extend(['--env', i])
+    add_env = settings.get('env') or []
+    add_env.extend(args.env)
+    for i in add_env: cmnd.extend(['--env', i])
 
     if args.log:
         cmnd.extend(expand_log_shorthand(args.log, name))

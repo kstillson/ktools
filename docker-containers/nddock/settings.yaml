@@ -11,12 +11,9 @@
 # And you really do NOT want to expose the internal webserver (port 19999) to
 # any untrusted networks (and certainly not to to the Internet!).
 
-# Enable the following if you need to override them for your setup:
-# name: host-specific-name
-# network: bridge
-# ip: '-'
-
 hostname: "HOSTNAME-ndd"
+
+extra_docker: "--cap-add SYS_PTRACE --security-opt apparmor=unconfined --userns=host"
 
 ports:
   - 19999:19999
@@ -38,5 +35,6 @@ mount_ro:
   - /sys: /host/sys
 
 # You may wish to add your $NETDATA_CLAIM_TOKEN and/or $NETDATA_CLAIM_URL
-#
-extra_docker: "--cap-add SYS_PTRACE --env DO_NOT_TRACK=1 --env PGID=1024 --security-opt apparmor=unconfined --userns=host"
+env:
+  - DO_NOT_TRACK=1
+  - PGID=1024
