@@ -8,6 +8,7 @@ Supported features in the settings file:
 debug_alt_cmnd: string
 extra_init: string
 debug_extra_init: string
+env: list of env assignment strings
 extra_docker: string
 foreground: 1   (note: ignored when --vol-alt, which requires background launches)
 hostname: string
@@ -341,6 +342,7 @@ def gen_command(args, settings):
     else:
         cmnd.extend(['--network', 'none'])
 
+    for i in settings.get('env'): cmnd.extend(['--env', i])
 
     if args.log:
         cmnd.extend(expand_log_shorthand(args.log, name))

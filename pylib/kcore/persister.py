@@ -183,7 +183,6 @@ class Persister:
                 return False
             with open(self.filename) as f: serialized = f.read()
 
-        C.log_debug(f'@@ loaded file contents: {serialized}')
         if self.password:
             if not serialized:
                 C.log_debug(f'filename={self.filename} loaded empty; cannot decrypt.')

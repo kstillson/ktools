@@ -445,18 +445,28 @@ def get_shared_secret_from_db(db_passwd, db_filename, token_hostname, client_add
   if not reg:
     debug_msg(f'failed to load registration db: {REGISTRATION.__dict__}')
     return None
-  lookup = reg.get(f'{token_hostname}:{username}')
+
+  srch = f'{token_hostname}:{username}'
+  lookup = reg.get(srch)
   if lookup:
     debug_msg(f'returning token hostname match: {token_hostname}')
     return lookup
-  lookup = reg.get(f'{client_addr}:{username}')
+  else: debug_msg(f'trying {srch} in reg db didnt work...')
+
+  srch = f'{client_addr}:{username}'
+  lookup = reg.get(srch)
   if lookup:
     debug_msg(f'returning client address hostname match: {client_addr}')
     return lookup
-  lookup = reg.get(f'*:{username}')
+  else: debug_msg(f'trying {srch} in reg db didnt work...')
+
+  srch = f'*:{username}'
+  lookup = reg.get(srch)
   if lookup:
     debug_msg(f'returning wildcard hostname match')
     return lookup
+  else: debug_msg(f'trying {srch} in reg db didnt work...')
+
   debug_msg(f'no matching hostname in secrets DB.')
 
 
