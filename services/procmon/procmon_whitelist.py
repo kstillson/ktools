@@ -3,6 +3,7 @@ from procmon_wl_type import WL
 #      Container    user           child? rqrd?  regex
 WHITELIST = [
     WL('*',         'root',        False, False, 'runc --root /var/run/docker/runtime-runc/moby --log'),
+    WL('*',         'root',        False, False, 'runc init'),
     WL('/',         '*',           False, False, '/lib/systemd/systemd --(system|user)'),
     WL('/',         '*',           False, False, '\(sd-pam\)'),
     WL('/',         'blue-backup', False, False, 'rsync '),
@@ -145,9 +146,12 @@ WHITELIST = [
 
 #      Container    user           child? rqrd?  regex
 GREYLIST = [
+    WL('/',         'ken',         False, False,  'sshd: ken'),
+    WL('/',         'root',        False, False,  '/usr/bin/python3 /usr/bin/glances'),
     WL('/',         'root',        False, False,  '/usr/bin/ssh-agent'),
-    WL('/',         'root',        True,  False,  'SCREEN -D -R'),
+    WL('/',         'root',        False, False,  'sshd: ken'),
     WL('/',         'root',        False, False,  'sshd: root \[priv\]'),
+    WL('/',         'root',        True,  False,  'SCREEN -D -R'),
     WL('/',         'root',        True,  False,  'sshd: root@pts/.'),
     WL('git',       'root',        False, False,  'sshd: ken'),
     WL('ssh',       'root',        False, False,  'sshd: ken'),
