@@ -63,6 +63,21 @@ These affect how containers are launched by docker-infrastructure/d-run.sh
   variable provides a default location to search for those files.
 
 
+## tools-for-root/q.sh
+
+- KMHOST: "hostname:port" of the keymaster to work with
+- KTOOLS_Q_DD: Where dnsmasq config files are stored
+- KTOOLS_Q_EXCLUDE: csv list of hosts to exclude
+- KTOOLS_Q_GIT_DIRS: ssv (space separated values) list of git dirs this script manages.
+- KTOOLS_Q_KMD_P: Location of encrypted keymaster secrets file
+- KTOOLS_Q_LEASES: Location of dnsmasq leases (output/generated) file.
+- KTOOLS_Q_LIST_LINUX: ssv list of non-RPi linux hosts
+- KTOOLS_Q_LIST_PIS: ssv list of RPi linux hosts
+- KTOOLS_Q_PROCQ:  Location of ../services/procmon output file
+- KTOOLS_Q_RSNAP_CONF: Location of rsnapshot config input file
+- PROCMON: "hostname:port" of the procmon to work with
+
+
 ## /varz
 
 - KTOOLS_VARZ_PROM: set to "1" for kcore.varz to automatically export all

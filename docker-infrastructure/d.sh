@@ -262,7 +262,7 @@ case "$cmd" in
     ;;
   enter | exec-cmd | exec | e0 | e)                              ## Interactive root shell in $1
     name=$(pick_container_from_up $spec)
-    docker exec -u 0 -ti ${name} /bin/bash
+    docker exec -u 0 -ti ${name} /bin/bash || docker exec -u 0 -ti ${name} /bin/sh
     echo "back from container."
     ;;
   run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;  ## Run command $2+ as root in $1
