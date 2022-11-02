@@ -146,9 +146,12 @@ WHITELIST = [
 
 #      Container    user           child? rqrd?  regex
 GREYLIST = [
+    WL('/',         'ken',         False, False,  'sshd: ken'),
+    WL('/',         'root',        False, False,  '/usr/bin/python3 /usr/bin/glances'),
     WL('/',         'root',        False, False,  '/usr/bin/ssh-agent'),
-    WL('/',         'root',        True,  False,  'SCREEN -D -R'),
+    WL('/',         'root',        False, False,  'sshd: ken'),
     WL('/',         'root',        False, False,  'sshd: root \[priv\]'),
+    WL('/',         'root',        True,  False,  'SCREEN -D -R'),
     WL('/',         'root',        True,  False,  'sshd: root@pts/.'),
     WL('git',       'root',        False, False,  'sshd: ken'),
     WL('ssh',       'root',        False, False,  'sshd: ken'),
