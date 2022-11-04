@@ -584,12 +584,12 @@ function push_wheel() {
 
 # Run a series of checks on the status of my home network.
 function checks_real() {
-    nag | expect "nagios checks" "all ok"
+    nag |& expect "nagios checks" "all ok"
     leases_list_orphans |& expect "dns orphans" "all ok"
-    cat $PROCQ | expect "procmon queue" ""
+    cat $PROCQ |& expect "procmon queue" ""
     fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
-    $0 dup-check | expect "$(basename $0) dup cmds" "all ok"
-    dns_check | expect "dns config check" "all ok"
+    $0 dup-check |& expect "$(basename $0) dup cmds" "all ok"
+    dns_check |& expect "dns config check" "all ok"
     /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
     /root/bin/d check-all-up |& expect "docker instances" "all ok"
     /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
