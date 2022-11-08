@@ -96,16 +96,16 @@ def scan(status_file):
                 elif section == 'servicestatus': 
                     svc = sect_dict.get('service_description', '?')
                 else:
-                    # Don't know how to parse this type...
+                    # Don't know or care how to parse this section...
                     continue
-                status_enum = eval_state(sect_dict, svc)
-                if 'test' in svc:
-                    if not ARGS.include_test and not ARGS.fail_sim:
-                        continue
-                    if ARGS.fail_sim:
-                        status_enum = StatusEnum.CRITICAL
-                status = Status(sect_dict.get('host_name', '?'),
-                                svc, status_enum, sect_dict)
+                hostname = sect_dict.get('host_name', '?')
+                if ('test' in svc or 'test' in hostname) and not ARGS.include_test:
+                    continue
+                if ARGS.fail_sim and (ARGS.fail_sim in svc or ARGS.fail_sim in hostname):
+                    status_enum = StatusEnum.CRITICAL
+                else:
+                    status_enum = eval_state(sect_dict, svc)
+                status = Status(hostname, svc, status_enum, sect_dict)
                 by_status[status_enum].append(status)
     return by_status
 
@@ -154,7 +154,7 @@ def generate_color(by_status):
     return cgi_wrap_text(color)
 
 
-def gen_ack_for_one_service(host, service):
+def gen_ack_for_one_item(host, service):
     now = get_now()
     if not service:
       return f'[{now}] ACKNOWLEDGE_HOST_PROBLEM;{host};1;1;1;1;Admin;via nag cmd\n'
@@ -162,7 +162,7 @@ def gen_ack_for_one_service(host, service):
       return f'[{now}] ACKNOWLEDGE_SVC_PROBLEM;{host};{service};1;1;1;Admin;via nag cmd\n'
 
 
-def gen_force_for_one_service(host, service):
+def gen_force_for_one_item(host, service):
     now = get_now()
     if not service:
       return f'[{now}] SCHEDULE_FORCED_HOST_CHECK;{host};{now}\n'
@@ -174,16 +174,16 @@ def run_list(the_list, ack=False):   # If !ack, then do retry.
     out = ''
     for i in the_list:
         if ack:
-            out += gen_ack_for_one_service(i.host, i.service)
+            out += gen_ack_for_one_item(i.host, i.service)
         else:
-            out += gen_force_for_one_service(i.host, i.service)
-        write_to_cmdfile(out)
+            out += gen_force_for_one_item(i.host, i.service)
+    write_to_cmdfile(out)
     return f'wrote {len(the_list)} {"ack" if ack else "retry"} command(s).'
 
 
 def write_to_cmdfile(out):
     if ARGS.test:
-        print('TEST (would queue): ' + out)
+        print(f'TEST (would queue):\n{out}--\n')
         return
     with open(ARGS.cmd_file, 'w') as f:
         f.write(out)
@@ -194,7 +194,7 @@ def parse_args():
     ap.add_argument('--ack', '-A',      action='store_true', help='Ack all non-ok services.')
     ap.add_argument('--all', '-a',      action='store_true', help='Include all, not just currently not-ok (in either output report or retry commands)')
     ap.add_argument('--cmd_file', '-o', default='/rw/dv/nagdock/var_nagios/rw/nagios.cmd', help='Location of nagios command input pipe')
-    ap.add_argument('--fail_sim', '-F', action='store_true', help='Simulate failure in the test service')
+    ap.add_argument('--fail_sim', '-F', default=None, help='Simulate failure in matching host/services')
     ap.add_argument('--filter', '-f',   nargs='+', default=[], help='exclude from failures anything with names matching these substrings')
     ap.add_argument('--color',          action='store_true', help='Output just the color of the overall status block (suitable for a cgi-bin call)')
     ap.add_argument('--html',           action='store_true', help='Output html format (suitable for a cgi-bin call)')
