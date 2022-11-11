@@ -25,6 +25,7 @@ $(info $(WHITELIST_SOURCE))
 
 $(INSTALL_DIR)/procmon_whitelist: $(WHITELIST_SOURCE)
 	cp $(WHITELIST_SOURCE) $@
+	chgrp adm $@
 
 $(TEST_LOG): $(wildcard *.py tests/*.py)
 	set -o pipefail && python3 procmon_whitelist.py |& tee $(TEST_LOG)
