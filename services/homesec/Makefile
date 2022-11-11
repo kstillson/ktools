@@ -31,6 +31,7 @@ $(TEST_LOG): $(wildcard *.py tests/*.py)
 # ---------- pass-throughs
 
 clean: common_clean
+	rm -rf private.d/__pycache__
 
 comp: common_comp
 

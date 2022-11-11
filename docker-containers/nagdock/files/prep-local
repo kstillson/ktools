@@ -7,6 +7,10 @@ SUID_DONT_DELETE_REGEX="su|ping"
 SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|chown|ln|od|strings)$"
 WORLD_WRITABLE_DIRS_RM=0
 
+# Some files stored in private.d subdirs to keep them out of git;
+# move them into their real positions.
+mv -f /etc/nagios/conf.d/private.d/* /etc/nagios/conf.d || true
+
 # Fix ownerships.
 /bin/chown -R root:nagios /etc/nagios
 

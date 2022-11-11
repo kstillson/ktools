@@ -8,7 +8,8 @@ all: common_all
 
 SHELL := /bin/bash
 
-PY_TARGETS := procmon procmon_whitelist
+PY_TARGETS := procmon
+CUSTOM_TARGETS := procmon_whitelist
 PLAIN_TARGETS := procmon_wl_type.py   # PLAIN to preserve .py suffix (needed for importing)
 
 USER := $(shell whoami)
@@ -19,8 +20,17 @@ SHELL := /bin/bash
 
 # ---------- custom targets
 
+WHITELIST_SOURCE := $(shell ls procmon_whitelist.py* private.d/procmon_whitelist.py* 2>/dev/null | head -1)
+$(info $(WHITELIST_SOURCE))
+
+$(INSTALL_DIR)/procmon_whitelist: $(WHITELIST_SOURCE)
+	cp $(WHITELIST_SOURCE) $@
+
 $(TEST_LOG): $(wildcard *.py tests/*.py)
-	set -o pipefail && ./tests/procmon_test.sh |& tee $(TEST_LOG)
+	set -o pipefail && python3 procmon_whitelist.py |& tee $(TEST_LOG)
+	set -o pipefail && if [[ -f private.d/procmon_whitelist.py ]]; then PYTHONPATH=. python3 private.d/procmon_whitelist.py |& tee $(TEST_LOG); fi
+	./procmon.py --logfile - --nocow --nodmap --noro --output '' --queue '' --test --whitelist tests/procmon_whitelist_allow_any.py |& fgrep -v Skipping |& tee $(TEST_LOG)
+	@fgrep "all ok" $(TEST_LOG)
 
 
 # ---------- pass-throughs

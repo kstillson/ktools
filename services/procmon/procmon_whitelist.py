@@ -1,3 +1,10 @@
+'''Example procmon whitelist
+
+This is an example based on the original author's actual whitelist (with a few
+strategic entries removed).  To make your own, copy this as a starting point to
+private.d/procmon_whitelist.py, and modify as needed for your system.
+'''
+
 from procmon_wl_type import WL
 
 #      Container    user           child? rqrd?  regex
@@ -15,7 +22,6 @@ WHITELIST = [
     WL('/',         'nobody',      False, False, '(/bin/bash -c *)?/bin/ping -c1 -q -w4 hs-front'),
     WL('/',         'nobody',      False, False, '/bin/sleep'),
     WL('/',         'nobody',      False, False, '/usr/bin/python3 /root/ktools/procmon/procmon'),
-    WL('/',         'nobody',      False, True,  '/usr/bin/python3 /root/ktools/tools-etc/button_relay.py'),
     WL('/',         'nobody',      False, True,  '/usr/local/bin/dhcp-helper -e eth1 -s 192.168.2.2'),
     WL('/',         'ntp',         False, False, '/usr/sbin/ntpd -p /var/run/ntpd.pid'),
     WL('/',         'root',        False, False, '(/bin/bash -c *)?.HC'),
@@ -62,7 +68,6 @@ WHITELIST = [
     WL('/',         'root',        False, True,  'sshd: /usr/sbin/sshd -D'),
     WL('/',         'root',        True,  False, '(/bin/sh -c *)?run-parts --report /etc/cron'),
     WL('/',         'root',        True,  False, '/bin/(ba)?sh( -c)? */root/bin/d 01 nagdock'),
-    WL('/',         'root',        True,  False, '/bin/(ba)?sh( -c)? */root/bin/ssh-agent-wrap /root/lets-encrypt-getssl/getssl'),
     WL('/',         'root',        True,  False, '/bin/(ba)?sh( -c)? */usr/local/bin/update-ddns'),
     WL('/',         'root',        True,  False, '/bin/sh -c */root/bin/rsnap-diff'),
     WL('/',         'root',        True,  False, '/bin/sh -c */root/bin/run-rsnapshot'),
@@ -99,7 +104,6 @@ WHITELIST = [
     WL('nagdock',   'dnagios',     True,  True,  '/usr/sbin/nagios'),
     WL('nddock',    '201',         True,  False, '/usr/sbin/netdata.*'),
     WL('nddock',    'root',        False, False, '/bin/bash'),
-    WL('privdock',  'dweb2',       False, False, '/usr/sbin/httpd'),
     WL('prometheus','265534',      False, True,  '/bin/prometheus --config.file=/etc/prometheus/prometheus.yml'),    
     WL('rclonedock','droot',       False, False, '/bin/bash /etc/init'),
     WL('rclonedock','droot',       False, False, '/root/bin/rclone (sync|copy)'),
@@ -109,11 +113,6 @@ WHITELIST = [
     WL('rclonedock','root',        False, False, '/bin/bash /etc/init'),
     WL('rclonedock','root',        False, False, '/root/bin/rclone (sync|copy)'),
     WL('rclonedock','root',        False, False, 'fgrep -v non'),
-    WL('rpsdock',   'droot',       False, False, '(/usr/bin/python. )?/root/.rps/rps'),
-    WL('rpsdock',   'droot',       False, True,  '/bin/sh /etc/init'),
-    WL('rpsdock',   'droot',       False, True,  '/tmp/tmp'),
-    WL('rpsdock',   'droot',       False, True,  'sleep'),
-    WL('rpsdock',   'droot',       True,  False, '/bin/bash -c gpg'),
     WL('rsnapdock', 'root',        True,  False, '/bin/bash /etc/init'),
     WL('rsnapdock', 'root',        True,  False, '/usr/bin/perl -w /usr/bin/rsnapshot'),
     WL('sambadock', 'dken',        True,  False, '/usr/sbin/smbd'),
@@ -156,6 +155,4 @@ GREYLIST = [
     WL('/',         'root',        True,  False,  'SCREEN -D -R'),
     WL('/',         'root',        True,  False,  'sshd: root@pts/.'),
     WL('git',       'root',        False, False,  'sshd: ken'),
-    WL('ssh',       'root',        False, False,  'sshd: ken'),
-    WL('web',       'www-data',    False, False,  'sh'),
 ]

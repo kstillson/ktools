@@ -501,8 +501,6 @@ function dns_update() {
     if [[ "$TEST" == 1 ]]; then emit "test mode; not updating dnsmasq"; return; fi
     emit "updating dnsmasq"
     /root/bin/d u dnsdock
-    cd ${DOCKBASE}/dnsdock
-    git C
     emit "done"
 }
 
@@ -554,8 +552,8 @@ function procmon_update() {
     t=$(gettemp procmon-queue-sorted)
     sort -u < $PROCQ > $t
     cd /root/dev/ktools/services/procmon
-    emacs procmon_whitelist.py $t
-    ./procmon.py -t -w procmon_whitelist.py | tee $t
+    emacs private.d/procmon_whitelist.py $t
+    ./procmon.py -t -w private.d/procmon_whitelist.py | tee $t
     last=$(tail -1 $t)
     rm -f $t
     if [[ "$last" != "all ok" ]]; then
@@ -566,7 +564,6 @@ function procmon_update() {
     runner "make install"
     runner ":>$PROCQ"
     runner "systemctl restart procmon"
-    echoc green "procmon restarted; ready for git commit in /root/dev/ktools/services/procmon"
 }
 
 # push an update of the pylib wheel distribute to select RPI's
