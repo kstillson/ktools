@@ -26,7 +26,7 @@ GC_HOME_URL = 'https://point0.net/xmas'
 
 GC_SRC_DIR = '/root/dev/ktools/services/gift-coordinator'
 
-LAST_SENT_STAMP = '/var/run/gift-coord-notify.stamp'
+LAST_SENT_STAMP = '/var/local/gift-coord-notify.stamp'
 
 NOTIFY_LIST = {
   'alexlbullock@icloud.com': 'Alex',
