@@ -79,6 +79,8 @@ def add_view(request):
         return render('add.html', repl)
 
     pp = request.post_params
+    if not pp.get('item') and not pp.get('url'):
+        return done('add gift idea (blank idea received)', f'empty gift idea from {session_data.get("user")}', False)
     gi = model.data.GiftIdea(key=None, recip=pp.get('user'), item=pp.get('item'),
                              taken=pp.get('taken'), notes=pp.get('notes'), url=pp.get('url'),
                              entered_by=session_data['user'], entered_on=model.now(),
