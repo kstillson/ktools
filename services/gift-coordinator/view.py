@@ -178,6 +178,7 @@ def root_view(request):
         controls = f'<form action="edit?key={gi.key}" method="post"><input type="submit" value="edit"/></form>'
         tab.append([controls, gi.recip, gi.item, gi.taken, gi.entered_by, notes])
 
+    tab.sort(key=lambda i: i[3] + i[1] + i[2])  # sort by: taken?, then recip, then item.
     out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"', 
                            header_list=['controls', 'recipient', 'item', 'taken?', 'entered by', 'notes'],
                            title='Gift ideas')

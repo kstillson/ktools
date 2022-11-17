@@ -564,6 +564,7 @@ function procmon_update() {
     runner "make install"
     runner ":>$PROCQ"
     runner "systemctl restart procmon"
+    runner "nag -r"
 }
 
 # push an update of the pylib wheel distribute to select RPI's
