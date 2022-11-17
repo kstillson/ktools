@@ -128,9 +128,14 @@ def ping(s):
         V.bump('ping-success')
         return True
     else:
-        HEALTHZ_STATUS = f'ERROR: unknown ping response: {got}'
-        V.bump('ping-fail')
-        return False
+        if got.startswith('button'):
+            # oops; got a button push when expecting a ping response; forard it.
+            # no opinion on healthz status update; leave it untouched.
+            return handle_button(got)
+        else:
+            HEALTHZ_STATUS = f'ERROR: unknown ping response: {got}'
+            V.bump('ping-fail')
+            return False
 
 
 # ---------- main
