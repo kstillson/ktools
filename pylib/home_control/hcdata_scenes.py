@@ -55,7 +55,7 @@ SCENES = {
   'gh0'         : [ 'lantern:white', 'garage:bulb-off', 'mobile-bulb:bulb-off', 'garage-L:on', 'garage-R:on', 'out-sconce:on', 'out-front-moon:on' ],
   'gh1'         : [ 'lantern:green', 'garage:dim-red', 'mobile-bulb:bulb-dim:2', 'garage-L:off', 'garage-R:off', 'out-sconce:off', 'out-front-moon:off' ],
   'home'        : [ 'office:med', 'lng:dim:30', 'kitchen:dim:60', 'dining-chandelier:dim:30' ],
-  'nook'        : [ 'kitchen:off', 'kitchen-pendants:off', 'breakfast-nook:dim:30' ],
+  'nook'        : [ 'kitchen:off', 'kitchen-pendants:off', 'breakfast-nook:dim:25' ],
   'panic'       : [ 'all', 'sirens' ],
   'party'       : [  'bendy', 'breakfast-nook', 'dining-chandelier', 'family-room-left',
                      'family-room-right', 'kitchen-pendants', 'kitchen', 'lounge',
@@ -68,7 +68,7 @@ SCENES = {
  # Special command-specific overrides
   'blue:on'     : [ 'accents:blue' ],
   'panic:on'    : [ 'all:full', 'sirens:on' ],
-  'party:on'    : [  'bendy:on', 'breakfast-nook:dim:30', 'dining-chandelier:dim:25', 'family-room-left:dim:15',
+  'party:on'    : [  'bendy:on', 'breakfast-nook:dim:25', 'dining-chandelier:dim:25', 'family-room-left:dim:15',
                      'family-room-right:dim:15', 'kitchen-pendants:dim:40', 'kitchen:dim:5', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:dim:30',
                      'accent-party', 'tree', 'tree', 'twinkle', 'lightning' ],

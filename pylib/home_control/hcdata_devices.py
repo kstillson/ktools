@@ -74,7 +74,8 @@ DEVICES = {
 
     # ---------- tplink individual device overrides and aliases
 
-    'office:dim'     : 'TPLINK-SWITCH:tp-office:dim:40',
+    'office:dim'                : 'TPLINK-SWITCH:tp-office:dim:40',
+    'breakfast-nook:dim'        : 'TPLINK-SWITCH:breakfast-nook:dim:25',
 
     # ---------- delay trigger
 

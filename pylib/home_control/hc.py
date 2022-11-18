@@ -251,6 +251,7 @@ def find_target(search_dict, target, command):
   if SETTINGS['nosub']: return None
   matches = []
   for k, v in search_dict.items():
+    if ':' in k: continue  # ignore command-specific overrides when searching for substrings; will basicaly always create a useless dup of the non-overidden target.
     if target in k: matches.append(k)
 
   if len(matches) == 1:
