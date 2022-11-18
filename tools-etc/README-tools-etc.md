@@ -14,17 +14,52 @@ look, and make use of anything that appeals to you.
 
 ## Contents
 
-- gpg_s: simple wrapper around gpg symmetric encrpytion
-- Hc: wrapper around hc that provides device substring name matching.
-- m: run-time filesystem mounter
-- party-lights: Slow color animation sequence for TP-Link smart bulbs.
-- pb-push: sends push-notifications via the Android Push Bullet app
-- speak-cgi: Trivial CGI wrapper for speak.py
-- speak: Convert the text on the command-line into speech, and say it.
-- sunsetter: Wait until an offset before or after sunset.
-- tplink: Deprecated tplink controller.
+- button_relay: listen on serial for messages from Arduino/espnow_button_recvr
+  (below) and take actions in response to espnow network events.
 
-## Tasker
+- m: run-time on-demand filesystem mounter
+
+- party-lights: Slow color animation sequence for TP-Link smart bulbs.
+
+- pb-push: sends push-notifications via the Android Push Bullet app
+
+- speak-cgi: Trivial CGI wrapper for speak.py (below)
+
+- speak: Convert the text on the command-line into speech, and say it.
+  (supports a bunch of different speech rendering methods)
+
+- sunsetter: Wait until an offset before/after sunset and then run a command.
+
+
+## Arduino/
+
+- espnow_button_recvr: listen on espnow network and report events
+  via serial port.  Also accepts various ad-hoc commands via serial.
+  Intended to be paired with button_relay (above) and receive signals
+  from espnow_sleepy_button_sender (below).
+  
+- espnow_sleepy_button_sender: designed for Adafruit Qt Py esp32-x boards,
+  spends most of its time in "deep sleep" waiting for a physical button push.
+  Then wakes, transmits button and battery voltage information via espnow,
+  and sleeps again.
+
+- kds_arduino_snippets_lib.ino: (code snippets; not directly compilable)
+  A collection of useful Arduino code snippets grabbed from various projects.
+
+
+## Tasker/
 
 The subdirectory ./Tasker has a bunch of my scripts for the Android Tasker
 app.  See [README-Tasker](Tasker/README-Tasker.md) for details.
+
+
+## Arc/ (archived)
+
+- Hc: wrapper around hc (home-control) that provides device substring name
+  matching.  Deprecated in favor of feature now built-in to hc.
+
+- gpg_s: simple wrapper around gpg symmetric encrpytion
+  deprecated in favor of pcrypt: pylib/kcore/uncommon.py:symmetric_crypt()
+
+- tplink: Deprecated tplink controller.
+
