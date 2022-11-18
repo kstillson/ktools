@@ -25,6 +25,11 @@ import kcore.webserver as W
 import kcore.varz as V
 
 
+# ---------- control constants
+
+LOW_BATTERY_THRESHOLD = 4000
+
+
 # ---------- global state
 
 HEALTHZ_STATUS = 'No ping yet'
@@ -39,10 +44,10 @@ def find_serial_dev():
         found = glob.glob('/dev/ttyUSB*')
         if len(found) == 1: return found[0]
         if len(found) > 1:
-            C.log_warning(f'choosing first of multiple serial ports: [found]')
+            C.log_info(f'choosing first of multiple serial ports: [found]')
             return found[0]
         if not sent_warning:
-            C.log_warning('waiting for serial port to be attached');
+            C.log_info('waiting for serial port to be attached');
             sent_warning = True
         time.sleep(3)  # never loop too fast.
 
@@ -66,8 +71,14 @@ def sput(s, msg): return s.write(msg.encode('UTF-8'))
 def handler_default(request):
     send_request = request.get_params.get('send')
     if send_request:
+        C.log(f'sent to serial due to get request: {send_request}')
         sput(SERIAL_PORT, send_request)
         return 'sent'
+    button_test = request.get_params.get('b')
+    if button_test:
+        rslt = handle_button_real(stoi(button_test), -1, 'na')
+        C.log(f'button test {button_test} -> {rslt}')
+        return rslt
     return H.html_page_wrap('<li><a href="varz">varz</a><br/><li><a href="healthz">healthz</a>')
 
 def handler_healthz(request):
@@ -76,37 +87,65 @@ def handler_healthz(request):
 def handler_noop(request): return None
 
 
-# ---------- business logic
+# ---------- general helpers
 
-def speak(msg):
-    url = C.quote_plus('http://pi1/speak/' + msg)
+def control(target, command='on'):
+    url = f'http://web/control/{target}/{command}'
     return C.read_web(url, timeout=5)
 
+def speak(msg):
+    url = 'http://pi1/speak/' + C.quote_plus(msg)
+    return C.read_web_e(url, timeout=5)
 
-def handle_button_real(msg):  # format:    button: xx, mac: xx:xx:xx:xx:xx:xx
+def stoi(s):
+    s = s.replace(',', '').strip()
+    return int(s) if s.isdigit() else -1
+
+def trigger(trigger):
+    path0 = '/trigger/' + trigger
+    token = A.generate_token(path0)
+    path = path0 + '?a2=' + token
+    return C.read_web_e('http://homesecdock:1111' + path)
+
+
+# ---------- business logic
+
+
+def parse_button_msg(msg):  # format:    button: xx, voltage: yy, mac: aabbccddeeff
+                            #            0       1   2        3   4    5
     parts = msg.split(' ')
-    button_str = parts[1].replace(',', '')
-    button = int(button_str) if button_str.isdigit() else -1
-    mac = parts[3]
+    button = stoi(parts[1])
+    battery = stoi(parts[3])
+    mac = parts[5].strip()
+    return button, battery, mac
+
+
+def handle_button_real(button, battery, mac):
     V.bump(f'button_{button}')
     V.bump(f'mac_{mac}')
 
-    if   button == 10: return speak('saw button')
-    elif button == 11: return speak('saw button d0')
-    elif button == 12:
-        path0 = '/trigger/test'
-        token = A.generate_token(path0)
-        path = path0 + '?a2=' + token
-        return C.read_web('http://jack:1111/' + path)
-    else:
-        C.log_warning(f'processed unknown button: {button}')
-        V.bump('unknown_button')
-        return None
+    if battery > 0 and battery < LOW_BATTERY_THRESHOLD:
+        C.log_warning(f'low battery level on {mac}: {battery} < {LOW_BATTERY_THRESHOLD}')
+        V.bump(f'low_batt_{mac}')
+
+    # testing buttons (MAC independents)
+    if button == 99: return speak('greetings professor falcon')
+    if button == 98: return trigger('test')
+
+    # sender specific buttons
+    if mac == '84F73D97E46':   # qt py esp32-s2 single button, tv mode
+       if button == 17: return control('tv')
+
+    # If we get to here, unknown sender or unknown button
+    C.log_error(f'unknown button {button} from {mac}')
+    V.bump('unknown_button')
+    return False
 
 
 def handle_button(msg):
     try:
-        return handle_button_real(msg)
+        button, battery, mac = parse_button_msg(msg)
+        return handle_button_real(button, battery, mac)
     except Exception as e:
         V.bump('handle_button_exception')
         C.log_error(f'exception during button processing: {str(e)}')
@@ -161,12 +200,15 @@ def serial_listen_loop(s, args):
     while True:
         line = sget(s)
         if line:
-            C.log(line)
-            if line.startswith('button'): handle_button(line)
+            if line.startswith('button:'):
+                rslt = handle_button(line)
+                C.log(f'{line} -> {rslt}')
+            else:
+                C.log(f'unprocessed input: {line}')
         if now() > next_ping:
             next_ping = now() + args.ping_freq
             if not ping(s):
-                C.log_error(f'ping fail: {HEALTHZ_STATUS}')
+                C.log_warning(f'ping fail: {HEALTHZ_STATUS}')
                 return
         time.sleep(0.5)  # never loop too fast.
 
@@ -174,7 +216,7 @@ def serial_listen_loop(s, args):
 def main(argv=[]):
     args = parse_args(argv or sys.argv[1:])
 
-    C.init_log(log_title='button relay', logfile=args.logfile)
+    C.init_log(log_title='button relay', logfile=args.logfile, filter_level_syslog=C.WARNING)
     W.WebServer(port=args.port, handlers=HANDLERS).start()
 
     while True:
