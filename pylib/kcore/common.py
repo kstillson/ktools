@@ -364,6 +364,12 @@ def read_web(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wr
     return web_get(url, timeout, get_dict, post_dict, verify_ssl, wrap_exceptions).text
 
 
+def read_web_e(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True):
+    '''Really simple web-get interface; returns a string with either content or human-readable error message.'''
+    rslt = web_get(url, timeout, get_dict, post_dict, verify_ssl, wrap_exceptions)
+    return rslt.text if rslt.ok else rslt.exception or f'ERROR: [{rslt.status_code}] {rslt.text}'
+
+
 # ---------- encoders
 
 # wrappers to auto-determine which version to use...
