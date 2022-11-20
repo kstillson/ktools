@@ -44,7 +44,8 @@ def sep_rgb(rgb):
 
 class NeoPixel:
     def __init__(self, pin, num_pixels, **kwargs):
-        global GRAPHICS
+        global GRAPHICS, ROOT
+        ROOT = None
         if LOG_LEVEL_SETUP: C.log(f'NeoPixel: new array of {num_pixels} dots', LOG_LEVEL_SETUP)
         if not os.environ.get('DISPLAY'):
             GRAPHICS = False
