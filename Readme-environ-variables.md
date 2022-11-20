@@ -6,7 +6,7 @@ A number of environment variables affect the way the ktools operates:
 
 ## Makefile controls
 
-These only affect things when running the "make" command.
+These affect the way the "make" command works.
 
 - BUILD_SIMPLE: In the pylib/ directory, the default is to build and install
   by building a Python "wheel" .whl file.  This is reasonably portable, but
@@ -17,6 +17,9 @@ These only affect things when running the "make" command.
   If set to "1", then ktools Makefile's assume that your root filesystem is
   read-only, and that anything being installed there requires a temporary
   remounting of the root-fs in "rw" mode.
+
+- KTOOLS_KEN: if set, triggers various actions that are specific to the
+  original author's systems and configurations; you probably don't want this.
 
 
 ## Docker controls: building containers

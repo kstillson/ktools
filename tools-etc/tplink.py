@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-'''Deprecated tplink controller.
+'''Deprecated tplink controller; although still used by tools-etc/party-lights.py
 
 This is the predecessor to ../home_control.  It doesn't have a plug-in system and
 all the data is hard-coded into the source-code..  But it does support passing

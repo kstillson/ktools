@@ -8,7 +8,7 @@
 #   SUBDIRS
 
 TOP_TARGETS = all clean comp install test uninstall update
-SUBDIRS ?= pylib tools-for-root services docker-infrastructure
+SUBDIRS ?= pylib tools-etc tools-for-root services docker-infrastructure
 
 ifeq ($(BUILD_DOCKER_CONTAINERS), 1)
   SUBDIRS := $(SUBDIRS) docker-containers
