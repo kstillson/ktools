@@ -31,6 +31,9 @@ look, and make use of anything that appeals to you.
 
 ## Arduino/
 
+- arduino-filter-boards.py: filter all but whitelisted boards from the
+  very-very-long list of supported boards, so picking the right one is easier.
+
 - espnow_button_recvr: listen on espnow network and report events
   via serial port.  Also accepts various ad-hoc commands via serial.
   Intended to be paired with button_relay (above) and receive signals
