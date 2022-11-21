@@ -52,16 +52,17 @@ install-jack: $(KTE_TARGETS) $(RB_TARGETS) $(ULB_TARGETS)
 	@echo ""
 
 $(KTE_DIR)/button_relay.py: button_relay.py
-	cp $^ $@
+	cp -puv $^ $@
 
 $(KTE_DIR)/kds-button_relay.service: button_relay.service
-	cp $^ $@
+	cp -puv $^ $@
 
 $(RB_DIR)/m: m.py
-	cp $^ $@
+	cp -puv $^ $@
 
 $(ULB_DIR)/sunsetter.py: sunsetter.py
-	cp $^ $@
+	cp -puv $^ $@
+	chmod go+rX $@
 
 
 # ----- comp
