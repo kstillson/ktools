@@ -41,6 +41,9 @@ function default_dep_checks() {
     tester "pytest-3 --version"             "python3-pytest"          "$prompt"
     tester "python3 -m pytest_timeout"      "python3-pytest-timeout"  "$prompt"
     echo "import psutil" | tester "python3" "python3-psutil"          "$prompt"
+    if [[ "$KTOOLS_VARZ_PROM" == "1" ]]; then
+	echo "import prometheus_client" | tester "python3" "python3-prometheus-client" "$prompt"
+    fi
 
     # If not using $BUILD_SIMPLE, we need extra pieces to build Python wheels.
     if [[ "$BUILD_SIMPLE" != "1" ]]; then
