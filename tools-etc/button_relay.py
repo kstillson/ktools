@@ -123,6 +123,7 @@ def parse_button_msg(msg):  # format:    button: xx, voltage: yy, mac: aabbccdde
 def handle_button_real(button, battery, mac):
     V.bump(f'button_{button}')
     V.bump(f'mac_{mac}')
+    V.set(f'mac_{mac}_batt', battery)
 
     if battery > 0 and battery < LOW_BATTERY_THRESHOLD:
         C.log_warning(f'low battery level on {mac}: {battery} < {LOW_BATTERY_THRESHOLD}')
