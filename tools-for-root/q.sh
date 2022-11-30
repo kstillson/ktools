@@ -303,7 +303,8 @@ function git_update_pis() {
     set +e
     t=$(gettemp git-updates.out)
     RP_FLAGS="${RP_FLAGS_BASE} --output $t"
-    hosts=$(list_pis | without hs-front,pi1,pi2-wifi,lightning)
+    # TODO(defer): add lightning
+    hosts="hs-family hs-lounge hs-mud pibr pout trellis1 twinkle"
     echo "pulling git updates..."
     RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
