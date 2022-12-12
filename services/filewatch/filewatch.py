@@ -78,7 +78,7 @@ def find_newest_file(target):
   files = glob.glob(f'{dirname}/*')
   if not files: raise RuntimeError('no files for newest check')
   try:
-    return max(files, key=os.path.getctime)
+    return max(files, key=os.path.getmtime)
   except Exception as e:
     raise RuntimeError(f'Exception finding newst file (possibly broken symlink?): {target}: {e}')
 
