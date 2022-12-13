@@ -90,7 +90,10 @@ DEVICES = {
     'accent-party:on'    : 'WEBS:home.point0.net/p1',
     'neotree:off'        : 'WEB:neotree2/0',
     'neotree:on'         : 'WEB:neotree2/1',
-    #
+
+    'mon:off'            : 'WEB:blue:2222/0',
+    'monitor:off'        : 'WEB:blue:2222/0',
+
     # Outside lighting controller: pout*
     ## 'out-all:off'        : 'WEB:pout:8080/a0', 'WEB:pout2:8080/a0',
     ## 'out-all:on'         : 'WEB:pout:8080/a1', 'WEB:pout2:8080/a1',
