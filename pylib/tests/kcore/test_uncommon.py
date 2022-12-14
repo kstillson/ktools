@@ -10,12 +10,21 @@ import kcore.common as C
 import kcore.uncommon as UC
 
 
+# ---------- helpers
+
+def err(msg):
+    print(msg, file=sys.stderr)
+    return None
+
+
+# ---------- tests
+
 # ----- I/O
 
 def test_capture():
     with UC.Capture(strip=False) as cap:
         print('test1')
-        sys.stderr.write("test2\n")
+        err("test2")
         assert '%s' % cap == 'test1\n'
         assert str(cap) == 'test1\n'
         assert cap.out == 'test1\n'
@@ -185,7 +194,10 @@ def test_symmetric_encryption():
 
 def test_gpg_symmetric():
     # not supported in python2
-    if sys.version_info[0] == 2: return
+    if sys.version_info[0] == 2: return err('test_gpg_symmetric not supported in py2; skipping test.')
+    # not supported if ~/.gnupg is a broken symlink
+    chkpath = os.environ.get('HOME') + '/.gnupg'
+    if os.path.islink(chkpath) and not os.path.exists(chkpath): return err(f'test_gpg_symmetric not supported with broken symlink {chkpath}')
 
     crypted = UC.gpg_symmetric('hello', 'password1', decrypt=False)
     assert 'PGP MESSAGE' in crypted
@@ -194,8 +206,8 @@ def test_gpg_symmetric():
     plain = UC.gpg_symmetric(crypted, 'password1')
     assert plain == 'hello'
 
-    err = UC.gpg_symmetric(crypted, 'bad-password')
-    assert err.startswith('ERROR:')
+    error = UC.gpg_symmetric(crypted, 'bad-password')
+    assert error.startswith('ERROR:')
 
 
 # ----- parallel queue tests & infrastructure
