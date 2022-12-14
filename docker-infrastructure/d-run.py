@@ -198,7 +198,7 @@ def get_ip(hostname):
 
 def get_ip_to_use(args, settings):
     ip = args.ip or settings.get('ip', None) or os.environ.get(IP_VAR) or IP_FALLBACK
-    if ip in ['', '-', '0']: return None
+    if ip in ['', '0']: return None
     if os.getuid() != 0: return err("skipping IP assignment; not running as root.")
     
     # If we don't see 3 dots, this must be a hostname we're intended to look up.
