@@ -1,4 +1,4 @@
-FROM netdata/netdata
+FROM docker.io/netdata/netdata
 
 COPY files /
 

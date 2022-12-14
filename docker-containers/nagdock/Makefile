@@ -1,8 +1,8 @@
 
-# ---------- custom default target
+# ---------- default target
 # (needs to be before including Makefile-docker)
 
-all:	vol_dirs docker-all
+all:	docker-all
 
 # ---------- control variables
 
@@ -25,12 +25,15 @@ ${VOL_DIRS}:
 	sudo chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
 
 
-# ---------- pass-throughs
+# ---------- other custom targets
 
+test: vol_dirs docker-test
+
+
+# ---------- pass-throughs
 
 comp:  # n/a
 clean: docker-clean
 install: docker-install
-test: docker-test
 uninstall: docker-uninstall
 update: docker-update

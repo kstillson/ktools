@@ -1,4 +1,4 @@
-FROM ktools/kcore-baseline:live
+FROM localhost/ktools/kcore-baseline:live
 
 RUN apk upgrade -U && \
     apk add --no-cache dnsmasq && \

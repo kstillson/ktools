@@ -11,15 +11,15 @@ SHELL := /bin/bash
 # ---------- control constants
 
 DOCKER_VOLS ?= /rw/dv
-
+UID := $(shell id -u)
 
 # ----- determine if we need sudo
 
 NEED_SUDO := 1
-ifeq ($$UID, 0)
+ifeq ($(UID), 0)
   NEED_SUDO := 0
 endif
-ifeq ($$DOCKER_EXEC, "podman")
+ifeq ($(DOCKER_EXEC), podman)
   NEED_SUDO := 0
 endif
 
@@ -69,10 +69,11 @@ build-stamp:
 
 build-stamp-sudo: ../kcore-baseline/baseline-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
 	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
+	exit 2
 	sudo -E $(MAKE) build-stamp-run    # -E to preserve d-build environment vars
 
 build-stamp-run:
-	/root/bin/d-build
+	d-build
 	touch build-stamp
 
 
@@ -84,7 +85,7 @@ install-stamp-sudo: build-stamp
 	sudo -E $(MAKE) install-stamp-run
 
 install-stamp-run:
-	/root/bin/d-build -s
+	d-build -s
 	touch install-stamp
 
 

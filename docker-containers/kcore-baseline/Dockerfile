@@ -1,10 +1,13 @@
 FROM docker.io/alpine:3.15
 
-# python3 is for kmc (copied in by ./Build)
+# python3 is for kmc
+
+#    apk add --no-cache bash python3 py3-cryptography py3-pip py3-prometheus-client tzdata && \
+#                                                     ^       ^
 
 RUN umask 022 && \
     apk upgrade -U && \
-    apk add --no-cache bash python3 py3-cryptography py3-pip py3-prometheus-client tzdata && \
+    apk add --no-cache bash python3 py3-cryptography tzdata && \
     rm -rf /var/cache/apk/*
 
 # Needs apk tzdata:

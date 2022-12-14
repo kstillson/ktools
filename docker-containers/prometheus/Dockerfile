@@ -1,4 +1,4 @@
-FROM prom/prometheus
+FROM docker.io/prom/prometheus
 
 EXPOSE 9090
 

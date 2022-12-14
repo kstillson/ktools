@@ -1,8 +1,8 @@
 
-# ---------- custom default target
+# ---------- default target
 # (needs to be before including Makefile-docker)
 
-all:	vol_dirs docker-all
+all: docker-all
 
 
 # ---------- control variables
@@ -34,7 +34,7 @@ ifeq ($(CONF_PRIV),)
 test:
 	@echo "exim test bypassed because ${CONF_PRIV_DIR} not found"
 else
-test: docker-test
+test: vol_dirs docker-test
 endif
 
 
