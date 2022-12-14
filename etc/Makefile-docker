@@ -10,6 +10,7 @@ SHELL := /bin/bash
 
 # ---------- control constants
 
+DOCKER_EXEC ?= /usr/bin/docker
 DOCKER_VOLS ?= /rw/dv
 UID := $(shell id -u)
 
@@ -67,12 +68,12 @@ docker-update: all docker-test docker-install
 build-stamp:
 	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) build-stamp-sudo; else $(MAKE) build-stamp-run; fi
 
-build-stamp-sudo: ../kcore-baseline/baseline-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+build-stamp-sudo:
 	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
 	exit 2
 	sudo -E $(MAKE) build-stamp-run    # -E to preserve d-build environment vars
 
-build-stamp-run:
+build-stamp-run: ../kcore-baseline/baseline-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
 	d-build
 	touch build-stamp
 
@@ -84,7 +85,7 @@ install-stamp-sudo: build-stamp
 	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
 	sudo -E $(MAKE) install-stamp-run
 
-install-stamp-run:
+install-stamp-run: build-stamp
 	d-build -s
 	touch install-stamp
 
@@ -92,11 +93,11 @@ install-stamp-run:
 test-stamp:
 	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) test-stamp-sudo; else $(MAKE) test-stamp-run; fi
 
-test-stamp-sudo: Test $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+test-stamp-sudo:
 	@echo "about to sudo for docker container Test command.  Testing involves starting up a container, which only root can do."
 	sudo -E $(MAKE) test-stamp-run
 
-test-stamp-run:
+test-stamp-run: Test $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
 	./Test -r
 	touch test-stamp
 

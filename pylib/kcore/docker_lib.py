@@ -18,7 +18,7 @@ import kcore.uncommon as UC
 
 PY_VER = sys.version_info[0]
 
-DOCKER_BIN = os.environ.get('DBUILD_DOCKER', 'podman')
+DOCKER_BIN = os.environ.get('DOCKER_EXEC', 'docker')
 
 DLIB=os.environ.get('DLIB', None)
 if not DLIB:
@@ -65,7 +65,7 @@ def run_command_in_container(container_name, cmd):
 
 def find_cow_dir(container_name):
     try:
-        upperdir_json = UC.popener(f'podman inspect {container_name} | fgrep UpperDir', shell=True).strip()
+        upperdir_json = UC.popener(f'{DOCKER_BIN} inspect {container_name} | fgrep UpperDir', shell=True).strip()
     except:
         sys.exit('cannot find container (is it up?)')
     key, val = upperdir_json.split(': ', 1)

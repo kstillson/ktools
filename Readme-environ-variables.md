@@ -28,6 +28,9 @@ These affect how containers are built by the docker-infrastructure/d-build.sh
 script (which is run automatically by make commands run explicitly inside the
 docker-containers subdirectory).
 
+- BUILD_DOCKER_CONTAINERS: if set to "1", then automatically include the
+  docker-containers subdirectory from the main directory's targets.
+
 - DBUILD_PARAMS: d-build will pass anything set here through to the "docker
   build" command.  Not generally needed.
 

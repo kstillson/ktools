@@ -21,8 +21,8 @@ VOL_DIRS := $(VOLS)/var_log_nagios $(VN) $(VN)/archive $(VN)/rw $(VN)/spool $(VN
 vol_dirs: ${VOL_DIRS}
 
 ${VOL_DIRS}:
-	sudo mkdir --parents --mode=755 $@
-	sudo chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
+	sudo -E mkdir --parents --mode=755 $@
+	sudo -E chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
 
 
 # ---------- other custom targets

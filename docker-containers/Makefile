@@ -36,7 +36,7 @@ clean:
 # ---------- custom targets
 
 purge:
-	@read -p 'About to purge ALL docker images (not just the ones created by this Makefile). ok (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo docker image prune -a; else exit -1; fi
+	@read -p 'About to purge ALL docker images (not just the ones created by this Makefile). ok (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E $(DOCKER_EXEC) image prune -a; else exit -1; fi
 
 
 # ---------- 1-time preparation sequence
@@ -50,6 +50,6 @@ prep-stamp:
 	touch prep-stamp
 
 prep-stamp-root:
-	sudo ls /root/bin/d-build || { echo ""; read -p 'parts of kcore *also* needs to be installed for user/root to build docker containers.  okay to do that now (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo SUBDIRS="pylib docker-infrastructure" make -C .. install; else exit -1; fi; }
-	sudo docker network rm docker2 >&/dev/null || true
-	sudo docker network create -d bridge --gateway 192.168.3.1 --subnet 192.168.3.0/24 --opt com.docker.network.bridge.name=docker2 docker2
+	sudo ls /root/bin/d-build || { echo ""; read -p 'parts of kcore *also* needs to be installed for user/root to build docker containers.  okay to do that now (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E SUBDIRS="pylib docker-infrastructure" make -C .. install; else exit -1; fi; }
+	sudo -E docker network rm docker2 >&/dev/null || true
+	sudo -E docker network create -d bridge --gateway 192.168.3.1 --subnet 192.168.3.0/24 --opt com.docker.network.bridge.name=docker2 docker2

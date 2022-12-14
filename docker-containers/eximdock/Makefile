@@ -25,7 +25,7 @@ vol_dirs: ${VOL_DIRS}
 
 ${VOL_DIRS}:
 	sudo mkdir --parents --mode=750 $@
-	sudo chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
+	sudo -E chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
 
 
 # ---------- custom logic for testing

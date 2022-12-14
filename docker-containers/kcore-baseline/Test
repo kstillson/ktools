@@ -3,7 +3,7 @@
 import argparse, os, subprocess, sys, time
 import kcore.docker_lib as d_lib
 
-DOCKER_BIN = os.environ.get('DBUILD_DOCKER', 'podman')
+DOCKER_BIN = os.environ.get('DOCKER_EXEC', 'docker')
 
 
 def main():
