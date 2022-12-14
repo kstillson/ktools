@@ -43,6 +43,8 @@ import kcore.auth
 
 # ---------- control constants
 
+DOCKER_EXEC = os.environ.get('DOCKER_EXEC', '/usr/bin/docker')
+
 HOSTNAME_VAR = 'KTOOLS_DRUN_HOSTNAME'
 HOSTNAME_FALLBACK = None  # will use container name
 
@@ -144,7 +146,7 @@ def clone_dir(src, dest):
 
 def does_image_exist(repo_name, image_name, tag_name):
     if not repo_name: return False
-    out = subprocess.check_output(['/usr/bin/docker', 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
+    out = subprocess.check_output([DOCKER_EXEC, 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
     return out != b''
 
 
@@ -321,7 +323,7 @@ def parse_settings(args):
 
 
 def gen_command(args, settings):
-    cmnd = ['/usr/bin/docker', 'run']
+    cmnd = [DOCKER_EXEC, 'run']
     fg = (args.fg
           or args.shell
           or (settings.get('foreground',0) == 1  and not args.vol_alt))
@@ -435,7 +437,7 @@ def main():
         if args.test: sys.exit(0)
     if not args.fail_on_exists:
         with open('/dev/null', 'w') as z:
-            subprocess.call(['/usr/bin/docker', 'rm', settings['name']], stdout=z, stderr=z)
+            subprocess.call([DOCKER_EXEC, 'rm', settings['name']], stdout=z, stderr=z)
     return subprocess.call(cmnd)
 
 

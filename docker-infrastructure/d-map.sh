@@ -1,2 +1,3 @@
 #!/bin/sh
-exec /usr/bin/docker ps --format '{{.ID}} {{.Names}}'
+DOCKER_EXEC=${DOCKER_EXEC:-/usr/bin/docker}
+exec $DOCKER_EXEC ps --format '{{.ID}} {{.Names}}'

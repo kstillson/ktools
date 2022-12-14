@@ -6,9 +6,11 @@
 # ---------- control constants
 # can be overriden from calling environment or flags.
 
+DOCKER_BASE_DIR=${DOCKER_BASE_DIR:-~/docker-dev}
+DOCKER_EXEC="${DOCKER_EXEC:-docker}"
+
 DBUILD_PARAMS="${DBUILD_PARAMS:-}"
 DBUILD_REPO="${DBUILD_REPO:-ktools}"
-DOCKER_BASE_DIR=${DOCKER_BASE_DIR:-~/docker-dev}
 
 
 # ---------- business logic
@@ -29,7 +31,7 @@ function run_build() {
     fi
 
     # ----- standard docker build
-    docker build $params -t $target .
+    ${DOCKER_EXEC} build $params -t $target .
     return $?
 }
 
@@ -44,8 +46,8 @@ function run_tests() {
 
 function setlive() {
     fullname="$1"
-    docker tag ${fullname}:live ${fullname}:prev  >&/dev/null   # backup old live tag
-    docker tag ${fullname}:latest ${fullname}:live
+    ${DOCKER_EXEC} tag ${fullname}:live ${fullname}:prev  >&/dev/null   # backup old live tag
+    ${DOCKER_EXEC} tag ${fullname}:latest ${fullname}:live
     echo "${fullname} :latest promoted to :live"
 }
 

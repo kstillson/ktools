@@ -11,7 +11,7 @@ import kcore.uncommon as UC
 # ---------- global controls
 
 DLIB = os.environ.get('DLIB', '/var/lib/docker/200000.200000')
-
+DOCKER_EXEC = os.environ.get('DOCKER_EXEC', '/usr/bin/docker')
 
 # ---------- global state
 
@@ -110,7 +110,7 @@ def load_ignore_list(privfile):
 
 
 def write_token():
-    UC.popen(['/usr/bin/docker', 'exec', '-u', '0', ARGS.token_container, '/bin/bash', '-c', 'echo "%s" > %s' % (TOKEN, ARGS.token_file)])
+    UC.popen([DOCKER_EXEC, 'exec', '-u', '0', ARGS.token_container, '/bin/bash', '-c', 'echo "%s" > %s' % (TOKEN, ARGS.token_file)])
 
 
 # ----------
@@ -129,7 +129,7 @@ def main():
     load_ignore_list(ARGS.private)
     write_token()
 
-    for temp in UC.popener(['/usr/bin/docker', 'ps', '--format', '{{.Names}} {{.ID}}']).split('\n'):
+    for temp in UC.popener([DOCKER_EXEC, 'ps', '--format', '{{.Names}} {{.ID}}']).split('\n'):
         if not temp: continue
         container, id_prefix = temp.split(' ')
         mount_id = read_file(resolve_glob(DLIB + '/image/overlay2/layerdb/mounts/%s*/mount-id' % id_prefix))

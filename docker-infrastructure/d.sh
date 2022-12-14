@@ -10,6 +10,7 @@ shift || true
 extra_flags="$@"
 
 # Overridable from the environment
+DOCKER_EXEC=${DOCKER_EXEC:-/usr/bin/docker}
 D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
 TIMEOUT=${TIMEOUT:-60}
 
@@ -88,7 +89,7 @@ function list-buildable() {
 }
 
 function list-up() {
-  docker ps --format '{{.Names}}'
+  $DOCKER_EXEC ps --format '{{.Names}}'
 }
 
 function list-testable() {
@@ -102,7 +103,7 @@ function list-testable() {
 function down() {
   name="$1"
   if [[ "$name" == "" ]]; then emitc red "no such container"; return; fi
-  docker stop -t 2 "${name}"
+  $DOCKER_EXEC stop -t 2 "${name}"
 }
 
 function up() {
@@ -224,14 +225,14 @@ case "$cmd" in
 # container maintenance
   add-su | addsu)                                               ## Copy /bin/su into container $1
     name=$(pick_container_from_up $spec)
-    docker cp ${D_SRC_DIR}/Etc/su ${name}:/bin
+    $DOCKER_EXEC cp ${D_SRC_DIR}/Etc/su ${name}:/bin
     echo "added /bin/su to ${name}"
     ;;
   add-debug | debug)                                            ## Add debugging tools and enter container $1
     name=$(pick_container_from_up $spec)
-    docker cp ${D_SRC_DIR}/debugger/debug.tgz ${name}:/
-    docker exec -u 0 ${name} tar x -k -o -z -f debug.tgz
-    docker exec -u 0 -ti ${name} /bin/bash
+    $DOCKER_EXEC cp ${D_SRC_DIR}/debugger/debug.tgz ${name}:/
+    $DOCKER_EXEC exec -u 0 ${name} tar x -k -o -z -f debug.tgz
+    $DOCKER_EXEC exec -u 0 -ti ${name} /bin/bash
     echo "back from container."
     ;;
   clean)                                                        ## Remove all sorts of unused docker cruft
@@ -241,33 +242,33 @@ case "$cmd" in
     ## WARNING: deletes all the "prev" images.  Only run this once
     ## confident we don't need to revert to any of those...
     ##
-    docker container prune -f --filter "label!=live"
-    docker image prune -f --filter "label!=live"
-    docker volume prune -f --filter "label!=live"
-    docker builder prune -f
+    $DOCKER_EXEC container prune -f --filter "label!=live"
+    $DOCKER_EXEC image prune -f --filter "label!=live"
+    $DOCKER_EXEC volume prune -f --filter "label!=live"
+    $DOCKER_EXEC builder prune -f
     ;;
   hup | H | HUP | reload | r)                                    ## Send sigHup to proc 1 in container $1
-    docker exec -u 0 $(pick_container_from_up $spec) kill -HUP 1
+    $DOCKER_EXEC exec -u 0 $(pick_container_from_up $spec) kill -HUP 1
     ;;
   mini-dlna-refresh | M)                                         ## kds specific; rescan miniDlna library
-    docker exec dlnadock /usr/sbin/minidlnad -R
+    $DOCKER_EXEC exec dlnadock /usr/sbin/minidlnad -R
     ;;
   test | t) test $(pick_container_from_dev $spec) ;;             ## Run tests for container $1
   upgrade | u) upgrade $(pick_container_from_dev $spec) ;;       ## Upgrade (build, test, relabel, restart) $1.
 
 # command execution
   console | C)                                                   ## Enter console for $1
-    docker attach $(pick_container_from_up $spec)
+    $DOCKER_EXEC attach $(pick_container_from_up $spec)
     echo "back from container console."
     ;;
   enter | exec-cmd | exec | e0 | e)                              ## Interactive root shell in $1
     name=$(pick_container_from_up $spec)
-    docker exec -u 0 -ti ${name} /bin/bash || docker exec -u 0 -ti ${name} /bin/sh
+    $DOCKER_EXEC exec -u 0 -ti ${name} /bin/bash || $DOCKER_EXEC exec -u 0 -ti ${name} /bin/sh
     echo "back from container."
     ;;
-  run) docker exec -u 0 $(pick_container_from_up $spec) "$@" ;;  ## Run command $2+ as root in $1
+  run) $DOCKER_EXEC exec -u 0 $(pick_container_from_up $spec) "$@" ;;  ## Run command $2+ as root in $1
   shell)                                                         ## Start container $1 but shell overriding entrypoint.
-      docker run -ti --user root --entrypoint /bin/bash ktools/$(pick_container_from_dev $spec):latest ;;
+      $DOCKER_EXEC run -ti --user root --entrypoint /bin/bash ktools/$(pick_container_from_dev $spec):latest ;;
 
 # Multiple container management done in parallel
   build-all | ba)                                                ## Build all buildable containers.
@@ -303,32 +304,32 @@ case "$cmd" in
     name=$(pick_container_from_up $spec)
     dlib_run get_cow_dir "$name"
     ;;
-  images | i) docker images ;;                                   ## List docker images
+  images | i) $DOCKER_EXEC images ;;                                   ## List docker images
   is-up | iu) is_up $spec ;;                                     ## Is container up (y/n)
   get-ip | getip | get_ip | ip)                                  ## Print the IP address for $1
     set -o pipefail
     name="$(pick_container_from_up $spec)"
     if [[ "$name" == "" ]]; then exit -1; fi
-    docker inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
+    $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
     ;;
   get-all-ips | ips)                                             ## Print IPs for all up containers.
-    for name in $(docker ps --format "{{.Names}}"); do
+    for name in $($DOCKER_EXEC ps --format "{{.Names}}"); do
 	echo -n "${name}   "
-	docker inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
+	$DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
     done | column -t | sort
     ;;
   list-up | lu | ls | l | ps | p)                                ## List all up containers
-    docker ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
+    $DOCKER_EXEC ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
       sed -e 's/0.0.0.0/*/g' -e 's:/tcp::g' | \
       column -s @ -t | cut -c-${COLUMNS:-200} | sort -k6
     ;;
   log | logs)                                                    ## Print logs for $1
-      docker logs -ft --details $(pick_container_from_dev $spec) ;;
+      $DOCKER_EXEC logs -ft --details $(pick_container_from_dev $spec) ;;
   pid)                                                           ## Print main PID for $1
-      docker inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;
-  spec | s) docker inspect $(pick_container_from_up $spec) ;;    ## Print docker details for $1
+      $DOCKER_EXEC inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;
+  spec | s) $DOCKER_EXEC inspect $(pick_container_from_up $spec) ;;    ## Print docker details for $1
   veth)                                                          ## Print virtual eth name for $1
-    idx=$(docker exec $(pick_container_from_up $spec) cat /sys/class/net/eth0/iflink)
+    idx=$($DOCKER_EXEC exec $(pick_container_from_up $spec) cat /sys/class/net/eth0/iflink)
     /bin/grep -l "$idx" /sys/class/net/veth*/ifindex | /usr/bin/cut -d/ -f5
     ;;
 
