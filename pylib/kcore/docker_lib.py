@@ -12,11 +12,13 @@ Some highlights:
 
 '''
 
-import atexit, glob, os, random, ssl, string, sys, time
+import atexit, os, random, ssl, string, sys, time
 import kcore.common as C
 import kcore.uncommon as UC
 
 PY_VER = sys.version_info[0]
+
+DOCKER_BIN = os.environ.get('DBUILD_DOCKER', 'podman')
 
 DLIB=os.environ.get('DLIB', None)
 if not DLIB:
@@ -30,7 +32,7 @@ OUT = sys.stdout
 
 
 def get_cid(container_name):  # or None if container not running.
-    out = UC.popener(['/usr/bin/docker', 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
+    out = UC.popener([DOCKER_BIN, 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
     for line in out.split('\n'):
         if ' ' not in line: continue
         cid, name = line.split(' ', 1)
@@ -41,7 +43,7 @@ def get_cid(container_name):  # or None if container not running.
 def latest_equals_live(container_name):
     try:
         ids = UC.popener(
-            ['/usr/bin/docker', 'images', '--filter=reference=ktools/%s' % container_name,
+            [DOCKER_BIN, 'images', '--filter=reference=ktools/%s' % container_name,
              '--format="{{.Tag}} {{.ID}}"'])
         id_map = {}
         for lines in ids.split('\n'):
@@ -55,7 +57,7 @@ def latest_equals_live(container_name):
 
 
 def run_command_in_container(container_name, cmd):
-    command = ['/usr/bin/docker', 'exec', '-u', '0', container_name]
+    command = [DOCKER_BIN, 'exec', '-u', '0', container_name]
     if isinstance(cmd, list): command.extend(cmd)
     else: command.append(cmd)
     return UC.popener(command)
@@ -63,14 +65,11 @@ def run_command_in_container(container_name, cmd):
 
 def find_cow_dir(container_name):
     try:
-        id_prefix = UC.popener(['/usr/bin/docker', 'ps', '--filter', 'name=%s' % container_name, '--format', '{{.ID}}']).replace('\n', '')
+        upperdir_json = UC.popener(f'podman inspect {container_name} | fgrep UpperDir', shell=True).strip()
     except:
         sys.exit('cannot find container (is it up?)')
-    globname = DLIB + '/image/overlay2/layerdb/mounts/%s*/mount-id' % id_prefix
-    files = glob.glob(globname)
-    if not files: sys.exit('ouch; docker naming convensions have changed: %s' % globname)
-    with open(files[0]) as f: cow = f.read()
-    return DLIB + '/overlay2/%s/diff' % cow
+    key, val = upperdir_json.split(': ', 1)
+    return val.replace('",', '').replace('"', '')
 
 def get_cow_dir(container_name): return find_cow_dir(container_name)  # alias for above
 
@@ -113,7 +112,7 @@ def launch_or_find_container(args, extra_run_args=None):
             run_log_relay(args, OUT)
             sys.exit(0)
 
-    try: ip = UC.popener(['/root/bin/d', 'ip', name])
+    try: ip = UC.popener(['d', 'ip', name])
     except: ip = None
     cow = find_cow_dir(name)
     dv = '/rw/dv/%s' % name if args.prod else '/rw/dv/TMP/%s' % orig_name
@@ -121,7 +120,7 @@ def launch_or_find_container(args, extra_run_args=None):
 
 def launch_test_container(args, extra_run_args, out):
     emit('launching container ' + args.real_name)
-    cmnd = ['/root/bin/d-run', '--log', 'json-file', '--tag', args.tag, '--print-cmd']
+    cmnd = ['d-run', '--tag', args.tag, '--print-cmd', '--log', 'j']
     if args.name: cmnd.extend(['--name', args.name])
     if extra_run_args: cmnd.extend(extra_run_args)
     test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
@@ -134,7 +133,7 @@ def launch_test_container(args, extra_run_args, out):
     if not rslt.ok: sys.exit(rslt.out)
 
 def run_log_relay(args, out):
-    rslt = UC.popen(['/usr/bin/docker', 'logs', '-f', args.real_name], stdout=out, stderr=out)
+    rslt = UC.popen([DOCKER_BIN, 'logs', '-f', args.real_name], stdout=out, stderr=out)
     if not rslt.ok: sys.exit(rslt.out)
     emit('log relay done.')
 
@@ -144,7 +143,7 @@ def stop_container_at_exit(args):
     if not args.real_name: return False
     cid = get_cid(args.real_name)
     if not cid: return False    # Already stopped
-    rslt = UC.popener(['/usr/bin/docker', 'stop', '-t', '2', args.real_name])
+    rslt = UC.popener([DOCKER_BIN, 'stop', '-t', '2', args.real_name])
     return not rslt.startswith('ERROR')
 
 
@@ -184,7 +183,7 @@ def file_expect_within(within_seconds, expect, filename, invert=False, missing_o
 
 # filename is inside the conainter.
 def container_file_expect(expect, container_name, filename):
-    data = UC.popener(['/usr/bin/docker', 'cp', '%s:%s' % (container_name, filename), '-'])
+    data = UC.popener([DOCKER_BIN, 'cp', '%s:%s' % (container_name, filename), '-'])
     if data.startswith('ERROR'): abort('error getting file %s:%s' % (container_name, filename))
     if expect in data:
         emit('success; saw "%s" in %s:%s' % (expect, container_name, filename))

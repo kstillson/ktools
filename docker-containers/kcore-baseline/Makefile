@@ -15,9 +15,8 @@ COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymaster.crt \
 all: copy baseline-stamp
 
 baseline-stamp: $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
-	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
-	sudo -E /root/bin/d-build -t    # -E to preserve d-build environment vars
-	sudo -E /root/bin/d-build -s    # -E to preserve d-build environment vars
+	d-build -t
+	d-build -s
 	touch baseline-stamp
 
 

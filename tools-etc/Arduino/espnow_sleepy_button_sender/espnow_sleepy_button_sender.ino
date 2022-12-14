@@ -359,11 +359,32 @@ void setup() {
         if (waked_by_mask & testbit) { send_espnow(i); ++sent; }
         testbit <<= 1;
       }
+      // If none of the bitmasks matched, make an assumption about the wake cause.
       if (sent == 0) {
         Serial.printf("!! woken by ext1, but mask (0x%x) didnt trigger, so assuming A1\r\n", waked_by_mask);
         send_espnow(A1);
         neo(RED, 500);
       }
+      // If the button is still pressed, wait for it to be released- we don't want to continuously
+      // cycle through sleep/wake and keep rapidly sending the notification.
+      sent = 0;
+      testbig = 0x01;
+      for (int i = 0; i < 32; i++) {
+        if (waked_by_mask & testbit) {
+	   int rslt = wait_for_button(i, 0, -1, -1, false, 0);
+	   if (rslt != -1) {
+	     if (sent == 0) { // only do battery-expensive light signal once.
+	       Serial.printf("waiting for button %d to be released\n", i);
+	       neo(YELLOW, 0.5);
+	       neo(BLACK);
+	       ++sent;
+	     }
+	     delay(100);
+	   }
+	}
+        testbit <<= 1;
+      }
+      Serial.println("all buttons released; going back to sleep.");
       break; }
     
     default:

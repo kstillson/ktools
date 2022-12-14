@@ -103,4 +103,3 @@ test-stamp-run:
 
 ../kcore-baseline/baseline-stamp:
 	$(MAKE) -C ../kcore-baseline all
-

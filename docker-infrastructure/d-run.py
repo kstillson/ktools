@@ -48,11 +48,13 @@ DOCKER_EXEC = os.environ.get('DOCKER_EXEC', '/usr/bin/docker')
 HOSTNAME_VAR = 'KTOOLS_DRUN_HOSTNAME'
 HOSTNAME_FALLBACK = None  # will use container name
 
+DOCKER_BIN = os.environ.get('DBUILD_DOCKER', 'podman')
+
 IP_VAR = 'KTOOLS_DRUN_IP'
 IP_FALLBACK = '-'
 
 LOG_VAR = 'KTOOLS_DRUN_LOG'
-LOG_FALLBACK = 'json'
+LOG_FALLBACK = 'journald'
 
 NAME_VAR = 'KTOOLS_DRUN_NAME'
 # fallback is dynamically computed name of the directory containing the settings file.
@@ -99,7 +101,8 @@ def expand_log_shorthand(log, name):
                 '--log-opt', 'tag={name}']
         if slog_addr: args.append(['--log-opt', f'syslog-address={slog_addr}'])
         return args
-    elif ctrl in ['j', 'json']:
+    elif ctrl in ['j', 'json', 'journal', 'journald']:
+        if 'podman' in DOCKER_BIN: return ['--log-driver=journald']
         return ['--log-driver=json-file',
                 '--log-opt', 'max-size=5m',
                 '--log-opt', 'max-file=3']
@@ -196,7 +199,8 @@ def get_ip(hostname):
 def get_ip_to_use(args, settings):
     ip = args.ip or settings.get('ip', None) or os.environ.get(IP_VAR) or IP_FALLBACK
     if ip in ['', '-', '0']: return None
-
+    if os.getuid() != 0: return err("skipping IP assignment; not running as root.")
+    
     # If we don't see 3 dots, this must be a hostname we're intended to look up.
     if ip.count('.') != 3:
         lookup_host1 = ip if ip != '-' else settings['hostname']
@@ -255,10 +259,10 @@ def parse_args():
     ap.add_argument('--tag',    '-T', default=None, help=f'tag or hash of image version to use.  Flags override settings and ${TAG_VAR}), default is "{TAG_FALLBACK}".')
 
     # Flags that provide context about the mode we're launching the container in.
-    ap.add_argument('--dev',           '-D',  action='store_true', help='Activate development mode (equiv to: --fg --log=NONE --name_prefix=dev- --network=docker2 --rm --subnet=3 --latest --vol-alt).')
+    ap.add_argument('--dev',           '-D',  action='store_true', help='Activate development mode (equiv to: --fg --name_prefix=dev- --network=docker2 --rm --subnet=3 --latest --vol-alt).')
     ap.add_argument('--dev-test',      '-DT', action='store_true', help='Same as --dev but use --name_prefix=test-')
     ap.add_argument('--settings',      '-s',  default=None, help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
-    ap.add_argument('--test-in-place', '-P',  action='store_true', help='Run dev version in real container (equiv to: --fg --log=NONE --rm --latest).')
+    ap.add_argument('--test-in-place', '-P',  action='store_true', help='Run dev version in real container (equiv to: --fg --rm --latest).')
 
     # Flags that override or are merged with individual settings to fine-tune individual flags passed to the container launch.
     ap.add_argument('--cmd',            default=None, help='Specify the inside-container command or args to run.')
@@ -292,11 +296,11 @@ def parse_args():
     if args.test_in_place:
         args.fg = True
         args.rm = True
-        if not args.log: args.log = 'NONE'
+        ##@@ if not args.log: args.log = 'NONE'
         if not args.tag: args.tag = 'latest'
     elif args.dev or args.dev_test:
         args.fg = True
-        if not args.log: args.log = 'NONE'
+        ##@@ if not args.log: args.log = 'NONE'
         if not args.name_prefix: args.name_prefix = 'test-' if args.dev_test else 'dev-'
         if not args.network: args.network = os.environ.get(TEST_NETWORK_VAR) or TEST_NETWORK_FALLBACK
         args.rm = True

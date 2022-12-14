@@ -11,13 +11,12 @@ all: common_all
 PY_TARGETS := d-cowscan d-run
 SH_TARGETS := d d-build d-map
 CUSTOM_TARGETS := d-cowscan.ignore
-INSTALL_DIR ?= /root/bin
 include ../etc/Makefile-common
 
 # ---------- addl files
 
 $(INSTALL_DIR)/d-cowscan.ignore: private.d/d-cowscan.ignore
-	sudo cp $^ $@
+	cp $^ $@
 
 
 # ----- Create an empty private.d/d-cowscan.ignore if one doesn't exist.
@@ -39,20 +38,17 @@ $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
 # ---------- pass-throughs
 
 comp:
-	@echo "about to sudo for docker-infrastructure:comp -- these had to be installed by root, and generally permissions now need root to read(/compare) them."
-	sudo $(MAKE) common_comp
+	$(MAKE) common_comp
 
 clean: common_clean
 	rm -rf private.d/__pycache__*
 
 install: check_kcore_installed
-	@echo "about to sudo for docker-infrastructure:install -- these tools can only be used by root, so it is assumed you want to install them where root can use them."
-	sudo $(MAKE) common_install
+	$(MAKE) common_install
 
 test: common_test
 
 uninstall:
-	@echo "about to sudo for docker-infrastructure:install -- these were installed for root by sudo, and so must be uninstalled that way."
-	sudo $(MAKE) common_uninstall
+	$(MAKE) common_uninstall
 
 update: common_update

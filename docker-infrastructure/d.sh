@@ -116,7 +116,7 @@ function up() {
   else
     # This substitution only supports a single param to the right of the "--".
     extra_flags=${extra_flags/-- /--extra-init=}
-    /root/bin/d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
+    d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
   fi
 }
 

@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
-import argparse, subprocess, sys, time
+import argparse, os, subprocess, sys, time
 import kcore.docker_lib as d_lib
+
+DOCKER_BIN = os.environ.get('DBUILD_DOCKER', 'podman')
 
 
 def main():
@@ -19,7 +21,7 @@ def main():
     # copy-on-write dir.  This isn't particularly profound, but at least
     # confirms the infrastructure needed for other containers' tests works.
     cookie = d_lib.gen_random_cookie()
-    subprocess.check_call(['/usr/bin/docker', 'exec', '-u', '0', name,
+    subprocess.check_call([DOCKER_BIN, 'exec', '-u', '0', name,
                            '/bin/bash', '-c', 'echo "%s" > /root/cookie' % cookie])
     d_lib.file_expect(cookie, cow + '/root/cookie')
 
