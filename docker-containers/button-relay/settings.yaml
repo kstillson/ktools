@@ -1,0 +1,15 @@
+
+ports:
+  - 8084:8080
+
+log: j
+
+mount_devices:
+  - /dev/ttyACM*
+  - /dev/ttyUSB*
+
+mount_logs:
+  - var_log: /var/log
+
+extra_docker: "--group-add keep-groups"
+

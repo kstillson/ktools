@@ -36,7 +36,7 @@ Most settings can come from multiple sources, the priority order is:
 
 '''
 
-import argparse, os, shutil, socket, subprocess, sys, yaml
+import argparse, glob, os, shutil, socket, subprocess, sys, yaml
 from pathlib import Path
 
 import kcore.auth
@@ -113,18 +113,43 @@ def expand_log_shorthand(log, name):
             return ['--log-driver'] + log.split(' ')
 
 
+def add_devices(cmnd, dev_list):
+    if not dev_list: return cmnd
+    for i in dev_list:
+        if '*' in i:
+            globs = glob.glob(i)
+            if not globs: err(f'WARNING: glob returned no items: {i}')
+            for g in globs:
+                cmnd.extend(['--device', g])
+            continue
+        else:
+            cmnd.extend(['--device', i])
+    return cmnd
+
+
 def add_mounts(cmnd, mapper, readonly, name, mount_list):
     if not mount_list: return cmnd
     for i in mount_list:
-        for k, v in i.items():
-            if '/' not in k:
-                k = os.path.join('/rw/dv/%s' % name, k)
-            if not os.path.exists(k):
-                err(f'Creating non-existent mountpoint source: {k}')
-                Path(k).mkdir(parents=True, exist_ok=True)
-            if mapper: k = mapper(k, name)
-            ro = ',readonly' if readonly else ''
-            cmnd.extend(['--mount', f'type=bind,source={k},destination={v}{ro}'])
+        for src, dest in i.items():
+            if '/' not in src:
+                src = os.path.join('/rw/dv/%s' % name, src)
+            if '*' in src:
+                globs = glob.glob(src)
+                if not globs: err(f'WARNING: glob returned no items: {src}')
+                for g in globs:
+                    cmnd = add_mounts_internal(cmnd, mapper, readonly, name, g, dest)
+                continue
+            if not os.path.exists(src):
+                err(f'Creating non-existent mountpoint source: {src}')
+                Path(src).mkdir(parents=True, exist_ok=True)
+            cmnd = add_mounts_internal(cmnd, mapper, readonly, name, src, dest)
+    return cmnd
+
+def add_mounts_internal(cmnd, mapper, readonly, name, src, dest):
+    if not dest: dest = src
+    if mapper: src = mapper(src, name)
+    ro = ',readonly' if readonly else ''
+    cmnd.extend(['--mount', f'type=bind,source={src},destination={dest}{ro}'])
     return cmnd
 
 
@@ -370,6 +395,7 @@ def gen_command(args, settings):
         if settings.get('debug_alt_cmnd') and args.vol_alt:
             cmnd.extend(['--entrypoint', settings['debug_alt_cmnd']])
 
+    add_devices(cmnd, settings.get('mount_devices'))
     add_mounts(cmnd, None, True, basename, settings.get('mount_ro'))
     add_mounts(cmnd, None, False, basename, settings.get('mount_persistent'))
     add_mounts(cmnd, None, args.vol_alt, basename, settings.get('mount_persistent_test_ro'))

@@ -1,0 +1,9 @@
+
+ports:
+  - 5000: 5000
+
+log: j
+
+mount_persistent_test_ro:
+  - var_lib_reg: /var/lib/registry
+

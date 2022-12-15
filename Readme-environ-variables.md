@@ -34,8 +34,14 @@ docker-containers subdirectory).
 - DBUILD_PARAMS: d-build will pass anything set here through to the "docker
   build" command.  Not generally needed.
 
-- DBUILD_REPO: name of the docker repository that d-build will build into.
-  default is 'ktools'
+- DBUILD_PUSH_OPTS: options when pushing a build to a remote repo
+  (defaults to "--tls-verify=false")
+
+- DBUILD_PUSH_TO: registry server to push remote repo builds to
+  (defaults to "localhost:5000")
+
+- DBUILD_REPO: path prefix for the local docker repository that d-build will
+  build into.  default is 'ktools'
 
 - DOCKER_BASE_DIR: If d-build is given a relative directory in-which to find a
   container to build (via the --cd flag), this is the directory the reference

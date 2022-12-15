@@ -30,6 +30,8 @@ function run_build() {
     fi
 
     # ----- standard docker build
+    echo ""
+    echo "${DOCKER_EXEC} build $params -t $target ."
     ${DOCKER_EXEC} build $params -t $target .
     return $?
 }

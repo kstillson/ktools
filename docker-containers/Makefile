@@ -1,10 +1,10 @@
-TOP_TARGETS = all clean install test update
+TOP_TARGETS = all clean install promote push test update
 SHELL := /bin/bash
 
 all: prep
 
 include ../etc/Makefile-colors
-include ../etc/Makefile-docker
+##include ../etc/Makefile-docker
 
 # WARNING- all docker containers (except kcore-baseline) depend on
 # kcore-baseline being built AND INSTALLED (i.e. marked :live) before the

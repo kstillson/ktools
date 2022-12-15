@@ -10,9 +10,14 @@ SHELL := /bin/bash
 
 # ---------- control constants
 
+DIRNAME ?= $(shell basename $(shell pwd))
 DOCKER_EXEC ?= /usr/bin/docker
 DOCKER_VOLS ?= /rw/dv
 UID := $(shell id -u)
+
+DBUILD_PUSH_OPTS ?= --tls-verify=false
+DBUILD_PUSH_TO ?= localhost:5000
+DBUILD_REPO ?= ktools
 
 # ----- determine if we need sudo
 
@@ -62,10 +67,17 @@ docker-uninstall:
 
 docker-update: all docker-test docker-install
 
+# force to :live without testing...
+promote: install-stamp
+
+# force push without testing or even checking if :live exists (i.e. probably want to "promote" first).
+push: build-stamp
+	$(DOCKER_EXEC) push $(DBUILD_PUSH_OPTS) $(DBUILD_REPO)/$(DIRNAME):live $(DBUILD_PUSH_TO)/$(DBUILD_REPO)/$(DIRNAME):live
+
 
 # ---------- second & third level logic
 
-build-stamp:
+build-stamp: Dockerfile
 	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) build-stamp-sudo; else $(MAKE) build-stamp-run; fi
 
 build-stamp-sudo:

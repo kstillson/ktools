@@ -1,17 +1,17 @@
 FROM docker.io/alpine:3.15
 
-# python3 is for kmc
+##_prom MIGHT WANT TO ADD THIS TO THE APK LIST...:  py3-prometheus-client
 
 RUN umask 022 && \
     apk upgrade -U && \
-    apk add --no-cache bash python3 py3-cryptography py3-prometheus-client py3-requests tzdata && \
+    apk add --no-cache bash python3 py3-cryptography py3-requests tzdata && \
     rm -rf /var/cache/apk/*
 
 # Needs apk tzdata:
 ENV TZ America/New_York
 
 # Enable auto varz -> Prometheus
-ENV KTOOLS_VARZ_PROM 1
+##_prom ENV KTOOLS_VARZ_PROM 1
 
 COPY files /
 
