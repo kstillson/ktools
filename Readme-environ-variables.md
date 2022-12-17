@@ -47,6 +47,9 @@ docker-containers subdirectory).
   container to build (via the --cd flag), this is the directory the reference
   will be relative to.
 
+- DOCKER_EXEC: Defaults to '/usr/bin/docker', but can be changed to alternate
+  commands with the same API (e.g. "podman") or a wrapper script.
+
 
 ## Docker controls: launching containers
 
@@ -58,6 +61,14 @@ These affect how containers are launched by docker-infrastructure/d-run.sh
 
 - KTOOLS_DRUN_NETWORK: default Docker network to use when launching containers
   from d-run, if not specified via flag or settings file.
+
+- KTOOLS_DRUN_REPO: default Docker repo/registry to use.  Default is "ktools"
+  which is implicitly "localhost/ktools", i.e. assuming a local repo.  If a
+  remote repo is specified, the image will be pulled from there, i.e.  the
+  only file in a container dir that is used is settings.yaml, which is used to
+  construct the params for the container launch.  Note also that if using
+  Docker and the registry is "insecure" (i.e. http only), you need to add it
+  to /etc/docker/daemon.json in the "insure-registries" list.
 
 - KTOOLS_DRUN_REPO2: fallback Docker repository to use for d-run, if not
   specified via flag or settings file.  Note that the primary repo to try
