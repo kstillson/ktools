@@ -58,7 +58,7 @@ docker-all: build-stamp
 docker-clean:
 	rm -f *-stamp
 
-docker-install: install-stamp docker-all docker-test
+docker-install: docker-all docker-test install-stamp
 
 docker-test: docker-all test-stamp
 
@@ -102,16 +102,21 @@ install-stamp-run: build-stamp
 	touch install-stamp
 
 
-test-stamp:
+test-stamp: $(wildcard Test* Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
 	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) test-stamp-sudo; else $(MAKE) test-stamp-run; fi
 
 test-stamp-sudo:
 	@echo "about to sudo for docker container Test command.  Testing involves starting up a container, which only root can do."
 	sudo -E $(MAKE) test-stamp-run
 
-test-stamp-run: Test $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
-	./Test -r
+test-stamp-run:
+	@if [[ -x ./Test ]]; then \
+          ./Test -r; \
+        else \
+	  printf "\nWARNING: $(shell pwd)/Test does not exist; assuming pass.\n\n"; \
+        fi
 	touch test-stamp
+
 
 # ----------
 
