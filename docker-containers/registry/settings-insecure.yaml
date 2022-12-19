@@ -1,0 +1,19 @@
+
+# This config exposes the wriable registry directly on port 5000, with no no
+# authN/Z requirements.  This means anyone with access to the local network
+# can arbitrarily overwrite your images.  Nice to have for emergency recovery,
+# but not a good idea for standard operations.
+
+# Note that for podman to use this registry, you need to set it up in
+# /etc/containers/registries.conf as "insecure = true", to make it clear
+# that you know you're making use of an insecure registry.
+
+name: registry_insecure
+
+ports:
+  - 5000:5000
+
+log: j
+
+mount_persistent_test_ro:
+  - var_lib_reg: /var/lib/registry
