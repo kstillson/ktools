@@ -204,6 +204,18 @@ def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_
     emit('success; expected output for %s' % cmd)
 
 
+# launch a temporary testing container and run the provided cmd in that.
+# This is provided because when launching a rootless container-under-test from
+# podman, the host cannot contact the container's ports direclty.  But other
+# containers on the same network can.  So we create such a container.
+def testing_container_expect(cmd, expect_out, expect_err=None):
+    # This needs to be kept in sync with the logic in launch_test_container()
+    test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
+
+    cmd2 = [DOCKER_BIN, 'run', '--rm', '-i', '--name', 'tmp_test_container', '--network', test_net, 'alpine:latest']
+    return popen_expect(cmd2, expect_out, expect_err, send_in=cmd)
+
+
 # expect can be a string or a list.  if list, accept any substring.
 def web_expect(expect, server, path, port=80, expect_status=None, post_params=None, headers={}, https=False, timeout=2, size_limit=512, proxy_host=None, verify_ssl=True):
     proto = 'https' if https else 'http'

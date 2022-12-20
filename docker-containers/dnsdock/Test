@@ -13,7 +13,9 @@ def main():
     name, ip, cow, dv = D.launch_or_find_container(args)
     if not cow or not ip: sys.exit('cannot find container %s' % name)
 
-    D.popen_expect(['/usr/bin/host', 'jack', ip], 'has address 192.168.1.2', '', 0)
+    D.testing_container_expect(
+        f'apk add bind-tools; nslookup jack {ip}; exit',
+        'Address: 192.168.1.2')
     print('pass')
     
 
