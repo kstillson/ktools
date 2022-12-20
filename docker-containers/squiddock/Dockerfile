@@ -1,8 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk upgrade -U && \
-    apk add --no-cache squid && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add squid
 
 EXPOSE 3128
 

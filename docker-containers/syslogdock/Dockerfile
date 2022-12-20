@@ -1,8 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk upgrade -U && \
-    apk add --no-cache ssmtp supervisor syslog-ng && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add ssmtp supervisor syslog-ng
 
 EXPOSE 1514 
 EXPOSE 1514/udp

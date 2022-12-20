@@ -108,7 +108,9 @@ sysdirs="
  /usr"
 
 # Remove apk configs.
-if [[ "${APK_CLEANUP}" == "1" ]]; then
+if [[ "${APK_CLEANUP}" == "2" ]]; then
+    rm -rf /var/cache/apk/*
+elif [[ "${APK_CLEANUP}" == "1" ]]; then
   find $sysdirs -xdev -regex '.*apk.*' -exec rm -fr {} +
 fi
 

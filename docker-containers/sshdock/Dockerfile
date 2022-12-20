@@ -1,8 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk upgrade -U && \
-    apk add --no-cache openssh rssh rsync rsyslog && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add openssh rssh rsync rsyslog
 
 EXPOSE 22
 

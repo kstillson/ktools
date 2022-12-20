@@ -29,7 +29,7 @@ mount_persistent_test_copy_files   "                                 recursive c
 mount_persistent_test_ro           "                                 mount real location, but ro
 mount_ro                           list of ro bind-mount maps s->d   same as normal
 mount_test_only                    ignored                           list of bind-mount maps s->d
-   relative paths are relative to  /rw/dv/{name}/...                 /rw/dv/TMP/{name}/...
+   relative paths are relative to  $DOCKER_VOL_BASE/{name}/...       $DOCKER_VOL_BASE/TMP/{name}/...
 
 Most settings can come from multiple sources, the priority order is:
   command-line flag, then settings file, then environment variable, then hard-coded "fallback" value.
@@ -52,7 +52,8 @@ NETWORK_ENV =      os.environ.get('KTOOLS_DRUN_NETWORK',       'bridge')
 REPO_ENV =         os.environ.get('KTOOLS_DRUN_REPO',          'ktools')
 REPO2_ENV =        os.environ.get('KTOOLS_DRUN_REPO2',         None)
 TAG_ENV =          os.environ.get('KTOOLS_DRUN_TAG',           'live')
-TEST_NETWORK_ENV = os.environ.get('KTOOLS_DRUN_TEST_NETWORK', 'bridge')
+TEST_NETWORK_ENV = os.environ.get('KTOOLS_DRUN_TEST_NETWORK',  'bridge')
+VOL_BASE =         os.environ.get('DOCKER_VOL_BASE',           '/rw/dv')
 
 
 # ----------------------------------------
@@ -113,7 +114,7 @@ def add_mounts(cmnd, mapper, readonly, name, mount_list):
     for i in mount_list:
         for src, dest in i.items():
             if '/' not in src:
-                src = os.path.join('/rw/dv/%s' % name, src)
+                src = os.path.join(f'{VOL_BASE}/{name}', src)
             if '*' in src:
                 globs = glob.glob(src)
                 if not globs: err(f'WARNING: glob returned no items: {src}')
@@ -162,9 +163,9 @@ def does_image_exist(repo_name, image_name, tag_name):
 
 def map_dir(destdir, name, include_tree=False, include_files=False):
     if '/' in destdir:
-        mapped = '/rw/dv/TMP/%s/%s' % (name, destdir.replace('/', '_'))
+        mapped = '%s/TMP/%s/%s' % (VOL_BASE, name, destdir.replace('/', '_'))
     else:
-        mapped = destdir.replace('/rw/dv', '/rw/dv/TMP')
+        mapped = destdir.replace(VOL_BASE, VOL_BASE + '/TMP')
     # Safety check (we're about to rm -rf from the mapped dir; make sure it's in the right place!)
     if 'TMP' not in mapped: sys.exit('Ouch- dir map failed: %s -> %s' % (destdir, mapped))
     # Make sure the mapped parent dir exists.

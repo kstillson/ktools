@@ -1,8 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk upgrade -U && \
-    apk add --no-cache git openssh && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add git openssh
 
 EXPOSE 22
 

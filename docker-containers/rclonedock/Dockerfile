@@ -3,10 +3,7 @@ FROM ktools/kcore-baseline:live
 # Note: An extra init param will be required to select the mode.
 # e.g.: d-run --extra_init {mode}
 
-
-RUN apk upgrade -U && \
-    apk add --no-cache curl encfs fuse util-linux && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add curl encfs fuse util-linux
 
 COPY files /
 

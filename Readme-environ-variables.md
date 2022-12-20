@@ -34,6 +34,21 @@ docker-containers subdirectory).
 - DBUILD_PARAMS: d-build will pass anything set here through to the "docker
   build" command.  Not generally needed.
 
+- DBUILD_PODMAN_SHARED_APK_CACHE: if set to "1" (the default) and DOCKER_EXEC
+  is "podman", then d-build will automatically add a read-write volume for
+  /var/cache/apk when using podman to build containers.  This allows for
+  shared caching of APKs.  If set to "2", then d-build will take no action
+  regarding the apk cache dir.  If neither Dockerfile nor files/prep take any
+  particular action, this means APK cache will be populated in the built image
+  (i.e. washing space).  If set to any other value, or if podman isn't in use,
+  the d-build will mount a tmpfs in /var/cache/apk, thus minimizing image
+  size, but meaning each container needs to redownload all used apk's.
+
+If set to any other value, or if not using podman, then
+  d-build will mount a tmpfs in /var/cache/apk, thus making sure images are
+  as small as possible (no cached apks)
+
+
 - DBUILD_PUSH_OPTS: options when pushing a build to a remote repo
   (defaults to "--tls-verify=false")
 
@@ -47,13 +62,16 @@ docker-containers subdirectory).
   container to build (via the --cd flag), this is the directory the reference
   will be relative to.
 
-- DOCKER_EXEC: Defaults to '/usr/bin/docker', but can be changed to alternate
-  commands with the same API (e.g. "podman") or a wrapper script.
-
 
 ## Docker controls: launching containers
 
 These affect how containers are launched by docker-infrastructure/d-run.sh
+
+- DOCKER_EXEC: Defaults to '/usr/bin/docker', but can be changed to alternate
+  commands with the same API (e.g. "podman") or a wrapper script.
+
+- DOCKER_VOL_BASE: Defaults to /rw/dv, and gives the default location for
+  mounted volume source directories, i.e. $DOCKER_VOL_BASE/{container_name}/...
 
 - KTOOLS_DRUN_LOG: default Docker log type to use for
   docker-infrastructure/d-run.sh if not specified on the command-line or in

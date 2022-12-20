@@ -3,15 +3,16 @@ FROM docker.io/alpine:3.15
 ##_prom MIGHT WANT TO ADD THIS TO THE APK LIST...:  py3-prometheus-client
 
 RUN umask 022 && \
-    apk upgrade -U && \
-    apk add --no-cache bash python3 py3-cryptography py3-requests tzdata && \
-    rm -rf /var/cache/apk/*
-
-# Needs apk tzdata:
-ENV TZ America/New_York
+    ln -s /var/cache/apk /etc/apk/cache && \
+    apk cache -v sync && \
+    apk upgrade && \
+    apk add bash python3 py3-cryptography py3-requests tzdata
 
 # Enable auto varz -> Prometheus
 ##_prom ENV KTOOLS_VARZ_PROM 1
+
+# Needs apk tzdata:
+ENV TZ America/New_York
 
 COPY files /
 

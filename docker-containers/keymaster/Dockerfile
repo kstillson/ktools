@@ -1,8 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk upgrade -U && \
-    apk add --no-cache py3-cryptography && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add py3-cryptography
 
 EXPOSE 4444
 

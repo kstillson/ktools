@@ -1,8 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk upgrade -U && \
-    apk add --no-cache python3 && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add python3
 
 EXPOSE 8080
 

@@ -8,9 +8,11 @@
 
 DOCKER_BASE_DIR=${DOCKER_BASE_DIR:-~/docker-dev}
 DOCKER_EXEC="${DOCKER_EXEC:-docker}"
+DOCKER_VOL_BASE="${DOCKER_VOL_BASE:-/rw/dv}"
+
 DBUILD_PARAMS="${DBUILD_PARAMS:-}"
 DBUILD_REPO="${DBUILD_REPO:-ktools}"
-
+DBUILD_PODMAN_SHARED_APK_CACHE="${DBUILD_PODMAN_SHARED_APK_CACHE:-1}"
 
 # ---------- business logic
 
@@ -29,7 +31,22 @@ function run_build() {
         echo "continuing after ./Build"
     fi
 
-    # ----- standard docker build
+    # ----- alpine shared cache (only support for podman, because need to bind-mount
+    #       volumes during build command, which docker doesn't support.
+
+    if [[ "$DBUILD_PODMAN_SHARED_APK_CACHE" == "1" &&
+	      "$DOCKER_EXEC" == *"podman" ]]; then
+	echo "adding shared APK cache dir..."
+	apk_cache_dir="${DOCKER_VOL_BASE}/apk_cache_dir"
+	mkdir -p $apk_cache_dir
+	params="-v $apk_cache_dir:/var/cache/apk $params"
+    elif [[ "$DBUILD_PODMAN_SHARED_APK_CACHE" != "2" ]]; then
+	echo "adding tmpfs for APK cache dir..."
+	params="--tmpfs /var/cache/apk $params"
+    fi
+
+    # ----- standard docker/podman build
+
     echo ""
     echo "${DOCKER_EXEC} build $params -t $target ."
     ${DOCKER_EXEC} build $params -t $target .

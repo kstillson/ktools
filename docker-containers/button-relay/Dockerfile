@@ -1,8 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk update -U && \
-    apk add --no-cache bash python3 py3-pyserial tzdata && \
-    rm -rf /var/cache/apk/*
+RUN apk -U add bash python3 py3-pyserial tzdata
 
 # Needs apk tzdata:
 ENV TZ America/New_York
