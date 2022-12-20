@@ -29,8 +29,8 @@ clean:
 	rm -rf $(COPIED_FILES) *-stamp
 
 test:
-	sudo -E $(MAKE) check_kcore_installed
-	sudo -E $(MAKE) docker-test
+	$(MAKE) check_kcore_installed
+	$(MAKE) docker-test
 
 
 # ---------- local additions

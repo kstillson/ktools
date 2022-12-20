@@ -21,8 +21,12 @@ VOL_DIRS := $(VOLS)/var_log_nagios $(VN) $(VN)/archive $(VN)/rw $(VN)/spool $(VN
 vol_dirs: ${VOL_DIRS}
 
 ${VOL_DIRS}:
-	sudo -E mkdir --parents --mode=755 $@
-	sudo -E chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
+	mkdir --parents --mode=755 $@
+	if [[ "$UID" == "0" ]]; then \
+	    chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
+	else
+	    @printf "\n$(YELLOW) WARNING $(RESET)- not root, so cant fix ownership on volume dirs.  owner should be ${UID_OUTSIDE}:${GID_OUTSIDE} for ${VOL_DIRS}\n\n"
+	fi
 
 
 # ---------- other custom targets

@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
-# SITE-SPECIFIC: The details of how this test sends its email: send_email(),
-# and the credentials used for the sending: files/etc/exim/passwd.client
-# (generally overriden via files/etc/exim/private.d/passwd.client) are
-# site-specific, and you'll need to modify them to suit your speciifcs before
-# this test will pass.
+'''This test can't send an email without credentials; see Test-prod for that.
+Instead, we *try* to send an email and expect it to go nowhere, and check that
+the errors look like what we expect, rather than looking like configuration
+errors, or failure to start the exim server, etc. '''
 
-import argparse, socket, sys, time
+
+import argparse, os, socket, sys, time
 
 sys.path.append('/root/bin')
 import kcore.docker_lib as D
@@ -19,12 +19,12 @@ def send_email(cookie, ip):
     resp = D.socket_exchange(
         sock,
         ['HELO point0.net', 'MAIL FROM: tech@point0.net',
-         'RCPT TO: root@point0.net', 'DATA', 
-         'email test cookie %s\n.\n' % cookie, 'QUIT'], 
+         'RCPT TO: root@point0.net', 'DATA',
+         'email test cookie %s\n.\n' % cookie, 'QUIT'],
         add_eol=True, emit_transcript=True)
     sock.close()
     D.emit('SMTP responses: %s' % resp)
-        
+
 
 def main():
     ap = argparse.ArgumentParser(description='eximdock test')
@@ -33,13 +33,20 @@ def main():
     name, ip, cow, dv = D.launch_or_find_container(args)
     if not cow or not ip: sys.exit('cannot find container %s' % name)
 
+    prefix = dv + ('/' if args.prod else '/_rw_dv_eximdock_')
+    exim_log_dir = f'{prefix}/var_log/exim'
+    if not os.path.isdir(exim_log_dir):
+        D.emit(f'creating: {exim_log_dir}')
+        os.mkdir(exim_log_dir, mode = 0o777)
+    else:
+        D.emit(f'already exists: {exim_log_dir}')
+
     D.emit('sending test email')
     cookie = D.gen_random_cookie()
     try: send_email(cookie, ip)
     except Exception as e: sys.exit('unable to send email: %s' % e)
 
     time.sleep(5)
-    prefix = dv + ('/' if args.prod else '/_rw_dv_eximdock_')
     D.file_expect('Completed', prefix + 'var_log/exim/mainlog')
     D.file_expect('error', prefix + 'var_log/exim/mainlog', invert=True)
     D.file_expect('denied', prefix + 'var_log/exim/mainlog', invert=True)
@@ -49,7 +56,7 @@ def main():
     D.file_expect(cookie, prefix + 'var_mail/outbound-archive')
 
     print('pass')
-    
+
 
 if __name__ == "__main__":
   main()

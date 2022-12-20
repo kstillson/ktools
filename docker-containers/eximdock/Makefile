@@ -24,8 +24,12 @@ CONF_PRIV ?= $(shell ls -ald $(CONF_PRIV_DIR))
 vol_dirs: ${VOL_DIRS}
 
 ${VOL_DIRS}:
-	sudo mkdir --parents --mode=750 $@
-	sudo -E chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
+	mkdir --parents --mode=750 $@
+	if [[ "$UID" == "0" ]]; then \
+	    chown ${UID_OUTSIDE}:${GID_OUTSIDE} $@
+	else
+	    @printf "\n$(YELLOW) WARNING $(RESET)- not root, so cant fix ownership on volume dirs.  owner should be ${UID_OUTSIDE}:${GID_OUTSIDE} for ${VOL_DIRS}\n\n"
+	fi
 
 
 # ---------- custom logic for testing

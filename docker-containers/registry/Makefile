@@ -34,7 +34,7 @@ $(KEY_TARGET) $(CERT_TARGET): ../../private.d/cert-settings
           if [[ "$$p" == "y"* ]]; then \
             sudo install --backup --compare -D -o root -g root --mode 644 $(CERT_TARGET) $(CCD)/$(REG_HOSTNAME):5443/$(REG_HOSTNAME).crt && \
             sudo install --backup --compare -D -o root -g root --mode 644 $(CERT_TARGET) $(CCD)/$(REG_HOSTNAME):5444/$(REG_HOSTNAME).crt && \
-            @printf "\n$(GREEN)copy done $(RESET)\n"; \
+            @printf "\n$(GREEN)copy done $(RESET).\n$(YELLOW)You'll need to copy the $(CERT_TARGET) to any other hosts that intend to use this repo in TLS mode.$(RESET)\n"; \
 	  fi
 
 $(HTP_TARGET):
