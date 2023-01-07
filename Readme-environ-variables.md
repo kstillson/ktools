@@ -40,7 +40,7 @@ docker-containers subdirectory).
   shared caching of APKs.  If set to "2", then d-build will take no action
   regarding the apk cache dir.  If neither Dockerfile nor files/prep take any
   particular action, this means APK cache will be populated in the built image
-  (i.e. washing space).  If set to any other value, or if podman isn't in use,
+  (i.e. wasting space).  If set to any other value, or if podman isn't in use,
   the d-build will mount a tmpfs in /var/cache/apk, thus minimizing image
   size, but meaning each container needs to redownload all used apk's.
 

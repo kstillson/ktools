@@ -1,5 +1,5 @@
 
-PLIB := files/usr/lib/python3.9/site-packages
+PLIB := files/usr/lib/python3.10/site-packages
 COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymaster.crt \
     $(PLIB)/kcore
 
