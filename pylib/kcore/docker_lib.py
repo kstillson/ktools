@@ -120,7 +120,7 @@ def launch_or_find_container(args, extra_run_args=None):
 
 def launch_test_container(args, extra_run_args, out):
     emit('launching container ' + args.real_name)
-    cmnd = ['d-run', '--tag', args.tag, '--print-cmd', '--log', 'j']
+    cmnd = ['d-run', '--tag', args.tag, '--print-cmd', '--log', 'passthrough']
     if args.name: cmnd.extend(['--name', args.name])
     if extra_run_args: cmnd.extend(extra_run_args)
     test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
