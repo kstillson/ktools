@@ -56,11 +56,11 @@ def latest_equals_live(container_name):
         return 'unknown'
 
 
-def run_command_in_container(container_name, cmd):
+def run_command_in_container(container_name, cmd, raw_popen=False):
     command = [DOCKER_BIN, 'exec', '-u', '0', container_name]
     if isinstance(cmd, list): command.extend(cmd)
     else: command.append(cmd)
-    return UC.popener(command)
+    return UC.popen(command) if raw_popen else UC.popener(command)
 
 
 def find_cow_dir(container_name):
@@ -194,6 +194,19 @@ def container_file_expect(expect, container_name, filename):
 # expect commnd run on host (not container) to return certain output and/or error text.
 def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
     rslt = UC.popen(cmd, send_in)
+    if expect_returncode is not None and rslt.returncode != expect_returncode: abort('wrong return code: %d <> %d for %s' % (rslt.returncode, expect_returncode, cmd))
+    if expect_out is not None:
+        if rslt.stdout and not expect_out: abort('Unexpected output "%s" for: %s' % (rslt.stdout, cmd))
+        if expect_out not in rslt.stdout: abort('Unable to find output "%s" in "%s" for: %s' % (expect_out, rslt.stdout, cmd))
+    if expect_err is not None:
+        if rslt.stderr and not expect_err: abort('Unexpected error output "%s" for: %s', (rslt.stderr, cmd))
+        if expect_err and expect_err not in rslt.stderr: abort('Unable to find error "%s" in "%s" for: %s' % (expect_err, rslt.stderr, cmd))
+    emit('success; expected output for %s' % cmd)
+
+
+# expect commnd run inside the container to return certain output and/or error text.
+def popen_inside_expect(container_name, cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
+    rslt = run_command_in_container(container_name, cmd, raw_popen=True)
     if expect_returncode is not None and rslt.returncode != expect_returncode: abort('wrong return code: %d <> %d for %s' % (rslt.returncode, expect_returncode, cmd))
     if expect_out is not None:
         if rslt.stdout and not expect_out: abort('Unexpected output "%s" for: %s' % (rslt.stdout, cmd))

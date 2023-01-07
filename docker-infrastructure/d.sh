@@ -100,6 +100,20 @@ function list-testable() {
 # ------------------------------
 # operations complicated enough to need their own support functions
 
+function builder() {
+  name="$1"
+  cd ${D_SRC_DIR}/${name}
+  emit ""
+  emitc blue "<> Building container ${name}"
+  if [[ -r Build ]]; then
+    emitc yellow "deferring to ./Build"
+    ./Build
+  elif [[ -r Makefile ]]; then
+    make clean && make
+  else
+    d-build
+}
+
 function down() {
   name="$1"
   if [[ "$name" == "" ]]; then emitc red "no such container"; return; fi
@@ -143,28 +157,19 @@ function test() {
 
 function upgrade() {
   name=$1
-  emit ""
-  emitc blue "<> Building container ${name}"
-  cd ${D_SRC_DIR}/${name}
-  if [[ -r Makefile ]]; then
-      make clean && make
-  else
-      ./Build
-  fi
-  if [[ "$(dlib_run latest_equals_live $name)" == "true" ]]; then
-      emitc yellow "#latest == #live, so nothing more to do."
-      return
-  fi
+  builder $name
+
   rslt=$(test $name)
   if [[ "$rslt" != "pass" ]]; then
-      emitc yellow "result: $rslt (expected 'pass')"
-      return 1
+    emitc yellow "result: $rslt (expected 'pass')"
+    return 1
   fi
-  if [[ -r Makefile ]]; then
-      d-build -s
-  else
-      ./Build --setlive
+
+  emit green "> Marking ${name} live"
+  if [[ -r ./Build ]]; then ./Build --setlive
+  else d-build -s
   fi
+
   if [[ -f ./autostart ]]; then
       emitc blue "restarting $name"
       down $name
@@ -199,9 +204,9 @@ function myhelp() {
 case "$cmd" in
 
 # Simple container management
-  build | b) cd ${D_SRC_DIR}/$(pick_container_from_dev $spec); d-build ;;  ## Build container, name=$1
-  down | stop | 0) down $(pick_container_from_up $spec) ;;                 ## Stop container $1
-  restart | 01 | R)           ## Restart container $1
+  build | b) builder $(pick_container_from_dev $spec)   ;;  ## Build container $1
+  down | stop | 0) down $(pick_container_from_up $spec) ;;  ## Stop container $1
+  restart | 01 | R)                                         ## Restart container $1
     name=$(pick_container_from_up $spec)
     echo "Shutting down $name"
     down $name
@@ -209,7 +214,7 @@ case "$cmd" in
     echo "Starting up $name"
     up $name
     ;;
-  up | start | 1)             ## Launch container $1
+  up | start | 1)                                           ## Launch container $1
     sel=$(pick_container_from_dev $spec)
     if [[ "$sel" == "" ]]; then
       echo "error- cannot find container to launch: $sel"
