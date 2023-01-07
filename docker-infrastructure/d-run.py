@@ -84,7 +84,7 @@ def expand_log_shorthand(log, name):
         if slog_addr: args.append(['--log-opt', f'syslog-address={slog_addr}'])
         return args
     elif ctrl in ['p', 'passthrough']:
-        return ['--log-driver=passthrough'] if 'podman' in DOCKER_EXEC else []
+        return []
     elif ctrl in ['j', 'json', 'journal', 'journald']:
         if 'podman' in DOCKER_EXEC: return ['--log-driver=journald']
         return ['--log-driver=json-file',
