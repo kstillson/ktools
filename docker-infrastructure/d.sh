@@ -110,7 +110,8 @@ function builder() {
     ./Build
   elif [[ -r Makefile ]]; then
     make clean && make
-  else 
+  else
+    echo "no Makefile, falling back to direct d-build"
     d-build
   fi
 }
