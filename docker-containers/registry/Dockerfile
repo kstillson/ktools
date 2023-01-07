@@ -5,4 +5,6 @@ FROM docker.io/registry:2
 
 COPY files /
 
+COPY files/etc/private.d/* /etc/
+
 ENV TZ America/New_York
