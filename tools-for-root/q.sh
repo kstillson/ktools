@@ -661,7 +661,7 @@ function keymaster_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     read -s -p "km password: " passwd
     tmp=$(gettemp kmd)
-    gpg_s -p'$passwd' -i "$KMD_P" -o "$tmp"
+    pcrypt -p "$passwd" -i "$KMD_P" -o "$tmp"
     s1=$(stat -t $tmp)
     emacs $tmp
     s2=$(stat -t $tmp)
@@ -669,7 +669,7 @@ function keymaster_update() {
     read -p "ok to proceed? " ok
     if [[ "$ok" != "y" ]]; then emitc yellow "aborted."; rm $tmp; return; fi
     mv -f $KMD_P ${KMD_P}.prev
-    pcrypt -p'$passwd' -i "$tmp" -o "$KMD_P"
+    pcrypt -p "$passwd" -i "$tmp" -o "$KMD_P"
     rm $tmp
     emitc green "re-encryption done; attempting to rebuild kmdock"
     d u keymaster   # allow -e to abort if this fails.
