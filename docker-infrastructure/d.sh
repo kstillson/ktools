@@ -110,8 +110,9 @@ function builder() {
     ./Build
   elif [[ -r Makefile ]]; then
     make clean && make
-  else
+  else 
     d-build
+  fi
 }
 
 function down() {
