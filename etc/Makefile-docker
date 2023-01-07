@@ -77,7 +77,7 @@ push: build-stamp
 
 # ---------- second & third level logic
 
-build-stamp: Dockerfile
+build-stamp: ../kcore-baseline/baseline-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
 	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) build-stamp-sudo; else $(MAKE) build-stamp-run; fi
 
 build-stamp-sudo:
@@ -85,10 +85,9 @@ build-stamp-sudo:
 	exit 2
 	sudo -E $(MAKE) build-stamp-run    # -E to preserve d-build environment vars
 
-build-stamp-run: ../kcore-baseline/baseline-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+build-stamp-run:
 	d-build
 	touch build-stamp
-
 
 install-stamp:
 	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) install-stamp-sudo; else $(MAKE) install-stamp-run; fi
