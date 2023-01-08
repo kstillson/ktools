@@ -74,7 +74,7 @@ function setlive() {
     ${DOCKER_EXEC} tag ${fullname}:live ${fullname}:prev  >&/dev/null   # backup old live tag
     ${DOCKER_EXEC} tag ${fullname}:latest ${fullname}:live
     echo "${fullname} :latest promoted to :live"
-    if [[ "$push" == "1" ]]; run_push ${fullname}:live; fi
+    if [[ "$push" == "1" ]]; run_push "${fullname}:live"; fi
 }
 
 function try_dir() {
@@ -148,7 +148,7 @@ function main() {
 
     run_build "$target" "$build_params" || exit $?
 
-    if [[ "$push" == "1" ]]; then run_push $target; fi
+    if [[ "$push" == "1" ]]; then run_push "$target"; fi
 
     # ---- test
 
