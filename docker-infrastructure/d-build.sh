@@ -53,6 +53,12 @@ function run_build() {
     return $?
 }
 
+function run_push() {
+    target="$1"
+    echo "pushing $target_live"
+    $DOCKER_EXEC push $target_live
+}
+
 function run_tests() {
     if [[ ! -x ./Test ]]; then
         echo "WARNING- no tests provided.  Assuming pass."
@@ -64,9 +70,11 @@ function run_tests() {
 
 function setlive() {
     fullname="$1"
+    push="$2"
     ${DOCKER_EXEC} tag ${fullname}:live ${fullname}:prev  >&/dev/null   # backup old live tag
     ${DOCKER_EXEC} tag ${fullname}:latest ${fullname}:live
     echo "${fullname} :latest promoted to :live"
+    if [[ "$push" == "1" ]]; run_push ${fullname}:live; fi
 }
 
 function try_dir() {
@@ -89,7 +97,7 @@ function myhelp() {
 
 function main() {
 
-    # ---------- default values
+    # ---- default values
 
     auto_mode=0
     just_live=0
@@ -102,7 +110,7 @@ function main() {
     repo="$DBUILD_REPO"
     tag="latest"
 
-    # ---------- parse flags
+    # ---- parse flags
 
     while [[ $# -gt 0 ]]; do
         flag="$1"
@@ -123,24 +131,26 @@ function main() {
         shift
     done
 
+    # ---- prep
+
     try_dir $cd   # Make sure there's a Dockerfile in our working dir.
 
     if [[ "$name" == "" ]]; then name=$(basename $(pwd)); fi
 
     if [[ "$repo" == *":"* ]]; then push="1"; fi
-    echo "@@ repo=${repo}, push=${push}"
 
     fullname="${repo}/${name}"
     target="${fullname}:${tag}"
 
-    if [[ $just_live == 1 ]]; then setlive $fullname ; exit $?; fi
+    # ---- build
+
+    if [[ $just_live == 1 ]]; then setlive "$fullname" "$push" ; exit $?; fi
 
     run_build "$target" "$build_params" || exit $?
 
-    if [[ "$push" == "1" ]]; then
-	echo "pushing $target"
-	$DOCKER_EXEC push $target
-    fi
+    if [[ "$push" == "1" ]]; then run_push $target; fi
+
+    # ---- test
 
     if [[ $run_tests == 1 ]]; then
 	run_tests || exit $?
@@ -155,13 +165,7 @@ function main() {
 
     # ----- auto mode
 
-    setlive $fullname
-
-    target_live="${fullname}:live"
-    if [[ "$push" == "1" ]]; then
-	echo "pushing $target_live"
-	$DOCKER_EXEC push $target_live
-    fi
+    setlive "$fullname" "$push"
 
     if [[ -f autostart ]]; then
         /root/bin/d 01 $name || exit $?
