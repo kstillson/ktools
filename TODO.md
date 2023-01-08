@@ -1,6 +1,8 @@
 
 # queued minor improvements
 
+  - make persister data more tolerante of tabs.
+
 # new subsystems
 
   - add homesec client modules...?
