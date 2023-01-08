@@ -93,6 +93,7 @@ function main() {
 
     auto_mode=0
     just_live=0
+    push=0
     run_tests=0
 
     build_params="$DBUILD_PARAMS"
@@ -126,12 +127,20 @@ function main() {
 
     if [[ "$name" == "" ]]; then name=$(basename $(pwd)); fi
 
+    if [[ "$repo" == *":"* ]]; then push="1"; fi
+    echo "@@ repo=${repo}, push=${push}"
+
     fullname="${repo}/${name}"
     target="${fullname}:${tag}"
 
     if [[ $just_live == 1 ]]; then setlive $fullname ; exit $?; fi
 
     run_build "$target" "$build_params" || exit $?
+
+    if [[ "$push" == "1" ]]; then
+	echo "pushing $target"
+	$DOCKER_EXEC push $target
+    fi
 
     if [[ $run_tests == 1 ]]; then
 	run_tests || exit $?
@@ -147,6 +156,12 @@ function main() {
     # ----- auto mode
 
     setlive $fullname
+
+    target_live="${fullname}:live"
+    if [[ "$push" == "1" ]]; then
+	echo "pushing $target_live"
+	$DOCKER_EXEC push $target_live
+    fi
 
     if [[ -f autostart ]]; then
         /root/bin/d 01 $name || exit $?
