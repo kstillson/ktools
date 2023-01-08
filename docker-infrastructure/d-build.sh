@@ -54,9 +54,9 @@ function run_build() {
 }
 
 function run_push() {
-    target="$1"
-    echo "pushing $target_live"
-    $DOCKER_EXEC push $target_live
+    t="$1"
+    echo "pushing $t"
+    $DOCKER_EXEC push $t
 }
 
 function run_tests() {
