@@ -85,7 +85,7 @@ function list-autostart() {
 
 function list-buildable() {
   cd ${D_SRC_DIR}
-  ls -1 */Build | cut -d/ -f1
+  ls -1 */Makefile | cut -d/ -f1
 }
 
 function list-up() {
@@ -109,7 +109,7 @@ function builder() {
     emitc yellow "deferring to ./Build"
     ./Build
   elif [[ -r Makefile ]]; then
-    make clean && make
+    make
   else
     echo "no Makefile, falling back to direct d-build"
     d-build
