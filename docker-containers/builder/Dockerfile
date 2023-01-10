@@ -9,4 +9,4 @@ RUN /prep
 
 WORKDIR /root
 
-CMD ["/etc/init"]
+ENTRYPOINT ["/etc/init"]

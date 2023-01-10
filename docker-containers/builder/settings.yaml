@@ -12,5 +12,8 @@ mount_persistent:
   - var_lib_containers: /var/lib/containers
 
 mount_ro:
-  # TODO: is this where the official version of this dir should be?
-  - /root/dev/ktools/private.d: /root/private.d
+  # Bind in reference copy of the current source; primary use of
+  # this is for the private.d directory, but can also be manually
+  # copied into place for quicker iteration than extracting from
+  # git on each /etc/init.
+  - /root/dev/ktools: /root/ktools-ref

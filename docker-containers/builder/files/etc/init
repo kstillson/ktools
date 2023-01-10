@@ -33,10 +33,11 @@ else
 fi
 
 # make externally mounted private.d visible to the build area.
-[[ -L ktools/private.d ]] || ln -s private.d ktools/private.d
+cd ktools
+[[ -L private.d ]] || ln -s ../ktools-ref/private.d
 
 echo ">> install docker infra"
-cd ktools/docker-infrastructure
+cd ../docker-infrastructure
 make
 make install
 
