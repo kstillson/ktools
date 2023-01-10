@@ -19,6 +19,8 @@ baseline-stamp: $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* file
 # for check_kcore_installed
 include ../../etc/Makefile-common
 
+KCORE_DIR ?= $(PLIB)/kcore
+
 FULB := files/usr/local/bin
 COPIED_FILES := $(FULB)/kmc $(FULB)/keymaster.crt $(KCORE_DIR)
 

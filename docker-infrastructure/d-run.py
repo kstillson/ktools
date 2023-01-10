@@ -281,7 +281,7 @@ def parse_args():
     ap.add_argument('--env',      '-e', default=[], nargs='*', help='Any additional environment variables to set in the container')
     ap.add_argument('--fg',             action='store_true', help='Run the container in the foreground')
     ap.add_argument('--hostname', '-H', default=None, help=f'use a particular hostname.  Default is "{HOSTNAME_ENV}".  Blank/none will use the contain name. Supports replacement of string HOSTNAME with the hosts name .')
-    ap.add_argument('--ip',             default=None, help=f'assign a particular IP address.  Default is {IP_ENV}.  Use "-" to look up hostname in dns and use returned value.  Use "" (or dns lookup failure) to let docker pick.')
+    ap.add_argument('--ip',             default=None, help=f'assign a particular IP address.  Default is {IP_ENV}.  Use "-" to look up hostname in dns and use returned value.  Use "" (or "0", or dns lookup failure) to let docker pick.')
     ap.add_argument('--log',      '-L', default=None, help=f'Log driver to use.  Allowed: p/passthrough, n/none, s/syslog[:url] (e.g. s:udp://sysloghost:514), j/json, or any other value to pass blindly on to Docker.  Default value is "{LOG_ENV}".')
     ap.add_argument('--name',     '-n', default=None, help=f'use a specified container name.  Default of None will use the name of the directory that contains the settings file')
     ap.add_argument('--network',  '-N', default=None, help=f'Name of docker network to use.  Default is "{NETWORK_ENV}"')

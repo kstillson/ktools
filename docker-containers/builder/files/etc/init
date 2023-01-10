@@ -19,15 +19,24 @@ chown -R root.root /root/.ssh
 [[ -L /rw/dv/var_cache_apk ]] || { mkdir -p /rw/dv; ln -s /var/cache/apk /rw/dv/var_cache_apk; }
 
 echo ">> pull source"
-cd /root
-rm -rf ktools
-git clone git:git/ktools
+cd ${HOME}
+
+if [[ -d ktools ]]; then
+    read -p "${HOME}/ktools already exists; wipe and redownload from git? " x
+    if [[ "$x" == "y" ]]; then rm -rf ktools; fi
+fi
+
+if [[ ! -d ktools ]]; then
+    git clone git:git/ktools
+else
+    echo "ktools/ already exists; skipping git clone."
+fi
 
 # make externally mounted private.d visible to the build area.
-ln -s /root/private.d /root/ktools/private.d
+[[ -L ktools/private.d ]] || ln -s private.d ktools/private.d
 
 echo ">> install docker infra"
-cd /root/ktools/docker-infrastructure
+cd ktools/docker-infrastructure
 make
 make install
 

@@ -2,6 +2,9 @@
 all: copy docker-all
 
 include ../../etc/Makefile-docker
+include ../../etc/Makefile-common  # for $PLIB
+
+KTOOLS_DIR ?= $(PLIB)/ktools
 
 HSH_DIR := files/home/hs
 HSH_FILES := controller.py data.py ext.py homesec.py model.py reset_dynamic_data.py view.py static templates
