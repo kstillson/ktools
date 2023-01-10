@@ -50,6 +50,7 @@ files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
 	chmod 644 $@
 
 $(KCORE_DIR): ../../pylib/kcore
+	mkdir -p $(PLIB)
 	cp -rpuv $^ $(PLIB)
 	chmod -R go+rX $@
 
