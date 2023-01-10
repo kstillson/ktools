@@ -50,4 +50,4 @@ cd ${D_SRC_DIR}
 if [[ "$1" == "" ]]; then echo "ready"; exec bash -i; fi
 
 echo ">> transferring to builder"
-exec script -a -c "/etc/builder $@" $BUILDER_LOG
+/etc/builder "$@"
