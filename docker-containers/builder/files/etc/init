@@ -21,7 +21,7 @@ chown -R root.root /root/.ssh
 echo ">> pull source"
 cd /root
 rm -rf ktools
-clone git:git/ktools
+git clone git:git/ktools
 
 # make externally mounted private.d visible to the build area.
 ln -s /root/private.d /root/ktools/private.d
