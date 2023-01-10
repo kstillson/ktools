@@ -1,4 +1,15 @@
 
+# ---- path
+
+addpath() {
+    if [[ ! -d "$1" ]]; then echo "$1 not a valid dir"; return 1; fi
+    if [[ "$PATH:" == *"$1:"* ]]; then echo "$1 is already in the path."; return 2; fi
+    PATH="$PATH:${1}"
+    if [[ "$2" != "-" ]]; then echo "ok: $PATH"; fi
+}
+addpath ${HOME}/bin
+
+
 # ---- ktools controls
 
 export D_SRC_DIR="/root/ktools/docker-containers"

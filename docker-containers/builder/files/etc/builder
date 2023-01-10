@@ -1,7 +1,5 @@
 #!/bin/bash -e
 
-D=${HOME}/bin/d
-
 # ---- option to skip kcore-baseline rebuilding
 
 if [[ "$1" == "-n" ]]; then
@@ -14,19 +12,19 @@ fi
 
 if [[ "$1" == "a" ]]; then
     echo ">> pre-building baseline, so everyone doesnt redo it in parallel"
-    $D build kcore-baseline
+    dbuild kcore-baseline
     echo ">> rebuilding all in parallel"
-    $D build-all
+    dbuild-all
     
 elif [[ "$1" == "A" ]]; then
     echo ">> rebuilding all in sequence"
-    for target in $(D list-buildable); do
-	$D build "$target"
+    for target in $(d list-buildable); do
+	dbuild "$target"
     done
     
 else
     for target in "$@"; do
-	$D build "$target"
+	dbuild "$target"
     done
     
 fi
