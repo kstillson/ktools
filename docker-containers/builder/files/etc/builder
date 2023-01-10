@@ -12,19 +12,19 @@ fi
 
 if [[ "$1" == "a" ]]; then
     echo ">> pre-building baseline, so everyone doesnt redo it in parallel"
-    dbuild kcore-baseline
+    d build kcore-baseline
     echo ">> rebuilding all in parallel"
-    dbuild-all
+    d build-all
     
 elif [[ "$1" == "A" ]]; then
     echo ">> rebuilding all in sequence"
     for target in $(d list-buildable); do
-	dbuild "$target"
+	d build "$target"
     done
     
 else
     for target in "$@"; do
-	dbuild "$target"
+	d build "$target"
     done
     
 fi
