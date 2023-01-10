@@ -8,7 +8,7 @@ DIRS := $(H_DIR)
 # ---------- local custom logic
 
 all: copy Dockerfile $(H_TARGETS)
-	DOCKER_EXEC=podman DBUILD_PARAMS="--userns=host" $(MAKE) docker-all
+	DOCKER_EXEC=podman DBUILD_PARAMS="$$DBUILD_PARAMS --userns=host" $(MAKE) docker-all
 
 clean:
 	rm -rf $(H_DIR)
