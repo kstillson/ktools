@@ -8,7 +8,7 @@ addpath() {
     if [[ "$2" != "-" ]]; then echo "ok: $PATH"; fi
 }
 if [[ ! -d ${HOME}/bin ]]; then mkdir ${HOME}/bin; fi
-addpath ${HOME}/bin
+addpath ${HOME}/bin || true
 
 
 # ---- ktools controls
@@ -19,6 +19,12 @@ export DBUILD_REPO="${DBUILD_REPO:-regdock:5444/ktools}"
 export DOCKER_EXEC="podman"
 export KTOOLS_DRUN_REPO="$DBUILD_REPO"
 export KTOOLS_DRUN_TEST_NETWORK="host"
+
+
+# ---- logging
+
+export BUILDER_LOG="/var/log/builder/builder.log"
+export BUILDER_RP_LOG="/var/log/builder/builder-rp.log"
 
 
 # ---- registry creds

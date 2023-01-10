@@ -15,6 +15,8 @@ if [[ "$1" == "a" ]]; then
     d build kcore-baseline
     echo ">> rebuilding all in parallel"
     d build-all
+    cp d-build-all.out $BUILDER_RP_LOG
+    ls -l $BUILDER_RP_LOG
     
 elif [[ "$1" == "A" ]]; then
     echo ">> rebuilding all in sequence"

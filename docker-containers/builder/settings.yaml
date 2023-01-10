@@ -7,13 +7,16 @@ extra_docker: "-ti --userns=host --privileged --add-host=regdock:192.168.1.2"
 network: docker2
 
 mount_persistent:
+  # Shared/persistent apk cache
   - var_cache_apk: /var/cache/apk
   # Needed to avoid stacked overlays, also has side-effect of persisting image cache:
   - var_lib_containers: /var/lib/containers
 
+mount_logs:
+  - var_log_builder: /var/log/builder
+
 mount_ro:
-  # Bind in reference copy of the current source; primary use of
-  # this is for the private.d directory, but can also be manually
-  # copied into place for quicker iteration than extracting from
-  # git on each /etc/init.
+  # Bind in reference copy of the current source; primary use of this is for
+  # the private.d directory, but can also be manually copied from ~/ktools-ref
+  # to ~/ktools for quicker iteration than extracting from git on each init.
   - /root/dev/ktools: /root/ktools-ref
