@@ -5,8 +5,7 @@ SHELL := /bin/bash
 # before these targets can be BUILT.
 
 # Furthermore, docker containers other than kds-baseline depend on
-# kds-baseline being INSTALLED (i.e. marked live) before they can be BUILT.
-
+# kcore-baseline being INSTALLED (i.e. tagged "live") before they can be BUILT.
 
 # ---------- control constants
 
@@ -18,6 +17,13 @@ UID := $(shell id -u)
 DBUILD_PUSH_OPTS ?= --tls-verify=false
 DBUILD_PUSH_TO ?= localhost:5000
 DBUILD_REPO ?= ktools
+
+# ----- directory constants (need to be updated with Python versions)
+
+PLIB := files/usr/lib/python3.10/site-packages
+KCORE_DIR := $(PLIB)/kcore
+KTOOLS_DIR := $(PLIB)/ktools
+
 
 # ----- determine if we need sudo
 
