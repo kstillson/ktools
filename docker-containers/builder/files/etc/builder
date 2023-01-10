@@ -1,0 +1,28 @@
+#!/bin/bash -e
+
+# ---- option to skip kcore-baseline rebuilding
+
+if [[ "$1" == "-n" ]]; then
+    echo "marking kcore-baseline as already approved"
+    touch ${D_SRC_DIR}/kcore-baseline/baseline-stamp
+    shift
+fi
+
+# ---------- main
+
+if [[ "$1" == "a" ]]; then
+    echo ">> rebuilding all in parallel"
+    d build-all
+    
+elif [[ "$1" == "A" ]]; then
+    echo ">> rebuilding all in sequence"
+    for target in $(d list-buildable); do
+	d build "$target"
+    done
+    
+else
+    for target in "$@"; do
+	d build "$target"
+    done
+    
+fi

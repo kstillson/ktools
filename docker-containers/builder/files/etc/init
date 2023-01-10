@@ -1,0 +1,43 @@
+#!/bin/bash -e
+
+# ---- build env controls
+
+. /etc/env
+
+# ---- prep build envir
+
+STAMP="/tmp/init-stamp"
+if [[ -f "$STAMP" ]]; then
+  echo "${STAMP} already exists.  delete it if you really want to re-init.  skiping to builder phase."
+  exec /etc/builder "$@"
+fi
+
+# fix permissions on ~.ssh (needed for ssh client from git clone)
+chown -R root.root /root/.ssh
+
+# link /rw/dv/var_cache_apk to /var/cache/apk
+[[ -L /rw/dv/var_cache_apk ]] || { mkdir -p /rw/dv; ln -s /var/cache/apk /rw/dv/var_cache_apk; }
+
+echo ">> pull source"
+cd /root
+rm -rf ktools
+clone git:git/ktools
+
+# make externally mounted private.d visible to the build area.
+ln -s /root/private.d /root/ktools/private.d
+
+echo ">> install docker infra"
+cd /root/ktools/docker-infrastructure
+make
+make install
+
+touch $STAMP
+
+# ---- xfer to builder script
+
+cd ${D_SRC_DIR}
+
+if [[ "$1" == "" ]]; then echo "ready"; exec bash -i; fi
+
+echo ">> transferring to builder"
+exec /etc/builder "$@"

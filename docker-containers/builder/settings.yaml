@@ -1,0 +1,16 @@
+
+# need --privileged so can run container commands inside a container.
+# --privileged requires no userns.
+extra_docker: "-ti --userns=host --privileged --add-host=regdock:192.168.1.2"
+
+# need full outbound connectivity; docker2 is intended for build env.
+network: docker2
+
+mount_persistent:
+  - var_cache_apk: /var/cache/apk
+  # Needed to avoid stacked overlays, also has side-effect of persisting image cache:
+  - var_lib_containers: /var/lib/containers
+
+mount_ro:
+  # TODO: is this where the official version of this dir should be?
+  - /root/dev/ktools/private.d: /root/private.d
