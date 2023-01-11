@@ -2,6 +2,8 @@
 # queued minor improvements
 
   - make persister data more tolerante of tabs.
+  - replace Readme-environ-variables.md with a script that both
+    sets defaults and documents purposes.
 
 # new subsystems
 
