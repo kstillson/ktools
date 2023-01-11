@@ -5,10 +5,7 @@ PORT1 := 5443
 PORT2 := 5444
 
 # note: make doesn't work well with filenames that contain ":"'s.
-# temporarily use "__" and replace that in the :copy target recipe.
-# alas, this means the "__" versions are removed by running the recipe,
-# which means it always looks like the build isn't complete and needs
-# to be re-run.  Not sure how to fix this.  TODO(defer).
+# temporarily use "__".  This gets fixed up in files/prep-local.
 CD_FILE := regdock.crt
 CDIR_BASE := files/etc/containers/certs.d
 CD_SRC_DIR := ../registry/files/etc/private.d
@@ -23,19 +20,18 @@ ULB_TARGETS := $(addprefix $(ULB_DIR)/, $(ULB_FILES))
 
 DIRS := $(CDIR1) $(CDIR2) $(ULB_DIR)
 
+SSH_KEY = files/root/.ssh/private.d/id_rsa
+
 # ---------- local custom logic
 
-all: copy docker-all
+all: copy $(SSH_KEY) docker-all
 
 clean:
 	rm -rf files/etc/containers
 
-$(info $(DIRS) $(CDIR1_TARGET) $(CDIR2_TARGET))
+# ---- copy
 
 copy: $(DIRS) $(CDIR1_TARGET) $(CDIR2_TARGET) $(ULB_TARGETS)
-	rm -rf $(CDIR_BASE)/$(CERTNAME):*
-	mv $(CDIR1) $(CDIR_BASE)/$(CERTNAME):$(PORT1)
-	mv $(CDIR2) $(CDIR_BASE)/$(CERTNAME):$(PORT2)
 
 $(DIRS):
 	mkdir -p $@
@@ -49,6 +45,10 @@ $(CDIR2_TARGET): $(CD_SRC_DIR)/$(CD_FILE)
 $(ULB_TARGETS): $(ULB_DIR)/% : ../../pylib/tools/%.py
 	cp $^ $@
 
+# ---- ssh key
+
+$(SSH_KEY):
+	ssh-keygen -C root@builder -N '' -f $@
 
 # ---------- pass-throughs
 

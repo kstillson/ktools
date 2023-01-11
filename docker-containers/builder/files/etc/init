@@ -4,6 +4,13 @@
 
 . /etc/env
 
+if [[ "$1" == "-c" ]]; then
+    COPY_REF="1"
+    shift
+else
+    COPY_REF="0"
+fi
+
 # ---- prep build envir
 
 STAMP="/tmp/init-stamp"
@@ -12,20 +19,25 @@ if [[ -f "$STAMP" ]]; then
   exec /etc/builder "$@"
 fi
 
-# fix permissions on ~.ssh (needed for ssh client from git clone)
+echo ">> fix ownerships of mapped uids from build stage"
 chown -R root.root /root/.ssh
 
-# link /rw/dv/var_cache_apk to /var/cache/apk
-[[ -L /rw/dv/var_cache_apk ]] || { mkdir -p /rw/dv; ln -s /var/cache/apk /rw/dv/var_cache_apk; }
+
+# ---- get container source data
 
 echo ">> pull source"
 cd ${HOME}
 
-if [[ -d ktools ]]; then
+if [[ "$COPY_REF" == "1" ]]; then
+    echo "cloning ktools from reference copy"
+    cp -pr ktools-ref ktools
+
+elif [[ -d ktools ]]; then
     read -p "${HOME}/ktools already exists; wipe and redownload from git? " x
     if [[ "$x" == "y" ]]; then rm -rf ktools; fi
 fi
 
+echo "cloning ktools from git"
 if [[ ! -d ktools ]]; then
     git clone git:git/ktools
 else

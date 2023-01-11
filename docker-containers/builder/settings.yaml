@@ -3,6 +3,8 @@
 # --privileged requires no userns.
 extra_docker: "-ti --userns=host --privileged --add-host=regdock:192.168.1.2"
 
+foreground: 1
+
 # need full outbound connectivity; docker2 is intended for build env.
 network: docker2
 
