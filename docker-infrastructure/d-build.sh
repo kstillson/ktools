@@ -50,8 +50,8 @@ function run_build() {
     # NB: using tar-based trick from https://superuser.com/questions/842642/how-to-make-a-symlinked-folder-appear-as-a-normal-folder
     # to translate symlinks to their contents, even if they are outside the "context."  Needed for private.d contents.
     echo ""
-    echo "$tar -ch . | {DOCKER_EXEC} build $params -t $target -"
-    tar -ch . | ${DOCKER_EXEC} build $params -t $target -
+    echo "tar -ch . | ${DOCKER_EXEC} build $params -t $target -"
+          tar -ch . | ${DOCKER_EXEC} build $params -t $target -
     return $?
 }
 
