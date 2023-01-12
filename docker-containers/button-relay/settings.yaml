@@ -2,7 +2,9 @@
 ports:
   - 8084:8080
 
-log: j
+# Need to run with the host's user id's, because need access to the real
+# dialout group.  Note that host uid 901 must also be added to gid/dialout.
+extra_docker: "--userns=host"
 
 mount_devices:
   - /dev/ttyACM*
@@ -11,5 +13,4 @@ mount_devices:
 mount_logs:
   - var_log: /var/log
 
-extra_docker: "--group-add keep-groups"
 

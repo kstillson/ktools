@@ -19,6 +19,7 @@
 # docker improvements
 
   - docker-containers needs a :prep
+    - private.d template subtree
     - set up /rw/dv/...
     - sshdock/gitdock need generated host-keys
     - idempotent setup of docker networks

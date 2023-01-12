@@ -11,8 +11,7 @@ COPY files /
 
 RUN /prep
 
-# Can't get permissions right using uid:relay  :-(
-# USER relay
+USER relay
 
 WORKDIR /home/relay
 ENTRYPOINT ["/home/relay/button_relay"]
