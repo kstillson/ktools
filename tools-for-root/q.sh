@@ -45,8 +45,8 @@ MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 RP_FLAGS_BASE="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
 RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
-DOCKBASE="${DOCKER_BASE_DIR:-/root/docker-dev}"                             # Directory containing docker source dirs.
-DD="${KTOOLS_Q_DD:-${DOCKBASE}/dnsdock/files/etc/dnsmasq/private.d}"        # Where dnsmasq config files are stored.
+D_SRC_DIR="${D_SRC_DIR_DIR:-/root/dev/ktools/docker-containers}"            # Directory containing docker source dirs.
+DD="${KTOOLS_Q_DD:-${D_SRC_DIR}/dnsdock/files/etc/dnsmasq/private.d}"       # Where dnsmasq config files are stored.
 GIT_DIRS="${KTOOLS_Q_GIT_DIRS}"                                             # List of git dirs this script manages.
 KM="https://${KMHOST:-localhost:4444}"
 KMD_P="${KTOOLS_Q_KMD_P:-$HOME/dev/ktools/private.d/km.data.pcrypt}"        # Location of encrypted keymaster secrets file
@@ -55,7 +55,7 @@ LIST_PIS="${KTOOLS_Q_LIST_PIS}"                                             # li
 LEASES="${KTOOLS_Q_LEASES:-/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases}"  # Location of dnsmasq leases (output/generated) file.
 PROCMON=${PROCMON:-localhost:8080}                                          # host:port of the procmon instance to work with.
 PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                               # Location of ../services/procmon output file
-RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${DOCKBASE}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
+RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
 
 # ---------- colorizers
 

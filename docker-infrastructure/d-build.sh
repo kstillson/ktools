@@ -6,7 +6,7 @@
 # ---------- control constants
 # can be overriden from calling environment or flags.
 
-DOCKER_BASE_DIR=${DOCKER_BASE_DIR:-~/docker-dev}
+D_SRC_DIR=${D_SRC_DIR:-~/docker-dev}
 DOCKER_EXEC="${DOCKER_EXEC:-docker}"
 DOCKER_VOL_BASE="${DOCKER_VOL_BASE:-/rw/dv}"
 
@@ -82,7 +82,7 @@ function setlive() {
 function try_dir() {
     dir="$1"
     if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
-    dir="$DOCKER_BASE_DIR/$dir"
+    dir="$D_SRC_DIR/$dir"
     if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
     echo "unable to find $1/Dockerfile.  Run from directory with Dockerfile or use --cd flag."
     exit -2
@@ -122,7 +122,7 @@ function main() {
             --test | -t) run_tests=1 ;;                   ## run mode: build and run tests, then exit
 
             --build_params | -b) build_params="$1" ;;     ## params for "docker build" (defaults to $DBUILD_PARAMS)
-            --cd) cd="$1"; shift ;;                       ## location of Dockerfile to build (can be relative to $DOCKER_BASE_DIR)
+            --cd) cd="$1"; shift ;;                       ## location of Dockerfile to build (can be relative to $D_SRC_DIR)
             --name) name="$1"; shift ;;                   ## output image name; defaults to basename of directory
             --repo) repo="$1"; shift ;;                   ## repo to build image into; defaults to $DBUILD_REPO
             --tag) tag="$1"; shift ;;                     ## tag to set after build.  defaults to ":latest"

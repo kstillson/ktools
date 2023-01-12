@@ -58,9 +58,9 @@ If set to any other value, or if not using podman, then
 - DBUILD_REPO: path prefix for the local docker repository that d-build will
   build into.  default is 'ktools'
 
-- DOCKER_BASE_DIR: If d-build is given a relative directory in-which to find a
-  container to build (via the --cd flag), this is the directory the reference
-  will be relative to.
+- D_SRC_DIR: Directory with container source directories in it.  e.g. if
+  d-build is given a relative directory in-which to find a container to build
+  (via the --cd flag), this is the directory the reference will be relative to.
 
 
 ## Docker controls: launching containers
