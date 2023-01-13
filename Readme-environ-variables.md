@@ -62,6 +62,14 @@ If set to any other value, or if not using podman, then
   d-build is given a relative directory in-which to find a container to build
   (via the --cd flag), this is the directory the reference will be relative to.
 
+- D_SRC_DIR2: If set, is similar to D_SRC_DIR, but provides an alternate
+  location that d.sh, d-build.sh, and similar tools will search for container
+  sources to build, test, etc.  Intended to be used to point to private
+  container collections that exist outside the ktools subtree.  Note that for
+  such a secondary collection to work, it needs to contain symlinks (or
+  copies, or something similar) in the D_SRC_DIR2 directory to ktools/etc and
+  ktools/docker-containers/kcore-baseline.
+  
 
 ## Docker controls: launching containers
 
