@@ -61,6 +61,8 @@ If set to any other value, or if not using podman, then
 - D_SRC_DIR: Directory with container source directories in it.  e.g. if
   d-build is given a relative directory in-which to find a container to build
   (via the --cd flag), this is the directory the reference will be relative to.
+  Should generally be set to the full path of the directory contianing this
+  file, with "/docker-containers" appended.
 
 - D_SRC_DIR2: If set, is similar to D_SRC_DIR, but provides an alternate
   location that d.sh, d-build.sh, and similar tools will search for container
