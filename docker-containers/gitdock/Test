@@ -26,7 +26,7 @@ def main():
 
     subprocess.check_call(
         ['git', 'clone', 'git-ro@%s:git/rc.git' % ip],
-        env={ 'GIT_SSH_COMMAND': '/usr/bin/ssh -i /root/docker-dev/gitdock/git-ro-test-key -o StrictHostKeyChecking=no' })
+        env={ 'GIT_SSH_COMMAND': f'/usr/bin/ssh -i {orig_dir}/git-ro-test-key -o StrictHostKeyChecking=no' })
     D.file_expect('exit with status', 'rc/.profile')
 
     print('pass')

@@ -140,20 +140,29 @@ function test() {
   name=$1
   shift
   cd ${D_SRC_DIR}/${name}
-  if [[ ! -x ./Test ]]; then
+  emitc blue "Testing ${name}."
+
+  out="/rw/dv/TMP/${name}/test.out"
+  outdir=$(dirname ${out})
+  [[ -d ${outdir} ]] || mkdir -p ${outdir}
+
+  if [[ -f Makefile ]]; then
+      make test &>> ${out} || { emitc red "failed"; echo "fail"; exit -1; }
+      echo "pass"
+
+  elif [[ -x ./Test ]]; then
+    rslt=$(./Test -r -o "${out}" "$@")
+    if [[ "$rslt" == *"pass"* ]]; then
+      emitc green "test passed    ( $out )."
+      echo "pass"
+    else
+      emitc red "test failed. [ $rslt ]; log: $out"
+      echo "fail"
+    fi
+
+  else
       emitc magenta "${name}: no test available; default to pass"
       echo "pass"
-      return
-  fi
-  emitc blue "Testing ${name}."
-  out="/rw/dv/TMP/${name}/test.out"
-  rslt=$(./Test -r -o "${out}" "$@")
-  if [[ "$rslt" == *"pass"* ]]; then
-          emitc green "test passed    ( $out )."
-          echo "pass"
-  else
-          emitc red "test failed. [ $rslt ]; log: $out"
-          echo "fail"
   fi
 }
 
@@ -279,7 +288,7 @@ case "$cmd" in
 
 # Multiple container management done in parallel
   build-all | ba)                                                ## Build all buildable containers.
-      list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
+      $0 build kcore-baseline; list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
   down-all | stop-all | 0a | 00)                                 ## Down all up containers
       list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
   restart-all | 01a | ra | RA | Ra)                              ## Restart all up containers
