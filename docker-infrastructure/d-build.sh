@@ -7,6 +7,7 @@
 # can be overriden from calling environment or flags.
 
 D_SRC_DIR=${D_SRC_DIR:-~/docker-dev}
+D_SRC_DIR2=${D_SRC_DIR2:-}
 DOCKER_EXEC="${DOCKER_EXEC:-docker}"
 DOCKER_VOL_BASE="${DOCKER_VOL_BASE:-/rw/dv}"
 
@@ -83,6 +84,8 @@ function try_dir() {
     dir="$1"
     if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
     dir="$D_SRC_DIR/$dir"
+    if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
+    dir="$D_SRC_DIR2/$dir"
     if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
     echo "unable to find $1/Dockerfile.  Run from directory with Dockerfile or use --cd flag."
     exit -2

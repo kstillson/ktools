@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Stop on first error...
-set -e
+set -e   # Stop on first error...
 
 cmd="$1"
 shift || true
@@ -12,6 +11,7 @@ extra_flags="$@"
 # Overridable from the environment
 DOCKER_EXEC=${DOCKER_EXEC:-/usr/bin/docker}
 D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
+D_SRC_DIR2=${D_SRC_DIR2:-}
 TIMEOUT=${TIMEOUT:-60}
 
 # ----------------------------------------
@@ -33,14 +33,23 @@ function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; co
 function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
 
 # ----------------------------------------
-# run function from dlib
+# general support
+
+function cd_sel() {
+  name="$1"
+  if [[ "$D_SRC_DIR2" != "" && -d "${D_SRC_DIR2}/${name}" ]]; then
+      cd ${D_SRC_DIR2}/${name}
+      emitc magenta "using ${D_SRC_DIR2}"
+  else
+      cd ${D_SRC_DIR}/${name}
+  fi
+}
 
 function dlib_run() {
     func="$1"
     param="$2"
     python3 -c "import kcore.docker_lib as D; print(D.${func}('${param}'))"
 }
-
 
 # ----------------------------------------
 # select specific container to operate on.
@@ -70,8 +79,15 @@ function pick_container_from_dev() {
   srch=$1
   cd ${D_SRC_DIR}
   sel=$(ls -1 ${srch}*/settings*.yaml | head -1 | cut -f1 -d/ )
+  if [[ "$sel" == "" && "$D_SRC_DIR2" != "" ]]; then
+      cd ${D_SRC_DIR2}
+      sel=$(ls -1 ${srch}*/settings*.yaml | head -1 | cut -f1 -d/ )
+  fi
+  if [[ "$sel" == "" ]]; then emitc red "could not find container matching ${srch}"; exit -1; fi  
   echo $sel
 }
+
+
 
 # ------------------------------
 # generate lists of containers
@@ -81,11 +97,19 @@ function list-autostart() {
   if [[ -f dnsdock/autostart ]]; then echo dnsdock; fi
   if [[ -f kmdock/autostart ]]; then echo kmdock; fi
   ls -1 */autostart | cut -d/ -f1 | egrep -v 'dnsdock|kmdock'
+  if [[ "$D_SRC_DIR2" != "" ]]; then
+      cd ${D_SRC_DIR2}
+      ls -1 */autostart | cut -d/ -f1
+  fi
 }
 
 function list-buildable() {
   cd ${D_SRC_DIR}
   ls -1 */Makefile | cut -d/ -f1
+  if [[ "$D_SRC_DIR2" != "" ]]; then
+      cd ${D_SRC_DIR2}
+      ls -1 */Makefile | cut -d/ -f1
+  fi
 }
 
 function list-up() {
@@ -95,6 +119,10 @@ function list-up() {
 function list-testable() {
   cd ${D_SRC_DIR}
   ls -1 */Test | cut -d/ -f1
+  if [[ "$D_SRC_DIR2" != "" ]]; then
+      cd ${D_SRC_DIR2}
+      ls -1 */Test | cut -d/ -f1
+  fi
 }
 
 # ------------------------------
@@ -102,7 +130,7 @@ function list-testable() {
 
 function builder() {
   name="$1"
-  cd ${D_SRC_DIR}/${name}
+  cd_sel "$name"
   emit ""
   emitc blue "<> Building container ${name}"
   if [[ -r Build ]]; then
@@ -125,7 +153,7 @@ function down() {
 function up() {
   sel="$1"
   echo -n "Starting: $sel ${extra_flags}    "
-  cd ${D_SRC_DIR}/$sel
+  cd_sel "$sel"
   if [[ -x ./Run ]]; then
    echo "launching via legacy Run file"
     ./Run ${extra_flags}
@@ -139,7 +167,7 @@ function up() {
 function test() {
   name=$1
   shift
-  cd ${D_SRC_DIR}/${name}
+  cd_sel "${name}"
   emitc blue "Testing ${name}."
 
   out="/rw/dv/TMP/${name}/test.out"
