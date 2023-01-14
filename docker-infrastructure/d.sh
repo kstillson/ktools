@@ -269,7 +269,7 @@ case "$cmd" in
 # container maintenance
   add-su | addsu)                                               ## Copy /bin/su into container $1
     name=$(pick_container_from_up $spec)
-    $DOCKER_EXEC cp ${D_SRC_DIR}/Etc/su ${name}:/bin
+    $DOCKER_EXEC exec -u 0 ${name} cp /bin/busybox /bin/su
     echo "added /bin/su to ${name}"
     ;;
   add-debug | debug)                                            ## Add debugging tools and enter container $1
