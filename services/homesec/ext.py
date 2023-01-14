@@ -10,7 +10,7 @@ import kcore.uncommon as UC
 # ---------- Global state and controls
 
 DEBUG = False
-PB_PUSH_TOKEN = None
+PB_PUSH_TOKEN = None   # Set by homesec.py:main() during init.
 
 # ----- rate limiters
 
@@ -92,17 +92,15 @@ def push_notification(msg, level='other'):
 
   # If keymaster ends up panicing, the external script pb-push will stop working
   # because it can no longer query its access token.  So cache it here if we can.
-  global PB_PUSH_TOKEN
   if not PB_PUSH_TOKEN:
-    PB_PUSH_TOKEN = UC.popener(['/usr/local/bin/kmc', 'pb-push'])
-    if PB_PUSH_TOKEN.startswith('ERROR'): PB_PUSH_TOKEN = None
+    C.log_error(f'unable to push msg to pb due to missing token: {msg}/{level}')
 
-  my_env = dict(os.environ)
-  if PB_PUSH_TOKEN: my_env['ACCESS_TOKEN'] = PB_PUSH_TOKEN
+  env = dict(os.environ)
+  env['ACCESS_TOKEN'] = PB_PUSH_TOKEN
 
   C.log(f'pushbullet sending [level={level}]: {msg}')
   if level != 'other': msg += ' !%s' % level
-  rslt = UC.popen(['/usr/local/bin/pb-push', msg])
+  rslt = UC.popen(['/usr/local/bin/pb-push', msg], env=env)
   if not rslt.ok: C.log_warning(f'pushbullet returned unexpected status: {rslt.out}')
   return rslt.ok
 
