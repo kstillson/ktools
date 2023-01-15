@@ -78,10 +78,10 @@ function pick_container_from_up() {
 function pick_container_from_dev() {
   srch=$1
   cd ${D_SRC_DIR}
-  sel=$(ls -1 ${srch}*/settings*.yaml | head -1 | cut -f1 -d/ )
+  sel=$(ls -1 ${srch}*/settings*.yaml 2>/dev/null | head -1 | cut -f1 -d/ )
   if [[ "$sel" == "" && "$D_SRC_DIR2" != "" ]]; then
       cd ${D_SRC_DIR2}
-      sel=$(ls -1 ${srch}*/settings*.yaml | head -1 | cut -f1 -d/ )
+      sel=$(ls -1 ${srch}*/settings*.yaml 2>/dev/null | head -1 | cut -f1 -d/ )
   fi
   if [[ "$sel" == "" ]]; then emitc red "could not find container matching ${srch}"; exit -1; fi  
   echo $sel
@@ -99,7 +99,7 @@ function list-autostart() {
   ls -1 */autostart | cut -d/ -f1 | egrep -v 'dnsdock|kmdock'
   if [[ "$D_SRC_DIR2" != "" ]]; then
       cd ${D_SRC_DIR2}
-      ls -1 */autostart | cut -d/ -f1
+      ls -1 */autostart 2>/dev/null | cut -d/ -f1
   fi
 }
 
@@ -108,7 +108,7 @@ function list-buildable() {
   ls -1 */Makefile | cut -d/ -f1
   if [[ "$D_SRC_DIR2" != "" ]]; then
       cd ${D_SRC_DIR2}
-      ls -1 */Makefile | cut -d/ -f1
+      ls -1 */Makefile 2>/dev/null | cut -d/ -f1
   fi
 }
 
@@ -121,7 +121,7 @@ function list-testable() {
   ls -1 */Test | cut -d/ -f1
   if [[ "$D_SRC_DIR2" != "" ]]; then
       cd ${D_SRC_DIR2}
-      ls -1 */Test | cut -d/ -f1
+      ls -1 */Test 2>/dev/null | cut -d/ -f1
   fi
 }
 
