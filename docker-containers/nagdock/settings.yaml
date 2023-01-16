@@ -1,4 +1,6 @@
 
+autostart: 5
+
 mount_logs:
   - var_log_nagios: /var/log/nagios
 

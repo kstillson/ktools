@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# High level container control and maintenance routines.
+
+# NB: This script hard-codes the assumption that the container name matches
+# the dirname containing settings.yaml.  (For the most part), it doesn't
+# understand the idea of alternately-named settings files, or that a settings
+# file can change the name of a container.
+
 set -e   # Stop on first error...
 
 cmd="$1"
@@ -28,22 +35,14 @@ RESET='\x1b[00m'
 
 function emit() { echo ">> $@" >&2; }
 # stderr $2+ in color named by $1. insert "-" as $1 to skip ending newline.
-function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
+function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" >&2 ; }
 # stderr $2+ in color named by $1, but only if stdin is an interactive terminal.
 function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
 
 # ----------------------------------------
 # general support
 
-function cd_sel() {
-  name="$1"
-  if [[ "$D_SRC_DIR2" != "" && -d "${D_SRC_DIR2}/${name}" ]]; then
-      cd ${D_SRC_DIR2}/${name}
-      emitc magenta "using ${D_SRC_DIR2}"
-  else
-      cd ${D_SRC_DIR}/${name}
-  fi
-}
+function cd_sel() { cd $(find_dir $1); }
 
 function dlib_run() {
     func="$1"
@@ -51,65 +50,127 @@ function dlib_run() {
     python3 -c "import kcore.docker_lib as D; print(D.${func}('${param}'))"
 }
 
+# stdin a list of pathnames, on per-line.  output is the basename of the dirname for each input.
+# e.g. /q/x/y/z -> y
+# this is more efficient that calling $(basename $(dirname $i)) for each line in a list.
+function dirnames() {
+    sed -e 's:/[^/]*$::' -e 's:^.*/::'
+}
+
+# Given a container name, dir, or settings path, return the dir (no partial matching).
+function find_dir() {
+    sel="$1"
+    if [[ "$sel" == "" ]]; then sel=$(cat); fi            # Accept sel either from args or stdin (i.e. as filter)
+    
+    if [[ -d "$sel" ]]; then echo "$sel"; return; fi      # given the container directory already.
+    if [[ -f "$sel" ]]; then dirname $sel; return; fi     # given the settings file (or any other file in the dir)
+    if [[ -d "${D_SRC_DIR}/$sel" ]]; then echo "${D_SRC_DIR}/$sel"; return; fi     # given the container name
+    if [[ -d "${D_SRC_DIR2}/$sel" ]]; then echo "${D_SRC_DIR2}/$sel"; return; fi   # given the private container name
+    emitC red "cannot find directory for selection: $sel"
+    return 1
+}
+
+function get_autostart_wave() {
+    sel="$1"
+    dir=$(find_dir $sel)
+    wave=$(fgrep "autostart:" ${dir}/settings.yaml | sed -e 's/^.*: *//')
+    if [[ "$wave" == *"host="* ]]; then
+	required_host=$(echo "$wave" | sed -e s'/^.*host=//' -e 's/,.*$//')
+	if [[ "$required_host" != $(hostname) ]]; then
+	    emitC yellow "skipping $sel autostart; not required host ($required_host)."
+	    echo ""
+	    return
+	fi
+    fi
+    if [[ -f ${dir}/autostart ]]; then
+	if [[ "$wave" == "" ]]; then
+	    emitC yellow "found old-style autostart file; assuming wave 5; $dir"
+	    wave="5"
+	else
+	    emitC yellow "found both old-style autostart file and settings-based wave info.  Ignoring old-style file; $dir"
+	fi
+    fi
+    echo "$wave"    
+}
+
+# stdin is a list of inputs to find_dir; output is a list of container names
+function get_container_names() {
+    while IFS='$\n' read -r line; do
+	basename $(find_dir $line )
+    done
+}
+
+# reground output of list-autostart-waves by wave
+function waves() {
+    current_wave=""
+    current_out=""
+    while read -r wave line; do
+	if [[ "$wave" != "$current_wave" ]]; then
+	    if [[ "$current_out" != "" ]]; then echo "$current_out"; fi
+	    echo "+ $wave"
+	    current_wave="$wave"
+	    current_out=""
+	fi
+	current_out="${current_out}${line} "
+    done
+    if [[ "$current_out" != "" ]]; then echo "$current_out"; fi
+}
+
+
 # ----------------------------------------
 # select specific container to operate on.
 # $1 is a prefix substring search spec.  If search matches more than 1, then 1st alphabetical is picked.
 
 function is_up() {
-  srch=$1
-  sel=$(list-up | /bin/egrep "^${srch}") || true
-  if [[ "$sel" == "" ]]; then echo "n"; return; fi
-  echo "y"
+    srch=$1
+    sel=$(list-up | /bin/egrep "^${srch}") || true
+    if [[ "$sel" == "" ]]; then echo "n"; return; fi
+    echo "y"
 }
 
 function pick_container_from_up() {
-  srch=$1
-  sel=$(list-up | /bin/egrep "^${srch}")
-  if [[ "$sel" == "" ]]; then echo "ERROR"; echo "no up container matching $srch" >&2; exit -1; fi
-  head=$(echo "$sel" | head -1)
-  if [[ "$sel" != "$head" ]]; then
-    echo "selected { $sel } -> $head" | tr "\n" " " 1>&2
-    echo "" 1>&2
-    sel="$head"
-  fi
-  echo $sel
+    srch=$1
+    list-up | /bin/egrep "^${srch}" | pick_first
 }
 
-function pick_container_from_dev() {
-  srch=$1
-  cd ${D_SRC_DIR}
-  sel=$(ls -1 ${srch}*/settings*.yaml 2>/dev/null | head -1 | cut -f1 -d/ )
-  if [[ "$sel" == "" && "$D_SRC_DIR2" != "" ]]; then
-      cd ${D_SRC_DIR2}
-      sel=$(ls -1 ${srch}*/settings*.yaml 2>/dev/null | head -1 | cut -f1 -d/ )
-  fi
-  if [[ "$sel" == "" ]]; then emitc red "could not find container matching ${srch}"; exit -1; fi  
-  echo $sel
+function pick_container_from_all() {
+    srch="$1"
+    list-all | egrep "^${srch}" | pick_first
 }
 
-
+function pick_first() {
+    in=$(cat)
+    sel=$(echo "${in}" | head -1)
+    if [[ "$in" != "$sel" ]]; then emitC cyan "selected [ $(echo "$in" | tr '\n' ' ') ] -> ${sel}"; fi
+    echo "$sel"
+}
 
 # ------------------------------
 # generate lists of containers
 
+function list-all() {
+    list-all-settings | dirnames | sort -u
+}
+
+function list-all-settings() {
+    ls -1 ${D_SRC_DIR}/*/settings*.yaml ${D_SRC_DIR2}/*/settings*.yaml 2>/dev/null
+}
+
+function list-autostart-waves() {
+    for s in $(list-all-settings); do
+	dir=$(dirname $s)
+	name=$(basename $dir)
+	wave=$(get_autostart_wave $dir)
+	if [[ "$wave" != "" ]]; then echo "$wave $name"; fi	
+    done | sort -n
+}
+
 function list-autostart() {
-  cd ${D_SRC_DIR}
-  if [[ -f dnsdock/autostart ]]; then echo dnsdock; fi
-  if [[ -f kmdock/autostart ]]; then echo kmdock; fi
-  ls -1 */autostart | cut -d/ -f1 | egrep -v 'dnsdock|kmdock'
-  if [[ "$D_SRC_DIR2" != "" ]]; then
-      cd ${D_SRC_DIR2}
-      ls -1 */autostart 2>/dev/null | cut -d/ -f1
-  fi
+    list-autostart-waves | cut -d' ' -f2 
 }
 
 function list-buildable() {
-  cd ${D_SRC_DIR}
-  ls -1 */Makefile | cut -d/ -f1
-  if [[ "$D_SRC_DIR2" != "" ]]; then
-      cd ${D_SRC_DIR2}
-      ls -1 */Makefile 2>/dev/null | cut -d/ -f1
-  fi
+    ls -1 ${D_SRC_DIR}/*/Makefile ${D_SRC_DIR2}/*/Makefile 2>/dev/null | get_container_names
 }
 
 function list-up() {
@@ -117,12 +178,7 @@ function list-up() {
 }
 
 function list-testable() {
-  cd ${D_SRC_DIR}
-  ls -1 */Test | cut -d/ -f1
-  if [[ "$D_SRC_DIR2" != "" ]]; then
-      cd ${D_SRC_DIR2}
-      ls -1 */Test 2>/dev/null | cut -d/ -f1
-  fi
+    ls -1 ${D_SRC_DIR}/*/Test ${D_SRC_DIR2}/*/Test 2>/dev/null | get_container_names
 }
 
 # ------------------------------
@@ -209,13 +265,29 @@ function upgrade() {
   else d-build -s
   fi
 
-  if [[ -f ./autostart ]]; then
+  astart=$(get_autostart_wave $name)
+  if [[ "$astart" != "" ]]; then
       emitc blue "restarting $name"
       down $name
       sleep 1
       up $name
   fi
   emitc green "done with $name"
+}
+
+# ----------------------------------------
+# group ops
+
+function do-in-waves() {
+    op="$1"
+    set +e
+    list-autostart-waves | waves | while read -r line; do
+	if [[ "$line" == +* ]]; then
+	    emitc green "starting wave: ${line/+ /}"
+	else
+	    echo $line | tr ' ' '\n' | /usr/local/bin/run_para --align --cmd "$0 $op @" --timeout $TIMEOUT
+	fi
+    done
 }
 
 # ----------------------------------------
@@ -243,7 +315,7 @@ function myhelp() {
 case "$cmd" in
 
 # Simple container management
-  build | b) builder $(pick_container_from_dev $spec)   ;;  ## Build container $1
+  build | b) builder $(pick_container_from_all $spec)   ;;  ## Build container $1
   down | stop | 0) down $(pick_container_from_up $spec) ;;  ## Stop container $1
   restart | 01 | R)                                         ## Restart container $1
     name=$(pick_container_from_up $spec)
@@ -254,7 +326,7 @@ case "$cmd" in
     up $name
     ;;
   up | start | 1)                                           ## Launch container $1
-    sel=$(pick_container_from_dev $spec)
+    sel=$(pick_container_from_all $spec)
     if [[ "$sel" == "" ]]; then
       echo "error- cannot find container to launch: $sel"
       exit 1
@@ -297,8 +369,8 @@ case "$cmd" in
   mini-dlna-refresh | M)                                         ## kds specific; rescan miniDlna library
     $DOCKER_EXEC exec dlnadock /usr/sbin/minidlnad -R
     ;;
-  test | t) test $(pick_container_from_dev $spec) ;;             ## Run tests for container $1
-  upgrade | u) upgrade $(pick_container_from_dev $spec) ;;       ## Upgrade (build, test, relabel, restart) $1.
+  test | t) test $(pick_container_from_all $spec) ;;             ## Run tests for container $1
+  upgrade | u) upgrade $(pick_container_from_all $spec) ;;       ## Upgrade (build, test, relabel, restart) $1.
 
 # command execution
   console | C)                                                   ## Enter console for $1
@@ -312,7 +384,7 @@ case "$cmd" in
     ;;
   run) $DOCKER_EXEC exec -u 0 $(pick_container_from_up $spec) "$@" ;;  ## Run command $2+ as root in $1
   shell)                                                         ## Start container $1 but shell overriding entrypoint.
-      $DOCKER_EXEC run -ti --user root --entrypoint /bin/bash ktools/$(pick_container_from_dev $spec):latest ;;
+      $DOCKER_EXEC run -ti --user root --entrypoint /bin/bash ktools/$(pick_container_from_all $spec):latest ;;
 
 # Multiple container management done in parallel
   build-all | ba)                                                ## Build all buildable containers.
@@ -320,19 +392,18 @@ case "$cmd" in
   down-all | stop-all | 0a | 00)                                 ## Down all up containers
       list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
   restart-all | 01a | ra | RA | Ra)                              ## Restart all up containers
-      $0 restart dnsdock
-      list-up | sed -e 's/dnsdock//' | /usr/local/bin/run_para --align --cmd "$0 restart @" --timeout $TIMEOUT ;;
+      $0 down-all ; $0 up-all ;;
   run-in-all | ria)                                              ## Run $1+ in root shell in all up containers
       list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
   test-all | ta)                                                 ## Test all testable containers (#latest)
       list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
-  test-all-prod | tap)                                           ## Test all testable production containers
+  test-all-prod | tap)                                           ## Test all in-production containers
       list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;
-  up-all | start-all | 1a | 11)                                  ## Launch all autostart containers
-      set +e; for i in $(list-autostart); do up "$i"; done ;;
-  upgrade-all | ua)                                              ## upgrade all containers
-      list-buildable | /usr/local/bin/run_para --align --cmd "$0 upgrade @" --output d-upgrade-all.out --timeout $TIMEOUT ;;
+  up-all | start-all | 1a | 11) do-in-waves up ;;                ## Launch all autostart containers
+  upgrade-all | ua) do-in-waves upgrade ;;                       ## upgrade all containers
 # various queries
+  autostart-wave | aw | al | ai)                                 ## Print autostart wave for container  
+      get_autostart_wave $(pick_container_from_all $spec) ;;
   check-all-up | cau | ca | qa)                                  ## Check that all autostart containers are up.
       t=$(mktemp)
       list-up | cut -d' ' -f1 > $t
@@ -362,13 +433,8 @@ case "$cmd" in
 	$DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
     done | column -t | sort
     ;;
-  list-up | lu | ls | l | ps | p)                                ## List all up containers
-    $DOCKER_EXEC ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
-      sed -e 's/0.0.0.0/*/g' -e 's:/tcp::g' | \
-      column -s @ -t | cut -c-${COLUMNS:-200} | sort -k6
-    ;;
   log | logs)                                                    ## Print logs for $1
-      $DOCKER_EXEC logs -ft --details $(pick_container_from_dev $spec) ;;
+      $DOCKER_EXEC logs -ft --details $(pick_container_from_all $spec) ;;
   pid)                                                           ## Print main PID for $1
       $DOCKER_EXEC inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;
   spec | s) $DOCKER_EXEC inspect $(pick_container_from_up $spec) ;;    ## Print docker details for $1
@@ -378,9 +444,19 @@ case "$cmd" in
     ;;
 
 # instance lists
-  list-autostart | la) list-autostart ;;                         ## List auto-startable containers
+  list-all-settings | las) list-all-settings ;;                  ## List all known settings files
+  list-all | lA) list-all ;;                                     ## List all known container names
+  list-autostart | la) list-autostart ;;                         ## List auto-startable containers in start-up order
+  list-autostart-waves | law) list-autostart-waves ;;            ## List auto-startable containers prefixed by their startup wave
   list-buildable | lb) list-buildable ;;                         ## List buildable containers
   list-testable | lt) list-testable ;;                           ## List containers with tests
+  list-up | lu | ls | l | ps | p)                                ## List all up containers
+    $DOCKER_EXEC ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
+      sed -e 's/0.0.0.0/*/g' -e 's:/tcp::g' | \
+      column -s @ -t | cut -c-${COLUMNS:-200} | sort -k6
+    ;;
+  list-up-names | lun)                                           ## List all up containers (just the names)
+    $DOCKER_EXEC ps --format '{{.Names}}' ;;
 
 # internal
   help | h) myhelp "$spec" ;;                                    ## display this help

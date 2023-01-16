@@ -172,7 +172,8 @@ function main() {
 
     setlive "$fullname" "$push"
 
-    if [[ -f autostart ]]; then
+    awave=$(d autostart-wave $name)
+    if [[ "$awave" != "" ]]; then
         /root/bin/d 01 $name || exit $?
     fi
     exit 0

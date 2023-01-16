@@ -1,4 +1,6 @@
 
+autostart: 5
+
 ports:
   - "2223:22"
 

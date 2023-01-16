@@ -1,4 +1,6 @@
 
+autostart: 5
+
 # Port mapping must be done via iptables DNAT rather than docker proxy,
 # to preserve incoming peer IP addresses for client access control check.
 
