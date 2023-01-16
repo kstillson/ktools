@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-'''
-TODO(doc)
+'''TODO(doc)
 
 Supported features in the settings file:
 
+autostart: string (see below)
 debug_alt_cmnd: string
 extra_init: string
 debug_extra_init: string
@@ -18,6 +18,14 @@ log: string{N|J|S|custom spec}
 name: string (flag overrides this, this overrides directory name)
 network: string{NONE|name of network to use.}
 port: list of ports to forward: host:container
+
+
+autostart: an arbitary string used more by d.sh than d-run.py.  When
+launching, containers are grouped into "waves" with the same string, and then
+started in those groupings; sorted numerically.  String should not contain any
+spaces, but can contain something like "4,host=x", which would include the
+container in wave 4, but only on the host matching "x".
+
 
 mount option                       normal behavior                   -v behavior
 ------------                       ---------------                   -----------
