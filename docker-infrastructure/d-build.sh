@@ -1,6 +1,24 @@
 #!/bin/bash
 
-# TODO(doc)
+# Build a docker image, optionally also testing and pushing it.
+# This is a "low level" builder that runs underneath the Makefile.
+# i.e., make uses this, not the other way around.
+
+# Really all this script does is call "docker build" with a few extra params,
+# but those extra params can be important.
+
+# You need to already be in the directory with the Dockerfile for the
+# container you want to build, unless specifying the --cd flag, in which case
+# the value of that flag names the container to be built.
+
+# The "--setlive" (aka "-s") flag causes this script to not doing any
+# actual building, but instead unconditionally tags the :latest version
+# of the comtainer as :live.  It also creates a backup of the previously
+# :live container with the tag :prev.
+
+# The presence of a ":" in the --repo (or $DBUILD_REPO) setting will
+# push the image image to the specified remote repo; this includes both
+# normal building and --setlive operations.
 
 
 # ---------- control constants
@@ -14,6 +32,7 @@ DOCKER_VOL_BASE="${DOCKER_VOL_BASE:-/rw/dv}"
 DBUILD_PARAMS="${DBUILD_PARAMS:-}"
 DBUILD_REPO="${DBUILD_REPO:-ktools}"
 DBUILD_PODMAN_SHARED_APK_CACHE="${DBUILD_PODMAN_SHARED_APK_CACHE:-1}"
+
 
 # ---------- business logic
 
@@ -104,7 +123,6 @@ function main() {
 
     # ---- default values
 
-    auto_mode=0
     just_live=0
     push=0
     run_tests=0
@@ -120,7 +138,6 @@ function main() {
     while [[ $# -gt 0 ]]; do
         flag="$1"
         case "$flag" in
-            --auto | -a) auto_mode=1; run_tests=1 ;;      ## run mode: build, test, promote to live (if pass) and restart (if autostart)
             --setlive | -s) just_live=1 ;;                ## run mode: just tag :latest to :live and exit
             --test | -t) run_tests=1 ;;                   ## run mode: build and run tests, then exit
 
@@ -160,21 +177,6 @@ function main() {
     if [[ $run_tests == 1 ]]; then
 	run_tests || exit $?
 	echo "TESTS PASS"
-    fi
-
-    # If not in auto mode, we're done.
-    if [[ $auto_mode == 0 ]]; then
-        echo "successfully built $target"
-        exit 0
-    fi
-
-    # ----- auto mode
-
-    setlive "$fullname" "$push"
-
-    awave=$(d autostart-wave $name)
-    if [[ "$awave" != "" ]]; then
-        /root/bin/d 01 $name || exit $?
     fi
     exit 0
 }

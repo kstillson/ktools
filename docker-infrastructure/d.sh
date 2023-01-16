@@ -61,7 +61,7 @@ function dirnames() {
 function find_dir() {
     sel="$1"
     if [[ "$sel" == "" ]]; then sel=$(cat); fi            # Accept sel either from args or stdin (i.e. as filter)
-    
+
     if [[ -d "$sel" ]]; then echo "$sel"; return; fi      # given the container directory already.
     if [[ -f "$sel" ]]; then dirname $sel; return; fi     # given the settings file (or any other file in the dir)
     if [[ -d "${D_SRC_DIR}/$sel" ]]; then echo "${D_SRC_DIR}/$sel"; return; fi     # given the container name
@@ -90,7 +90,7 @@ function get_autostart_wave() {
 	    emitC yellow "found both old-style autostart file and settings-based wave info.  Ignoring old-style file; $dir"
 	fi
     fi
-    echo "$wave"    
+    echo "$wave"
 }
 
 # stdin is a list of inputs to find_dir; output is a list of container names
@@ -161,12 +161,12 @@ function list-autostart-waves() {
 	dir=$(dirname $s)
 	name=$(basename $dir)
 	wave=$(get_autostart_wave $dir)
-	if [[ "$wave" != "" ]]; then echo "$wave $name"; fi	
+	if [[ "$wave" != "" ]]; then echo "$wave $name"; fi
     done | sort -n
 }
 
 function list-autostart() {
-    list-autostart-waves | cut -d' ' -f2 
+    list-autostart-waves | cut -d' ' -f2
 }
 
 function list-buildable() {
@@ -256,7 +256,7 @@ function upgrade() {
 
   rslt=$(test $name)
   if [[ "$rslt" != "pass" ]]; then
-    emitc yellow "result: $rslt (expected 'pass')"
+    emitc red "test failed.  result: $rslt (expected 'pass')"
     return 1
   fi
 
@@ -402,7 +402,7 @@ case "$cmd" in
   up-all | start-all | 1a | 11) do-in-waves up ;;                ## Launch all autostart containers
   upgrade-all | ua) do-in-waves upgrade ;;                       ## upgrade all containers
 # various queries
-  autostart-wave | aw | al | ai)                                 ## Print autostart wave for container  
+  autostart-wave | aw | al | ai)                                 ## Print autostart wave for container
       get_autostart_wave $(pick_container_from_all $spec) ;;
   check-all-up | cau | ca | qa)                                  ## Check that all autostart containers are up.
       t=$(mktemp)
