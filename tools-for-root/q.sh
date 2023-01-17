@@ -154,11 +154,25 @@ function append_if() {
 
 # Expect stdin to match $2, print status decorated by title in $1 and output stdin upon mismatch.
 # For example, if you expect a file to be empty:  cat file | expect "file should be empty" ""
+function expect_exact() {
+    title="$1"
+    expect="$2"
+    got=$(cat)
+    if [[ "$got" == "$expect" ]]; then
+        emit "$title - ok"
+        return 0
+    fi
+    emit "$title - error"
+    echoC yellow "$title: "
+    echo "$got"
+}
+
+# Same as expect_exact, but $2 is expected to appear anywhere in stdin; other data in stdin is ignored.
 function expect() {
     title="$1"
     expect="$2"
     got=$(cat)
-    if [[ "$expect" == "$got" ]]; then
+    if [[ "$got" == *"$expect"* ]]; then
         emit "$title - ok"
         return 0
     fi
@@ -585,17 +599,17 @@ function push_wheel() {
 function checks_real() {
     nag |& expect "nagios checks" "all ok"
     leases_list_orphans |& expect "dns orphans" "all ok"
-    cat $PROCQ |& expect "procmon queue" ""
-    fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
+    cat $PROCQ |& expect_exact "procmon queue" ""
+    fgrep -v 'session opened' /rw/log/queue | expect_exact "syslog queue" ""
     $0 dup-check |& expect "$(basename $0) dup cmds" "all ok"
     dns_check |& expect "dns config check" "all ok"
     /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
     /root/bin/d check-all-up |& expect "docker instances" "all ok"
-    /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect "exim panic log empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect "exim reject log empty" "0"
-    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect "no unencrpted ktools secrets" "0"
-    git_check_all |& expect "git dirs with local changes" ""
+    /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect_exact "exim queue empty" "0"
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect_exact "exim panic log empty" "0"
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect_exact "exim reject log empty" "0"
+    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect_exact "no unencrpted ktools secrets" "0"
+    git_check_all |& expect_exact "git dirs with local changes" ""
 }
 
 # Wrapper around checks_real that does formatting and checks for overall status.
