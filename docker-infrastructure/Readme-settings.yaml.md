@@ -30,49 +30,19 @@ Adding the "--dev-test" flag for d-run tells it to generate the testing
 version.
 
 
-## Contents - some things my containers do *not* generally specify
-
-### image
-
-I almost always use a container name that is set to the name of the image that
-created it, and where that is set to the base-name of the directory that
-contains the Dockerfile.  i.e. ../docker-containers/eximdock/Dockerfile will
-create an image called eximdock, and a container named eximdock.
-
-But if you don't want to follow this convention, you can use this setting to
-do something different.
+## Contents - things containers almost always need to specify
 
 
-### ip
+### autostart
 
-I like to control all my IP assignments in one place- my DNS server.
-Therefore, once d-run has figured out the container name, it's default is to
-run a DNS query for that name, and assign the returned address to the
-container.
-
-But if you'd prefer to manage your container IP addresses in their
-settings.yaml files, this is the field for you.
-
-Note that the --subnet flag to d-run can override the 3rd octet (?.?.subnet.?)
-of the IP address assigned by either DNS or by the "ip" setting, and the
---subnet flag is set implicitly by other flags, such as --dev or --dev-test.
-
-This is because I use that 3rd octet to differentiate between production and
-test instances.  For example, if DNS returns 192.168.2.125 for eximdock, then
-using d-run with --dev-test will automatically set --subnet=3, which will
-launch the container at IP address 192.168.3.125.  This both makes sure that
-test containers stay out-of-the-way of the production ones, and gives me a
-really easy way to identify what test container is generating a bunch of junk
-traffic based on it's IP address.
-
-btw- I never let Docker assign IP numbers and use it's internal routing to
-find containers.  This is because I use iptables to lock-down just about all
-of my network communication, and it needs fixed IP addresses to work.
+This is an arbitary string used more by d.sh than d-run.py.  When launching,
+containers are grouped into "waves" with the same string, and then started in
+those groupings; sorted numerically.  String should not contain any spaces,
+but can contain something like "4,host=x", which would include the container
+in wave 4, but only on the host matching "x".
 
 
-## Contents - some things my containers almost always specify
-
-### ports
+### port
 
 This setting contains a list of port number pairs.  The first number in the
 pair is the number in the real host that needs to listen for requests, and the
@@ -150,7 +120,18 @@ string is the path inside the container where the bind-mount will appear.
   mounted read+write for test runs.
 
 
-## Other settings.yaml options
+## Contents - occasionally useful options
+
+### env
+
+A list of name=value pairs to be added to the container's runtime envirnonment.
+
+
+### foreground
+
+If set to "1", the container runs in the foreground and logs inherently go to
+stdout / stderr, i.e. the normal logging driver setting is ignored.
+
 
 ### log
 
@@ -179,3 +160,66 @@ that it's operating in its test mode.
 
 In-case you need some other Docker flag that isn't covered by the more
 abstract settings available, you can just provide raw Docker flags here.
+
+
+## Contents - things containers usually don't need to specify
+
+
+### hostname
+
+Overrides the name of the host inside the container.  By default this is set
+to match the container name, which by default is set to match the base
+directory name of the directory containing the settings file.
+
+
+### image
+
+I almost always use a container name that is set to the name of the image that
+created it, and where that is set to the base-name of the directory that
+contains the Dockerfile.  i.e. ../docker-containers/eximdock/Dockerfile will
+create an image called eximdock, and a container named eximdock.
+
+But if you don't want to follow this convention, you can use this setting to
+do something different.
+
+
+### ip
+
+I like to control all my IP assignments in one place- my DNS server.
+Therefore, once d-run has figured out the container name, it's default is to
+run a DNS query for that name, and assign the returned address to the
+container.
+
+But if you'd prefer to manage your container IP addresses in their
+settings.yaml files, this is the field for you.
+
+Note that the --subnet flag to d-run can override the 3rd octet (?.?.subnet.?)
+of the IP address assigned by either DNS or by the "ip" setting, and the
+--subnet flag is set implicitly by other flags, such as --dev or --dev-test.
+
+This is because I use that 3rd octet to differentiate between production and
+test instances.  For example, if DNS returns 192.168.2.125 for eximdock, then
+using d-run with --dev-test will automatically set --subnet=3, which will
+launch the container at IP address 192.168.3.125.  This both makes sure that
+test containers stay out-of-the-way of the production ones, and gives me a
+really easy way to identify what test container is generating a bunch of junk
+traffic based on it's IP address.
+
+btw- I never let Docker assign IP numbers and use it's internal routing to
+find containers.  This is because I use iptables to lock-down just about all
+of my network communication, and it needs fixed IP addresses to work.
+
+
+### name
+
+Overrides the name of the conatainer as managed by Docker.  By default this is
+set to the name of the directory continaing the settings file.
+
+
+### network
+
+Sets the Docker network name to use.  Defaults to $KTOOLS_DRUN_NETWORK for
+normal runs, or $KTOOLS_DRUN_TEST_NETWORK for test runs.  Those both default
+to "bridge" if not set.  Generally this is more of a host-specific thing, so I
+tend to use the environment variables to control this, rather than the
+settings.

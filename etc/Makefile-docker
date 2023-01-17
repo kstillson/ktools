@@ -18,6 +18,13 @@ DBUILD_PUSH_OPTS ?= --tls-verify=false
 DBUILD_PUSH_TO ?= localhost:5000
 DBUILD_REPO ?= ktools
 
+ifeq ($(DBUILD_TEST_PROD), 1)
+  TESTER ?= ./Test-prod
+else
+  TESTER ?= ./Test
+endif
+
+
 # ----- directory constants (need to be updated with Python versions)
 
 PLIB := files/usr/lib/python3.10/site-packages
@@ -115,10 +122,13 @@ test-stamp-sudo:
 	sudo -E $(MAKE) test-stamp-run
 
 test-stamp-run:
-	@if [[ -x ./Test ]]; then \
-          ./Test -r; \
+	@if [[ -x $(TESTER) ]]; then \
+          $(TESTER) -r; \
+	elif  [[ -x ./Test ]]; then \
+	  printf "\nWARNING: $(shell pwd)/$(TESTER) does not exist; falling back to ./Test\n\n"; \
+	  ./Test -r;\
         else \
-	  printf "\nWARNING: $(shell pwd)/Test does not exist; assuming pass.\n\n"; \
+	  printf "\nWARNING: $(shell pwd)/$(TESTER) does not exist; assuming pass.\n\n"; \
         fi
 	touch test-stamp
 

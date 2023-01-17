@@ -21,6 +21,15 @@ D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
 D_SRC_DIR2=${D_SRC_DIR2:-}
 TIMEOUT=${TIMEOUT:-60}
 
+if [[ "$TESTER" == "" ]]; then
+    if [[ "$KTOOLS_DRUN_TEST_PROD" == "1" ]]; then
+	TESTER="./Test-prod"
+    else
+	TESTER="./Test"
+    fi
+fi
+
+
 # ----------------------------------------
 # colorizer
 
@@ -178,6 +187,7 @@ function list-up() {
 }
 
 function list-testable() {
+
     ls -1 ${D_SRC_DIR}/*/Test ${D_SRC_DIR2}/*/Test 2>/dev/null | get_container_names
 }
 
@@ -223,31 +233,37 @@ function up() {
 function test() {
   name=$1
   shift
-  cd_sel "${name}"
-  emitc blue "Testing ${name}."
 
   out="/rw/dv/TMP/${name}/test.out"
+  emitc blue "Testing ${name} -> ${out}"
+  cd_sel "${name}"
+
+  printf "\n---- $(date): Testing ${name}\n" >> $out
+
   outdir=$(dirname ${out})
   [[ -d ${outdir} ]] || mkdir -p ${outdir}
 
   if [[ -f Makefile ]]; then
       make test &>> ${out} || { emitc red "failed"; echo "fail"; exit -1; }
       echo "pass"
-
-  elif [[ -x ./Test ]]; then
-    rslt=$(./Test -r -o "${out}" "$@")
-    if [[ "$rslt" == *"pass"* ]]; then
-      emitc green "test passed    ( $out )."
-      echo "pass"
-    else
-      emitc red "test failed. [ $rslt ]; log: $out"
-      echo "fail"
-    fi
-
-  else
-      emitc magenta "${name}: no test available; default to pass"
-      echo "pass"
+      return
   fi
+
+  if [[ ! -x $TESTER ]]; then
+      emitc yellow "test not available ($TESTER not found);  assuming pass."
+      echo "pass"
+      return
+  fi
+
+  rslt=$($TESTER -r -o "${out}" "$@")
+  if [[ "$rslt" == *"pass"* ]]; then
+    emitc green "test passed.    ( $out )"
+    echo "pass"
+    return
+  fi
+
+  emitc red "test failed.    ( $out )"
+  echo "fail"
 }
 
 function upgrade() {
@@ -397,8 +413,6 @@ case "$cmd" in
       list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
   test-all | ta)                                                 ## Test all testable containers (#latest)
       list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
-  test-all-prod | tap)                                           ## Test all in-production containers
-      list-testable | /usr/local/bin/run_para --align --cmd "$0 test @ -p" --output d-all-test.out --timeout $TIMEOUT ;;
   up-all | start-all | 1a | 11) do-in-waves up ;;                ## Launch all autostart containers
   upgrade-all | ua) do-in-waves upgrade ;;                       ## upgrade all containers
 # various queries

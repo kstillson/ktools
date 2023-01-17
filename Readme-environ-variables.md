@@ -73,6 +73,19 @@ If set to any other value, or if not using podman, then
   ktools/docker-containers/kcore-baseline.
   
 
+## Docker controls: testing containers
+
+- KTOOLS_DRUN_TEST_PROD: when tests are requested (e.g "d.sh test" or "make
+  test"), if KTOOLS_DRUN_TEST_PROD=1, then ./Test-prod is used, otherwise
+  ./Test.  Basically, setting this to "1" indicates that the full production
+  environment is available on the current host, e.g. all bind-mounted
+  directories are present and have their uid's (potentially mapped) and
+  permissions set correctly for the test to use.
+
+- KTOOLS_DRUN_TEST_NETWORK: docker Network to use when d-run is launching a
+  container in --dev or --dev_test mode, if not specified via flag.
+
+
 ## Docker controls: launching containers
 
 These affect how containers are launched by docker-infrastructure/d-run.sh
@@ -103,8 +116,6 @@ These affect how containers are launched by docker-infrastructure/d-run.sh
   "ktools", but d-run will fall back to this if that doesn't work.  So if
   you've got a personal repo, set it's value here.
 
-- KTOOLS_DRUN_TEST_NETWORK: docker Network to use when d-run is launching a
-  container in --dev or --dev_test mode, if not specified via flag.
 
 
 ## Home-control
