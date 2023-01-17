@@ -46,6 +46,7 @@ SCENES = {
  # Groupings by similar purpose
   'sirens'      : [ 'siren1', 'siren2', 'siren3' ],
   'accents'     : [ 'color-sofa-left', 'color-sofa-right', 'color-moon', 'color-stairs' ],
+  'specials'    : [ 'accents', 'tree', 'twinkle', 'lightning' ],
 
  # Activity-based
   'away'        : [ 'main:off', 'delay:2:office:dim:40' ],
@@ -71,7 +72,7 @@ SCENES = {
   'party:on'    : [  'bendy:on', 'breakfast-nook:dim:25', 'dining-chandelier:dim:25', 'family-room-left:dim:15',
                      'family-room-right:dim:15', 'kitchen-pendants:dim:40', 'kitchen:dim:5', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:dim:30',
-                     'accent-party', 'tree', 'tree', 'twinkle', 'lightning' ],
+                     'accent-party', 'tree', 'twinkle', 'lightning' ],
   'red:on'     : [ 'accents:red' ],
 
  # Scene aliases
