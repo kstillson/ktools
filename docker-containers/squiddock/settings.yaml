@@ -1,4 +1,6 @@
 
+autostart: 5
+
 ports:
   - 3128:3128
 

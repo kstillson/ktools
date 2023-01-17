@@ -3,6 +3,8 @@
 # we need to the preserve incoming IP address-- it's part of the access control
 # checks.
 
+autostart: 2
+
 mount_logs:
   - var_log_km: /var/log/km
 

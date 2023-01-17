@@ -1,4 +1,6 @@
 
+autostart: 1
+
 ip: 192.168.2.2
 
 # Can't find syslog IP if we're not up yet.

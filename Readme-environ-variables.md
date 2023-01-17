@@ -40,7 +40,7 @@ docker-containers subdirectory).
   shared caching of APKs.  If set to "2", then d-build will take no action
   regarding the apk cache dir.  If neither Dockerfile nor files/prep take any
   particular action, this means APK cache will be populated in the built image
-  (i.e. washing space).  If set to any other value, or if podman isn't in use,
+  (i.e. wasting space).  If set to any other value, or if podman isn't in use,
   the d-build will mount a tmpfs in /var/cache/apk, thus minimizing image
   size, but meaning each container needs to redownload all used apk's.
 
@@ -58,9 +58,32 @@ If set to any other value, or if not using podman, then
 - DBUILD_REPO: path prefix for the local docker repository that d-build will
   build into.  default is 'ktools'
 
-- DOCKER_BASE_DIR: If d-build is given a relative directory in-which to find a
-  container to build (via the --cd flag), this is the directory the reference
-  will be relative to.
+- D_SRC_DIR: Directory with container source directories in it.  e.g. if
+  d-build is given a relative directory in-which to find a container to build
+  (via the --cd flag), this is the directory the reference will be relative to.
+  Should generally be set to the full path of the directory contianing this
+  file, with "/docker-containers" appended.
+
+- D_SRC_DIR2: If set, is similar to D_SRC_DIR, but provides an alternate
+  location that d.sh, d-build.sh, and similar tools will search for container
+  sources to build, test, etc.  Intended to be used to point to private
+  container collections that exist outside the ktools subtree.  Note that for
+  such a secondary collection to work, it needs to contain symlinks (or
+  copies, or something similar) in the D_SRC_DIR2 directory to ktools/etc and
+  ktools/docker-containers/kcore-baseline.
+  
+
+## Docker controls: testing containers
+
+- KTOOLS_DRUN_TEST_PROD: when tests are requested (e.g "d.sh test" or "make
+  test"), if KTOOLS_DRUN_TEST_PROD=1, then ./Test-prod is used, otherwise
+  ./Test.  Basically, setting this to "1" indicates that the full production
+  environment is available on the current host, e.g. all bind-mounted
+  directories are present and have their uid's (potentially mapped) and
+  permissions set correctly for the test to use.
+
+- KTOOLS_DRUN_TEST_NETWORK: docker Network to use when d-run is launching a
+  container in --dev or --dev_test mode, if not specified via flag.
 
 
 ## Docker controls: launching containers
@@ -93,8 +116,6 @@ These affect how containers are launched by docker-infrastructure/d-run.sh
   "ktools", but d-run will fall back to this if that doesn't work.  So if
   you've got a personal repo, set it's value here.
 
-- KTOOLS_DRUN_TEST_NETWORK: docker Network to use when d-run is launching a
-  container in --dev or --dev_test mode, if not specified via flag.
 
 
 ## Home-control

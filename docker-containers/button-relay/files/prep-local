@@ -2,7 +2,5 @@
 ACCOUNTS_DONT_DELETE_REGEX="^(relay)"
 GROUP_DONT_DELETE_REGEX="^(relay)"
 
-# ---------- fix ownership / permissions
-
-chgrp -R relay /home
-chmod -R g+rX /home
+# Fix permissions from copying.
+chmod -R go+rX /home

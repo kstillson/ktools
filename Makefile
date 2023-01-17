@@ -54,6 +54,8 @@ etc/prep-stamp:	private.d private.d/kcore_auth_db.data.pcrypt private.d/keymaste
 
 private.d:
 	mkdir -p $@
+	# Create the subdir tree within private.d expected by the various private.d symlinks.
+	mkdir -p $(find . -type l | egrep 'private.d$' | sed -e 's:/private.d::' -e 's/^\./private.d/')
 
 private.d/kcore_auth_db.data.pcrypt:
 	touch $@

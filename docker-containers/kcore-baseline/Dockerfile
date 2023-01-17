@@ -1,9 +1,10 @@
-FROM docker.io/alpine:3.15
+FROM docker.io/alpine:3.17
 
 ##_prom MIGHT WANT TO ADD THIS TO THE APK LIST...:  py3-prometheus-client
 
 RUN umask 022 && \
     ln -s /var/cache/apk /etc/apk/cache && \
+    apk update && \
     apk cache -v sync && \
     apk upgrade && \
     apk add bash python3 py3-cryptography py3-requests tzdata

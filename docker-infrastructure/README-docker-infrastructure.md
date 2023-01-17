@@ -40,6 +40,32 @@ I convert almost every service into a Docker container.  Why?
     automatically update, build, test, and deploy many containers and
     only need to get involved should a test fail.
 
+  - This system supports several types of tests:
+
+    - Stand-alone readiness test;  ./Test -r
+
+      This type of test launches a test-mode instance of the container,
+      and runs tests against it that have minimal environmental assumptions.
+      i.e., ideally this test should run anywhere that the image can be built.
+
+    - Production readiness test;   ./Test-prod -r
+
+      This type of test launches a test-mode instance of the container, and
+      runs a series of tests which assume the environment matches that needed
+      for real production operations.  i.e., bind mounted directories can have
+      all sorts of expected already-available contents and permissions, with
+      permissions already adjusted for accessibilty via mapped uid's, etc.
+
+   - In-production test;           ./Test-prod
+
+     This test does not launch the container to be tested, it runs the
+     Test-prod script against an already-running real production container.
+
+  - "make test" (and d.sh test ..., which runs "make test") will run a
+    production readiness test (./Test-prod -r) if $KTOOLS_DRUN_TEST_PROD=1,
+    and otherwise a stand-alone readiness test (./Test -r).
+
+
 - - -
 
 ## Docker source tricks and techniques
@@ -62,24 +88,7 @@ so D_SRC_DIR is needed to enumerate the list of all possible containers.
 
 Here are the contents expected for each container source directory:
 
-- autostart: To include this container in the list of containers that
-  should be started automatically upon boot, place an empty file named
-  "autostart" in the source dir.
-
-  Note that actually all this does is cause the container name to be
-  included in the "list-autostart" command of the `d.sh` script.  To
-  actually get containers to auto-start, you'll need something to run the
-  command `d start-all` at the appropriate time in boot.
-
-- Build: This is a deprecated way of building my Docker images.  Basically
-  it was just a little bash boilerplate around the command `docker build`.
-  It's been replaced by "d-build.sh"
-
 - Dockerfile: This is a standard Dockerfile.
-
-- .dockerignore: This isn't really required, but its purpose is to make sure
-  that infrastructure files, like the ones listed here, don't accidentally
-  make their way into the images.
 
 - files/: Dockerfile's generally copy various files from their source
   directories into their images.  Traditionally these files are left in
@@ -155,7 +164,7 @@ container running, although generally restarting the container would be a
 safer way to re-establish a known-good state.
 
 
-### d-map
+### d-map.py
 
 A bunch of the tools in this system need to map between the container ID's
 (which is what you see in the "ps" command) and the container name's, which
@@ -168,7 +177,7 @@ run under sudo by any uid that needs a current mapping (e.g. see
 ../services/procmon).
 
 
-### "d-run"
+### d-run.sh
 
 docker takes copious instructions about how to launch a container from the
 command-line.  This is painful if constructing command-lines by hand, so
@@ -203,10 +212,13 @@ command-line flags (i.e. `d-run -h`) for a list.  You can use the `--test`
 flag to see what the script would do without actually doing it.
 
 
-### "d.sh"
+### d.sh.
 
-"d" is a shell script designed to provide a very terse way of running
-docker commands on both single containers and bunches of them.  Some examples:
+"d" is a shell script designed to provide a very terse way of running docker
+commands on both single containers and bunches of them.  It's kinda like
+tools-for-root/q.sh, but with Docker specific commands.
+
+Some examples:
 
 `d 1 X`
 If you have only 1 container whose directory starts with the letter "X",
@@ -223,4 +235,3 @@ container.
 
 `d ua`
 Same as above, but upgrade all containers.
-

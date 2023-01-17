@@ -1,8 +1,4 @@
 
-PLIB := files/usr/lib/python3.9/site-packages
-COPIED_FILES := files/usr/local/bin/kmc files/usr/local/bin/keymaster.crt \
-    $(PLIB)/kcore
-
 # ---------- local custom logic
 
 # WARNING- all docker containers (except kcore-baseline) depend on
@@ -23,6 +19,12 @@ baseline-stamp: $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* file
 # for check_kcore_installed
 include ../../etc/Makefile-common
 
+KCORE_DIR ?= $(PLIB)/kcore
+
+FULB := files/usr/local/bin
+COPIED_FILES := $(FULB)/kmc $(FULB)/keymaster.crt $(KCORE_DIR)
+
+
 # ---------- local customizations
 
 clean:
@@ -35,7 +37,7 @@ test:
 
 # ---------- local additions
 
-copy: $(PLIB) $(COPIED_FILES)
+copy: $(COPIED_FILES)
 
 files/usr/local/bin/kmc: ../../pylib/tools/kmc.py
 	mkdir --mode=755 --parents files/usr/local/bin
@@ -47,10 +49,8 @@ files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
 	cp $^ $@
 	chmod 644 $@
 
-$(PLIB):
-	mkdir -p $@
-
-$(PLIB)/kcore: ../../pylib/kcore
+$(KCORE_DIR): ../../pylib/kcore
+	mkdir -p $(PLIB)
 	cp -rpuv $^ $(PLIB)
 	chmod -R go+rX $@
 

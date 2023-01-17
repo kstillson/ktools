@@ -42,8 +42,8 @@ $(PRIV_TARGETS): $(KMH_DIR)/% : ../../private.d/%
 # -----
 
 ../../private.d/km.data.pcrypt: ../../services/keymaster/tests/km-test.data.pcrypt
-	@echo "COULD NOT FIND $@, SO USING $^ AS A STARTING POINT"
-	cp -p $^ $@
+	# Only copy template file if target doesn't exist, regardless of which is newer.
+	if [[ ! -f $@ ]]; then echo "COULD NOT FIND $@, SO USING $^ AS A STARTING POINT"; cp -p $^ $@; fi
 
 
 # ---------- pass-throughs

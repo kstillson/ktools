@@ -1,38 +1,17 @@
 #!/usr/bin/python3
 
-'''
-TODO(doc)
+'''Launch a container.
 
-Supported features in the settings file:
-
-debug_alt_cmnd: string
-extra_init: string
-debug_extra_init: string
-env: list of env assignment strings
-extra_docker: string
-foreground: 1   (note: ignored when --vol-alt, which requires background launches)
-hostname: string
-image: name of image to run
-ip: string {'-' for dns-based, '' to let docker assign}
-log: string{N|J|S|custom spec}
-name: string (flag overrides this, this overrides directory name)
-network: string{NONE|name of network to use.}
-port: list of ports to forward: host:container
-
-mount option                       normal behavior                   -v behavior
-------------                       ---------------                   -----------
-mount_logs                         list of bind-mount maps s->d      create empty +w dir in alt location
-mount_persistent                   "                                 same as normal (caution: can affect real data)
-mount_persistent_test_copy         "                                 same as mount_logs, top level dir only
-mount_persistent_test_copy_tree    "                                 clone src dir struct in alt location; no files
-mount_persistent_test_copy_files   "                                 recursive copy src to alt location
-mount_persistent_test_ro           "                                 mount real location, but ro
-mount_ro                           list of ro bind-mount maps s->d   same as normal
-mount_test_only                    ignored                           list of bind-mount maps s->d
-   relative paths are relative to  $DOCKER_VOL_BASE/{name}/...       $DOCKER_VOL_BASE/TMP/{name}/...
+This scripts constructs the command-line parameters for Docker to launch a
+container.
 
 Most settings can come from multiple sources, the priority order is:
-  command-line flag, then settings file, then environment variable, then hard-coded "fallback" value.
+  command-line flag, then
+  settings file, then
+  environment variable, then
+  a hard-coded "fallback" value
+
+See Readme-settings.yaml.md for a detailed description of the settings file.
 
 '''
 
@@ -83,6 +62,8 @@ def expand_log_shorthand(log, name):
                 '--log-opt', 'tag={name}']
         if slog_addr: args.append(['--log-opt', f'syslog-address={slog_addr}'])
         return args
+    elif ctrl in ['p', 'passthrough']:
+        return []
     elif ctrl in ['j', 'json', 'journal', 'journald']:
         if 'podman' in DOCKER_EXEC: return ['--log-driver=journald']
         return ['--log-driver=json-file',
@@ -279,8 +260,8 @@ def parse_args():
     ap.add_argument('--env',      '-e', default=[], nargs='*', help='Any additional environment variables to set in the container')
     ap.add_argument('--fg',             action='store_true', help='Run the container in the foreground')
     ap.add_argument('--hostname', '-H', default=None, help=f'use a particular hostname.  Default is "{HOSTNAME_ENV}".  Blank/none will use the contain name. Supports replacement of string HOSTNAME with the hosts name .')
-    ap.add_argument('--ip',             default=None, help=f'assign a particular IP address.  Default is {IP_ENV}.  Use "-" to look up hostname in dns and use returned value.  Use "" (or dns lookup failure) to let docker pick.')
-    ap.add_argument('--log',      '-L', default=None, help=f'Log drier to use.  Allowed: n/none, s/syslog[:url] (e.g. s:udp://sysloghost:514), j/json, or any other value to pass blindly on to Docker.  Default value is "{LOG_ENV}".')
+    ap.add_argument('--ip',             default=None, help=f'assign a particular IP address.  Default is {IP_ENV}.  Use "-" to look up hostname in dns and use returned value.  Use "" (or "0", or dns lookup failure) to let docker pick.')
+    ap.add_argument('--log',      '-L', default=None, help=f'Log driver to use.  Allowed: p/passthrough, n/none, s/syslog[:url] (e.g. s:udp://sysloghost:514), j/json, or any other value to pass blindly on to Docker.  Default value is "{LOG_ENV}".')
     ap.add_argument('--name',     '-n', default=None, help=f'use a specified container name.  Default of None will use the name of the directory that contains the settings file')
     ap.add_argument('--network',  '-N', default=None, help=f'Name of docker network to use.  Default is "{NETWORK_ENV}"')
     ap.add_argument('--ports',    '-p', default=None, nargs='*', help='Port to map, host:container (can specify flag multiple times')

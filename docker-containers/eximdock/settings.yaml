@@ -1,4 +1,6 @@
 
+autostart: 5
+
 ports:
   - 25:2525
 

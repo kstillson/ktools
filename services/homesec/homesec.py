@@ -163,14 +163,15 @@ WEB_HANDLERS = {
 
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='home automation web server')
-  ap.add_argument('--debug', '-d', action='store_true', help='debug mode; log to stdout, disable all external comm')
+  ap.add_argument('--debug',             '-d', action='store_true', help='debug mode; log to stdout, disable all external comm')
   ap.add_argument('--kauth-db-filename', '-F', default=A.DEFAULT_DB_FILENAME, help='kauth shared secrets filename')
   ap.add_argument('--kauth-db-password', '-P', default='-', help='kauth shared secrets encryption password.  "-" means query keymanager for "kauth".  Blank disables kauth authN, i.e. clients must use http basic auth when authN required.')
-  ap.add_argument('--kauth-max-delta', '-D', type=int, default=A.DEFAULT_MAX_TIME_DELTA, help='max seconds between client and server token times (i.e. replay attack window)')
-  ap.add_argument('--kauth-no-ratchet', '-R', action='store_true', help='disable requirement that each kauth request have a later timestamp than the previous one.')
-  ap.add_argument('--logfile', '-l', default='homesec.log', help='filename for operations log.  "-" for stdout, blank to disable log file')
-  ap.add_argument('--port', '-p', type=int, default=8080, help='port to listen on')
-  ap.add_argument('--syslog', '-s', action='store_true', help='send critical log messages to syslog')
+  ap.add_argument('--kauth-max-delta',   '-D', type=int, default=A.DEFAULT_MAX_TIME_DELTA, help='max seconds between client and server token times (i.e. replay attack window)')
+  ap.add_argument('--kauth-no-ratchet',  '-R', action='store_true', help='disable requirement that each kauth request have a later timestamp than the previous one.')
+  ap.add_argument('--logfile',           '-l', default='homesec.log', help='filename for operations log.  "-" for stdout, blank to disable log file')
+  ap.add_argument('--pb-token',                default='-', help='password to use for pushbullet api.  Default "-" will query keymanager for "pb-push"')
+  ap.add_argument('--port',              '-p', type=int, default=8080, help='port to listen on')
+  ap.add_argument('--syslog',            '-s', action='store_true', help='send critical log messages to syslog')
   return ap.parse_args(argv)
 
 
@@ -181,6 +182,8 @@ def main(argv=[]):
              filter_level_logfile=C.DEBUG if args.debug else C.INFO,
              filter_level_syslog=C.CRITICAL if args.syslog else C.NEVER)
 
+  # ---- Security inits that require keymanager queries
+
   if args.kauth_db_password == '-':
     args.kauth_db_password = KMC.query_km('kauth')
     if args.kauth_db_password.startswith('ERROR'): C.log_critical('unable to retrieve kauth password')
@@ -190,11 +193,21 @@ def main(argv=[]):
     max_time_delta=args.kauth_max_delta, must_be_later_than_last_check=not args.kauth_no_ratchet)
   view.init_kauth(kauth_params)
 
+  pb_push_token = KMC.query_km('pb-push') if args.pb_token == '-' else args.pb_token
+  if not pb_push_token or pb_push_token.startswith('ERROR'): C.log_error('unable to retrieve pb-push token')
+  else: C.log('successfully retrieved pb-push token')
+  view.controller.ext.PB_PUSH_TOKEN = pb_push_token
+
+
+  # ---- debug mode
+
   if args.debug:
     import ext
     ext.DEBUG = True
     view.DEBUG = True
     C.log_warning('** DEBUG MODE ACTIVATED **')
+
+  # ---- xfer control to webserver
 
   ws = W.WebServer(WEB_HANDLERS, wrap_handlers=not args.debug)
   ws.start(port=args.port, background=False)  # Doesn't return.

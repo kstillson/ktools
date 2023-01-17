@@ -1,4 +1,6 @@
 
+autostart: 5
+
 ports:
   - 3333:8080
   
