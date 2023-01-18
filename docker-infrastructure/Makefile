@@ -18,6 +18,8 @@ include ../etc/Makefile-common
 $(INSTALL_DIR)/d-cowscan.ignore: private.d/d-cowscan.ignore
 	cp $^ $@
 
+private.d/d-cowscan.ignore:
+	touch $@
 
 # ---------- testing
 
