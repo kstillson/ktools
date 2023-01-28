@@ -53,10 +53,10 @@ def get_touch_status_for(username):
   return None
 
 
-def get_touches(search=['ken', 'dad']):
-  '''Return list of TouchData for specified user list.'''
+def get_presence_touches():
+  '''Return list of TouchData where value indicates a user that is home or away.'''
   touches = get_all_touches()
-  return [x for x in touches if x.trigger in search]
+  return [x for x in touches if x.value in ['home','away']]
 
 
 def last_trigger_touch(trigger):
@@ -115,8 +115,8 @@ def partition_states():
 def resolve_auto(state):
   '''Resolve arm-auto to arm-home or arm-away based on how many people are home.'''
   if not 'auto' in state: return state
-  twvh = touches_with_value('home')
-  return 'arm-away' if twvh == 0 else 'arm-home'
+  touches_showing_people_home = touches_with_value('home')
+  return 'arm-away' if touches_showing_people_home == 0 else 'arm-home'
 
 
 # ---------- getters with authn internal logic

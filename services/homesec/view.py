@@ -152,7 +152,7 @@ def test_view(request):
 @authn_required
 def touchz_view(request):
   touches = []
-  for t in model.get_touches():
+  for t in model.get_presence_touches():
     touches.append([t.trigger, t.value, t.last_update_nice])
   return H.html_page_wrap(H.list_to_table(touches, title='touches'), title='last touches')
 
