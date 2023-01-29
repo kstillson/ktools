@@ -25,7 +25,7 @@ import kcore.auth
 DOCKER_EXEC =      os.environ.get('DOCKER_EXEC',               '/usr/bin/docker')
 HOSTNAME_ENV =     os.environ.get('KTOOLS_DRUN_HOSTNAME',      None)      # None => use container name
 IP_ENV =           os.environ.get('KTOOLS_DRUN_IP',            '-')
-LOG_ENV =          os.environ.get('KTOOLS_DRUN_LOG',           'journald')
+LOG_ENV =          os.environ.get('KTOOLS_DRUN_LOG',           None)
 NAME_ENV =         os.environ.get('KTOOLS_DRUN_NAME',          None)      # None => use container name
 NETWORK_ENV =      os.environ.get('KTOOLS_DRUN_NETWORK',       'bridge')
 REPO_ENV =         os.environ.get('KTOOLS_DRUN_REPO',          'ktools')
@@ -248,7 +248,7 @@ def parse_args():
     ap.add_argument('--tag',    '-T', default=None, help=f'tag or hash of image version to use.  Default is "{TAG_ENV}".')
 
     # Flags that provide context about the mode we're launching the container in.
-    ap.add_argument('--dev',           '-D',  action='store_true', help='Activate development mode (equiv to: --fg --name_prefix=dev- --network=docker2 --rm --subnet=3 --latest --vol-alt).')
+    ap.add_argument('--dev',           '-D',  action='store_true', help='Activate development mode (equiv to: --fg --name_prefix=dev- --network=$KTOOLS_DRUN_TEST_NETWORK --rm --subnet=3 --latest --vol-alt).')
     ap.add_argument('--dev-test',      '-DT', action='store_true', help='Same as --dev but use --name_prefix=test-')
     ap.add_argument('--settings',      '-s',  default=None, help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
     ap.add_argument('--test-in-place', '-P',  action='store_true', help='Run dev version in real container (equiv to: --fg --rm --latest).')
@@ -346,8 +346,8 @@ def gen_command(args, settings):
         cmnd.extend(expand_log_shorthand(args.log, name))
     elif settings.get('log'):
         cmnd.extend(expand_log_shorthand(settings['log'], name))
-    else:
-        cmnd.extend(expand_log_shorthand('S', name))
+    elif LOG_ENV:
+        cmnd.extend(expand_log_shorthand(LOG_ENV, name))
 
     if args.extra_docker: cmnd.extend(args.extra_docker.split(' '))
     if settings.get('extra_docker'): cmnd.extend(settings['extra_docker'].split(' '))
