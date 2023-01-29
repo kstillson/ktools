@@ -3,6 +3,11 @@
 
   - make persister data more tolerante of tabs.
 
+# queued larger ideas improvements
+
+  - shift container tests to pytest-3 with mark filtering
+  - shift from env settings to config file
+
 # new subsystems
 
   - add homesec client modules...?
@@ -17,10 +22,9 @@
 # docker improvements
 
   - docker-containers needs a :prep
-    - private.d template subtree
     - set up /rw/dv/...
     - sshdock/gitdock need generated host-keys
-    - idempotent setup of docker networks
+    - idempotent setup of docker networks ?
   - settings file have hard-coded TZ; take this from a var
 
 # new project name?
