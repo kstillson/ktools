@@ -41,7 +41,7 @@ system's processes.  This outside-a-container position makes procmon a good
 place to check a number of other security-like conditions, so a bunch of other
 checks are added-on.
 
-Specifically- procmon can run d-cowscan (see ../../docker-infrastructure),
+Specifically- procmon can run d-cowscan (see ../../container-infrastructure),
 which identifies unexpected copy-on-write filesystem changes inside
 containers.  Additionally, procmon can check to see if the root filesystem is
 mounted read-only; I generally keep mine locked-down, and it's handy for

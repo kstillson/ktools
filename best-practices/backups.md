@@ -156,7 +156,7 @@ that I know change regularly are not unacceptably old.  Actually, I tend to
 check that their rsnapshot versioned backups are acceptably new- thus testing
 both the rclone and rsnapshot.
 
-See the [/etc/init file](../docker-containers/rclonedock/files/etc/init) in
+See the [/etc/init file](../containers/rclonedock/files/etc/init) in
 the rclone container for the place where most of the magic happens.
 
 
@@ -164,7 +164,7 @@ the rclone container for the place where most of the magic happens.
 
 #### rsnapshot in general
 
-[rsnapshot](../docker-containers/rsnapdock) is a wonderful tool for keeping
+[rsnapshot](../containers/rsnapdock) is a wonderful tool for keeping
 versioned local backups.  It does away with the concepts of incremental and
 differential backups, and instead makes clever use of Linux file-system
 hard-links.

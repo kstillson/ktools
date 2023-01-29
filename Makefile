@@ -8,10 +8,10 @@
 #   SUBDIRS
 
 TOP_TARGETS = all clean comp install test uninstall update
-SUBDIRS ?= pylib tools-etc tools-for-root services docker-infrastructure
+SUBDIRS ?= pylib tools-etc tools-for-root services container-infrastructure
 
 ifeq ($(BUILD_DOCKER_CONTAINERS), 1)
-  SUBDIRS := $(SUBDIRS) docker-containers
+  SUBDIRS := $(SUBDIRS) containers
 endif
 
 SHELL := /bin/bash
@@ -24,7 +24,7 @@ include etc/Makefile-colors
 # Both rules will run..  So we do the local :prep receipe first, and then echo "all" into the subdirs.
 #
 all:	prep
-	@if [[ "$$BUILD_DOCKER_CONTAINERS" != "1" ]]; then printf "\n  $(YELLOW)NOTE: $(RESET) docker-containers/... not included in the build.\n         If you think you want it, check README.md and then set 'BUILD_DOCKER_CONTAINERS=1'.\n\n"; fi
+	@if [[ "$$BUILD_DOCKER_CONTAINERS" != "1" ]]; then printf "\n  $(YELLOW)NOTE: $(RESET) containers/... not included in the build.\n         If you think you want it, check README.md and then set 'BUILD_DOCKER_CONTAINERS=1'.\n\n"; fi
 
 # This also includes "all"; both rules will run.
 $(TOP_TARGETS): $(SUBDIRS)

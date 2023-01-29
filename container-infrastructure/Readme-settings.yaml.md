@@ -176,7 +176,7 @@ directory name of the directory containing the settings file.
 
 I almost always use a container name that is set to the name of the image that
 created it, and where that is set to the base-name of the directory that
-contains the Dockerfile.  i.e. ../docker-containers/eximdock/Dockerfile will
+contains the Dockerfile.  i.e. ../containers/eximdock/Dockerfile will
 create an image called eximdock, and a container named eximdock.
 
 But if you don't want to follow this convention, you can use this setting to

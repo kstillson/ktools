@@ -1,7 +1,7 @@
 
 SHELL := /bin/bash
 
-# Note: several targets depend on docker-infrastructure being INSTALLED
+# Note: several targets depend on container-infrastructure being INSTALLED
 # before these targets can be BUILT.
 
 # Furthermore, docker containers other than kds-baseline depend on

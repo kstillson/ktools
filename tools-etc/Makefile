@@ -46,8 +46,8 @@ ULB_TARGETS := $(addprefix $(ULB_DIR)/, $(ULB_FILES))
 
 install-jack: $(KTE_TARGETS) $(RB_TARGETS) $(ULB_TARGETS)
 	@printf "\n$(YELLOW)install exceptions:$(RESET)\n\n"
-	@echo "party-lights.py, tplink.py are pulled by ../docker-containers/webdock/Makefile"
-	@echo "pb-push.sh is pulled by ../docker-containers/homesecdoc/Makefile"
+	@echo "party-lights.py, tplink.py are pulled by ../containers/webdock/Makefile"
+	@echo "pb-push.sh is pulled by ../containers/homesecdoc/Makefile"
 	@echo "speak-cgi.py and speak.py must to be maually copied to pi1"
 	@echo "Arduino/arduino-filter-boards.py must be manually copied to blue:/bin"
 	@echo ""

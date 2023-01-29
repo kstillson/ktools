@@ -9,7 +9,7 @@ Most of these directories contain nothing more than the minimal configuration
 to build and image and launch its container.  You can think of it as painting
 a thin layer of containment on-top of the business logic that's contained
 elsewhere.  However, there are a few of them where the critical service
-configuration is stored here in the docker-containers tree.
+configuration is stored here in the containers tree.
 
 For example, with filewatchdock/, this is a service created by and for this
 system, so the source code and configuration are both in
@@ -127,7 +127,7 @@ is removed from /etc/passwd if it's not needed (because all processes are
 running as non-root accounts).  It's harder to attack Linux if the whole
 concept of root doesn't even exit (truthfully the concept of uid 0 still
 exists, unless you're using uid-namespace-mapping, see
-[../docker-infrastructure/Readme-uid-mapping.md](uid-mapping) for details),
+[../container-infrastructure/Readme-uid-mapping.md](uid-mapping) for details),
 but regardless, it's harder to hack a system where username "root" can't even
 reference the concept of uid 0).
 
@@ -177,7 +177,7 @@ The kcore-baseline:all target is special, in that it will build, :test, and
 targets only do the image building part.  Once the kcore-baseline#live image
 is ready, we get our ../kcore-baseline/baseline-stamp.  Then
 ../etc/Makefile-docker:build-stamp proceeds with a "sudo /root/bin/d-build"
-(see ../docker-infrastructure/d-build.sh), which in this case doesn't do much
+(see ../container-infrastructure/d-build.sh), which in this case doesn't do much
 more than run "docker build .", with some parameters telling it to tag the
 output image as "latest".
 
@@ -206,7 +206,7 @@ stopped before it can be re-launched.
 
 btw- a shortcut to the entire above process (all the make sub-steps and the
 final "start and/or re-start the container") can be run with either "d-build
--a" when in the docker-containers/filewatchdock directory, or with the even
+-a" when in the containers/filewatchdock directory, or with the even
 shorter "d u f" (docker upgrade f*) regardless of your current working dir.
-See ../docker-infrastructure for the source to all those tools.
+See ../container-infrastructure for the source to all those tools.
 

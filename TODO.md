@@ -21,7 +21,7 @@
 
 # docker improvements
 
-  - docker-containers needs a :prep
+  - ./containers needs a :prep
     - set up /rw/dv/...
     - sshdock/gitdock need generated host-keys
     - idempotent setup of docker networks ?

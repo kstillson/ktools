@@ -227,7 +227,7 @@ def search_for_dir(dir):
     cd = os.getcwd()
     if 'ktools/' in cd:
         pre, post = cd.split('ktools/', 1)
-        candidate = '%s/ktools/docker-containers/%s' % (pre, dir)
+        candidate = '%s/ktools/containers/%s' % (pre, dir)
         if os.path.isdir(candidate): return candidate
     candidate = '%s/docker-dev/%s' % (os.environ.get('HOME'), dir)
     if os.path.isdir(candidate): return candidate

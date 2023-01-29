@@ -1,7 +1,7 @@
 '''Docker related support library.
 
 This module primarily provides logic that was too hard to code in shell which is
-needed by ../../docker-infrastructure/*.
+needed by ../../container-infrastructure/*.
 
 Some highlights:
   - Return the directory with copy-on-write contents for an up container
