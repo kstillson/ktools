@@ -9,11 +9,12 @@ from a list of matches.
 '''
 
 import os, sys
+import kcore.common2 as C
 import kcore.uncommon as UC
 
 
 def select(sel):
-    targets = UC.popener(['q', 'ltp']).split(' ')
+    targets = C.popener(['q', 'ltp']).split(' ')
     matches = []
     for i in targets:
         if sel in i: matches.append(i)

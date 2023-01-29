@@ -13,7 +13,7 @@ Some highlights:
 '''
 
 import atexit, os, random, ssl, string, sys, time
-import kcore.common as C
+import kcore.common2 as C
 import kcore.uncommon as UC
 
 PY_VER = sys.version_info[0]
@@ -32,7 +32,7 @@ OUT = sys.stdout
 
 
 def get_cid(container_name):  # or None if container not running.
-    out = UC.popener([DOCKER_BIN, 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
+    out = C.popener([DOCKER_BIN, 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
     for line in out.split('\n'):
         if ' ' not in line: continue
         cid, name = line.split(' ', 1)
@@ -42,7 +42,7 @@ def get_cid(container_name):  # or None if container not running.
 
 def latest_equals_live(container_name):
     try:
-        ids = UC.popener(
+        ids = C.popener(
             [DOCKER_BIN, 'images', '--filter=reference=ktools/%s' % container_name,
              '--format="{{.Tag}} {{.ID}}"'])
         id_map = {}
@@ -60,12 +60,12 @@ def run_command_in_container(container_name, cmd, raw_popen=False):
     command = [DOCKER_BIN, 'exec', '-u', '0', container_name]
     if isinstance(cmd, list): command.extend(cmd)
     else: command.append(cmd)
-    return UC.popen(command) if raw_popen else UC.popener(command)
+    return C.popen(command) if raw_popen else C.popener(command)
 
 
 def find_cow_dir(container_name):
     try:
-        upperdir_json = UC.popener(f'{DOCKER_BIN} inspect {container_name} | fgrep UpperDir', shell=True).strip()
+        upperdir_json = C.popener(f'{DOCKER_BIN} inspect {container_name} | fgrep UpperDir', shell=True).strip()
     except:
         sys.exit('cannot find container (is it up?)')
     key, val = upperdir_json.split(': ', 1)
@@ -112,7 +112,7 @@ def launch_or_find_container(args, extra_run_args=None):
             run_log_relay(args, OUT)
             sys.exit(0)
 
-    try: ip = UC.popener(['d', 'ip', name])
+            try: ip = C.popener(['d', 'ip', name])
     except: ip = None
     cow = find_cow_dir(name)
     dv = '/rw/dv/%s' % name if args.prod else '/rw/dv/TMP/%s' % orig_name
@@ -129,11 +129,11 @@ def launch_test_container(args, extra_run_args, out):
     if test_net == 'docker2':  ## TODO(defer): kds specific
         cmnd.extend(['--subnet', '3'])
     emit(' '.join(cmnd))
-    rslt = UC.popen(cmnd, stdout=out, stderr=out)
+    rslt = C.popen(cmnd, stdout=out, stderr=out)
     if not rslt.ok: sys.exit(rslt.out)
 
 def run_log_relay(args, out):
-    rslt = UC.popen([DOCKER_BIN, 'logs', '-f', args.real_name], stdout=out, stderr=out)
+    rslt = C.popen([DOCKER_BIN, 'logs', '-f', args.real_name], stdout=out, stderr=out)
     if not rslt.ok: sys.exit(rslt.out)
     emit('log relay done.')
 
@@ -143,7 +143,7 @@ def stop_container_at_exit(args):
     if not args.real_name: return False
     cid = get_cid(args.real_name)
     if not cid: return False    # Already stopped
-    rslt = UC.popener([DOCKER_BIN, 'stop', '-t', '2', args.real_name])
+    rslt = C.popener([DOCKER_BIN, 'stop', '-t', '2', args.real_name])
     return not rslt.startswith('ERROR')
 
 
@@ -183,7 +183,7 @@ def file_expect_within(within_seconds, expect, filename, invert=False, missing_o
 
 # filename is inside the conainter.
 def container_file_expect(expect, container_name, filename):
-    data = UC.popener([DOCKER_BIN, 'cp', '%s:%s' % (container_name, filename), '-'])
+    data = C.popener([DOCKER_BIN, 'cp', '%s:%s' % (container_name, filename), '-'])
     if data.startswith('ERROR'): abort('error getting file %s:%s' % (container_name, filename))
     if expect in data:
         emit('success; saw "%s" in %s:%s' % (expect, container_name, filename))
@@ -193,7 +193,7 @@ def container_file_expect(expect, container_name, filename):
 
 # expect commnd run on host (not container) to return certain output and/or error text.
 def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
-    rslt = UC.popen(cmd, send_in)
+    rslt = C.popen(cmd, send_in)
     if expect_returncode is not None and rslt.returncode != expect_returncode: abort('wrong return code: %d <> %d for %s' % (rslt.returncode, expect_returncode, cmd))
     if expect_out is not None:
         if rslt.stdout and not expect_out: abort('Unexpected output "%s" for: %s' % (rslt.stdout, cmd))
