@@ -1,8 +1,4 @@
 
-# queued minor improvements
-
-  - make persister data more tolerante of tabs.
-
 # queued larger ideas improvements
 
   - shift container tests to pytest-3 with mark filtering

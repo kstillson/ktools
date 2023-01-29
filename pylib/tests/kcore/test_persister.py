@@ -75,7 +75,7 @@ def test_persister_simple_dict(tmp_path):
     d1 = P.Persister(tempfile)
     d2 = P.Persister(tempfile)
 
-    d1.set_data({'k1': 'v1',  'k2': 'X'})
+    d1.set_data({'k1': 'v1', 'k2': 'X'})
     with d1.get_rw() as d:
         d['k2'] = 'v2'
 
@@ -155,6 +155,18 @@ def test_dict_of_dataclasses(tmp_path):
     lines = serialized.split('\n')
     assert lines[0] == "'key1': Dc1(f1='str1', f2=11)"
     assert lines[1] == "'key2': Dc1(f1='str2', f2=99)"
+
+
+def test_dict_of_dataclasses_with_serialized_tabs(tmp_path):
+    tempfile = str(tmp_path / "tempfile")
+    d1 = P.PersisterDictOfDC(tempfile, rhs_type=Dc1)
+    with open(tempfile, 'w') as f:
+        f.write("'key3':\tDc1(f1='str3', f2=11)\n'key4':\t\tDc1(f1='str4', f2=123)\n")
+
+    d = d1.get_data()
+    assert d['key3'].f1 == 'str3'
+    assert d['key4'].f2 == 123
+    assert len(d) == 2
 
 
 # ---------- list of dataclasses

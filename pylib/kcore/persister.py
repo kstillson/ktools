@@ -290,6 +290,7 @@ class PersisterDictOfDC(Persister):
         data.clear()
         for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
+            line = line.replace('\t', ' ')  # be tolerant of tabs
             if not ': ' in line: continue
             k, v_str = line.split(': ', 1)
             k = k.replace("'", "").replace('"', '')
