@@ -87,7 +87,7 @@ import argparse, psutil, os, re, subprocess, sys, time
 from dataclasses import dataclass
 from typing import List
 
-import kcore.common2 as C
+import kcore.common as C
 import kcore.html as H
 import kcore.uncommon as UC
 import kcore.varz as V

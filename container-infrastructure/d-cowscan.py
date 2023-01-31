@@ -6,7 +6,7 @@ TODO: move the IGNORE_LIST to a config file.
 '''
 
 import argparse, datetime, glob, os, socket
-import kcore.common2 as C
+import kcore.common as C
 import kcore.uncommon as UC
 
 # ---------- global controls

@@ -26,7 +26,7 @@ import argparse, os, shutil, sys
 
 # kcore stuff
 import kcore.auth as A
-import kcore.common2 as C
+import kcore.common as C
 import kcore.uncommon as UC
 import ktools.kmc as KMC
 

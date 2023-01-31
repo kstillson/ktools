@@ -13,7 +13,7 @@ Some highlights:
 '''
 
 import atexit, os, random, ssl, string, sys, time
-import kcore.common2 as C
+import kcore.common as C
 import kcore.uncommon as UC
 
 PY_VER = sys.version_info[0]

@@ -14,7 +14,7 @@ Highlights:
 
 import errno, grp, os, pwd, time, signal, subprocess, sys, threading
 
-import kcore.common2 as C
+import kcore.common as C
 
 PY_VER = sys.version_info[0]
 if PY_VER == 2: import StringIO as io
@@ -94,7 +94,7 @@ class FileLock:
 
 def pgrep(srch):
     '''Returns a set of pids whos command matches srch.'''
-    pids = popener(['pgrep', srch])
+    pids = C.popener(['pgrep', srch])
     if not pids or pids.startswith('ERROR'): return set()
     return set(pids.split('\n'))
 

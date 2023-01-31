@@ -9,7 +9,7 @@ from a list of matches.
 '''
 
 import os, sys
-import kcore.common2 as C
+import kcore.common as C
 import kcore.uncommon as UC
 
 

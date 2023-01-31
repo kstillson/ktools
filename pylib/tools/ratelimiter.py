@@ -27,7 +27,7 @@ file with r+w access.  The lock file remains.
 '''
 
 import os, sys, time
-import kcore.common2 as C
+import kcore.common as C
 import kcore.uncommon as UC
 
 VERBOSE = False

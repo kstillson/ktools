@@ -4,7 +4,7 @@
 import os, smtplib, syslog
 from email.mime.text import MIMEText
 
-import kcore.common2 as C
+import kcore.common as C
 import kcore.uncommon as UC
 
 # ---------- Global state and controls
