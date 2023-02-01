@@ -159,3 +159,11 @@ def resolve_special_arg(args, argname, required=True):
     if required and not value: raise ValueError(f'Unable to get required value for {argname}.')
     return value
 
+
+# ---------- ad-hoc
+
+# other ideas for charset: strings.printable, stings.ascii_letters, strings.digits
+def random_printable(len=16, charset='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[]_{}'):
+    import random
+    return ''.join(random.choice(charset) for i in range(len))
+

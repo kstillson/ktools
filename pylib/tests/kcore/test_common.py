@@ -86,7 +86,7 @@ def test_popener():
 def test_get_callers_module():
     assert C.get_callers_module().__file__ == __file__
 
-    
+
 def test_get_initial_python_file_comment():
     assert C.get_initial_python_file_comment(__file__) == 'tests for common.py'
     assert C.get_initial_python_file_comment() == 'tests for common.py'
@@ -125,3 +125,11 @@ def test_resolve_special_arg():
     args.x = '$tmp1'
     assert C.resolve_special_arg(args, 'x', required=False) == ''
     assert args.x == ''
+
+
+# ----- ad-hoc method tests
+
+def test_random_printable():
+    assert len(C.random_printable(22)) == 22
+    assert C.random_printable(3, 'a') == 'aaa'
+
