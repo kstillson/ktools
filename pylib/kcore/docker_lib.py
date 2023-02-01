@@ -112,7 +112,7 @@ def launch_or_find_container(args, extra_run_args=None):
             run_log_relay(args, OUT)
             sys.exit(0)
 
-            try: ip = C.popener(['d', 'ip', name])
+    try: ip = C.popener(['d', 'ip', name])
     except: ip = None
     cow = find_cow_dir(name)
     dv = '/rw/dv/%s' % name if args.prod else '/rw/dv/TMP/%s' % orig_name
