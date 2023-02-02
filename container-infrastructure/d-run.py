@@ -38,41 +38,49 @@ class Ctrl:
 
     def __post_init__(self):
         self.resolved = None
-        
+
     def debug(self, val, src):
         if DEBUG: err(f'resolved setting "{self.control_name}" \t to \t "{val}" \t from {src}')
         return val
 
-    def resolve(self, args, basedir, settings, test_mode, dev_mode):
+    def resolve(self, args, settings, test_mode, dev_mode):
         if self.resolved: return self.resolved
-        self.resolved = self._resolve(args, basedir, settings, test_mode, dev_mode)
+        answer = self._resolve(args, settings, test_mode, dev_mode)
+        # Make sure dev- or test- prefix is in place
+        if self.control_name == 'name':
+            if dev_mode and not answer.startswith('dev-'):
+                answer = 'dev-' + answer
+            elif test_mode and not answer.startswith('test-'):
+                answer = 'test-' + answer
+        # Cache the answer to save time on duplicate calls and so _resolve doesn't emit dup debug messages.
+        self.resolved = answer
         return self.resolved
-    
-    def _resolve(self, args, basedir, settings, test_mode, dev_mode):
+
+    def _resolve(self, args, settings, test_mode, dev_mode):
         if self.override_flag:
             attrname = self.override_flag.replace('--', '').replace('-', '_')
             tmp = getattr(args, attrname, None)
-            if tmp: return self.debug(tmp, 'override flag')
+            if not tmp is None: return self.debug(tmp, 'override flag')
 
         if self.override_env:
             tmp = os.environ.get(self.override_env, None)
-            if tmp: return self.debug(tmp, 'override env')
+            if not tmp is None: return self.debug(tmp, 'override env')
 
         if dev_mode:
             tmp = settings.get('dev_' + self.setting_name, None)
-            if tmp: return self.debug(tmp, f'dev_{self.setting_name} from settings file')
+            if not tmp is None: return self.debug(tmp, f'dev_{self.setting_name} from settings file')
         elif test_mode:
             tmp = settings.get('test_' + self.setting_name, None)
-            if tmp: return self.debug(tmp, f'test_{self.setting_name} from settings file')
+            if not tmp is None: return self.debug(tmp, f'test_{self.setting_name} from settings file')
         tmp = settings.get(self.setting_name, None)
-        if tmp: return self.debug(tmp, 'settings file')
+        if not tmp is None: return self.debug(tmp, f'@@ {test_mode=} {dev_mode=} {tmp=} settings file')
 
         if test_mode:
             tmp = self.test_mode_default
             if dev_mode: tmp = tmp.replace('test', 'dev')
         else: tmp = self.normal_mode_default
         if not tmp: return self.debug(tmp, 'default value (which is None for this mode)')
-        tmp = tmp.replace('@basedir', basedir)
+        tmp = tmp.replace('@basedir', settings['basedir'])
         if not tmp.startswith('$'): return self.debug(tmp, 'mode default')
         tmp2 = os.environ.get(tmp[1:], None)
         return self.debug(tmp2, f'mode default via {tmp}')
@@ -106,14 +114,14 @@ CONTROLS = [
 ]
 
 class ControlsManager:
-    def __init__(self, args, basedir, settings, test_mode, dev_mode):
-        self.args, self.basedir, self.settings, self.dev_mode = args, basedir, settings, dev_mode
+    def __init__(self, args, settings, test_mode, dev_mode):
+        self.args, self.settings, self.dev_mode = args, settings, dev_mode
         self.test_mode = test_mode or dev_mode
 
     def resolve_control(self, control_name):
         try:
             ctrl = next(x for x in CONTROLS if x.control_name == control_name)
-            return ctrl.resolve(self.args, self.basedir, self.settings, self.test_mode, self.dev_mode) if ctrl else None
+            return ctrl.resolve(self.args, self.settings, self.test_mode, self.dev_mode) if ctrl else None
         except StopIteration:
             raise Exception(f'internal error; no such control {control_name}')
 
@@ -135,7 +143,9 @@ def err(msg):
 
 def expand_log_shorthand(log, name):
     ctrl = log.lower()
-    if ctrl in ['n', 'none', 'z']:
+    if ctrl == '-':
+        return []
+    elif ctrl in ['n', 'none', 'z']:
         return ['--log-driver=none']
     elif ctrl == 's' or ctrl.startswith('s:') or ctrl.startswith('syslog'):
         if ':' in ctrl:
@@ -228,9 +238,7 @@ def add_simple_control(cmnd, control_name, param=None):
     val = get_control(control_name)       # could be a list from json or a csv string from flags.
     if not val: return None
 
-    if isinstance(val, str):
-        if '.' in val: val_list = val.split(',')
-        else: val_list = [val]
+    val_list = val if isinstance(val, list) else val.split(',')
     for i in val_list:
         if param: cmnd.extend([param, i])
         else: cmnd.append(i)
@@ -269,7 +277,7 @@ def map_dir(destdir, name, include_tree=False, include_files=False):
     clone_dir(os.path.dirname(destdir), os.path.dirname(mapped))
     # Destructive replace of the mapped dir.
     if os.path.exists(mapped):
-        print('Removing previous alt dir: %s' % mapped)
+        err('Removing previous alt dir: %s' % mapped)
         shutil.rmtree(mapped)
     # If not including the tree, the only thing to do is clone the top level dir.
     if not include_tree:
@@ -323,15 +331,19 @@ def get_puid(name):
 def search_for_dir(dir):
     if os.path.isdir(dir): return dir
     d_src_dir = os.environ.get('D_SRC_DIR')
-    if d_src_dir and os.path.isdir(d_src_dir): return d_src_dir
+    if d_src_dir:
+        candidate = os.path.join(d_src_dir, dir)
+        if os.path.isdir(candidate): return candidate
     d_src_dir2 = os.environ.get('D_SRC_DIR2')
-    if d_src_dir2 and os.path.isdir(d_src_dir2): return d_src_dir2
+    if d_src_dir2:
+        candidate = os.path.join(d_src_dir2, dir)
+        if os.path.isdir(candidate): return candidate
     cd = os.getcwd()
     if 'ktools/' in cd:
         pre, post = cd.split('ktools/', 1)
-        candidate = '%s/ktools/containers/%s' % (pre, dir)
+        candidate = os.path.join(pre, 'ktools/containers',  dir)
         if os.path.isdir(candidate): return candidate
-    candidate = '%s/docker-dev/%s' % (os.environ.get('HOME'), dir)
+    candidate = os.path.join(os.environ.get('HOME'), 'docker-dev', dir)
     if os.path.isdir(candidate): return candidate
     return None    # Out of ideas...
 
@@ -341,11 +353,13 @@ def search_for_dir(dir):
 
 def parse_settings(filename):
     if not os.path.isfile(filename): raise Exception(f'settings file not found: {filename} .  Either run from the docker dir to launch, or see --cd flag.')
-    dirpath = os.path.dirname(os.path.abspath(filename))
+    abspath = os.path.abspath(filename)
+    dirpath = os.path.dirname(abspath)
     settings = {
-        'settings_filename': filename,
+        'basedir': os.path.basename(dirpath),
+        'settings_basename': os.path.basename(filename),
+        'settings_pathname': abspath,
         'settings_dir': dirpath,
-        'settings_leaf_dir': dirpath.split('/')[-1]
     }
     with open(filename) as f:
         y = yaml.load(f, Loader=yaml.FullLoader)
@@ -358,7 +372,7 @@ def gen_command():
     settings = CONTROLS_MANAGER.settings
     test_mode = CONTROLS_MANAGER.test_mode
 
-    cmnd = [ get_control('docker_exec') ]
+    cmnd = [ get_control('docker_exec'), 'run' ]
 
     name = add_simple_control(cmnd, 'name')
     basename = name.replace('test-', '')
@@ -428,28 +442,35 @@ def gen_command():
 # ----------------------------------------
 # main
 
-def parse_args(args=sys.argv[1:]):
+def parse_args(argv=sys.argv[1:]):
     ap = argparse.ArgumentParser(description='docker container launcher')
 
     g1 = ap.add_argument_group('Modified run modes', 'Do something other than simply launching a container.')
-    g1.add_argument('--debug',       '-d', action='store_true', help='Have each control value print out the source of its setting')
-    g1.add_argument('--print-cmd',         action='store_true', help='Launch the container as normal, but also print out the command being used for the launch.')
-    g1.add_argument('--test',        '-t', action='store_true', help='Just print the command that would be run rather than running it.')
+    g1.add_argument('--debug',         '-d', action='store_true', help='Print the source of each control value, and final command as a list (showing args are separate)')
+    g1.add_argument('--print-cmd',           action='store_true', help='Launch the container as normal, but also print out the command being used for the launch.')
+    g1.add_argument('--show-settings', '-v', action='store_true', help='Output a Python dict with all resolved control values.')
+    g1.add_argument('--test',          '-t', action='store_true', help='Just print the command that would be run rather than running it.')
 
     g2 = ap.add_argument_group('Meta settings', 'Flags that effect how all the other settings are set.')
     g2.add_argument('--cd',                default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
-    g2.add_argument('--port-offset', '-P', default=10000, help='add this value to host-side port mappings in --test-mode')
+    g2.add_argument('--port-offset', '-P', default=10000, help='add this value to host-side port mappings in --test-mode or --dev-mode (default is 10,000)')
     g2.add_argument('--settings',    '-s', default='settings.yaml', help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
     g2.add_argument('--shell',       '-S', action='store_true', help='Override the entrypoint to an interactve tty-enable bash shell')
     g2.add_argument('--dev-mode',    '-D', action='store_true', help="Same as --test-mode, except change prefixes from 'test-' to 'dev-'")
     g2.add_argument('--test-mode',   '-T', action='store_true', help="Launch the container in test mode (changes most setting's defaults)")
 
-    g3 = ap.add_argument_group('Individual launch params', 'These override settings and environment variable defaults')
+    g3 = ap.add_argument_group('shortcuts')
+    g3.add_argument('--latest',      '-l', action='store_true', help='shortcut for "--tag latest"')
+
+    g4 = ap.add_argument_group('Individual launch params', 'These override settings and environment variable defaults')
     for c in CONTROLS:
         if not c.override_flag: continue
-        g3.add_argument(c.override_flag, help=c.doc)
+        g4.add_argument(c.override_flag, help=c.doc)
 
-    return ap.parse_args(args)
+    args = ap.parse_args(argv)
+    if args.latest: args.tag = 'latest'
+
+    return args
 
 
 def main():
@@ -460,18 +481,23 @@ def main():
 
     if args.cd:
         src_dir = search_for_dir(args.cd)
-        if src_dir: os.chdir(src_dir)
+        if src_dir:
+            os.chdir(src_dir)
+            err(f'Using source directory {src_dir}')
         else: err(f'dont know how to find directory: {args.cd}')
-    else:
-        src_dir = os.getcwd()
-    basedir = os.path.basename(src_dir)
 
     settings = parse_settings(args.settings)
 
     global CONTROLS_MANAGER
-    CONTROLS_MANAGER = ControlsManager(args, basedir, settings, args.test_mode, args.dev_mode)
+    CONTROLS_MANAGER = ControlsManager(args, settings, args.test_mode, args.dev_mode)
 
     cmnd = gen_command()
+
+    if args.show_settings:
+        out = {i.control_name: i.resolved for i in CONTROLS if i.resolved}
+        print(f'settings: {out}')
+
+    if args.debug: err(f'command: {cmnd}')
 
     if args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
