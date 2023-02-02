@@ -1,7 +1,4 @@
-'''Docker related support library.
-
-This module primarily provides logic that was too hard to code in shell which is
-needed by ../../docker-infrastructure/*.
+'''Container related support library.
 
 Some highlights:
   - Return the directory with copy-on-write contents for an up container
@@ -12,27 +9,26 @@ Some highlights:
 
 '''
 
-import atexit, os, random, ssl, string, sys, time
+import atexit, os, random, ssl, string, sys, threading, time
 import kcore.common as C
 import kcore.uncommon as UC
+
+from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
 
 DOCKER_BIN = os.environ.get('DOCKER_EXEC', 'docker')
+DV_BASE = os.environ.get('DOCKER_VOL_BASE', '/rw/dv')
 
-DLIB=os.environ.get('DLIB', None)
-if not DLIB:
-    DLIB = '/var/lib/docker/200000.200000'
-    if not os.path.isdir(DLIB): DLIB = '/var/lib/docker'
-
+# Testing related
 OUT = sys.stdout
+
 
 # ----------------------------------------
 # Intended as external command targets (generally called by ~/bin/d)
 
-
 def get_cid(container_name):  # or None if container not running.
-    out = UC.popener([DOCKER_BIN, 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
+    out = C.popener([DOCKER_BIN, 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
     for line in out.split('\n'):
         if ' ' not in line: continue
         cid, name = line.split(' ', 1)
@@ -42,7 +38,7 @@ def get_cid(container_name):  # or None if container not running.
 
 def latest_equals_live(container_name):
     try:
-        ids = UC.popener(
+        ids = C.popener(
             [DOCKER_BIN, 'images', '--filter=reference=ktools/%s' % container_name,
              '--format="{{.Tag}} {{.ID}}"'])
         id_map = {}
@@ -60,28 +56,111 @@ def run_command_in_container(container_name, cmd, raw_popen=False):
     command = [DOCKER_BIN, 'exec', '-u', '0', container_name]
     if isinstance(cmd, list): command.extend(cmd)
     else: command.append(cmd)
-    return UC.popen(command) if raw_popen else UC.popener(command)
+    return C.popen(command) if raw_popen else C.popener(command)
 
 
 def find_cow_dir(container_name):
     try:
-        upperdir_json = UC.popener(f'{DOCKER_BIN} inspect {container_name} | fgrep UpperDir', shell=True).strip()
+        upperdir_json = C.popener(f'{DOCKER_BIN} inspect {container_name} | fgrep UpperDir', shell=True).strip()
     except:
         sys.exit('cannot find container (is it up?)')
     key, val = upperdir_json.split(': ', 1)
     return val.replace('",', '').replace('"', '')
 
-def get_cow_dir(container_name): return find_cow_dir(container_name)  # alias for above
+
+def find_ip_for(name): return C.popener(['d', 'ip', name])
+
+def get_cow_dir(container_name): return find_cow_dir(container_name)  # alias for find_cow_dir
 
 
 # ----------------------------------------
 # Testing related
 
-def emit(msg): OUT.write('>> %s\n' % msg)
+# ---------- general support
 
 def abort(msg):
     emit(msg)
     sys.exit(msg)
+
+
+def emit(msg): OUT.write('>> %s\n' % msg)
+
+
+def gen_random_cookie(len=15):
+    return ''.join(random.choice(string.ascii_letters) for i in range(len))
+
+
+# Send a list of strings, read response after each and return in a list.
+# (used for things like exchanging interactive commands with a remote SMTP server non-interactively)
+def socket_exchange(sock, send_list, add_eol=False, emit_transcript=False):
+    resp_list = []
+    for i in send_list:
+        if emit_transcript: emit('sending: %s' % i)
+        if add_eol: i += '\n'
+        if PY_VER == 3: i = i.encode('utf-8')
+        sock.sendall(i)
+        resp = sock.recv(1024)
+        if PY_VER == 3: resp = resp.decode('utf-8')
+        resp = resp.strip()
+        if emit_transcript: emit('received: %s' % resp)
+        resp_list.append(resp)
+    return resp_list
+
+
+# ---------- NEW NEW @@
+
+@dataclass
+class ContainerData:
+    name: str
+    ip: str
+    cow: str
+    vol_dir: str
+    port_shift: int
+
+
+def find_or_start_container(test_mode, name='@basedir'):
+    if name == '@basedir': name = os.path.basename(os.getcwd())
+
+    if test_mode:
+        # Launch test container on a background thread.
+        fullname = 'test-' + name
+        atexit.register(stop_container_at_exit, fullname)
+
+        thread = threading.Thread(target=start_test_container, args=[name,])
+        thread.daemon = True
+        thread.start()
+        time.sleep(2)  # Give time for container to start.
+    else:
+        # Assume production container is already running (and has no name prefix).
+        fullname = name
+
+    # TODO(defer): ideally, at least the vol_dir and port_shift fields should
+    # be populated by getting that data our of the d-run command rather than
+    # manually re-creating it here.  But we run d-run foreground/syncronously
+    # (better for watching test results unfold), so getting any output from it
+    # would be tricky.  Oh well.
+    #
+    return ContainerData(
+        name, find_cow_dir(fullname), find_ip_for(fullname),
+        f'{DV_BASE}/TMP/{name}' if test_mode else f'{DV_BASE}/{name}',
+        10000 if test_mode else 0)
+
+
+def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name='@basedir'):
+    test_mode = os.environ.get(control_var) != '1'
+    return find_or_start_container(test_mode, name)
+
+
+def start_test_container(name):
+    emit('starting test container for: ' + name)
+    rslt = C.popen(['d-run', '--test-mode', '--name', name, '--print-cmd', '-v'])
+    emit(f'container exited;  results: {rslt}')
+    return rslt.ok
+
+
+# ---------- OLD OLD @@
+
+# ---------- launching/manipulating containers-under-test
 
 def add_testing_args(ap):
     ap.add_argument('--name', '-n', help='Override default name of container to launch and/or test')
@@ -89,6 +168,7 @@ def add_testing_args(ap):
     ap.add_argument('--prod', '-p', action='store_true', help='Test the production container, rather than the dev container')
     ap.add_argument('--run',  '-r', action='store_true', help='Start up the container to test')
     ap.add_argument('--tag',  '-t', default='latest', help='If using --run, what image tag to launch')
+
 
 def launch_or_find_container(args, extra_run_args=None):
     global OUT
@@ -106,21 +186,22 @@ def launch_or_find_container(args, extra_run_args=None):
         OUT = open(args.out, 'w')
 
     if args.run:
-        atexit.register(stop_container_at_exit, args)
+        atexit.register(stop_container_at_exit, name)
         launch_test_container(args, extra_run_args, OUT)
         if os.fork() == 0:
             run_log_relay(args, OUT)
             sys.exit(0)
 
-    try: ip = UC.popener(['d', 'ip', name])
+    try: ip = C.popener(['d', 'ip', name])
     except: ip = None
     cow = find_cow_dir(name)
     dv = '/rw/dv/%s' % name if args.prod else '/rw/dv/TMP/%s' % orig_name
     return name, ip, cow, dv
 
+
 def launch_test_container(args, extra_run_args, out):
     emit('launching container ' + args.real_name)
-    cmnd = ['d-run', '--tag', args.tag, '--print-cmd', '--log', 'passthrough']
+    cmnd = ['d-run', '--tag', args.tag, '--print-cmd']
     if args.name: cmnd.extend(['--name', args.name])
     if extra_run_args: cmnd.extend(extra_run_args)
     test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
@@ -129,23 +210,30 @@ def launch_test_container(args, extra_run_args, out):
     if test_net == 'docker2':  ## TODO(defer): kds specific
         cmnd.extend(['--subnet', '3'])
     emit(' '.join(cmnd))
-    rslt = UC.popen(cmnd, stdout=out, stderr=out)
+    rslt = C.popen(cmnd, stdout=out, stderr=out)
     if not rslt.ok: sys.exit(rslt.out)
 
+
 def run_log_relay(args, out):
-    rslt = UC.popen([DOCKER_BIN, 'logs', '-f', args.real_name], stdout=out, stderr=out)
+    rslt = C.popen([DOCKER_BIN, 'logs', '-f', args.real_name], stdout=out, stderr=out)
     if not rslt.ok: sys.exit(rslt.out)
     emit('log relay done.')
 
 
-def stop_container_at_exit(args):
-    if not args.run or args.prod: return False   # Don't stop something we didn't start.
-    if not args.real_name: return False
-    cid = get_cid(args.real_name)
-    if not cid: return False    # Already stopped
-    rslt = UC.popener([DOCKER_BIN, 'stop', '-t', '2', args.real_name])
-    return not rslt.startswith('ERROR')
+def stop_container_at_exit(name):
+    cid = get_cid(name)
+    if not cid:
+        print(f'container {name} already stopped.', file=sys.stderr)
+        return False    # Already stopped
+    print(f'stopping container {name}.', file=sys.stderr)
+    rslt = C.popener([DOCKER_BIN, 'stop', '-t', '2', name])
+    if rslt.startswith('ERROR'):
+        print(f'error stopping container {name}: {rslt}', file=sys.stderr)
+        return False
+    return True
 
+
+# ---------- assertions
 
 # filename is in the regular host filesystem.
 # returns error message of None if all ok.
@@ -183,7 +271,7 @@ def file_expect_within(within_seconds, expect, filename, invert=False, missing_o
 
 # filename is inside the conainter.
 def container_file_expect(expect, container_name, filename):
-    data = UC.popener([DOCKER_BIN, 'cp', '%s:%s' % (container_name, filename), '-'])
+    data = C.popener([DOCKER_BIN, 'cp', '%s:%s' % (container_name, filename), '-'])
     if data.startswith('ERROR'): abort('error getting file %s:%s' % (container_name, filename))
     if expect in data:
         emit('success; saw "%s" in %s:%s' % (expect, container_name, filename))
@@ -193,7 +281,7 @@ def container_file_expect(expect, container_name, filename):
 
 # expect commnd run on host (not container) to return certain output and/or error text.
 def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
-    rslt = UC.popen(cmd, send_in)
+    rslt = C.popen(cmd, send_in)
     if expect_returncode is not None and rslt.returncode != expect_returncode: abort('wrong return code: %d <> %d for %s' % (rslt.returncode, expect_returncode, cmd))
     if expect_out is not None:
         if rslt.stdout and not expect_out: abort('Unexpected output "%s" for: %s' % (rslt.stdout, cmd))
@@ -246,22 +334,4 @@ def web_expect(expect, server, path, port=80, expect_status=None, post_params=No
             return 0
     abort('Unable to find "%s" in: %s; response: %s' % (expect, url, resp.text))
 
-
-def gen_random_cookie(len=15):
-    return ''.join(random.choice(string.ascii_letters) for i in range(len))
-
-# Send a list of strings, read response after each and return in a list.
-def socket_exchange(sock, send_list, add_eol=False, emit_transcript=False):
-    resp_list = []
-    for i in send_list:
-        if emit_transcript: emit('sending: %s' % i)
-        if add_eol: i += '\n'
-        if PY_VER == 3: i = i.encode('utf-8')
-        sock.sendall(i)
-        resp = sock.recv(1024)
-        if PY_VER == 3: resp = resp.decode('utf-8')
-        resp = resp.strip()
-        if emit_transcript: emit('received: %s' % resp)
-        resp_list.append(resp)
-    return resp_list
 

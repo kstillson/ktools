@@ -56,9 +56,9 @@ This is seriously stripping down the attack surface area an attacker will have
 to work with down to its absolute minimum.
 
 For the details of the scripts I use to set up my containers and strip down
-their contents, see [Readme-containers](../docker-containers/README-containers.md).
+their contents, see [Readme-containers](../containers/README-containers.md).
 
-Most of the magic is [here](../docker-containers/kcore-baseline/files/prep).
+Most of the magic is [here](../containers/kcore-baseline/files/prep).
 
 
 ### Uid namespace mapping
@@ -94,7 +94,7 @@ Anyway, once you activate uid-mapping, a hacker can go to all the trouble they
 care to to "hack root" from their foothold inside your service, and they'll
 still find themselves with a completely unprivileged account.
 
-See [Readme-uid-mapping.md](../docker-infrastructure/Readme-uid-mapping.md)
+See [Readme-uid-mapping.md](../container-infrastructure/Readme-uid-mapping.md)
 for more information on activating this feature.
 
 
@@ -128,10 +128,10 @@ bash command into a .bash_history file.  Which I do.
 
 Relevant tools:
 
-[d cow-dir](../docker-infrastructure/d.sh) will output the COW directory
+[d cow-dir](../container-infrastructure/d.sh) will output the COW directory
 for a container.
 
-[d-cowscan](../docker-infrastructure/d-cowscan.py) contains the process for
+[d-cowscan](../container-infrastructure/d-cowscan.py) contains the process for
 scanning all up containers for files not on an IGNORE_LIST.
 
 [procmon](../services/procmon) wraps that into a security scanning service

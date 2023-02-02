@@ -24,12 +24,12 @@ These affect the way the "make" command works.
 
 ## Docker controls: building containers
 
-These affect how containers are built by the docker-infrastructure/d-build.sh
+These affect how containers are built by the container-infrastructure/d-build.sh
 script (which is run automatically by make commands run explicitly inside the
-docker-containers subdirectory).
+./containers subdirectory).
 
 - BUILD_DOCKER_CONTAINERS: if set to "1", then automatically include the
-  docker-containers subdirectory from the main directory's targets.
+  ./containers subdirectory from the main directory's targets.
 
 - DBUILD_PARAMS: d-build will pass anything set here through to the "docker
   build" command.  Not generally needed.
@@ -62,7 +62,7 @@ If set to any other value, or if not using podman, then
   d-build is given a relative directory in-which to find a container to build
   (via the --cd flag), this is the directory the reference will be relative to.
   Should generally be set to the full path of the directory contianing this
-  file, with "/docker-containers" appended.
+  file, with "/containers" appended.
 
 - D_SRC_DIR2: If set, is similar to D_SRC_DIR, but provides an alternate
   location that d.sh, d-build.sh, and similar tools will search for container
@@ -70,7 +70,7 @@ If set to any other value, or if not using podman, then
   container collections that exist outside the ktools subtree.  Note that for
   such a secondary collection to work, it needs to contain symlinks (or
   copies, or something similar) in the D_SRC_DIR2 directory to ktools/etc and
-  ktools/docker-containers/kcore-baseline.
+  ktools/containers/kcore-baseline.
   
 
 ## Docker controls: testing containers
@@ -88,7 +88,7 @@ If set to any other value, or if not using podman, then
 
 ## Docker controls: launching containers
 
-These affect how containers are launched by docker-infrastructure/d-run.sh
+These affect how containers are launched by container-infrastructure/d-run.sh
 
 - DOCKER_EXEC: Defaults to '/usr/bin/docker', but can be changed to alternate
   commands with the same API (e.g. "podman") or a wrapper script.
@@ -97,7 +97,7 @@ These affect how containers are launched by docker-infrastructure/d-run.sh
   mounted volume source directories, i.e. $DOCKER_VOL_BASE/{container_name}/...
 
 - KTOOLS_DRUN_LOG: default Docker log type to use for
-  docker-infrastructure/d-run.sh if not specified on the command-line or in
+  container-infrastructure/d-run.sh if not specified on the command-line or in
   the container's settings file.
 
 - KTOOLS_DRUN_NETWORK: default Docker network to use when launching containers

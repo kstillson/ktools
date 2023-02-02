@@ -100,7 +100,7 @@ def push_notification(msg, level='other'):
 
   C.log(f'pushbullet sending [level={level}]: {msg}')
   if level != 'other': msg += ' !%s' % level
-  rslt = UC.popen(['/usr/local/bin/pb-push', msg], env=env)
+  rslt = C.popen(['/usr/local/bin/pb-push', msg], env=env)
   if not rslt.ok: C.log_warning(f'pushbullet returned unexpected status: {rslt.out}')
   return rslt.ok
 

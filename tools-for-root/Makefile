@@ -21,7 +21,7 @@ install:
 	sudo $(MAKE) common_install
 
 uninstall:
-	@echo "about to sudo for docker-infrastructure:uninstall -- these were installed for root by sudo, and so must be uninstalled that way."
+	@echo "about to sudo for container-infrastructure:uninstall -- these were installed for root by sudo, and so must be uninstalled that way."
 	sudo $(MAKE) common_uninstall
 
 update:

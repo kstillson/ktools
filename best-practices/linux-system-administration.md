@@ -4,7 +4,7 @@
 ## Manual DNS assignment
 
 I use, and recommend, a somewhat unusual DHCP and DNS
-[configuration](../docker-containers/dnsdock/files/etc/dnsmasq): IP addresses
+[configuration](../containers/dnsdock/files/etc/dnsmasq): IP addresses
 and hostnames are assigned manually in my DHCP server.  Why?
 
 
@@ -35,7 +35,7 @@ and need to register it's MAC address and give it an IP and hostname.
 ## Network tags and virtual subnets
 
 If you look at my
-[dnsmasq.conf](../docker-containers/dnsdock/files/etc/dnsmasq/dnsmasq.conf),
+[dnsmasq.conf](../containers/dnsdock/files/etc/dnsmasq/dnsmasq.conf),
 you'll see my "subnet plan."  Basically, I use the entire 192.168.x.x / 16 for
 my local network.  Now, that's far more IP numbers than I need, but I divvy
 things up by subnet.  In most networks, subnet is reflective of physical
@@ -83,7 +83,7 @@ tag color.  Specifically-
   and any other behavior is suspicious.
 
   btw, for machine updates, I use a [squid
-  proxy](../docker-containers/squickdock).  This not only provides faster
+  proxy](../containers/squickdock).  This not only provides faster
   downloads when multiple machines are upgrading and can pull down the
   identical files from the local network rather than from outside, but also
   means I can easily enough put in rules to allow/expect traffic from my

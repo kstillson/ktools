@@ -41,7 +41,7 @@ system's processes.  This outside-a-container position makes procmon a good
 place to check a number of other security-like conditions, so a bunch of other
 checks are added-on.
 
-Specifically- procmon can run d-cowscan (see ../../docker-infrastructure),
+Specifically- procmon can run d-cowscan (see ../../container-infrastructure),
 which identifies unexpected copy-on-write filesystem changes inside
 containers.  Additionally, procmon can check to see if the root filesystem is
 mounted read-only; I generally keep mine locked-down, and it's handy for
@@ -137,7 +137,7 @@ class ProcessData:
 def get_docker_map():
   '''returns dict: cid:str -> container_name:str'''
   cid_map = {}
-  for i in UC.popener(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
+  for i in C.popener(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
     if not i: continue
     if not ' ' in i:
       C.log_error(f'unexpected output from d-map: {i}')
@@ -204,7 +204,7 @@ class Scanner(object):
       with open(ARGS.output, 'w') as f: f.write(str(WL.WHITELIST).replace(' WL', '\n WL'))
 
   def scan_cow(self):
-    for i in UC.popener(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
+    for i in C.popener(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
       if 'all ok' in i: continue
       self.cow_errors.append(i)
 
@@ -422,11 +422,11 @@ def healthz_handler(request):
 
 
 def panic_handler(request):
-  return UC.popener(['/usr/bin/sudo', '/usr/local/bin/panic'])
+  return C.popener(['/usr/bin/sudo', '/usr/local/bin/panic'])
 
 
 def pstree_handler(request):
-  return UC.popener(['/bin/ps', 'aux', '--forest'])
+  return C.popener(['/bin/ps', 'aux', '--forest'])
 
 
 def scan_handler(request):
@@ -447,7 +447,7 @@ def zap_handler(request):
 # ---------- main
 
 def parse_args(argv):
-  parser = UC.argparse_epilog(description='process scanner')
+  parser = C.argparse_epilog(description='process scanner')
   parser.add_argument('--debug',   '-D',   action='store_true', help='output debugging data to stdout (works best with -t)')
   parser.add_argument('--delay',   '-d',   type=int, default=120, help='delay between automatic rescans (seconds)')
   parser.add_argument('--logfile', '-l',   default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')

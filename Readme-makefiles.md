@@ -29,7 +29,7 @@ bunch of (mostly internal) dependencies must be *installed* before images can
 be built or tested, and the constructed containers likely won't be useful
 (might not even pass their internal tests) until you do some customization to
 fit them to your system.  So to avoid confusion, the top level Makefile will
-not descend into the docker-containers subdirectory unless this variable is
+not descend into the containers subdirectory unless this variable is
 set to "1".
 
 - **NO_TRACKING**
@@ -78,7 +78,7 @@ The following targets are accepted both at the top-level and in the individual s
    images are actually built.
 
 - "**make test**" runs tests.  For pylib/ these are very simple in-place
-  unit tests.  For services/ and docker-containers/, this involves actually
+  unit tests.  For services/ and containers/, this involves actually
   starting up real servers (generally on random high ports) and peppering
   them with requests to confirm operation.
 

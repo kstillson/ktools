@@ -38,7 +38,7 @@ you started running more specific tests to figure out what.
 One of my favorite things to monitor is file last-change timestamps.  As an
 example- I use syslog and ssh-tunnels to centralize my Linux system log
 messages.  Part of my [syslog-ng
-configuration](../docker-containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf)
+configuration](../containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf)
 takes messages from "cron" and splits them out to separate files based on what
 host they came from.  That config uses a glob expression, i.e. I don't need to
 manually register each host with a separate routing rule; when a new host gets
@@ -92,14 +92,14 @@ what is wrong, if things are not "ok."
 
 It's really easy to design monitoring infrastructure to scan a bunch of web
 server /healthz's to see if they're all "ok".  Here's my [Nagios
-plugin](../docker-containers/nagdock/files/usr/lib/nagios/plugins/check_healthz)
+plugin](../containers/nagdock/files/usr/lib/nagios/plugins/check_healthz)
 to make this really easy.
 
 
 ## Monitoring infrastructure: Nagios
 
 I use Nagios as my [centralized monitoring
-system](../docker-containers/nagdock).  Nagios is perhaps a bit
+system](../containers/nagdock).  Nagios is perhaps a bit
 over-engineered for simple use-cases- it supports multiple teams with dynamic
 schedules and cascading notifications, etc.  But it's reasonably easy to skip
 the complexity when you don't need it.
@@ -132,7 +132,7 @@ Finally, let's talk about Linux system logs.  Linux generates *a lot* of
 system logs, and it can be difficult to pick out the interesting ones.
 
 Over time, I've developed a pretty good [configuration for
-syslog-ng](../docker-containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf).
+syslog-ng](../containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf).
 
 Here's the idea -- I divvy log messages into one a several categories:
 

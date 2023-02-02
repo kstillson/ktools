@@ -13,7 +13,7 @@ addpath ${HOME}/bin || true
 
 # ---- ktools controls
 
-export D_SRC_DIR="/root/ktools/docker-containers"
+export D_SRC_DIR="/root/ktools/containers"
 export DBUILD_PARAMS="--network host"
 export DBUILD_REPO="${DBUILD_REPO:-regdock:5444/ktools}"
 export DOCKER_EXEC="podman"

@@ -45,7 +45,7 @@ MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 RP_FLAGS_BASE="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
 RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
-D_SRC_DIR="${D_SRC_DIR_DIR:-/root/dev/ktools/docker-containers}"            # Directory containing docker source dirs.
+D_SRC_DIR="${D_SRC_DIR_DIR:-/root/dev/ktools/containers}"                   # Directory containing docker source dirs.
 DD="${KTOOLS_Q_DD:-${D_SRC_DIR}/dnsdock/files/etc/dnsmasq/private.d}"       # Where dnsmasq config files are stored.
 GIT_DIRS="${KTOOLS_Q_GIT_DIRS}"                                             # List of git dirs this script manages.
 KM="https://${KMHOST:-localhost:4444}"

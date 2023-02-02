@@ -50,6 +50,6 @@ prep-stamp:
 	touch prep-stamp
 
 prep-stamp-root:
-	sudo ls /root/bin/d-build || { echo ""; read -p 'parts of kcore *also* needs to be installed for user/root to build docker containers.  okay to do that now (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E SUBDIRS="pylib docker-infrastructure" make -C .. install; else exit -1; fi; }
+	sudo ls /root/bin/d-build || { echo ""; read -p 'parts of kcore *also* needs to be installed for user/root to build docker containers.  okay to do that now (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E SUBDIRS="pylib container-infrastructure" make -C .. install; else exit -1; fi; }
 	sudo -E docker network rm docker2 >&/dev/null || true
 	sudo -E docker network create -d bridge --gateway 192.168.3.1 --subnet 192.168.3.0/24 --opt com.docker.network.bridge.name=docker2 docker2

@@ -49,7 +49,7 @@ cd ktools
 [[ -L private.d ]] || ln -s ../ktools-ref/private.d
 
 echo ">> install docker infra"
-cd docker-infrastructure
+cd container-infrastructure
 make
 make install
 

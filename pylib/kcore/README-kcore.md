@@ -42,7 +42,7 @@ Some highlights:
 ## docker_lib.py
 
 A bunch of Docker related library routines, primarily used by
-../docker-infrastructure.
+../container-infrastructure.
 
 It can do things like locate the copy-on-write directory for a container,
 determine if the latest built image is tagged "live", and provides a bunch of
