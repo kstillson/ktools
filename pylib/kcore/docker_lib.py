@@ -115,6 +115,7 @@ class ContainerData:
     ip: str
     cow: str
     vol_dir: str
+    port_shift: int
 
 
 def find_or_start_container(test_mode, name='@basedir'):
@@ -133,9 +134,16 @@ def find_or_start_container(test_mode, name='@basedir'):
         # Assume production container is already running (and has no name prefix).
         fullname = name
 
+    # TODO(defer): ideally, at least the vol_dir and port_shift fields should
+    # be populated by getting that data our of the d-run command rather than
+    # manually re-creating it here.  But we run d-run foreground/syncronously
+    # (better for watching test results unfold), so getting any output from it
+    # would be tricky.  Oh well.
+    #
     return ContainerData(
         name, find_cow_dir(fullname), find_ip_for(fullname),
-        f'{DV_BASE}/TMP/{name}' if test_mode else f'{DV_BASE}/{name}')
+        f'{DV_BASE}/TMP/{name}' if test_mode else f'{DV_BASE}/{name}',
+        10000 if test_mode else 0)
 
 
 def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name='@basedir'):
