@@ -121,16 +121,24 @@ class ContainerData:
 def find_or_start_container(test_mode, name='@basedir'):
     if name == '@basedir': name = os.path.basename(os.getcwd())
 
+    fullname = 'test-' + name if test_mode else name
+    cid = get_cid(fullname)
     if test_mode:
-        # Launch test container on a background thread.
-        fullname = 'test-' + name
-        atexit.register(stop_container_at_exit, fullname)
-
-        thread = threading.Thread(target=start_test_container, args=[name,])
-        thread.daemon = True
-        thread.start()
-        time.sleep(2)  # Give time for container to start.
+        # Launch test container (if needed) on a background thread.
+        if cid:
+            print(f'running against existing test container {fullname} {cid}', file=sys.stderr)
+        else:
+            atexit.register(stop_container_at_exit, fullname)
+            thread = threading.Thread(target=start_test_container, args=[name,])
+            thread.daemon = True
+            thread.start()
+            time.sleep(2)  # Give time for container to start.
     else:
+        if cid:
+            print(f'running against existing prod container {fullname} {cid}', file=sys.stderr)
+        else:
+            print(f'warning: container "{fullname}" not found', file=sys.stderr)
+
         # Assume production container is already running (and has no name prefix).
         fullname = name
 
@@ -141,7 +149,7 @@ def find_or_start_container(test_mode, name='@basedir'):
     # would be tricky.  Oh well.
     #
     return ContainerData(
-        name, find_cow_dir(fullname), find_ip_for(fullname),
+        name, find_ip_for(fullname), find_cow_dir(fullname),
         f'{DV_BASE}/TMP/{name}' if test_mode else f'{DV_BASE}/{name}',
         10000 if test_mode else 0)
 
@@ -186,12 +194,14 @@ def launch_or_find_container(args, extra_run_args=None):
         OUT = open(args.out, 'w')
 
     if args.run:
-        atexit.register(stop_container_at_exit, name)
-        launch_test_container(args, extra_run_args, OUT)
         if os.fork() == 0:
+            launch_test_container(args, extra_run_args, OUT)
             run_log_relay(args, OUT)
             sys.exit(0)
+        else:
+            atexit.register(stop_container_at_exit, name)
 
+    time.sleep(1)  #  Give container a chance to launch.
     try: ip = C.popener(['d', 'ip', name])
     except: ip = None
     cow = find_cow_dir(name)
@@ -206,7 +216,7 @@ def launch_test_container(args, extra_run_args, out):
     if extra_run_args: cmnd.extend(extra_run_args)
     test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
     if not args.prod:
-        cmnd.extend(['--name_prefix', 'test-', '--network', test_net, '--rm', '-v'])
+        cmnd.extend(['--name_prefix', 'test-', '--network', test_net, '--rm=1', '-v'])
     if test_net == 'docker2':  ## TODO(defer): kds specific
         cmnd.extend(['--subnet', '3'])
     emit(' '.join(cmnd))
@@ -221,8 +231,7 @@ def run_log_relay(args, out):
 
 
 def stop_container_at_exit(name):
-    cid = get_cid(name)
-    if not cid:
+    if not get_cid(name):
         print(f'container {name} already stopped.', file=sys.stderr)
         return False    # Already stopped
     print(f'stopping container {name}.', file=sys.stderr)
