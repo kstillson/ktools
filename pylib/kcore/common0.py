@@ -37,12 +37,28 @@ CCC = {
     'reset' :   '\033[0;0m',
 }
 
-def c(msg, color, bold=False):
-    '''eg:  print(f"hello {C.c('there', 'green')} world.")'''
+def c(msg, color, out=0, bold=False):
+    '''Generate a colorized message.  eg: print(f"hello {C.c('there', 'green')} world.")
+       out=1 prints to stdout, 2 prints to stderr.'''
     if not sys.stdin.isatty(): return msg
     code = CCC.get(color.lower(), '')
-    if bold: code.replace('[', '[1;')
-    return code + msg + CCC['reset']
+    if bold: code = code.replace('[', '[1;')
+    answer = code + msg + CCC['reset']
+    if out == 1: print(answer)
+    if out == 2: print(answer, file=sys.stderr)
+    return answer
+
+def c0(colored_prefix, msg, color='auto', bold=True, out=0):
+    '''Generate a message with a colorzed prefix.  e.g. C.c0('warning', 'something is wrong', out=2) '''
+    if color == 'auto':
+        lc = colored_prefix.lower()
+        if lc.startswith('e'): color = 'red'
+        elif lc.startswith('w'): color = 'yellow'
+        else: color = 'green'
+    answer = c(colored_prefix, color, 0, bold) + ': ' + msg
+    if out == 1: print(answer)
+    if out == 2: print(answer, file=sys.stderr)
+    return answer
 
 
 # ----------------------------------------
