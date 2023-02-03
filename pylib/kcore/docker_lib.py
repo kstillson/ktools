@@ -11,7 +11,6 @@ Some highlights:
 
 import atexit, os, random, ssl, string, sys, threading, time
 import kcore.common as C
-import kcore.uncommon as UC
 
 from dataclasses import dataclass
 
@@ -107,7 +106,7 @@ def socket_exchange(sock, send_list, add_eol=False, emit_transcript=False):
     return resp_list
 
 
-# ---------- NEW NEW @@
+# ---------- THE NEW WAY @@
 
 @dataclass
 class ContainerData:
@@ -118,8 +117,17 @@ class ContainerData:
     port_shift: int
 
 
-def find_or_start_container(test_mode, name='@basedir'):
-    if name == '@basedir': name = os.path.basename(os.getcwd())
+def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'):
+    # Handle case where current dir isn't the one containing the settings file.
+    # (e.g. multiple pytest's run from a parent directory).
+    if os.path.isfile(settings):
+        basedir = os.path.basename(os.path.dirname(os.path.abspath(settings)))
+    else:
+        settings_dir = os.path.dirname(C.get_callers_module(levels=3).__file__)
+        settings = os.path.join(settings_dir, settings)
+        if not os.path.isfile(settings): raise Exception(f'Unable to find settings file: {settings}')
+        basedir = os.path.basename(settings_dir)
+    if name == '@basedir': name = basedir
 
     fullname = 'test-' + name if test_mode else name
     cid = get_cid(fullname)
@@ -129,7 +137,7 @@ def find_or_start_container(test_mode, name='@basedir'):
             print(f'running against existing test container {fullname} {cid}', file=sys.stderr)
         else:
             atexit.register(stop_container_at_exit, fullname)
-            thread = threading.Thread(target=start_test_container, args=[name,])
+            thread = threading.Thread(target=start_test_container, args=[name, settings])
             thread.daemon = True
             thread.start()
             time.sleep(2)  # Give time for container to start.
@@ -154,19 +162,19 @@ def find_or_start_container(test_mode, name='@basedir'):
         10000 if test_mode else 0)
 
 
-def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name='@basedir'):
+def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name='@basedir', settings='settings.yaml'):
     test_mode = os.environ.get(control_var) != '1'
-    return find_or_start_container(test_mode, name)
+    return find_or_start_container(test_mode, name, settings)
 
 
-def start_test_container(name):
+def start_test_container(name, settings='settings.yaml'):
     emit('starting test container for: ' + name)
-    rslt = C.popen(['d-run', '--test-mode', '--name', name, '--print-cmd', '-v'])
+    rslt = C.popen(['d-run', '--test-mode', '--name', name, '--settings', settings, '--print-cmd'])
     emit(f'container exited;  results: {rslt}')
     return rslt.ok
 
 
-# ---------- OLD OLD @@
+# ---------- THE OLD WAY @@ (deprecation pending)
 
 # ---------- launching/manipulating containers-under-test
 
