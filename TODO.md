@@ -15,6 +15,11 @@
   - graphical interface for inputs and outputs
   - homectrl push update to all
 
+# bugs to fix
+
+  - make for things like services/keymaster/km_helper fail until
+    kcore is installed.  breaks the normal make,test,install order.
+
 # docker improvements
 
   - ./containers needs a :prep
