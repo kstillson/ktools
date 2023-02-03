@@ -109,7 +109,7 @@ function get_container_names() {
     done
 }
 
-# reground output of list-autostart-waves by wave
+# re-group output of list-autostart-waves by wave
 function waves() {
     current_wave=""
     current_out=""
