@@ -20,9 +20,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import kcore.auth as A
+import kcore.common as C
 
 
-# ---------- local types
+# ---------- abstraction for a control set by various different sources
 
 DEBUG = False
 
@@ -57,6 +58,8 @@ class Ctrl:
         return self.resolved
 
     def _resolve(self, args, settings, test_mode, dev_mode):
+        if test_mode and self.setting_name == 'log': return self.debug('none', 'special case: always disable logging in --test-mode')
+
         if self.override_flag:
             attrname = self.override_flag.replace('--', '').replace('-', '_')
             tmp = getattr(args, attrname, None)
@@ -73,7 +76,7 @@ class Ctrl:
             tmp = settings.get('test_' + self.setting_name, None)
             if not tmp is None: return self.debug(tmp, f'test_{self.setting_name} from settings file')
         tmp = settings.get(self.setting_name, None)
-        if not tmp is None: return self.debug(tmp, f'@@ {test_mode=} {dev_mode=} {tmp=} settings file')
+        if not tmp is None: return self.debug(tmp, f'settings file')
 
         if test_mode:
             tmp = self.test_mode_default
@@ -91,7 +94,7 @@ class Ctrl:
 CONTROLS = [
 #        control name,   override_flag,    override_env,             setting_name,  test-mode-default, normal default     doc
     Ctrl('autostart',    None,             None,                     'autostart',   None,              None,              'string indicating startup wave to auto-launch this container system system boot. Not used by this script.'),
-    Ctrl('command',      None,             None,                     'cmd',         None,              None,              'send this as the command to run within the container. If an entrypoint is in use, this because params to that entrypoint (i.e. same as --extra-init)'),
+    Ctrl('command',      '--cmd',          None,                     'cmd',         None,              None,              'send this as the command to run within the container. If an entrypoint is in use, this because params to that entrypoint (i.e. same as --extra-init)'),
     Ctrl('docker_exec',  '--docker-exec',  'DOCKER_EXEC',            'docker_exec', '/usr/bin/docker', '/usr/bin/docker', 'container manager to use (docker or podman)'),
     Ctrl('env',          '--env',          None,                     'env',         None,              None,              'list of {name}={value} pairs to set in environment within the container'),
     Ctrl('extra_docker', None,             None,                     'extra_docker',None,              None,              'list of additional command line arguments to send to the container launch CLI'),
@@ -130,16 +133,14 @@ CONTROLS_MANAGER = None  ## initialized by main()
 def get_control(name): return CONTROLS_MANAGER.resolve_control(name)
 
 
-# ----------------------------------------
-# General purpose subroutines
+# ---------- general purpose helpers
 
 def err(msg):
     sys.stderr.write("%s\n" % msg)
     return None
 
 
-# ----------------------------------------
-# 2nd level helpers
+# ---------- internal business logic
 
 def expand_log_shorthand(log, name):
     ctrl = log.lower()
@@ -156,8 +157,8 @@ def expand_log_shorthand(log, name):
                 '--log-opt', 'mode=non-blocking',
                 '--log-opt', 'max-buffer-size=4m',
                 '--log-opt', 'syslog-facility=local3',
-                '--log-opt', 'tag={name}']
-        if slog_addr: args.append(['--log-opt', f'syslog-address={slog_addr}'])
+                '--log-opt', f'tag={name}']
+        if slog_addr: args.extend(['--log-opt', f'syslog-address={slog_addr}'])
         return args
     elif ctrl in ['p', 'passthrough']:
         return []
@@ -209,14 +210,17 @@ def add_mounts(cmnd, mapper, readonly, name, mount_list):
     return cmnd
 
 def add_mounts_internal(cmnd, mapper, readonly, name, src, dest):
+    orig_src = src
     if not dest: dest = src
     if mapper: src = mapper(src, name)
+    if DEBUG: err(f'  adding mount {src} -> {dest}  [{readonly=}], mapper={mapper.__name__}')
     ro = ',readonly' if readonly else ''
     cmnd.extend(['--mount', f'type=bind,source={src},destination={dest}{ro}'])
     return cmnd
 
 
 def add_ports(cmnd, ports_list, test_mode_shift, enable_ipv6):
+    if not ports_list: return cmnd
     for pair in ports_list:
         if not enable_ipv6 and not '.' in pair: pair = '0.0.0.0:' + pair
         if test_mode_shift:
@@ -268,9 +272,12 @@ def does_image_exist(repo_name, image_name, tag_name):
 def map_dir(destdir, name, include_tree=False, include_files=False):
     vol_base = get_control('vol_base')
     if '/' in destdir:
+        destdir = destdir.replace('TMP/', '')
         mapped = '%s/%s/%s' % (vol_base, name, destdir.replace('/', '_'))
     else:
         mapped = destdir.replace(vol_base, vol_base)
+    if DEBUG: err(f'  cloning mapped dir {destdir} -> {mapped}  [tree:{include_tree}, files:{include_files}]')
+
     # Safety check (we're about to rm -rf from the mapped dir; make sure it's in the right place!)
     if 'TMP' not in mapped: raise Exception('Ouch- dir map failed: %s -> %s' % (destdir, mapped))
     # Make sure the mapped parent dir exists.
@@ -348,8 +355,7 @@ def search_for_dir(dir):
     return None    # Out of ideas...
 
 
-# ----------------------------------------
-
+# ---------- settings file
 
 def parse_settings(filename):
     if not os.path.isfile(filename): raise Exception(f'settings file not found: {filename} .  Either run from the docker dir to launch, or see --cd flag.')
@@ -381,6 +387,9 @@ def gen_command():
     add_simple_control(cmnd, 'extra_docker', '')
     add_simple_control(cmnd, 'hostname')
     add_simple_control(cmnd, 'network')
+
+    ip = get_ip_to_use()
+    if ip: cmnd.extend(['--ip', ip])
 
     fg_control = get_control('foreground')
     fg = (fg_control == '1') or args.shell
@@ -439,8 +448,11 @@ def gen_command():
     return cmnd
 
 
-# ----------------------------------------
-# main
+# ---------- args
+
+class DeprecatedAction(argparse.Action):
+    def __call__(self, *args, **kwargs): C.c0('warning', f'flag {self.option_strings} is deprecated and ignored.', out=2)
+
 
 def parse_args(argv=sys.argv[1:]):
     ap = argparse.ArgumentParser(description='docker container launcher')
@@ -448,7 +460,6 @@ def parse_args(argv=sys.argv[1:]):
     g1 = ap.add_argument_group('Modified run modes', 'Do something other than simply launching a container.')
     g1.add_argument('--debug',         '-d', action='store_true', help='Print the source of each control value, and final command as a list (showing args are separate)')
     g1.add_argument('--print-cmd',           action='store_true', help='Launch the container as normal, but also print out the command being used for the launch.')
-    g1.add_argument('--show-settings', '-v', action='store_true', help='Output a Python dict with all resolved control values.')
     g1.add_argument('--test',          '-t', action='store_true', help='Just print the command that would be run rather than running it.')
 
     g2 = ap.add_argument_group('Meta settings', 'Flags that effect how all the other settings are set.')
@@ -461,17 +472,27 @@ def parse_args(argv=sys.argv[1:]):
 
     g3 = ap.add_argument_group('shortcuts')
     g3.add_argument('--latest',      '-l', action='store_true', help='shortcut for "--tag latest"')
+    g3.add_argument('-v',                  action='store_true', help='shortcut for "--test-mode" (kept for compatibility)  TODO: get rid of this and use -v as shortcut for --debug')
 
-    g4 = ap.add_argument_group('Individual launch params', 'These override settings and environment variable defaults')
+    g4 = ap.add_argument_group('DEPRECATED', 'These are ignored, but are listed here so they dont cause an error if specified by old code')
+    g4.add_argument('--name_prefix',       action=DeprecatedAction,   help='IGNORED')
+    g4.add_argument('--subnet',            action=DeprecatedAction,   help='IGNORED')
+
+    g5 = ap.add_argument_group('Individual launch params', 'These override settings and environment variable defaults')
     for c in CONTROLS:
         if not c.override_flag: continue
-        g4.add_argument(c.override_flag, help=c.doc)
+        g5.add_argument(c.override_flag, help=c.doc)
 
     args = ap.parse_args(argv)
+
+    # Handle shortcuts
     if args.latest: args.tag = 'latest'
+    if args.v: args.test_mode = True
 
     return args
 
+
+# ---------- main
 
 def main():
     args = parse_args()
@@ -493,13 +514,13 @@ def main():
 
     cmnd = gen_command()
 
-    if args.show_settings:
+    if DEBUG:
         out = {i.control_name: i.resolved for i in CONTROLS if i.resolved}
         print(f'settings: {out}')
 
     if args.debug: err(f'command: {cmnd}')
 
-    if args.print_cmd or args.test:
+    if DEBUG or args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
         last_space = temp.rfind(' ')
         print(temp[:last_space] + '\t\\\n ' + temp[last_space:])
