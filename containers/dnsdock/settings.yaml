@@ -4,6 +4,7 @@ autostart: 1
 
 # Must manually assign IP; can't do DNS lookup when DNS isn't up yet.
 ip: 192.168.2.2
+test_ip: "-"
 
 # caps required by dnsmasq
 extra_docker:

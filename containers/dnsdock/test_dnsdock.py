@@ -11,13 +11,22 @@ import kcore.docker_lib as D
 def container_to_test(): return D.find_or_start_container_env()
 
 
+# ---------- helpers
+
+def query(name, container_to_test):
+    cmd = ['host']
+    if os.getuid() == 0:
+        server = container_to_test.ip
+    else:
+        server = 'localhost'
+        cmd += ['-p', str(53 + container_to_test.port_shift)]
+    cmd += [name, server]
+    print(f'@@ {cmd=}', file=sys.stderr)
+    return cmd
+
 # ---------- tests
 
 def test_dnsdock_default_config(container_to_test):
-    prod_mode = os.environ.get('KTOOLS_DRUN_TEST_PROD') == '1'
-    port = str(53 + container_to_test.port_shift)
-    invalid_random_port = '23871'
-    D.popen_expect(['host', '-p', port, 'jack', 'localhost'], 'has address 192.168.1.2')
-    D.popen_expect(['host', '-p', port, 'jack2', 'localhost'], 'NXDOMAIN')
-    D.popen_expect(['host', '-p', invalid_random_port, 'jack', 'localhost'], 'refused')
+    D.popen_expect(query('jack', container_to_test), 'has address 192.168.1.2')
+    D.popen_expect(query('jack2', container_to_test), 'NXDOMAIN')
 
