@@ -13,7 +13,7 @@ def container_to_test(): return D.find_or_start_container_env()
 
 # ---------- helpers
 
-def query(name, container_to_test):
+def query_cmd(name, container_to_test):
     cmd = ['host']
     if os.getuid() == 0:
         server = container_to_test.ip
@@ -21,12 +21,11 @@ def query(name, container_to_test):
         server = 'localhost'
         cmd += ['-p', str(53 + container_to_test.port_shift)]
     cmd += [name, server]
-    print(f'@@ {cmd=}', file=sys.stderr)
     return cmd
+
 
 # ---------- tests
 
 def test_dnsdock_default_config(container_to_test):
-    D.popen_expect(query('jack', container_to_test), 'has address 192.168.1.2')
-    D.popen_expect(query('jack2', container_to_test), 'NXDOMAIN')
-
+    D.popen_expect(query_cmd('jack',  container_to_test), 'has address 192.168.1.2')
+    D.popen_expect(query_cmd('jackX', container_to_test), 'NXDOMAIN')
