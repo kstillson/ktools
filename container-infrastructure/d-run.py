@@ -30,7 +30,7 @@ DEBUG = False
 @dataclass
 class Ctrl:
     control_name: str
-    override_flag: str
+    override_flag: str   # should include the "-" or "--".  A prefix of plus(es) instead of minus(es) indicates a boolean that doesn't take a value.
     override_env: str
     setting_name: str
     test_mode_default: str
@@ -61,8 +61,9 @@ class Ctrl:
         if test_mode and self.setting_name == 'log': return self.debug('none', 'special case: always disable logging in --test-mode')
 
         if self.override_flag:
-            attrname = self.override_flag.replace('--', '').replace('-', '_')
+            attrname = self.override_flag.replace('--', '').replace('-', '_').replace('+','')
             tmp = getattr(args, attrname, None)
+            if tmp is True: tmp = '1'
             if not tmp is None: return self.debug(tmp, 'override flag')
 
         if self.override_env:
@@ -99,11 +100,11 @@ CONTROLS = [
     Ctrl('env',          '--env',          None,                     'env',         None,              None,              'list of {name}={value} pairs to set in environment within the container'),
     Ctrl('extra_docker', None,             None,                     'extra_docker',None,              None,              'list of additional command line arguments to send to the container launch CLI'),
     Ctrl('extra_init',   '--extra-init',   None,                     'extra_init',  None,              None,              'list of additional arguments to pass to the init command within the container'),
-    Ctrl('foreground',   '--fg',           None,                     'foreground',  '1',               '0',               'set to "1" to run container in foreground with interactive/pty settings'),
+    Ctrl('foreground',   '++fg',           None,                     'foreground',  '1',               '0',               'if flag set or env set to "1", run container in foreground with interactive/pty settings'),
     Ctrl('hostname',     '--hostname',     'KTOOLS_DRUN_HOSTNAME',   'network',     'test-@basedir',   '@basedir',        'host name to assign within the container'),
     Ctrl('image',        '--image',        None,                     'image',       '@basedir',        '@basedir',        'name of the image to launch'),
     Ctrl('ip',           '--ip',           'KTOOLS_DRUN_IP',         'ip',          '0',               '-',               'IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
-    Ctrl('ipv6_ports',   None,             None,                     'ipv6_ports',  '0',               '0',               'if "1", enable IPv6 port mappings.'),
+    Ctrl('ipv6_ports',   '++ipv6',         None,                     'ipv6_ports',  '0',               '0',               'if flag set or env set to "1", enable IPv6 port mappings.'),
     Ctrl('log',          '--log',          'KTOOLS_DRUN_LOG',        'log',         'none',            '-',               'log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url]'),
     Ctrl('ports',        '--ports',        None,                     'ports',       None,              None,              'list of {host}:{container} port pairs for mapping'),
     Ctrl('puid',         '--puid',         'PUID',                   'puid',        'auto',            'auto',            'if not "auto", pass the given value into $PUID inside the container.  "auto" will generate a consistent container-specific value.  Blank to disable.'),
@@ -111,7 +112,7 @@ CONTROLS = [
     Ctrl('network',      '--network',      None,                     'network',     '$KTOOLS_DRUN_TEST_NETWORK', '$KTOOLS_DRUN_NETWORK',  'container network to use'),
     Ctrl('repo1',        '--repo',         'KTOOLS_DRUN_REPO',       'repo1',       'ktools',          'ktools',          'first repo to try for a matching image'),
     Ctrl('repo2',        '--repo2',        'KTOOLS_DRUN_REPO2',      'repo2',       None,              None,              'second repo to try for a matching image'),
-    Ctrl('rm',           '--rm',           None,                     'rm',          '1',               '1',               'if set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
+    Ctrl('rm',           '++rm',           None,                     'rm',          '1',               '1',               'if flag set or env set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
     Ctrl('tag',          '--tag',          'KTOOLS_DRUN_TAG',        'tag',         'latest',          'live',            'tagged or other version indicator of image to launch'),
     Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',        'volbase',     '/rw/dv/TMP',      '/rw/dv',          'base directory for relative bind-mount source points'),
 ]
@@ -213,7 +214,7 @@ def add_mounts_internal(cmnd, mapper, readonly, name, src, dest):
     orig_src = src
     if not dest: dest = src
     if mapper: src = mapper(src, name)
-    if DEBUG: err(f'  adding mount {src} -> {dest}  [{readonly=}], mapper={mapper.__name__}')
+    if DEBUG: err(f'  adding mount {src} -> {dest}  [{readonly=}], mapper={mapper.__name__ if mapper else "None"}')
     ro = ',readonly' if readonly else ''
     cmnd.extend(['--mount', f'type=bind,source={src},destination={dest}{ro}'])
     return cmnd
@@ -401,6 +402,8 @@ def gen_command():
 
     if args.shell: cmnd.extend(['--user', '0', '-ti', '--entrypoint', '/bin/bash'])
 
+    # In test-mode, these have the side-effect of cloning parts of the bind-mount tree into the temp area.
+
     add_devices(cmnd, settings.get('mount_devices'))
     add_mounts(cmnd, None, True, basename, settings.get('mount_ro'))
     add_mounts(cmnd, None, False, basename, settings.get('mount_persistent'))
@@ -442,7 +445,6 @@ def gen_command():
     # Throw any additional init args on the end, if any are requested by flags or settings.
     extra_init = get_control('extra_init')
     if extra_init and not args.shell:
-        cmnd.append('--')
         cmnd.extend(extra_init.strip().split(' '))
 
     return cmnd
@@ -459,6 +461,7 @@ def parse_args(argv=sys.argv[1:]):
 
     g1 = ap.add_argument_group('Modified run modes', 'Do something other than simply launching a container.')
     g1.add_argument('--debug',         '-d', action='store_true', help='Print the source of each control value, and final command as a list (showing args are separate)')
+    g1.add_argument('--no-rm',         '-n', action='store_true', help='Do not automatically remove any remanants of previous containers with the same name (which would break launch if not done)')
     g1.add_argument('--print-cmd',           action='store_true', help='Launch the container as normal, but also print out the command being used for the launch.')
     g1.add_argument('--test',          '-t', action='store_true', help='Just print the command that would be run rather than running it.')
 
@@ -481,7 +484,10 @@ def parse_args(argv=sys.argv[1:]):
     g5 = ap.add_argument_group('Individual launch params', 'These override settings and environment variable defaults')
     for c in CONTROLS:
         if not c.override_flag: continue
-        g5.add_argument(c.override_flag, help=c.doc)
+        if c.override_flag.startswith('+'):
+            g5.add_argument(c.override_flag.replace('+', '-'), action='store_true', help=c.doc)
+        else:
+            g5.add_argument(c.override_flag, help=c.doc)
 
     args = ap.parse_args(argv)
 
@@ -495,6 +501,8 @@ def parse_args(argv=sys.argv[1:]):
 # ---------- main
 
 def main():
+    # gather the controls that affect command generation.
+
     args = parse_args()
 
     global DEBUG
@@ -504,7 +512,7 @@ def main():
         src_dir = search_for_dir(args.cd)
         if src_dir:
             os.chdir(src_dir)
-            err(f'Using source directory {src_dir}')
+            if DEBUG: err(f'Using source directory {src_dir}')
         else: err(f'dont know how to find directory: {args.cd}')
 
     settings = parse_settings(args.settings)
@@ -512,19 +520,27 @@ def main():
     global CONTROLS_MANAGER
     CONTROLS_MANAGER = ControlsManager(args, settings, args.test_mode, args.dev_mode)
 
+    # generate the launch command and output any requested debugging info.
+
     cmnd = gen_command()
 
     if DEBUG:
         out = {i.control_name: i.resolved for i in CONTROLS if i.resolved}
-        print(f'settings: {out}')
-
-    if args.debug: err(f'command: {cmnd}')
+        print(f'controls: {out}')
 
     if DEBUG or args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
         last_space = temp.rfind(' ')
         print(temp[:last_space] + '\t\\\n ' + temp[last_space:])
         if args.test: sys.exit(0)
+
+    # clear out any terminated-but-still-laying-around remanents of previous runs.
+
+    if not args.no_rm:
+        with open('/dev/null', 'w') as z:
+            subprocess.call([get_control('docker_exec'), 'rm', get_control('name')], stdout=z, stderr=z)
+
+    # actually run the launch command
 
     return subprocess.call(cmnd)
 
