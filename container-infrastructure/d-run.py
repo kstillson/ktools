@@ -63,8 +63,11 @@ class Ctrl:
         if self.override_flag:
             attrname = self.override_flag.replace('--', '').replace('-', '_').replace('+','')
             tmp = getattr(args, attrname, None)
-            if tmp is True: tmp = '1'
-            if not tmp is None: return self.debug(tmp, 'override flag')
+            if self.override_flag.startswith('+'):
+                # The default here isn't None, it's False.  So only take this flag as specified if True.
+                if tmp is True: return self.debug('1', 'override flag (boolean mapped to "1")')
+            else:
+                if not tmp is None: return self.debug(tmp, 'override flag')
 
         if self.override_env:
             tmp = os.environ.get(self.override_env, None)
@@ -114,8 +117,15 @@ CONTROLS = [
     Ctrl('repo2',        '--repo2',        'KTOOLS_DRUN_REPO2',      'repo2',       None,              None,              'second repo to try for a matching image'),
     Ctrl('rm',           '++rm',           None,                     'rm',          '1',               '1',               'if flag set or env set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
     Ctrl('tag',          '--tag',          'KTOOLS_DRUN_TAG',        'tag',         'latest',          'live',            'tagged or other version indicator of image to launch'),
-    Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',        'volbase',     '/rw/dv/TMP',      '/rw/dv',          'base directory for relative bind-mount source points'),
+    Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',        'volbase',     '/rw/dv',          '/rw/dv',          'base directory for relative bind-mount source points'),
 ]
+
+# Notes on subtlties above:
+#
+# - vol_base: test-mode-default should point to the same place as normal
+#   default, because for some mount-type (e.g. read-only), we want to mount
+#   the real versions.  We rely on map_dir() to take care of fixing the
+#   destination directories.
 
 class ControlsManager:
     def __init__(self, args, settings, test_mode, dev_mode):
@@ -274,9 +284,9 @@ def map_dir(destdir, name, include_tree=False, include_files=False):
     vol_base = get_control('vol_base')
     if '/' in destdir:
         destdir = destdir.replace('TMP/', '')
-        mapped = '%s/%s/%s' % (vol_base, name, destdir.replace('/', '_'))
+        mapped = '%s/TMP/%s/%s' % (vol_base, name, destdir.replace('/', '_'))
     else:
-        mapped = destdir.replace(vol_base, vol_base)
+        mapped = vol_base + '/TMP'
     if DEBUG: err(f'  cloning mapped dir {destdir} -> {mapped}  [tree:{include_tree}, files:{include_files}]')
 
     # Safety check (we're about to rm -rf from the mapped dir; make sure it's in the right place!)
@@ -525,8 +535,8 @@ def main():
     cmnd = gen_command()
 
     if DEBUG:
-        out = {i.control_name: i.resolved for i in CONTROLS if i.resolved}
-        print(f'controls: {out}')
+        out = {i.control_name: i.resolved for i in CONTROLS if i.resolved is not None}
+        print(f'\nargs: {args}\n\nsettings: {settings}\n\nresolved controls: {out}\n')
 
     if DEBUG or args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))

@@ -82,7 +82,7 @@ def abort(msg):
     sys.exit(msg)
 
 
-def emit(msg): OUT.write('>> %s\n' % msg)
+def emit(msg): print(f'>> {msg}', file=sys.stderr)
 
 
 def gen_random_cookie(len=15):
@@ -115,19 +115,21 @@ class ContainerData:
     cow: str
     vol_dir: str
     port_shift: int
+    settings_dir: str
 
 
 def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'):
     # Handle case where current dir isn't the one containing the settings file.
     # (e.g. multiple pytest's run from a parent directory).
     if os.path.isfile(settings):
-        basedir = os.path.basename(os.path.dirname(os.path.abspath(settings)))
+        settings_dir = os.path.dirname(os.path.abspath(settings))
+        basedir = os.path.basename(settings_dir)
     else:
         settings_dir = os.path.dirname(C.get_callers_module(levels=3).__file__)
         settings = os.path.join(settings_dir, settings)
         if not os.path.isfile(settings): raise Exception(f'Unable to find settings file: {settings}')
         basedir = os.path.basename(settings_dir)
-    if name == '@basedir': name = basedir
+    if not name or name == '@basedir': name = basedir
 
     fullname = 'test-' + name if test_mode else name
     cid = get_cid(fullname)
@@ -157,20 +159,26 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
     # would be tricky.  Oh well.
     #
     return ContainerData(
-        name, find_ip_for(fullname), find_cow_dir(fullname),
+        fullname, find_ip_for(fullname), find_cow_dir(fullname),
         f'{DV_BASE}/TMP/{name}' if test_mode else f'{DV_BASE}/{name}',
-        10000 if test_mode else 0)
+        10000 if test_mode else 0,
+        settings_dir)
 
 
-def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name='@basedir', settings='settings.yaml'):
-    test_mode = os.environ.get(control_var) != '1'
+def check_env_for_prod_mode(control_var='KTOOLS_DRUN_TEST_PROD'):
+    '''Return True if env indicates we should directly test production containers.'''
+    return os.environ.get(control_var) == '1'
+
+
+def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name=None, settings='settings.yaml'):
+    test_mode = not check_env_for_prod_mode(control_var)
     return find_or_start_container(test_mode, name, settings)
 
 
 def start_test_container(name, settings='settings.yaml'):
     emit('starting test container for: ' + name)
-    rslt = C.popen(['d-run', '--test-mode', '--name', name, '--settings', settings, '--print-cmd'])
-    emit(f'container exited;  results: {rslt}')
+    rslt = C.popen(['d-run', '--test-mode', '--name', name, '--settings', settings, '--print-cmd'], passthrough=True)
+    if not rslt.ok: emit(f'container exited with status: {rslt}')
     return rslt.ok
 
 
@@ -224,7 +232,7 @@ def launch_test_container(args, extra_run_args, out):
     if extra_run_args: cmnd.extend(extra_run_args)
     test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
     if not args.prod:
-        cmnd.extend(['--name_prefix', 'test-', '--network', test_net, '--rm=1', '-v'])
+        cmnd.extend(['--name_prefix', 'test-', '--network', test_net, '--rm', '-v'])
     if test_net == 'docker2':  ## TODO(defer): kds specific
         cmnd.extend(['--subnet', '3'])
     emit(' '.join(cmnd))
@@ -272,7 +280,7 @@ def file_expect_real(expect, filename, invert=False, missing_ok=False):
 
 
 def file_expect(expect, filename, invert=False, missing_ok=False):
-    err = file_expect_real(expect, filename, invert=False, missing_ok=False)
+    err = file_expect_real(expect, filename, invert, missing_ok)
     if err: abort(err)
     return True
 
