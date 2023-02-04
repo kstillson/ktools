@@ -69,7 +69,7 @@ endif
 docker-all: build-stamp
 
 docker-clean:
-	rm -f *-stamp
+	rm -rf *-stamp __pycache__
 
 docker-install: docker-all docker-test install-stamp
 

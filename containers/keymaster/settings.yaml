@@ -8,3 +8,7 @@ autostart: 2
 mount_logs:
   - var_log_km: /var/log/km
 
+# -----
+
+test_env: "TEST=1"
+test_ports: ['4444:4444']

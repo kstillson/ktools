@@ -10,3 +10,4 @@ mount_logs:
 mount_persistent_test_ro:
   - /dev/log: /dev/log
 
+test_env: "TEST=1"

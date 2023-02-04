@@ -12,3 +12,8 @@ mount_logs:
 
 # Routing to keymanager works better going direct to docker IP
 extra_docker: "--add-host=keys:192.168.2.33"
+
+# -----
+
+test_env: "TEST=1"
+test_ports: ['1111:1111']

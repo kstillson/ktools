@@ -7,3 +7,6 @@ mount_logs:
 mount_persistent_test_copy_tree:
   - var_nagios: /var/nagios
 
+# -----
+
+test_env: "TEST=1"
