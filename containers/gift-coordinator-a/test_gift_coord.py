@@ -1,22 +1,22 @@
 #!/usr/bin/python3
 
-import argparse, os, subprocess, sys, tempfile, time
-
-sys.path.append('/root/bin')
+import pytest, tempfile, time
 import kcore.docker_lib as D
 
 
-def main():
-    ap = argparse.ArgumentParser(description='gift-coordinator test')
-    D.add_testing_args(ap)
-    args = ap.parse_args()
-    name, ip, cow, dv = D.launch_or_find_container(args)
-    if not cow or not ip: sys.exit('cannot find container %s' % name)
+# ---------- fixture for container under test
 
-    # First check that everything is ok.
-    wait = 8
-    print(f'{wait} second startup wait (not sure why it needs so long)...', file=sys.stderr)
-    time.sleep(wait)   # Allow for startup time.
+@pytest.fixture(scope='session')
+def container_to_test(): return D.find_or_start_container_env()
+
+
+# ---------- tests
+
+def test_gift_coord(container_to_test):
+    time.sleep(3)  # Give things a chance to start-up.
+    ip = container_to_test.ip
+
+    # Check our overall health is good.
     D.web_expect('ok', ip, '/healthz', 8080)
 
     # Switch to curl to use cookies
@@ -32,10 +32,3 @@ def main():
                        'successful add')
         D.popen_expect(['curl', '-v', '-b', cookie_jar, f'http://{ip}:8080/'],
                        'item1')
-        
-    print('pass')
-
-
-if __name__ == "__main__":
-  main()
-

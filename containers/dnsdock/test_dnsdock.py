@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import os, pytest, sys
-
 import kcore.docker_lib as D
 
 
