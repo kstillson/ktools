@@ -39,7 +39,7 @@ class PopenOutput:
     def __str__(self): return self.out
 
 
-def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
+def popen(args, stdin_str=None, timeout=None, strip=True, passthrough=False, **kwargs_to_popen):
     '''Slightly improved API for subprocess.Popen().
 
        args can be a simple string or a list of string args (which is safer).
@@ -59,8 +59,8 @@ def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
     text_mode = kwargs_to_popen.pop('text', True)
     if not text_mode: strip = False
     stdin = kwargs_to_popen.pop('stdin', subprocess.PIPE)
-    stdout = kwargs_to_popen.pop('stdout', subprocess.PIPE)
-    stderr = kwargs_to_popen.pop('stderr', subprocess.PIPE)
+    stdout = None if passthrough else kwargs_to_popen.pop('stdout', subprocess.PIPE)
+    stderr = None if passthrough else kwargs_to_popen.pop('stderr', subprocess.PIPE)
     try:
         proc = subprocess.Popen(
             args, text=text_mode, stdin=stdin, stdout=stdout, stderr=stderr,
@@ -74,6 +74,7 @@ def popen(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
     except Exception as e:
         try: proc.kill()
         except Exception as e2: pass
+        if passthrough: print(str(e), file=sys.stderr)
         return PopenOutput(ok=False, returncode=-255,
                            stdout=None, stderr=None, exception_str=str(e), pid=-1)
 
