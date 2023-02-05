@@ -1,5 +1,5 @@
 
-extra_init: "-v full-photos"
+extra_init: ["-v", "full-photos"]
 
 mount_logs:
   - var_log: /var/log

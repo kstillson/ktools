@@ -560,6 +560,7 @@ def main():
     if DEBUG:
         out = {i.control_name: i.resolved for i in CONTROLS if i.resolved is not None}
         print(f'\nargs: {args}\n\nsettings: {settings}\n\nresolved controls: {out}\n')
+        print(f'cmnd: {cmnd}\n')
 
     if DEBUG or args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))

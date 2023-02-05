@@ -7,7 +7,13 @@
 # for all the other targets, which used mapped uids.  BE VERY CAREFUL.
 #
 # We also need fuse for encfs.
-extra_docker: "-ti --userns=host --cap-add=SYS_PTRACE --device /dev/fuse --cap-add=SYS_ADMIN --security-opt apparmor:unconfined"
+extra_docker:
+  - "-ti"
+  - "--userns=host"
+  - "--cap-add=SYS_PTRACE"
+  - "--device=/dev/fuse"
+  - "--cap-add=SYS_ADMIN"
+  - "--security-opt=apparmor:unconfined"
 
 extra_init: "interactive"
 foreground: 1
@@ -22,4 +28,3 @@ mount_persistent:
 
 mount_ro:
   - /rw/mnt/rsnap/daily.0: /root/src
-

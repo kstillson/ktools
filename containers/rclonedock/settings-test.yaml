@@ -1,5 +1,5 @@
 
-extra_init: "-v test"
+extra_init: ["-v", "test"]
 
 mount_logs:
   - var_log: /var/log
