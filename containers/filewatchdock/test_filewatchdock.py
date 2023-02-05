@@ -1,12 +1,6 @@
 #!/usr/bin/python3
 
-'''TODO/WARNING- Test currently requires a fully configured and passing prod server.
-
-Test should be re-designed to use abstracted functionality tests rather than
-test real rules.
-
-'''
-
+# TODO: come up with test that isn't jack-configuration specific.
 
 import atexit, os, pytest, subprocess, time, warnings
 import kcore.docker_lib as D
@@ -34,7 +28,8 @@ def cleanup():
 
 # ---------- tests
 
-def test_sending_email(container_to_test):
+@pytest.mark.skipif(D.not_required_host('jack'), reason='test contains host-specific configuration requirements')
+def test_jack_filewatch(container_to_test):
     prod_mode = D.check_env_for_prod_mode()
 
     if prod_mode:

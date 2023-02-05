@@ -29,7 +29,7 @@ $(SUBDIRS):
 # ---------- special additions to common targets
 
 clean:
-	rm -f prep-stamp
+	rm -rf prep-stamp __pycache__ .pytest_cache
 	@printf "\nuse '$(YELLOW)make purge$(RESET)' if you also want to remove all built Docker images\n\n"
 
 

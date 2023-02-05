@@ -41,7 +41,7 @@ class Ctrl:
         self.resolved = None
 
     def debug(self, val, src):
-        if DEBUG: err(f'resolved setting "{self.control_name}" \t to \t "{val}" \t from {src}')
+        if DEBUG: err(f'resolved control "{self.control_name}" \t to \t "{val}" \t from {src}')
         return val
 
     def resolve(self, args, settings, test_mode, dev_mode):
@@ -138,6 +138,19 @@ class ControlsManager:
             return ctrl.resolve(self.args, self.settings, self.test_mode, self.dev_mode) if ctrl else None
         except StopIteration:
             raise Exception(f'internal error; no such control {control_name}')
+
+    def resolve_setting(self, setting_name):
+        '''There are a few things, like mount_* directives, which are only in the settings file,
+           not reflected in the controls structure.  For those, this method can check for test_...
+           overrides directly in the settings.'''
+        regular_val = self.settings.get(setting_name)
+        if not self.test_mode: return regular_val
+        test_val = self.settings.get('test_' + setting_name)
+        if test_val is not None:
+            if DEBUG: err(f'resolved SETTING "{setting_name}" \t to \t "{test_val}" \t from setting test_{setting_name}')
+            return test_val
+        return regular_val
+        
 
 CONTROLS_MANAGER = None  ## initialized by main()
 
@@ -263,6 +276,7 @@ def add_simple_control(cmnd, control_name, param=None):
 
 def clone_dir(src, dest):
     if os.path.exists(dest): return False
+    if os.path.isfile(src): return False
     if not os.path.exists(src):
         err(f'Creating non-existent mountpoint source: {src}')
         Path(src).mkdir(parents=True)
@@ -296,13 +310,22 @@ def map_dir(destdir, name, include_tree=False, include_files=False):
     # Destructive replace of the mapped dir.
     if os.path.exists(mapped):
         err('Removing previous alt dir: %s' % mapped)
-        shutil.rmtree(mapped)
+        if os.path.isdir(mapped): shutil.rmtree(mapped)
+        else: os.unlink(mapped)
     # If not including the tree, the only thing to do is clone the top level dir.
     if not include_tree:
         if include_files: raise Exception('Error- cannot include files with including tree')
         clone_dir(destdir, mapped)
         return mapped
     # Copy over everything; trimming exsting files' contents if requested.
+    if os.path.isfile(destdir):
+        # Just the one file to copy over...
+        if include_files:
+            subprocess.check_call(['/bin/cp', '-a', destdir, mapped])
+            return mapped
+        else:
+            err(f'  likely config error: asked to clone file {destdir} -> {mapped} and not include files, but source is a file.  Doing nothing.')
+            return mapped
     if not os.path.isdir(destdir):
         # Nothing to copy, just create dest dir. (Ownership/perms might be wrong...)
         os.mkdir(mapped)
@@ -414,23 +437,23 @@ def gen_command():
 
     # In test-mode, these have the side-effect of cloning parts of the bind-mount tree into the temp area.
 
-    add_devices(cmnd, settings.get('mount_devices'))
-    add_mounts(cmnd, None, True, basename, settings.get('mount_ro'))
-    add_mounts(cmnd, None, False, basename, settings.get('mount_persistent'))
-    add_mounts(cmnd, None, test_mode, basename, settings.get('mount_persistent_test_ro'))
-    add_mounts(cmnd, map_to_empty_dir  if test_mode else None, False, basename, settings.get('mount_logs'))
-    add_mounts(cmnd, map_to_empty_dir  if test_mode else None, False, basename, settings.get('mount_persistent_test_copy'))
-    add_mounts(cmnd, map_to_empty_tree if test_mode else None, False, basename, settings.get('mount_persistent_test_copy_tree'))
-    add_mounts(cmnd, map_to_clone      if test_mode else None, False, basename, settings.get('mount_persistent_test_copy_files'))
+    add_devices(cmnd, CONTROLS_MANAGER.resolve_setting('mount_devices'))
+    add_mounts(cmnd, None, True, basename, CONTROLS_MANAGER.resolve_setting('mount_ro'))
+    add_mounts(cmnd, None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent'))
+    add_mounts(cmnd, None, test_mode, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_ro'))
+    add_mounts(cmnd, map_to_empty_dir  if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_logs'))
+    add_mounts(cmnd, map_to_empty_dir  if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_copy'))
+    add_mounts(cmnd, map_to_empty_tree if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_copy_tree'))
+    add_mounts(cmnd, map_to_clone      if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_copy_files'))
     if test_mode:
-        add_mounts(cmnd, None, False, basename, settings.get('mount_test_only'))
+        add_mounts(cmnd, None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_test_only'))
 
     test_mode_shift = args.port_offset if test_mode else 0
     add_ports(cmnd, get_control('ports'), test_mode_shift, get_control('ipv6_ports') == 1)
 
 
     puid = get_control('puid')
-    if puid == 'auto': puid = get_puid(basename)
+    if puid == 'auto': puid = get_puid(name)
     if puid: cmnd.extend(['--env', 'PUID=' + puid])
 
     image_name = get_control('image')

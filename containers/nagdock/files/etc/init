@@ -1,9 +1,11 @@
 #!/bin/bash
 
 if [[ -z "$TEST" ]]; then
-  CONFIG="/etc/nagios/nagios.cfg"
+    CONFIG="/etc/nagios/nagios.cfg"
 else
-  CONFIG="/etc/nagios/nagios-test.cfg"
+    echo "** RUNNING IN TEST MODE **"
+    CONFIG="/etc/nagios/nagios-test.cfg"
+    /dummy_server.py &
 fi
 
 exec /usr/sbin/nagios ${CONFIG}

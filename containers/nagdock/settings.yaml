@@ -10,3 +10,4 @@ mount_persistent_test_copy_tree:
 # -----
 
 test_env: "TEST=1"
+test_ports: ['1234:1234']

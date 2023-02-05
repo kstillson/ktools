@@ -13,7 +13,7 @@ def container_to_test(): return D.find_or_start_container_env()
 
 # ---------- tests
 
-def test_dnsdock_default_config(container_to_test):
+def test_keymaster(container_to_test):
     prod_mode = D.check_env_for_prod_mode()
     if prod_mode:
         warnings.warn('cannot do in-place prod testing; test is destructive to its container.')
@@ -33,7 +33,7 @@ def test_dnsdock_default_config(container_to_test):
     kmc.DEBUG = True
     hostport = '%s:%d' % (server, test_port)
     answer = kmc.query_km('testkey', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0, override_hostname='test')
-    if answer != 'mysecret': D.abort('expected "mysecret", but saw "%s"' % answer)
+    assert answer == 'mysecret'
 
     # Check the service health.
     D.web_expect('ok', server, '/healthz', port=test_port, https=True, verify_ssl=False)
@@ -48,10 +48,10 @@ def test_dnsdock_default_config(container_to_test):
     # and leave the system locked due to a source IP check failure.
     D.web_expect('ok', server, '/load', post_params={'password': 'test123'}, port=test_port, https=True, verify_ssl=False)
     answer = kmc.query_km('nonexistent-key', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
-    if not 'ERROR: no such key' in answer: D.abort('got unexpected answer for non-existent key: %s' % answer)
+    assert 'ERROR: no such key' in answer
 
     # The system should now be locked.
     answer = kmc.query_km('testkey', km_host_port=hostport, km_cert='', timeout=2, retry_limit=0)
-    if 'not ready' not in answer: D.abort('got unexpected answer for non-existent key: %s' % answer)
+    assert 'not ready' in answer, 'expected system to be locked, but did not see "not ready" error'
     D.web_expect('not ready', server, '/test', port=test_port, https=True, verify_ssl=False)
     

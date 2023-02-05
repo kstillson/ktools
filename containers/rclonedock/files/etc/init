@@ -132,6 +132,7 @@ case $MODE in
 	# Docker "Test" script will have already created unique content for the test-out file.
 	SRC="/root/echo-back/test-out"
 	DEST="/root/echo-back/test-in"
+	DEST_FILE="/root/echo-back/test-in/test-out"
 	echo "copying cookie out"
 	${RCLONE} -v copy ${SRC} wasabi-s3:kstillson-s3
 	STATUS=$?
@@ -139,8 +140,10 @@ case $MODE in
 	echo "copying cookie back"
 	rm -rf /root/echo-back/test-in
 	${RCLONE} -v copy wasabi-s3:kstillson-s3/test-out ${DEST}
-	/usr/bin/diff -q ${SRC} ${DEST} || { echo "ERROR- test cookie copy-back doesnt match."; exit -1; }
-	echo "pass"
+	/usr/bin/diff -q ${SRC} ${DEST_FILE} || { echo "ERROR- test cookie copy-back doesnt match."; exit -1; }
+	echo "init: ${SRC} == ${DEST_FILE} : $(cat ${DEST_FILE})"
+	echo "init: pass"
+	sleep 3  # hang around long enough for the test to find the container metadata.
 	;;
 
     wasabi)

@@ -36,25 +36,26 @@ clean:
 copy: $(DIRS) $(HSH_DIR) $(PRIV_TARGETS) $(PRIV_HS_DIR) $(PRIV_HS_TARGETS) $(HSH_TARGETS) $(KTOOLS_DIR) $(KTOOLS_TARGETS) $(KTOOLS_ETC_TARGETS)
 
 $(DIRS):
-	mkdir -p $@
+	mkdir -m 0755 -p $@
 
 $(HSH_TARGETS): $(HSH_DIR)/% : ../../services/homesec/%
 	cp -r $^ $@
+	chmod -R go+rX $@
 
 $(PRIV_TARGETS): $(HSH_DIR)/% : ../../private.d/%
-	cp $^ $@
+	install $^ $@
 
 $(PRIV_HS_TARGETS): $(HSH_PRIV_DIR)/% : ../../services/homesec/private.d/%
-	cp $^ $@
+	install $^ $@
 
 $(KMH_TEST_TARGETS): $(HSH_DIR)/% : ../../services/keymaster/tests/%
-	cp $^ $@
+	install $^ $@
 
 $(KTOOLS_TARGETS): $(KTOOLS_DIR)/% : ../../pylib/tools/%
-	cp $^ $@
+	install $^ $@
 
 $(KTOOLS_ETC_TARGETS): $(KTOOLS_DIR)/% : ../../tools-etc/%
-	cp $^ $@
+	install $^ $@
 
 # ---------- pass-throughs
 

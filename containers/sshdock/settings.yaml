@@ -16,3 +16,14 @@ mount_persistent_test_ro:
 
 # Old rps config sends syslog to "sys"; redirect that to syslogdock.
 extra_docker: "--add-host=sys:192.168.2.12"
+
+# -----
+
+test_extra_init: "/usr/sbin/sshd -d"
+
+test_mount_ro: []
+
+test_mount_persistent_test_copy_files:
+  - authkeys: /etc/ssh/authkeys
+  - hostkeys: /etc/ssh/hostkeys
+  - passwd: /etc/passwd

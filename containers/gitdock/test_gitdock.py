@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+# TODO: copy over test key creation from ../sshdock/test_sshdock.py
+
 import atexit, os, pytest, shutil, subprocess, tempfile
 import kcore.docker_lib as D
 

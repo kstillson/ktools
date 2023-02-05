@@ -23,13 +23,13 @@ clean:
 copy: $(DIRS) $(HCH_DIR) $(HCH_TARGETS) $(HCLIB_DIR) $(PLIB_TARGETS)
 
 $(DIRS):
-	mkdir -p $@
+	mkdir -m 0755 -p $@
 
 $(HCH_TARGETS): $(HCH_DIR)/% : ../../services/home-control/%
-	cp $^ $@
+	install $^ $@
 
 $(PLIB_TARGETS): $(HCLIB_DIR)/% : ../../pylib/home_control/%
-	cp $^ $@
+	install $^ $@
 
 
 # ---------- pass-throughs
