@@ -142,7 +142,7 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
             print(f'running against existing test container {fullname} {cid}', file=sys.stderr)
         else:
             atexit.register(stop_container_at_exit, fullname)
-            thread = threading.Thread(target=start_test_container, args=[name, settings])
+            thread = threading.Thread(target=start_test_container, args=[settings])
             thread.daemon = True
             thread.start()
             time.sleep(2)  # Give time for container to start.
@@ -180,10 +180,10 @@ def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name=None, 
     return find_or_start_container(test_mode, name, settings)
 
 
-def start_test_container(name, settings='settings.yaml'):
-    emit('starting test container for: ' + name)
-    rslt = C.popen(['d-run', '--test-mode', '--name', name, '--settings', settings, '--print-cmd'], passthrough=True)
-    if not rslt.ok: emit(f'container exited with status: {rslt}')
+def start_test_container(settings='settings.yaml'):
+    emit('starting test container for: ' + os.path.abspath(settings))
+    rslt = C.popen(['d-run', '--test-mode', '--debug', '--settings', settings], passthrough=True)
+    if not rslt.ok: emit(f'container exited with: {rslt}')
     return rslt.ok
 
 

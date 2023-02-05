@@ -150,7 +150,7 @@ class ControlsManager:
             if DEBUG: err(f'resolved SETTING "{setting_name}" \t to \t "{test_val}" \t from setting test_{setting_name}')
             return test_val
         return regular_val
-        
+
 
 CONTROLS_MANAGER = None  ## initialized by main()
 
@@ -559,13 +559,13 @@ def main():
 
     if DEBUG:
         out = {i.control_name: i.resolved for i in CONTROLS if i.resolved is not None}
-        print(f'\nargs: {args}\n\nsettings: {settings}\n\nresolved controls: {out}\n')
-        print(f'cmnd: {cmnd}\n')
+        err(f'\nargs: {args}\n\nsettings: {settings}\n\nresolved controls: {out}\n')
+        err(f'cmnd: {cmnd}\n')
 
     if DEBUG or args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
         last_space = temp.rfind(' ')
-        print(temp[:last_space] + '\t\\\n ' + temp[last_space:])
+        err(temp[:last_space] + '\t\\\n ' + temp[last_space:])
         if args.test: sys.exit(0)
 
     # clear out any terminated-but-still-laying-around remanents of previous runs.

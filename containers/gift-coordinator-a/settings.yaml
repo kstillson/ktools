@@ -8,3 +8,6 @@ autostart: 5;host=a2.point0.net
 mount_persistent_test_copy_files:
   - data: /home/santa/data
 
+# -----
+
+test_ports: ['8100:8080']
