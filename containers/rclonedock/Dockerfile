@@ -9,7 +9,5 @@ COPY files /
 
 RUN /prep
 
-ENV TZ America/New_York
-
 ENTRYPOINT ["/etc/init"]
 CMD []

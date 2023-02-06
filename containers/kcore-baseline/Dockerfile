@@ -12,9 +12,6 @@ RUN umask 022 && \
 # Enable auto varz -> Prometheus
 ##_prom ENV KTOOLS_VARZ_PROM 1
 
-# Needs apk tzdata:
-ENV TZ America/New_York
-
 COPY files /
 
 # Run prep-local to perform limited baseline image hardneing.

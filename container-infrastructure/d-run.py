@@ -117,6 +117,7 @@ CONTROLS = [
     Ctrl('repo2',        '--repo2',        'KTOOLS_DRUN_REPO2',      'repo2',       None,              None,              'second repo to try for a matching image'),
     Ctrl('rm',           '++rm',           None,                     'rm',          '1',               '1',               'if flag set or env set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
     Ctrl('tag',          '--tag',          'KTOOLS_DRUN_TAG',        'tag',         'latest',          'live',            'tagged or other version indicator of image to launch'),
+    Ctrl('timezone',     '--tz',           'KTOOLS_DRUN_TZ',         'tz',          '-',               '-',               'timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
     Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',        'volbase',     '/rw/dv',          '/rw/dv',          'base directory for relative bind-mount source points'),
 ]
 
@@ -430,6 +431,10 @@ def gen_command():
     if not fg: cmnd.append('-d')
 
     cmnd.extend(expand_log_shorthand(get_control('log'), name))
+
+    tz = get_control('timezone')
+    if tz == '-': tz = C.read_file('/etc/timezone').strip()
+    if tz: cmnd.extend(['--env', f'TZ={tz}'])
 
     if get_control('rm') == '1': cmnd.append('--rm')
 

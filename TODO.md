@@ -1,7 +1,18 @@
 
+# docker improvements
+
+  - ./containers needs a :prep
+    - set up /rw/dv/...
+    - sshdock/gitdock need generated host-keys
+    - idempotent setup of docker networks ?
+
+# bugs to fix
+
+  - make for things like services/keymaster/km_helper fail until
+    kcore is installed.  breaks the normal make,test,install order.
+
 # queued larger ideas improvements
 
-  - shift container tests to pytest-3 with mark filtering
   - shift from env settings to config file
 
 # new subsystems
@@ -14,19 +25,6 @@
   - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio
   - graphical interface for inputs and outputs
   - homectrl push update to all
-
-# bugs to fix
-
-  - make for things like services/keymaster/km_helper fail until
-    kcore is installed.  breaks the normal make,test,install order.
-
-# docker improvements
-
-  - ./containers needs a :prep
-    - set up /rw/dv/...
-    - sshdock/gitdock need generated host-keys
-    - idempotent setup of docker networks ?
-  - settings file have hard-coded TZ; take this from a var
 
 # new project name?
 
