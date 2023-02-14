@@ -127,6 +127,11 @@ def test_resolve_special_arg():
     assert args.x == ''
 
 
+def test_special_arg_resolver():
+    val = C.special_arg_resolver('file:testdata/file1')
+    assert val == 'hello world \nline 2  \n   \n'
+
+
 # ----- ad-hoc method tests
 
 def test_random_printable():
