@@ -10,8 +10,6 @@ RUN /prep
 
 VOLUME ["/var/log", "/var/mail", "/var/spool"]
 
-ENV TZ America/New_York
-
 USER exim
 ENTRYPOINT ["/usr/sbin/exim"]
 CMD ["-bd", "-v", "-C", "/etc/exim/exim.conf"]

@@ -117,6 +117,7 @@ CONTROLS = [
     Ctrl('repo2',        '--repo2',        'KTOOLS_DRUN_REPO2',      'repo2',       None,              None,              'second repo to try for a matching image'),
     Ctrl('rm',           '++rm',           None,                     'rm',          '1',               '1',               'if flag set or env set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
     Ctrl('tag',          '--tag',          'KTOOLS_DRUN_TAG',        'tag',         'latest',          'live',            'tagged or other version indicator of image to launch'),
+    Ctrl('timezone',     '--tz',           'KTOOLS_DRUN_TZ',         'tz',          '-',               '-',               'timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
     Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',        'volbase',     '/rw/dv',          '/rw/dv',          'base directory for relative bind-mount source points'),
 ]
 
@@ -150,7 +151,7 @@ class ControlsManager:
             if DEBUG: err(f'resolved SETTING "{setting_name}" \t to \t "{test_val}" \t from setting test_{setting_name}')
             return test_val
         return regular_val
-        
+
 
 CONTROLS_MANAGER = None  ## initialized by main()
 
@@ -431,6 +432,10 @@ def gen_command():
 
     cmnd.extend(expand_log_shorthand(get_control('log'), name))
 
+    tz = get_control('timezone')
+    if tz == '-': tz = C.read_file('/etc/timezone').strip()
+    if tz: cmnd.extend(['--env', f'TZ={tz}'])
+
     if get_control('rm') == '1': cmnd.append('--rm')
 
     if args.shell: cmnd.extend(['--user', '0', '-ti', '--entrypoint', '/bin/bash'])
@@ -559,13 +564,13 @@ def main():
 
     if DEBUG:
         out = {i.control_name: i.resolved for i in CONTROLS if i.resolved is not None}
-        print(f'\nargs: {args}\n\nsettings: {settings}\n\nresolved controls: {out}\n')
-        print(f'cmnd: {cmnd}\n')
+        err(f'\nargs: {args}\n\nsettings: {settings}\n\nresolved controls: {out}\n')
+        err(f'cmnd: {cmnd}\n')
 
     if DEBUG or args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
         last_space = temp.rfind(' ')
-        print(temp[:last_space] + '\t\\\n ' + temp[last_space:])
+        err(temp[:last_space] + '\t\\\n ' + temp[last_space:])
         if args.test: sys.exit(0)
 
     # clear out any terminated-but-still-laying-around remanents of previous runs.

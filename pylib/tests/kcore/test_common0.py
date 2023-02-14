@@ -41,7 +41,7 @@ def test_read_file():
     assert C.read_file(f, strip=True) == 'hello world \nline 2'
     assert C.read_file(f, list_of_lines=True) == ['hello world ', 'line 2  ', '   ', '']
     assert C.read_file(f, list_of_lines=True, strip=True) == ['hello world', 'line 2', '']
-    assert C.read_file('notfound') is None
+    assert C.read_file('notfound') is False
     try:
         C.read_file('notfound', wrap_exceptions=False)
         assert '' == 'exception expected!'
@@ -74,7 +74,7 @@ def test_logging(tmp_path):
 
     # Check log messages go to stderr if init_log() not yet called.
     C.FORCE_TIME = 'TIME0'
-    
+
     # Basic test with all defaults except log filename.
     ok = C.init_log(logfile=tempname, force_time='TIME', clear=True)
     assert ok
@@ -111,7 +111,7 @@ def test_logging(tmp_path):
 def test_log_queue():
     C.init_log('test', logfile=None, log_queue_len=3, clear=True,
                filter_level_syslog=C.NEVER, force_time='TIME')
-               
+
     C.log_debug('msg1')
     C.log('msg2', C.INFO)
     C.log_warning('msg3')
@@ -135,7 +135,7 @@ def test_log_queue():
     assert C.last_logs() == 'test: TIME: CRITICAL: msg5\ntest: TIME: CRITICAL: msg4'
     assert C.last_logs_html() == '<p>test: TIME: CRITICAL: msg5<br/>test: TIME: CRITICAL: msg4'
 
-    
+
 # ---------- web get
 
 '''

@@ -127,38 +127,49 @@ def argparse_epilog(*args, **kwargs):
 
 def resolve_special_arg(args, argname, required=True):
     '''Process various special argument values.  Write resolved value back into args and return it.
+       See special_arg_resolver() for details on supported special values.'''
 
-       args.argname can be "-" to read as a password from tty,
-       $X to indicate to use environment variable as value,
-       *A[/B/C] to query keymaster for key A under username B and password C,
-       or can just be a normal string.
+    orig_val = getattr(args, argname)
+    new_value = special_arg_resolver(orig_val, argname)
+    if required and not new_value: raise ValueError(f'Unable to get required value for {argname}.')
+    setattr(args, argname, new_value)
+    return new_value
+
+
+def special_arg_resolver(input_val, argname='argument'):
+    '''The input value can have any of these special forms:
+       - "-" to read as a password from the tty
+       - $X to read the value from environment variable X
+       - *A[/B/C] to query keymaster for key A (optionally under username B and password C)
+       - file:X or f:X to read the value from file X
+       - or can just be a normal string (which is returned unchanged)
     '''
-    arg_val = getattr(args, argname)
-    if arg_val == "-":
+
+    if input_val == "-":
         import getpass
-        value = getpass.getpass(f'Enter value for {argname}: ')
-        setattr(args, argname, value)
+        return  getpass.getpass(f'Enter value for {argname}: ')
 
-    elif arg_val and arg_val.startswith('$'):
-        varname = arg_val[1:]
-        value = os.environ.get(varname)
-        if value is None: raise ValueError(f'{argname} indicated to use environment variable {arg_val}, but variable is not set.')
-        setattr(args, argname, value)
+    elif input_val and input_val.startswith('$'):
+        varname = input_val[1:]
+        output_value = os.environ.get(varname)
+        if output_value is None: raise ValueError(f'{argname} indicated to use environment variable {input_val}, but variable is not set.')
+        return output_value
 
-    elif arg_val and arg_val.startswith('*'):
-        parts = arg_val[1:].split('/')
+    elif input_val and input_val.startswith('*'):
+        parts = input_val[1:].split('/')
         keyname = parts[0]
         username = parts[1] if len(parts) >= 2 else None
         password = parts[2] if len(parts) >= 3 else None
         import kmc
-        arg_val = kmc.query_km(keyname, username, password, timeout=3, retry_limit=2, retry_delay=2)
-        if arg_val.startswith('ERROR:'): raise ValueError(f'failed to retrieve {keyname} from keymaster: {arg_val}.')
-        setattr(args, argname, value)
+        output_value = kmc.query_km(keyname, username, password, timeout=3, retry_limit=2, retry_delay=2)
+        if output_value.startswith('ERROR:'): raise ValueError(f'failed to retrieve {keyname} from keymaster: {output_value}.')
+        return output_value
 
-    else: value = arg_val
+    elif input_val and (input_val.startswith('file:') or input_val.startswith('f:')):
+        _, filename = input_val.split(':', 1)
+        return read_file(filename, wrap_exceptions=False)
 
-    if required and not value: raise ValueError(f'Unable to get required value for {argname}.')
-    return value
+    return input_val
 
 
 # ---------- ad-hoc

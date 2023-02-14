@@ -2,9 +2,6 @@ FROM ktools/kcore-baseline:live
 
 RUN apk -U add bash python3 py3-pyserial tzdata
 
-# Needs apk tzdata:
-ENV TZ America/New_York
-
 EXPOSE 8080
 
 COPY files /

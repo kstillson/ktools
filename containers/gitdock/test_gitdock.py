@@ -21,6 +21,7 @@ def cleanup(tmpdir, orig_dir):
 
 # ---------- tests
 
+@pytest.mark.skipif(D.not_required_host('jack'), reason='test contains host-specific configuration requirements (see TODO in settings.yaml)')
 def test_gitdock(container_to_test):
     orig_dir = os.getcwd()
     tmpdir = tempfile.mkdtemp()

@@ -92,6 +92,7 @@ install-simple: tools/keymaster.crt
 	cp -puv tools/pcrypt.py $(SIMPLE_BIN_DIR)/pcrypt
 	cp -puv tools/ratelimiter.py $(SIMPLE_BIN_DIR)/ratelimiter
 	cp -puv tools/run_para.py $(SIMPLE_BIN_DIR)/run_para
+	cp -puv tools/substring_counter.py $(SIMPLE_BIN_DIR)/substring_counter
 	#
 	$(MAKE) link
 	chmod -R go+rX $(LOCAL_SITE_DIR)
