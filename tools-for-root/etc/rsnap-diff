@@ -1,39 +1,54 @@
 #!/bin/bash
 # Output a report of the files that have changed recently in our rsnapshot backup.
 
-BASE=/mnt/rsnap
-EXC=/root/bin/rsnap-diff.exclude
+# ----- input params & defaults
 
 # If $1 is defined, use that as our output file; else use a random temp file.
-out=${1:-$(/bin/tempfile)}
-# If $2 is defined, use that as our OLD directory
+OUT=${1:-$(/bin/tempfile)}
+# If $2 is defined, use that as our OLD directory (relative to $BASE, below)
 OLD=${2:-daily.1}
-# If $3 is defined, use that as our NEW directory
+# If $3 is defined, use that as our NEW directory (relative to $BASE, below)
 NEW=${3:-daily.0}
 
-cd ${BASE}
-{ /usr/bin/diff -rq ${NEW} ${OLD} | \
-  /bin/sed -e 's@: @/@' | \
-  /bin/egrep -v -f ${EXC} > ${out}; \
-} 2>&1 | fgrep -v "No such file" | \
-         fgrep -v "Too many levels" | \
-         fgrep -v "recursive directory loop"
+# ----- control constants
+
+MYDIR=$(realpath $(dirname $0))
+BASE=${BASE:-/mnt/rsnap}
+EXC=${EXC:-${MYDIR}/rsnap-diff.exclude}
+CONSOL_FILE=${CONSOL_FILE:-${MYDIR}/rsnap-consolidate-substrings}
+CONSOL=${CONSOL:-substring_counter -r -s file:${CONSOL_FILE}}
+
+# ----- compute the diff
+
+if [[ ! -f ${OUT} ]]; then
+  cd ${BASE}
+  { /usr/bin/diff -rq ${NEW} ${OLD} | \
+    /bin/sed -e 's@: @/@' | \
+    /bin/egrep -v -f ${EXC} > ${OUT}; \
+  } 2>&1 | fgrep -v "No such file" | \
+           fgrep -v "Too many levels" | \
+           fgrep -v "recursive directory loop"
+fi
+
+# ----- output phase: separate into changes, deletions and additions
 
 echo ""
 echo "rsnapshot diff report ${NEW} vs ${OLD}"
 
 echo ""
 echo "Changes (see ~/bin/D)"
-/bin/grep differ ${out} | /usr/bin/cut -d" " -f2 | /bin/sed -e "s:${NEW}/::"
+/bin/grep differ ${OUT} | /usr/bin/cut -d" " -f2 | /bin/sed -e "s:${NEW}/::" | ${CONSOL}
 
 echo ""
 echo "Deletions"
-/bin/grep Only ${out} | /bin/grep ${OLD} | /usr/bin/cut -d" " -f3,4
+/bin/grep Only ${OUT} | /bin/grep ${OLD} | /usr/bin/cut -d" " -f3,4 | ${CONSOL}
 
 echo ""
 echo "Additions"
-/bin/grep Only ${out} | /bin/grep ${NEW} | /usr/bin/cut -d" " -f3,4
+/bin/grep Only ${OUT} | /bin/grep ${NEW} | /usr/bin/cut -d" " -f3,4 | ${CONSOL}
+
+# ----- cleanup
 
 if [[ "$1" == "" ]]; then
-  /bin/rm -f ${out}
+  /bin/rm -f ${OUT}
 fi

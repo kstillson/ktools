@@ -56,7 +56,7 @@ SCENES = {
   'gh0'         : [ 'lantern:white', 'garage:bulb-off', 'mobile-bulb:bulb-off', 'garage-L:on', 'garage-R:on', 'out-sconce:on', 'out-front-moon:on' ],
   'gh1'         : [ 'lantern:green', 'garage:dim-red', 'mobile-bulb:bulb-dim:2', 'garage-L:off', 'garage-R:off', 'out-sconce:off', 'out-front-moon:off' ],
   'home'        : [ 'office:med', 'lng:dim:30', 'kitchen:dim:60', 'dining-chandelier:dim:30' ],
-  'nook'        : [ 'kitchen:off', 'kitchen-pendants:off', 'breakfast-nook:dim:25' ],
+  'nook'        : [ 'kitchen:dim', 'kitchen-pendants:dim', 'breakfast-nook:dim:33' ],
   'panic'       : [ 'all', 'sirens' ],
   'party'       : [  'bendy', 'breakfast-nook', 'dining-chandelier', 'family-room-left',
                      'family-room-right', 'kitchen-pendants', 'kitchen', 'lounge',
