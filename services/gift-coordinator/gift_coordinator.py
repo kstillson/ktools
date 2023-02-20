@@ -46,8 +46,10 @@ WEB_HANDLERS = {
   '/edit':      view.edit_view,
   '/export':    view.export_view,
   '/healthz':   view.healthz_view,
+  '/hold':      view.hold_view,
   '/login':     view.login_view,
   '/logout':    view.logout_view,
+  '/take':      view.take_view,
 }
 
 
