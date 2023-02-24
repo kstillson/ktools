@@ -77,6 +77,8 @@ DEVICES = {
     'office:dim'                : 'TPLINK-SWITCH:tp-office:dim:40',
     'breakfast-nook:dim'        : 'TPLINK-SWITCH:tp-breakfast-nook:dim:25',
     'breakfast-nook:med'        : 'TPLINK-SWITCH:tp-breakfast-nook:dim:40',
+    'rear-flood:dim'		: 'TPLINK-PLUG:tp-rear-flood:off',  # rear flood only activates for "full" and "on"
+    'rear-flood:med'		: 'TPLINK-PLUG:tp-rear-flood:off',
 
     # ---------- delay trigger
 
