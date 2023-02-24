@@ -2,6 +2,8 @@
 # Everything else depends on DNS (d-run needs hostname lookups to get ip addresses), so start this very first.
 autostart: 1
 
+dns: "8.8.8.8"
+
 # log services not up yet, so don't try to use them
 log: J
 
