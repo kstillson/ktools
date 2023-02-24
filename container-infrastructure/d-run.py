@@ -101,7 +101,7 @@ CONTROLS = [
     Ctrl('command',      '--cmd',          None,                     'cmd',         None,              None,              'send this as the command to run within the container. If an entrypoint is in use, this because params to that entrypoint (i.e. same as --extra-init)'),
     Ctrl('docker_exec',  '--docker-exec',  'DOCKER_EXEC',            'docker_exec', '/usr/bin/docker', '/usr/bin/docker', 'container manager to use (docker or podman)'),
     Ctrl('env',          '--env',          None,                     'env',         None,              None,              'list of {name}={value} pairs to set in environment within the container'),
-    Ctrl('extra_docker', None,             None,                     'extra_docker',None,              None,              'list of additional command line arguments to send to the container launch CLI'),
+    Ctrl('extra_docker', '--extra-docker', 'KTOOLS_DRUN_EXTRA',      'extra_docker',None,              None,              'list of additional command line arguments to send to the container launch CLI'),
     Ctrl('extra_init',   '--extra-init',   None,                     'extra_init',  None,              None,              'list of additional arguments to pass to the init command within the container'),
     Ctrl('foreground',   '++fg',           None,                     'foreground',  '1',               '0',               'if flag set or env set to "1", run container in foreground with interactive/pty settings'),
     Ctrl('hostname',     '--hostname',     'KTOOLS_DRUN_HOSTNAME',   'network',     'test-@basedir',   '@basedir',        'host name to assign within the container'),
