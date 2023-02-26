@@ -33,7 +33,13 @@ You can add features (and complexity) incrementally
 With this, s['setting1'] will return the contents of $env_setting1 if that's defined,
 and "some-default" otherwise.
 
-A fully-featured use might look something more like this:
+Settings files can also contain include directives, which can point to other
+individual settings files, glob expressions, or entire directories.
+Similarly, arguments that provide a settings filename to either the Settings
+constructor or to the parse_settings_file() method can be lists of filenames
+or glob expressions.
+
+A slightly more fully-featured use might look something more like this:
 
 ----- test.py:
 
@@ -86,7 +92,7 @@ OVERRIDE_color=yellow ./test.py -g global.dict -l local.env --color=brown --size
 
 '''
 
-import argparse, os, sys, yaml
+import argparse, glob, os, sys, yaml
 from dataclasses import dataclass, field
 
 import kcore.common as C
@@ -117,7 +123,6 @@ class Setting:
     disable_cache: bool = False
     cached_value: str = None
 
-
 # ----------
 
 class Settings:
@@ -126,7 +131,7 @@ class Settings:
 
     def __init__(self, settings_filename=None, settings_data_type='auto',
                  env_override_prefix=None, env_prefix=None, env_list_sep=';',
-                 flag_prefix=None, debug_mode=False):
+                 flag_prefix=None, include_directive='!include', debug_mode=False):
         # store our controls
         self.settings_filename = settings_filename
         self.settings_data_type = settings_data_type
@@ -134,6 +139,7 @@ class Settings:
         self.env_prefix = env_prefix
         self.env_list_sep = env_list_sep
         self.flag_prefix = flag_prefix
+        self.include_directive = include_directive
         self.debug_mode = debug_mode
 
         # init internal caches
@@ -186,6 +192,7 @@ class Settings:
     # ----- return setting's values
 
     def get(self, name, ignore_cache=False):
+        # find our setting instance from the name
         setting = self._settings_dict.get(name)
         if not setting:
             answer = self._settings_file_value_cache.get(name)
@@ -195,22 +202,18 @@ class Settings:
             if self.debug_mode: print(f'setting {name} requested, but we have no information on it; returning None', file=sys.stderr)
             return None
 
+        # handle already-cached values
         if setting.cached_value and not setting.disable_cache and not ignore_cache:
             if self.debug_mode: print(f'returning cached value {name} = {setting.cached_value}', file=sys.stderr)
             return setting.cached_value
 
         answer, how = self._resolve(setting)
-
-        resolve_special = C.special_arg_resolver(answer, name, setting.default_env_value)
-        if resolve_special != answer:
-            how += f'; after arg resolved for: {answer}'
-            answer = resolve_special
-
         if self.debug_mode:
             print(f'resolved and cached setting "{name}" \t to \t "{answer}" \t via {how}', file=sys.stderr)
 
         if not setting.disable_cache: setting.cached_value = answer
         return answer
+
 
     def __getitem__(self, name): return self.get(name)
 
@@ -226,6 +229,18 @@ class Settings:
     # returns a dict of settings from loaded file, but effect on self._settings_file_value_cache is cumulative.
 
     def parse_settings_file(self, filename=None, data_type=None):
+        # Handle special types of incoming filenames (lists and globs)
+        if isinstance(filename, list):
+            cumulative = {}
+            for f in filename: cumulative.update(self.parse_settings_file(f))
+            return cumulative
+
+        elif '*' in filename:
+            cumulative = {}
+            for f in glob.glob(filename): cumulative.update(self.parse_settings_file(f))
+            return cumulative
+
+        # Handle a regular filename
         if not filename: filename = self.settings_filename
         else: self.settings_filename = filename
         if not filename:
@@ -246,28 +261,30 @@ class Settings:
 
     def parse_settings_data(self, data, data_type, filename=None):  # filename just for logging...
         self.reset_cached_values()  # If settings already evaluated, results could be changed by this load.
-        new_data = {}
+        new_settings = {}
+
+        if self.include_directive in data: data = self._handle_includes(data)
 
         if data_type == 'yaml':
-            new_data.update(yaml.safe_load(data))
+            new_settings.update(yaml.safe_load(data))
 
         elif data_type == 'env':
             for line in data.split('\n'):
                 if not line or line.startswith('#') or '=' not in line: continue
                 key, value = line.split('=', 1)
-                new_data[key.strip()] = value.strip(" \t'\"")
+                new_settings[key.strip()] = value.strip(" \t'\"")
 
         elif data_type == 'dict':
-            new_data.update(eval(data, {}, {}))
+            new_settings.update(eval(data, {}, {}))
 
         else:
             print(f'unknown settings_data_type: {data_type}', file=sys.stderr)
 
-        if self.debug_mode: print(f'loaded {len(new_data)} settings from {data_type} file {filename}', file=sys.stderr)
+        if self.debug_mode: print(f'loaded {len(new_settings)} settings from {data_type} file {filename}', file=sys.stderr)
 
-        self._settings_file_value_cache.update(new_data)
+        self._settings_file_value_cache.update(new_settings)
         self.add_settings_from_settings_file_cache()
-        return new_data
+        return new_settings
 
     # ----- other state maintenance
 
@@ -279,6 +296,18 @@ class Settings:
     #       (done here rather than in Setting, as need access to the various caches)
 
     def _resolve(self, setting):
+        answer, how = self._search_sources_for_setting(setting)
+
+        # Check integration with special_arg_resolver (file and keymaster integration)
+        resolve_special = C.special_arg_resolver(answer, setting.name, setting.default_env_value)
+        if resolve_special != answer:
+            how += f'; after arg resolved for: {answer}'
+            answer = resolve_special
+
+        return answer, how
+
+
+    def _search_sources_for_setting(self, setting):
         # try override environment variable
         varname = self._get_override_env_name(setting)
         val = self._get_env_value(varname, self.env_list_sep)
@@ -332,6 +361,44 @@ class Settings:
 
     def _get_setting_name(self, setting):
         return setting.setting_name or setting.name
+
+    # ----- include directives
+
+    def _handle_includes(self, data):
+        include_directive_lines = []
+        lines = data.split('\n')
+        for count, line in enumerate(lines):
+            if line.startswith(self.include_directive): include_directive_lines.append(count)
+
+        for line_number in include_directive_lines:
+            line = lines[line_number]
+            _, param = line.split(self.include_directive, 1)
+            param = param.strip()
+            if self.debug_mode: print(f'processing include directive: {param}', file=sys.stderr)
+
+            count = 0
+            if os.path.isfile(param):
+                count = len(self.parse_settings_file(param))
+
+            elif os.path.isdir(param):
+                for f in glob.glob(os.path.join(param, '*')):
+                    count += len(self.parse_settings_file(f))
+
+            elif '*' in param:
+                for f in glob.glob(param):
+                    count += len(self.parse_settings_file(f))
+
+            else:
+                raise ValueError(f'do not known how to handle include directive: {line}')
+
+            if self.debug_mode:
+                if count > 0: print(f'include directive {param} added {count} settings.')
+                else: print(f'WARNING: include directive {param} added no settings (failed glob?).')
+
+            print(f'@@ {self._settings_file_value_cache=}')
+
+        for line_number in reversed(include_directive_lines): lines.pop(line_number)
+        return '\n'.join(lines)
 
 
 # ---------- main

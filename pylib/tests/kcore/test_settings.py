@@ -213,6 +213,21 @@ def test_env_sep():
     settings.add_setting('s')
     assert settings['s'] == ['a', 'b']
 
+def test_chained_include_directives():
+    settings = S.Settings('testdata/settings4.env', debug_mode=True)
+    assert settings['a'] == '1'   # from settings4
+    assert settings['b'] == '2'   # from settings4
+    assert settings['c'] == 5     # from settings5
+    assert settings['d'] == 6     # from settings6
+
+def test_settings_file_glob_and_include_dir():
+    settings = S.Settings(['testdata/settings2.env', 'testdata/settings7.e*'], debug_mode=True)
+    assert settings['a'] == '9'   # from settings7
+    assert settings['b'] is None
+    assert settings['c'] == 'cval' # from data.d/file1.yaml
+    assert settings['d'] == 'dval' # from data.d/file2.env
+    assert settings['f'].startswith('hello')  # from settings2.env
+
 def test_cli():
     reset_env()
     os.environ['e1e'] = 'e1e-e'
@@ -237,3 +252,4 @@ def test_cli():
         ret = S.main(argv)
         assert ret == 0
         assert 'f=hello world' in cap.out
+
