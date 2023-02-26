@@ -22,6 +22,9 @@ def reset_env():
 # ---------- tests
 
 def test_simple_yaml_only():
+    reset_env()
+    os.environ['e1'] = 'e1val-env9'
+
     s = S.Settings('testdata/settings1.yaml')
     assert s.get('a') == 'val-a'
     assert s['c'] == '321'
@@ -29,31 +32,35 @@ def test_simple_yaml_only():
     assert s['d']['k2'] == 'v2'
     assert s['l'][0] == 'l1'
     assert s['l'][1] == 'l2'
-    assert s['e1'] == '$e1'                 # no special arg resolution
-    assert s['f'] == 'file:testdata/file1'  # no special arg resolution
+    assert s['e1'] == 'e1val-env9'
+    assert s['f'].startswith('hello')
     assert s['n'] == 123
     assert s['missing'] is None
 
 
 def test_simple_env_only():
-    si = S.Settings()
-    s = si.parse_settings_file('testdata/settings2.env')
+    s = S.Settings(debug_mode=True)
+    s.add_setting('e1', default_env_value='e1missing')
+
+    parse_results = s.parse_settings_file('testdata/settings2.env')
     assert s['a'] == 'val-ae'
     assert s['c'] == '321e'
-    assert s['e1'] == '$e1e'                # no special arg resolution
-    assert s['f'] == 'file:testdata/file1'  # no special arg resolution
+    assert s['e1'] == 'e1missing'
+    assert s['f'].startswith('hello')
     assert s['n'] == '124'                  # note conversion to string (because .env file doesn't have types)
+    assert parse_results['f'].startswith('file:')
 
 
 def test_simple_dict_file_only():
     s = S.Settings('testdata/settings3.dict')
+    s.get_setting('e1').default_env_value = 'e1missing2'
     assert s['a'] == 'val-ad'
     assert s['c'] == '321d'
     assert s['d']['k1'] == 'v1d'
     assert s['d']['k2'] == 'v2d'
     assert s['l'][0] == 'l1d'
     assert s['l'][1] == 'l2d'
-    assert s['e1'] == '$e1d'                # no special arg resolution
+    assert s['e1'] == 'e1missing2'
     assert s['n'] == 125
 
 
@@ -191,24 +198,27 @@ def test_list_of_Settings():
     assert settings['z2'] == 'd2'
     assert settings.get('z3') == 125
 
-
 def test_cli():
+    reset_env()
+    os.environ['e1e'] = 'e1e-e'
+    os.environ['e2e'] = 'e2e-e'
+
     argv = ['--settings_filename', 'testdata/settings2.env', 'a']
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0
-        assert cap.out == 'val-ae'
+        assert cap.out == 'a=val-ae'
         assert cap.err == ''
 
-    argv.append('c')
+    argv = ['--settings_filename', 'testdata/settings2.env', '--quotes', 'a', 'c', 'e2']
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0
-        assert cap.out == 'a: val-ae\nc: 321e'
+        assert cap.out == "a='val-ae'\nc='321e'\ne2='e2e-e'"
         assert cap.err == ''
 
     argv = ['--settings_filename', 'testdata/settings2.env', '--all']
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0
-        assert 'file:testdata/file1' in cap.out   # special arg not resolved.
+        assert 'f=hello world' in cap.out

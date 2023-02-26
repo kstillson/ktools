@@ -136,13 +136,17 @@ def resolve_special_arg(args, argname, required=True):
     return new_value
 
 
-def special_arg_resolver(input_val, argname='argument'):
+def special_arg_resolver(input_val, argname='argument', env_value_default=None):
     '''The input value can have any of these special forms:
        - "-" to read as a password from the tty
        - $X to read the value from environment variable X
        - *A[/B/C] to query keymaster for key A (optionally under username B and password C)
        - file:X or f:X to read the value from file X
        - or can just be a normal string (which is returned unchanged)
+
+       If $X is specified as input_val, but X is not present in the environment, then
+       env_value_default will be returned.  If env_value_default is None (the default),
+       a ValueError will be raised, as we have no source for the correct value.
     '''
 
     if not input_val: return input_val
@@ -163,7 +167,9 @@ def special_arg_resolver(input_val, argname='argument'):
     elif val.startswith('$'):
         varname = val[1:]
         output_value = os.environ.get(varname)
-        if output_value is None: raise ValueError(f'{argname} indicated to use environment variable {val}, but variable is not set.')
+        if output_value is None:
+            if env_value_default is not None: return env_value_default
+            raise ValueError(f'{argname} indicated to use environment variable {val}, but variable is not set and no default provided.')
         return output_value
 
     elif val.startswith('*'):

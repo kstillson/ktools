@@ -2,7 +2,7 @@
 
 '''...'''
 
-import argparse, os, pprint, sys, yaml
+import argparse, os, sys, yaml
 from dataclasses import dataclass, field
 
 import kcore.common as C
@@ -14,7 +14,7 @@ import kcore.common as C
 class Setting:
     name: str
 
-    doc: str = 'undocumented'
+    doc: str = 'undocumented'       # only really used when constructing flags
     override_env_name: str = None
     flag_name: str = None
     flag_aliases: list = field(default_factory=list)  # list of strings
@@ -22,7 +22,8 @@ class Setting:
     env_name: str = None
     override_env_name: str = None
     default: ... = None
-    value_type: ... = str     # just used when add_flags() is creating argparse entries.
+    default_env_value: str = None   # if value contains $X but $X not defined, return this.  If None, raise a ValueError.
+    value_type: ... = str           # just used when add_flags() is creating argparse entries.
 
     cached_value: str = None
 
@@ -57,12 +58,8 @@ class Settings:
 
     # ----- add settings this instance is to control
 
-    def add_setting(self, name, doc='undocumented', value_type=str,
-            override_env_name=None, flag_name=None, flag_aliases=[],
-            setting_name=None, env_name=None, default=None):
-        self._settings_dict[name] = Setting(
-            name, doc, override_env_name, flag_name, flag_aliases,
-            setting_name, env_name, default, value_type)
+    def add_setting(self, name, *args, **kwargs):
+        self._settings_dict[name] = Setting(name, *args, **kwargs)
 
     def add_Setting(self, instance_of_Settings):
         self._settings_dict[instance_of_Settings.name] = instance_of_Settings
@@ -72,6 +69,11 @@ class Settings:
 
     def add_simple_settings(self, iter_of_setting_names):
         for name in iter_of_setting_names: self.add_setting(name)
+
+    def add_settings_from_settings_file_cache(self):
+        for name, val in self._settings_file_value_cache.items():
+            if not name in self._settings_dict:
+                self.add_setting(name)
 
 
     # ----- modify an argparse instance to add flags created by controls settings under our control.
@@ -100,13 +102,16 @@ class Settings:
             if answer:
                 if self.debug_mode: print(f'resolved setting "{name}" \t to \t "{answer}" \t as an unregistered setting from settings file', file=sys.stderr)
                 return answer
-            # Otherwise, we know nothing about this setting, so just return None.
+            if self.debug_mode: print(f'setting {name} requested, but we have no information on it; returning None', file=sys.stderr)
             return None
 
-        if setting.cached_value and not ignore_cache: return setting.cached_value
+        if setting.cached_value and not ignore_cache:
+            if self.debug_mode: print(f'returning cached value {name} = {setting.cached_value}', file=sys.stderr)
+            return setting.cached_value
+
         answer, how = self._resolve(setting)
 
-        resolve_special = C.special_arg_resolver(answer, name)
+        resolve_special = C.special_arg_resolver(answer, name, setting.default_env_value)
         if resolve_special != answer:
             how += f'; after arg resolved for: {answer}'
             answer = resolve_special
@@ -114,7 +119,7 @@ class Settings:
         if self.debug_mode:
             print(f'resolved and cached setting "{name}" \t to \t "{answer}" \t via {how}', file=sys.stderr)
 
-        setting.cached_value= answer
+        setting.cached_value = answer
         return answer
 
     def __getitem__(self, name): return self.get(name)
@@ -171,6 +176,7 @@ class Settings:
         if self.debug_mode: print(f'loaded {len(new_data)} settings from {data_type} file {filename}', file=sys.stderr)
 
         self._settings_file_value_cache.update(new_data)
+        self.add_settings_from_settings_file_cache()
         return new_data
 
     # ----- other state maintenance
@@ -186,7 +192,6 @@ class Settings:
         # try override environment variable
         varname = self._get_override_env_name(setting)
         val = self._get_env_value(varname, self.env_list_sep)
-        print(f'@@EO {varname=} {val=}')
         if val: return val, f'override environment variable ${varname}'
 
         # Try flag
@@ -249,6 +254,7 @@ def parse_main_args(argv):
     ap.add_argument('--debug',              '-d', action='store_true', help='verbose settings resolution data to stsderr')
     ap.add_argument('--settings_filename',  '-s', default=default_settings_file, help='name of settings file to parse')
     ap.add_argument('--settings_file_type', '-t', default='auto', help='yaml, env, or dict')
+    ap.add_argument('--quotes',             '-q', action='store_true', help='add quotes around RHS of output (useful if feeding into shell assignments)')
     ap.add_argument('settings', nargs='*', help='list of settings to resolve')
     return ap.parse_args(argv)
 
@@ -256,14 +262,14 @@ def parse_main_args(argv):
 def main(argv=[]):
     args = parse_main_args(argv or sys.argv[1:])
     settings = Settings(args.settings_filename, debug_mode=args.debug)
+    settings_dict = settings.get_dict()
+
+    q = "'" if args.quotes else ""
 
     if args.all:
-        pprint.pprint(settings._settings_file_value_cache)
-        return 0
-
-    for setting_name in args.settings:
-        prefix = (setting_name + ': ') if len(args.settings) > 1 else ''
-        print(f'{prefix}{settings.get(setting_name)}')
+        for name, val in settings_dict.items(): print(f'{name}={q}{val}{q}')
+    else:
+        for name in args.settings: print(f'{name}={q}{settings_dict.get(name)}{q}')
     return 0
 
 
