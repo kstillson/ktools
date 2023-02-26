@@ -64,9 +64,14 @@ class Settings:
             name, doc, override_env_name, flag_name, flag_aliases,
             setting_name, env_name, default, value_type)
 
+    def add_Setting(self, instance_of_Settings):
+        self._settings_dict[instance_of_Settings.name] = instance_of_Settings
+
+    def add_Settings(self, iter_of_Settings):
+        for setting in iter_of_Settings: self.add_Setting(setting)
+
     def add_simple_settings(self, iter_of_setting_names):
-        for name in iter_of_setting_names:
-            self.add_setting(name)
+        for name in iter_of_setting_names: self.add_setting(name)
 
 
     # ----- modify an argparse instance to add flags created by controls settings under our control.

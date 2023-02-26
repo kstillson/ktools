@@ -17,7 +17,7 @@ def reset_env():
     else:
         os.environ.clear()
         os.environ.update(ENV)
-        
+
 
 # ---------- tests
 
@@ -100,7 +100,7 @@ def test_env_values_only_when_requested():
     reset_env()
     os.environ['q1'] = 'q1val-x'
     os.environ['eo_q1'] = 'q1val-xx'
-    
+
     settings = S.Settings(debug_mode=True)  # no env prefixes are set, no datafile provided.
     settings.add_setting('q1')
     assert settings['q1'] is None
@@ -117,7 +117,7 @@ def test_env_values_only_when_requested():
     settings4.add_setting('q1')
     assert settings4['q1'] == 'q1val-x'
 
-    
+
 def test_including_flags_in_the_mix():
     reset_env()
     settings = S.Settings('testdata/settings2.env',
@@ -172,10 +172,23 @@ def test_multiple_settings_files():
 
     # Note that we are not asserting ignore_cache=True; parse_settings_file()
     # should invalidate the cache automatically.
-    
+
     settings.parse_settings_file('testdata/settings2.env')
     assert settings['a'] == 'val-ae'       # changed
     assert settings['d']['k1'] == 'v1'     # unchanged (not set in the 2nd file)
+
+
+def test_list_of_Settings():
+    settings = S.Settings('testdata/settings3.dict', debug_mode=True)
+    settings.add_Settings([
+        S.Setting('z1', setting_name='a',       default='d1'),
+        S.Setting('z2', setting_name='missing', default='d2'),
+        S.Setting('z3', setting_name='n',       default='d3', value_type=int),
+    ])
+
+    assert settings['z1'] == 'val-ad'
+    assert settings['z2'] == 'd2'
+    assert settings.get('z3') == 125
 
 
 def test_cli():
