@@ -216,6 +216,12 @@ def test_env_sep():
     settings.add_setting('s', env_name='s')
     assert settings['s'] == ['a', 'b']
 
+    os.environ['s2'] = 'a, b'
+    settings = S.Settings(env_list_sep=', ', debug=True)
+    settings.add_setting('s2', env_name='s2')
+    assert settings['s2'] == ['a', 'b']
+
+
 def test_chained_include_directives():
     settings = S.Settings('testdata/settings4.env', debug=True)
     assert settings['a'] == '1'    # from settings4
