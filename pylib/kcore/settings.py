@@ -48,16 +48,15 @@ ap = argparse.ArgumentParser(add_help=False)  # Defer help until after we've add
 ap.add_argument('--global_settings_file', '-g', default=None)
 ap.add_argument('--local_settings_file', '-l', default=None)
 ap.add_argument('--other_flags_unrelated_to_settings', default=None)
-ap.add_argument('--help', '-h', action='store_true', help='print this help')
+ap.add_argument('--help', '-h', action='store_true', help='print help')
 args, _ = ap.parse_known_args()   # User may specify settings-based flags we haven't added to the parser yet; ignore those for now.
 
 import kcore.settings as S
-s = S.Settings(env_override_prefix='OVERRIDE_', env_prefix='')
-s.parse_settings_file(args.global_settings_file)
+s = S.Settings(args.global_settings_file)
 s.parse_settings_file(args.local_settings_file)
 s.add_Settings([
-  S.Setting('color', flag_name='color_name', flag_aliases=['-c'], default='black', doc='color we want'),
-  S.Setting('size',  env_name='SIZE', doc='size we want'),
+  S.Setting('color', env_name='color', override_env_name='OVERRIDE_color', flag_name='color_name', flag_aliases=['-c'], default='black', doc='color we want'),
+  S.Setting('size',  env_name='SIZE',  override_env_name='OVERRIDE_size',  doc='size we want'),
 ])
 
 s.add_flags(ap)          # Add our defined settings to the argparser's flags,
@@ -109,11 +108,11 @@ class Setting:
     value_type: ... = str           # just used when add_flags() is creating argparse entries.
 
     # settings sources, listed in presidence order
-    override_env_name: str = None   # name of environment variable that overrides all other sources.  defaults to .name, only enabled if Settings.env_override_prefix is set.
-    flag_name: str = None           # name of flag to add for setting this setting.  Should not include "--" prefix.
+    override_env_name: str = None   # name of environment variable that overrides all other sources.  Not used unless explicitly set.
+    flag_name: str = None           # name of flag to add for setting this setting.  Should not include "--" prefix (because it's going to have Settings.flag_prefix prepending).  This setting is disabled if Settings.flag_prefix is None.  If Settings.flag_prefix is not none (including ''), this defaults to .name
     flag_aliases: list = field(default_factory=list)  # list of aliases for the flag_name;   should include the "-" or "--" prefixes.
     setting_name: str = None        # name of the field in setting files where we look for this setting.  Defaults to .name
-    env_name: str = None            # name of environment variable to use if other sources don't provide a value.  defaults to .name, only enabled if Settings.env_prefix is set.
+    env_name: str = None            # name of environment variable to use if other sources don't provide a value.  Not used unless explicitly set.
     default: ... = None             # default value to use if no other source provides one.  can be a string or a callable that returns a string.
 
     # other controls
@@ -129,14 +128,11 @@ class Settings:
 
     # ----- constructors
 
-    def __init__(self, settings_filename=None, settings_data_type='auto',
-                 env_override_prefix=None, env_prefix=None, env_list_sep=';',
+    def __init__(self, settings_filename=None, settings_data_type='auto', env_list_sep=';',
                  flag_prefix=None, include_directive='!include', debug_mode=False):
         # store our controls
         self.settings_filename = settings_filename
         self.settings_data_type = settings_data_type
-        self.env_override_prefix = env_override_prefix
-        self.env_prefix = env_prefix
         self.env_list_sep = env_list_sep
         self.flag_prefix = flag_prefix
         self.include_directive = include_directive
@@ -170,6 +166,18 @@ class Settings:
         for name, val in self._settings_file_value_cache.items():
             if not name in self._settings_dict:
                 self.add_setting(name)
+
+
+    # ----- tweak existing settings
+    #       In-case you want to change things imported as simple settings.
+
+    def tweak_setting(self, name, attr, newval):
+        setting = self._settings_dict.get(name)
+        setattr(setting, attr, newval.replace('{name}', setting.name))
+
+    def tweak_all_settings(self, attr, newval):
+        for setting in self._settings_dict.values():
+            setattr(setting, attr, newval.replace('{name}', setting.name))
 
 
     # ----- modify an argparse instance to add flags created by controls settings under our control.
@@ -309,9 +317,8 @@ class Settings:
 
     def _search_sources_for_setting(self, setting):
         # try override environment variable
-        varname = self._get_override_env_name(setting)
-        val = self._get_env_value(varname, self.env_list_sep)
-        if val: return val, f'override environment variable ${varname}'
+        val = self._get_env_value(setting.override_env_name, setting.name, self.env_list_sep)
+        if val: return val, f'override environment variable ${setting.override_env_name}'
 
         # Try flag
         if not self._args_dict_cache and self._argparse_instance_cache:
@@ -326,9 +333,8 @@ class Settings:
         if val: return val, f'setting {setting_name} from file {self.settings_filename}'
 
         # Try default environment variable
-        varname = self._get_env_name(setting)
-        val = self._get_env_value(varname, self.env_list_sep)
-        if val: return val, f'environment variable ${varname}'
+        val = self._get_env_value(setting.env_name, setting.name, self.env_list_sep)
+        if val: return val, f'environment variable ${setting.env_name}'
 
         # Return the fallback default value
         if isinstance(setting.default, str): return setting.default, 'default string'
@@ -338,25 +344,19 @@ class Settings:
 
     # ----- internal naming helpers
 
-    def _get_override_env_name(self, setting):
-        if self.env_override_prefix is None: return None
-        return f'{self.env_override_prefix or ""}{setting.override_env_name or setting.name}'
-
-    def _get_env_name(self, setting):
-        if self.env_prefix is None: return None
-        return f'{self.env_prefix or ""}{setting.env_name or setting.name}'
-
-    def _get_env_value(self, varname, env_list_sep=None):
-        if not varname: return None
+    def _get_env_value(self, varname, setting_name, env_list_sep=None):
+        if varname is None: return None            # Disabled
+        if not varname: varname = setting_name     # Not disabled but blank; use the setting name
         val = os.environ.get(varname)
         if val and env_list_sep and env_list_sep in val: val = val.split(env_list_sep)
         return val
 
     def _get_flag_name(self, setting):
-        if setting.flag_name and setting.flag_name.startswith('-'): return setting.flag_name
+        if self.flag_prefix is None: return None   # This disables flags.  Set to '' to enable but have it empty.
+        if setting.flag_name and setting.flag_name.startswith('-'): return setting.flag_name  # Trick to bypass flag_prefix.
         base = setting.flag_name or setting.name
         if len(base) == 1 and not self.flag_prefix: return '-' + base
-        flagname = (self.flag_prefix or "") + base
+        flagname = self.flag_prefix + base
         return '--' + flagname.replace('-', '_')
 
     def _get_setting_name(self, setting):

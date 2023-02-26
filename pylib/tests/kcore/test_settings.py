@@ -71,9 +71,12 @@ def test_yaml_plus_environment():
     os.environ['q1'] = 'q1val-env'
     os.environ['eo_n'] = 'n-override-env'
 
-    settings = S.Settings('testdata/settings1.yaml', env_override_prefix='eo_', env_prefix='', debug_mode=True)
+    settings = S.Settings('testdata/settings1.yaml', debug_mode=True)
     settings.add_simple_settings(['a', 'c', 'd', 'l', 'e1', 'e2', 'ex', 'f', 'n', 'q1', 'q2', 'q3'])
-    settings.get_setting('q2').default = 'def-q2'  # reach in a change a setting's internals...
+    # reach in a change some settings' controls...
+    settings.tweak_setting('q2', 'default', 'def-q2')
+    settings.tweak_all_settings('override_env_name', 'eo_{name}')
+    settings.tweak_all_settings('env_name', '')  # change None to '' to trigger default of {name}
 
     assert settings.get('a') == 'val-a'  # from yaml
     assert settings.get_setting('a').cached_value == 'val-a'  # check value was cached
@@ -109,28 +112,28 @@ def test_env_values_only_when_requested():
     os.environ['q1'] = 'q1val-x'
     os.environ['eo_q1'] = 'q1val-xx'
 
-    settings = S.Settings(debug_mode=True)  # no env prefixes are set, no datafile provided.
+    settings = S.Settings(debug_mode=True)  # no env_names are set, no datafile provided.
     settings.add_setting('q1')
     assert settings['q1'] is None
 
-    settings2 = S.Settings(env_prefix='', debug_mode=True)
-    settings2.add_setting('q1')
+    settings2 = S.Settings(debug_mode=True)
+    settings2.add_setting('q1', env_name='q1')
     assert settings2['q1'] == 'q1val-x'
 
-    settings3 = S.Settings(env_override_prefix='eo_', debug_mode=True)
-    settings3.add_setting('q1')
+    settings3 = S.Settings(debug_mode=True)
+    settings3.add_setting('q1', override_env_name='eo_q1')
     assert settings3['q1'] == 'q1val-xx'
 
-    settings4 = S.Settings(env_override_prefix='', debug_mode=True)
-    settings4.add_setting('q1')
+    settings4 = S.Settings(debug_mode=True)
+    settings4.add_setting('q1', override_env_name='q1')
     assert settings4['q1'] == 'q1val-x'
 
 
 def test_including_flags_in_the_mix():
     reset_env()
-    settings = S.Settings('testdata/settings2.env',
-        env_override_prefix='eo_', flag_prefix="f_", debug_mode=True)
+    settings = S.Settings('testdata/settings2.env', flag_prefix="f_", debug_mode=True)
     settings.add_simple_settings(['a', 'c', 'd', 'l', 'e1', 'e2', 'ex', 'f', 'n', 'q1', 'q2', 'q3'])
+    settings.tweak_all_settings('override_env_name', 'eo_{name}')
 
     ap = argparse.ArgumentParser()
     ap.add_argument('--local', help='flag not associated with the settings system')
@@ -209,8 +212,8 @@ def test_default_callable():
 def test_env_sep():
     reset_env()
     os.environ['s'] = 'a;b'
-    settings = S.Settings(env_prefix='', debug_mode=True)
-    settings.add_setting('s')
+    settings = S.Settings(debug_mode=True)
+    settings.add_setting('s', env_name='s')
     assert settings['s'] == ['a', 'b']
 
 def test_chained_include_directives():
