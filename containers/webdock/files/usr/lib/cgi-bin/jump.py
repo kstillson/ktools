@@ -56,7 +56,7 @@ def main():
     hits = []
     for filename in glob.glob('/var/www/html/launchpad/index*.html'):
         for line in open(filename):
-            if not '<button class="bb" ' in line: continue
+            if not '<button class="bb' in line: continue
             item = parse_line(line, filename)
             if qs in item.search_blob(): hits.append(item)
 

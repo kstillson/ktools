@@ -96,29 +96,30 @@ class Ctrl:
 # ---------- control constants
 
 CONTROLS = [
-#        control name,   override_flag,    override_env,             setting_name,  test-mode-default, normal default     doc
-    Ctrl('autostart',    None,             None,                     'autostart',   None,              None,              'string indicating startup wave to auto-launch this container system system boot. Not used by this script.'),
-    Ctrl('command',      '--cmd',          None,                     'cmd',         None,              None,              'send this as the command to run within the container. If an entrypoint is in use, this because params to that entrypoint (i.e. same as --extra-init)'),
-    Ctrl('docker_exec',  '--docker-exec',  'DOCKER_EXEC',            'docker_exec', '/usr/bin/docker', '/usr/bin/docker', 'container manager to use (docker or podman)'),
-    Ctrl('env',          '--env',          None,                     'env',         None,              None,              'list of {name}={value} pairs to set in environment within the container'),
-    Ctrl('extra_docker', None,             None,                     'extra_docker',None,              None,              'list of additional command line arguments to send to the container launch CLI'),
-    Ctrl('extra_init',   '--extra-init',   None,                     'extra_init',  None,              None,              'list of additional arguments to pass to the init command within the container'),
-    Ctrl('foreground',   '++fg',           None,                     'foreground',  '1',               '0',               'if flag set or env set to "1", run container in foreground with interactive/pty settings'),
-    Ctrl('hostname',     '--hostname',     'KTOOLS_DRUN_HOSTNAME',   'network',     'test-@basedir',   '@basedir',        'host name to assign within the container'),
-    Ctrl('image',        '--image',        None,                     'image',       '@basedir',        '@basedir',        'name of the image to launch'),
-    Ctrl('ip',           '--ip',           'KTOOLS_DRUN_IP',         'ip',          '0',               '-',               'IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
-    Ctrl('ipv6_ports',   '++ipv6',         None,                     'ipv6_ports',  '0',               '0',               'if flag set or env set to "1", enable IPv6 port mappings.'),
-    Ctrl('log',          '--log',          'KTOOLS_DRUN_LOG',        'log',         'none',            '-',               'log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url]'),
-    Ctrl('ports',        '--ports',        None,                     'ports',       None,              None,              'list of {host}:{container} port pairs for mapping'),
-    Ctrl('puid',         '--puid',         'PUID',                   'puid',        'auto',            'auto',            'if not "auto", pass the given value into $PUID inside the container.  "auto" will generate a consistent container-specific value.  Blank to disable.'),
-    Ctrl('name',         '--name',         'KTOOLS_DRUN_NAME',       'name',        'test-@basedir',   '@basedir',        'name to assign to the launched container'),
-    Ctrl('network',      '--network',      None,                     'network',     '$KTOOLS_DRUN_TEST_NETWORK', '$KTOOLS_DRUN_NETWORK',  'container network to use'),
-    Ctrl('repo1',        '--repo',         'KTOOLS_DRUN_REPO',       'repo1',       'ktools',          'ktools',          'first repo to try for a matching image'),
-    Ctrl('repo2',        '--repo2',        'KTOOLS_DRUN_REPO2',      'repo2',       None,              None,              'second repo to try for a matching image'),
-    Ctrl('rm',           '++rm',           None,                     'rm',          '1',               '1',               'if flag set or env set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
-    Ctrl('tag',          '--tag',          'KTOOLS_DRUN_TAG',        'tag',         'latest',          'live',            'tagged or other version indicator of image to launch'),
-    Ctrl('timezone',     '--tz',           'KTOOLS_DRUN_TZ',         'tz',          '-',               '-',               'timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
-    Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',        'volbase',     '/rw/dv',          '/rw/dv',          'base directory for relative bind-mount source points'),
+#        control name,   override_flag,    override_env,                      setting_name,  test-mode-default,     normal default         doc
+    Ctrl('autostart',    None,             None,                              'autostart',   None,                  None,                  'string indicating startup wave to auto-launch this container system system boot. Not used by this script.'),
+    Ctrl('command',      '--cmd',          None,                              'cmd',         None,                  None,                  'send this as the command to run within the container. If an entrypoint is in use, this because params to that entrypoint (i.e. same as --extra-init)'),
+    Ctrl('dns',          '--dns',          'KTOOLS_DRUN_OVERRIDE_DNS',        'dns',         '$KTOOLS_DRUN_DNS',    '$KTOOLS_DRUN_DNS',    'IP address to use as DNS server from inside container'),
+    Ctrl('docker_exec',  '--docker-exec',  'DOCKER_EXEC',                     'docker_exec', '/usr/bin/docker',     '/usr/bin/docker',     'container manager to use (docker or podman)'),
+    Ctrl('env',          '--env',          None,                              'env',         None,                  None,                  'list of {name}={value} pairs to set in environment within the container'),
+    Ctrl('extra_docker', '--extra-docker', 'KTOOLS_DRUN_OVERRIDE_EXTRA',      'extra_docker','$KTOOLS_DRUN_EXTRA', '$KTOOLS_DRUN_EXTRA',   'list of additional command line arguments to send to the container launch CLI'),
+    Ctrl('extra_init',   '--extra-init',   None,                              'extra_init',  None,                  None,                  'list of additional arguments to pass to the init command within the container'),
+    Ctrl('foreground',   '++fg',           None,                              'foreground',  '1',                   '0',                   'if flag set or env set to "1", run container in foreground with interactive/pty settings'),
+    Ctrl('hostname',     '--hostname',     'KTOOLS_DRUN_OVERRIDE_HOSTNAME',   'network',     'test-@basedir',       '@basedir',            'host name to assign within the container'),
+    Ctrl('image',        '--image',        None,                              'image',       '@basedir',            '@basedir',            'name of the image to launch'),
+    Ctrl('ip',           '--ip',           'KTOOLS_DRUN_OVERRIDE_IP',         'ip',          '0',                   '-',                   'IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
+    Ctrl('ipv6_ports',   '++ipv6',         None,                              'ipv6_ports',  '0',                   '0',                   'if flag set or env set to "1", enable IPv6 port mappings.'),
+    Ctrl('log',          '--log',          'KTOOLS_DRUN_OVERRIDE_LOG',        'log',         'none',                '-',                   'log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url]'),
+    Ctrl('ports',        '--ports',        None,                              'ports',       None,                  None,                  'list of {host}:{container} port pairs for mapping'),
+    Ctrl('puid',         '--puid',         'PUID',                            'puid',        'auto',                'auto',                'if not "auto", pass the given value into $PUID inside the container.  "auto" will generate a consistent container-specific value.  Blank to disable.'),
+    Ctrl('name',         '--name',         'KTOOLS_DRUN_OVERRIDE_NAME',       'name',        'test-@basedir',       '@basedir',            'name to assign to the launched container'),
+    Ctrl('network',      '--network',      'KTOOLS_DRUN_OVERRIDE_NETWORK',    'network',     '$KTOOLS_DRUN_TEST_NETWORK', '$KTOOLS_DRUN_NETWORK',  'container network to use'),
+    Ctrl('repo1',        '--repo',         'KTOOLS_DRUN_OVERRIDE_REPO',       'repo1',       '$KTOOLS_DRUN_REPO',   '$KTOOLS_DRUN_REPO',   'first repo to try for a matching image'),
+    Ctrl('repo2',        '--repo2',        'KTOOLS_DRUN_REPO2',               'repo2',       '$KTOOLS_DRUN_REPO2',  '$KTOOLS_DRUN_REPO2',   'second repo to try for a matching image'),
+    Ctrl('rm',           '++rm',           None,                              'rm',          '1',                   '1',                   'if flag set or env set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
+    Ctrl('tag',          '--tag',          'KTOOLS_DRUN_OVERRIDE_TAG',        'tag',         'latest',              'live',                'tagged or other version indicator of image to launch'),
+    Ctrl('timezone',     '--tz',           'KTOOLS_DRUN_OVERRIDE_TZ',         'tz',          '-',                   '-',                   'timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
+    Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',                 'volbase',     '/rw/dv',              '/rw/dv',              'base directory for relative bind-mount source points'),
 ]
 
 # Notes on subtlties above:
@@ -418,6 +419,7 @@ def gen_command():
     name = add_simple_control(cmnd, 'name')
     basename = name.replace('test-', '')
 
+    add_simple_control(cmnd, 'dns')
     add_simple_control(cmnd, 'env')
     add_simple_control(cmnd, 'extra_docker', '')
     add_simple_control(cmnd, 'hostname')
