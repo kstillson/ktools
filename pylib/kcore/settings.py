@@ -129,14 +129,14 @@ class Settings:
     # ----- constructors
 
     def __init__(self, settings_filename=None, settings_data_type='auto', env_list_sep=';',
-                 flag_prefix=None, include_directive='!include', debug_mode=False):
+                 flag_prefix=None, include_directive='!include', debug=False):
         # store our controls
         self.settings_filename = settings_filename
         self.settings_data_type = settings_data_type
         self.env_list_sep = env_list_sep
         self.flag_prefix = flag_prefix
         self.include_directive = include_directive
-        self.debug_mode = debug_mode
+        self.debug = debug
 
         # init internal caches
         self._settings_dict = {}               # settings name -> settings instance
@@ -205,18 +205,18 @@ class Settings:
         if not setting:
             answer = self._settings_file_value_cache.get(name)
             if answer:
-                if self.debug_mode: print(f'resolved setting "{name}" \t to \t "{answer}" \t as an unregistered setting from settings file', file=sys.stderr)
+                if self.debug: print(f'resolved setting "{name}" \t to \t "{answer}" \t as an unregistered setting from settings file', file=sys.stderr)
                 return answer
-            if self.debug_mode: print(f'setting {name} requested, but we have no information on it; returning None', file=sys.stderr)
+            if self.debug: print(f'setting {name} requested, but we have no information on it; returning None', file=sys.stderr)
             return None
 
         # handle already-cached values
         if setting.cached_value and not setting.disable_cache and not ignore_cache:
-            if self.debug_mode: print(f'returning cached value {name} = {setting.cached_value}', file=sys.stderr)
+            if self.debug: print(f'returning cached value {name} = {setting.cached_value}', file=sys.stderr)
             return setting.cached_value
 
         answer, how = self._resolve(setting)
-        if self.debug_mode:
+        if self.debug:
             print(f'resolved and cached setting "{name}" \t to \t "{answer}" \t via {how}', file=sys.stderr)
 
         if not setting.disable_cache: setting.cached_value = answer
@@ -252,7 +252,7 @@ class Settings:
         if not filename: filename = self.settings_filename
         else: self.settings_filename = filename
         if not filename:
-            if self.debug_mode: print('attempt to parse settings file, but no filename provided', file=sys.stderr)
+            if self.debug: print('attempt to parse settings file, but no filename provided', file=sys.stderr)
             return False
 
         if not data_type: data_type = self.settings_data_type
@@ -260,7 +260,7 @@ class Settings:
         if data_type == 'auto':
             _, ext = os.path.splitext(self.settings_filename)
             data_type = ext[1:]  # strip leading "."
-        if self.debug_mode: print(f'reading settings file {filename} of type {data_type}', file=sys.stderr)
+        if self.debug: print(f'reading settings file {filename} of type {data_type}', file=sys.stderr)
 
         data = C.read_file(filename)
         if not data: raise ValueError(f'unable to read settings file {filename}')
@@ -288,7 +288,7 @@ class Settings:
         else:
             print(f'unknown settings_data_type: {data_type}', file=sys.stderr)
 
-        if self.debug_mode: print(f'loaded {len(new_settings)} settings from {data_type} file {filename}', file=sys.stderr)
+        if self.debug: print(f'loaded {len(new_settings)} settings from {data_type} file {filename}', file=sys.stderr)
 
         self._settings_file_value_cache.update(new_settings)
         self.add_settings_from_settings_file_cache()
@@ -374,7 +374,7 @@ class Settings:
             line = lines[line_number]
             _, param = line.split(self.include_directive, 1)
             param = param.strip()
-            if self.debug_mode: print(f'processing include directive: {param}', file=sys.stderr)
+            if self.debug: print(f'processing include directive: {param}', file=sys.stderr)
 
             count = 0
             if os.path.isfile(param):
@@ -391,7 +391,7 @@ class Settings:
             else:
                 raise ValueError(f'do not known how to handle include directive: {line}')
 
-            if self.debug_mode:
+            if self.debug:
                 if count > 0: print(f'include directive {param} added {count} settings.')
                 else: print(f'WARNING: include directive {param} added no settings (failed glob?).')
 
@@ -418,7 +418,7 @@ def parse_main_args(argv):
 
 def main(argv=[]):
     args = parse_main_args(argv or sys.argv[1:])
-    settings = Settings(args.settings_filename, debug_mode=args.debug)
+    settings = Settings(args.settings_filename, debug=args.debug)
     settings_dict = settings.get_dict()
 
     q = "'" if args.quotes else ""

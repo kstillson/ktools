@@ -39,7 +39,7 @@ def test_simple_yaml_only():
 
 
 def test_simple_env_only():
-    s = S.Settings(debug_mode=True)
+    s = S.Settings(debug=True)
     s.add_setting('e1', default_env_value='e1missing')
 
     parse_results = s.parse_settings_file('testdata/settings2.env')
@@ -71,7 +71,7 @@ def test_yaml_plus_environment():
     os.environ['q1'] = 'q1val-env'
     os.environ['eo_n'] = 'n-override-env'
 
-    settings = S.Settings('testdata/settings1.yaml', debug_mode=True)
+    settings = S.Settings('testdata/settings1.yaml', debug=True)
     settings.add_simple_settings(['a', 'c', 'd', 'l', 'e1', 'e2', 'ex', 'f', 'n', 'q1', 'q2', 'q3'])
     # reach in a change some settings' controls...
     settings.tweak_setting('q2', 'default', 'def-q2')
@@ -112,26 +112,26 @@ def test_env_values_only_when_requested():
     os.environ['q1'] = 'q1val-x'
     os.environ['eo_q1'] = 'q1val-xx'
 
-    settings = S.Settings(debug_mode=True)  # no env_names are set, no datafile provided.
+    settings = S.Settings(debug=True)  # no env_names are set, no datafile provided.
     settings.add_setting('q1')
     assert settings['q1'] is None
 
-    settings2 = S.Settings(debug_mode=True)
+    settings2 = S.Settings(debug=True)
     settings2.add_setting('q1', env_name='q1')
     assert settings2['q1'] == 'q1val-x'
 
-    settings3 = S.Settings(debug_mode=True)
+    settings3 = S.Settings(debug=True)
     settings3.add_setting('q1', override_env_name='eo_q1')
     assert settings3['q1'] == 'q1val-xx'
 
-    settings4 = S.Settings(debug_mode=True)
+    settings4 = S.Settings(debug=True)
     settings4.add_setting('q1', override_env_name='q1')
     assert settings4['q1'] == 'q1val-x'
 
 
 def test_including_flags_in_the_mix():
     reset_env()
-    settings = S.Settings('testdata/settings2.env', flag_prefix="f_", debug_mode=True)
+    settings = S.Settings('testdata/settings2.env', flag_prefix="f_", debug=True)
     settings.add_simple_settings(['a', 'c', 'd', 'l', 'e1', 'e2', 'ex', 'f', 'n', 'q1', 'q2', 'q3'])
     settings.tweak_all_settings('override_env_name', 'eo_{name}')
 
@@ -176,7 +176,7 @@ def test_including_flags_in_the_mix():
 
 
 def test_multiple_settings_files():
-    settings = S.Settings('testdata/settings1.yaml', debug_mode=True)
+    settings = S.Settings('testdata/settings1.yaml', debug=True)
     settings.add_simple_settings(['a', 'd'])
     assert settings['a'] == 'val-a'
     assert settings['d']['k1'] == 'v1'
@@ -190,7 +190,7 @@ def test_multiple_settings_files():
 
 
 def test_list_of_Settings():
-    settings = S.Settings('testdata/settings3.dict', debug_mode=True)
+    settings = S.Settings('testdata/settings3.dict', debug=True)
     settings.add_Settings([
         S.Setting('z1', setting_name='a',       default='d1'),
         S.Setting('z2', setting_name='missing', default='d2'),
@@ -202,7 +202,7 @@ def test_list_of_Settings():
     assert settings.get('z3') == 125
 
 def test_default_callable():
-    settings = S.Settings(debug_mode=True)
+    settings = S.Settings(debug=True)
     toggle = True
     settings.add_setting('s', disable_cache=True, default=lambda: 'is-true' if toggle else 'is-false')
     assert settings['s'] == 'is-true'
@@ -212,20 +212,20 @@ def test_default_callable():
 def test_env_sep():
     reset_env()
     os.environ['s'] = 'a;b'
-    settings = S.Settings(debug_mode=True)
+    settings = S.Settings(debug=True)
     settings.add_setting('s', env_name='s')
     assert settings['s'] == ['a', 'b']
 
 def test_chained_include_directives():
-    settings = S.Settings('testdata/settings4.env', debug_mode=True)
-    assert settings['a'] == '1'   # from settings4
-    assert settings['b'] == '2'   # from settings4
-    assert settings['c'] == 5     # from settings5
-    assert settings['d'] == 6     # from settings6
+    settings = S.Settings('testdata/settings4.env', debug=True)
+    assert settings['a'] == '1'    # from settings4
+    assert settings['b'] == '2'    # from settings4
+    assert settings['c'] == 5      # from settings5
+    assert settings['d'] == 6      # from settings6
 
 def test_settings_file_glob_and_include_dir():
-    settings = S.Settings(['testdata/settings2.env', 'testdata/settings7.e*'], debug_mode=True)
-    assert settings['a'] == '9'   # from settings7
+    settings = S.Settings(['testdata/settings2.env', 'testdata/settings7.e*'], debug=True)
+    assert settings['a'] == '9'    # from settings7
     assert settings['b'] is None
     assert settings['c'] == 'cval' # from data.d/file1.yaml
     assert settings['d'] == 'dval' # from data.d/file2.env
@@ -255,4 +255,3 @@ def test_cli():
         ret = S.main(argv)
         assert ret == 0
         assert 'f=hello world' in cap.out
-
