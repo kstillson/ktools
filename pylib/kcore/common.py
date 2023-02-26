@@ -145,17 +145,25 @@ def special_arg_resolver(input_val, argname='argument'):
        - or can just be a normal string (which is returned unchanged)
     '''
 
+    if not input_val: return input_val
+
+    if isinstance(input_val, list):
+        return [special_arg_resolver(i) for i in input_val]
+
+    if isinstance(input_val, dict):
+        return {k: special_arg_resolver(v) for k, v in input_val.items()}
+
     if input_val == "-":
         import getpass
         return  getpass.getpass(f'Enter value for {argname}: ')
 
-    elif input_val and input_val.startswith('$'):
+    elif input_val.startswith('$'):
         varname = input_val[1:]
         output_value = os.environ.get(varname)
         if output_value is None: raise ValueError(f'{argname} indicated to use environment variable {input_val}, but variable is not set.')
         return output_value
 
-    elif input_val and input_val.startswith('*'):
+    elif input_val.startswith('*'):
         parts = input_val[1:].split('/')
         keyname = parts[0]
         username = parts[1] if len(parts) >= 2 else None
@@ -165,7 +173,7 @@ def special_arg_resolver(input_val, argname='argument'):
         if output_value.startswith('ERROR:'): raise ValueError(f'failed to retrieve {keyname} from keymaster: {output_value}.')
         return output_value
 
-    elif input_val and (input_val.startswith('file:') or input_val.startswith('f:')):
+    elif input_val.startswith('file:') or input_val.startswith('f:'):
         _, filename = input_val.split(':', 1)
         return read_file(filename, wrap_exceptions=False)
 
