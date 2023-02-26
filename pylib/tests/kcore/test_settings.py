@@ -198,6 +198,21 @@ def test_list_of_Settings():
     assert settings['z2'] == 'd2'
     assert settings.get('z3') == 125
 
+def test_default_callable():
+    settings = S.Settings(debug_mode=True)
+    toggle = True
+    settings.add_setting('s', disable_cache=True, default=lambda: 'is-true' if toggle else 'is-false')
+    assert settings['s'] == 'is-true'
+    toggle = False
+    assert settings['s'] == 'is-false'
+
+def test_env_sep():
+    reset_env()
+    os.environ['s'] = 'a;b'
+    settings = S.Settings(env_prefix='', debug_mode=True)
+    settings.add_setting('s')
+    assert settings['s'] == ['a', 'b']
+
 def test_cli():
     reset_env()
     os.environ['e1e'] = 'e1e-e'

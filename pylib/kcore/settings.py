@@ -1,6 +1,90 @@
 #!/usr/bin/python3
 
-'''...'''
+'''Merge settings from various sources in an organized way.
+
+I frequently find generating the correct settings for a particular operation
+involves combining values from various different sources.  For example, some
+settings are machine-specific and should come from global settings files or
+perhaps environment variables, while some are operation-specific, and should
+come from flags, a local settings file, and/or environment variables.  And
+sometimes I need to override the normal settings, but don't want to change the
+settings file for a one-time thing, so something like flags or environmental
+variable override seem ideal.
+
+This module combines all that into a single easy-to-use interface, and
+supports several different formats for settings files (and auto-type detection
+based on filename extension).
+
+The class is integrated with kcore.common.special_arg_resolver, so settings
+can pull values from files, keymaster, password-entry-via-tty, etc.
+
+The easiest use of the class is just to pull in one-or-more settings files
+(latest ones override earlier ones when they contain the same settings), e.g.:
+
+  s = settings.Settings('global_settings_file.yaml')   # default global settings
+  print(s['setting_name']                              # here'access the settings
+
+You can add features (and complexity) incrementally
+
+  s = settings.Settings('global_settings_file.env')   # default global settings
+  s.parse_settings_file('local_settings_file.yaml')   # higher priority local settings
+  s.add_setting('setting1', default='some-default', env_name='SETTING1')
+
+With this, s['setting1'] will return the contents of $env_setting1 if that's defined,
+and "some-default" otherwise.
+
+A fully-featured use might look something more like this:
+
+----- test.py:
+
+import argparse
+ap = argparse.ArgumentParser(add_help=False)  # Defer help until after we've added our settings-based flags.
+ap.add_argument('--global_settings_file', '-g', default=None)
+ap.add_argument('--local_settings_file', '-l', default=None)
+ap.add_argument('--other_flags_unrelated_to_settings', default=None)
+ap.add_argument('--help', '-h', action='store_true', help='print this help')
+args, _ = ap.parse_known_args()   # User may specify settings-based flags we haven't added to the parser yet; ignore those for now.
+
+import kcore.settings as S
+s = S.Settings(env_override_prefix='OVERRIDE_', env_prefix='')
+s.parse_settings_file(args.global_settings_file)
+s.parse_settings_file(args.local_settings_file)
+s.add_Settings([
+  S.Setting('color', flag_name='color_name', flag_aliases=['-c'], default='black', doc='color we want'),
+  S.Setting('size',  env_name='SIZE', doc='size we want'),
+])
+
+s.add_flags(ap)          # Add our defined settings to the argparser's flags,
+args = ap.parse_args()   # and re-parse.
+
+if args.help:            # We turned off auto-help, do it manually now if requested.
+    print(ap.format_help())
+else:
+    print(f"color: {s['color']},  size: {s['size']}")
+
+-----
+
+You can then test out some of the interesting combinations like so:
+
+./test.py -h
+./test.py
+./test.py -c red
+./test.py --size extra-medium
+COLOR=funky ./test.py   # no effect as flag default overrides env
+OVERRIDE_color=green ./test.py
+OVERRIDE_color=green ./test.py --color overriden_by_env
+SIZE=tiny ./test.py
+SIZE=tiny ./test.py --size 'flag-overrides-env'
+OVERRIDE_size=huge ./test.py --size 'overriden-by-override-flag'
+
+# and adding some settings files into the mix:
+echo "{ 'color': 'blue', 'size': 'small' }" > global.dict
+echo "color=pink" > local.env
+./test.py -g global.dict -l local.env   # flag default overrides global setting for color
+./test.py -g global.dict -l local.env --color=brown
+OVERRIDE_color=yellow ./test.py -g global.dict -l local.env --color=brown --size=extra-medium
+
+'''
 
 import argparse, os, sys, yaml
 from dataclasses import dataclass, field
@@ -12,19 +96,25 @@ import kcore.common as C
 
 @dataclass
 class Setting:
-    name: str
+    name: str                       # required: internal name by which we refer to this setting
 
-    doc: str = 'undocumented'       # only really used when constructing flags
-    override_env_name: str = None
-    flag_name: str = None
-    flag_aliases: list = field(default_factory=list)  # list of strings
-    setting_name: str = None
-    env_name: str = None
-    override_env_name: str = None
-    default: ... = None
-    default_env_value: str = None   # if value contains $X but $X not defined, return this.  If None, raise a ValueError.
+    # settings metadata
+    doc: str = 'undocumented'       # only really used when constructing arpparse flags (see Settings.add_flags())
     value_type: ... = str           # just used when add_flags() is creating argparse entries.
 
+    # settings sources, listed in presidence order
+    override_env_name: str = None   # name of environment variable that overrides all other sources.  defaults to .name, only enabled if Settings.env_override_prefix is set.
+    flag_name: str = None           # name of flag to add for setting this setting.  Should not include "--" prefix.
+    flag_aliases: list = field(default_factory=list)  # list of aliases for the flag_name;   should include the "-" or "--" prefixes.
+    setting_name: str = None        # name of the field in setting files where we look for this setting.  Defaults to .name
+    env_name: str = None            # name of environment variable to use if other sources don't provide a value.  defaults to .name, only enabled if Settings.env_prefix is set.
+    default: ... = None             # default value to use if no other source provides one.  can be a string or a callable that returns a string.
+
+    # other controls
+    default_env_value: str = None   # if value contains $X but $X not defined, return this.  If None, raise a ValueError.
+
+    # internal cache for already-resolved setting values
+    disable_cache: bool = False
     cached_value: str = None
 
 
@@ -84,7 +174,7 @@ class Settings:
             flagname = self._get_flag_name(setting)
             if not flagname: continue
             args = [flagname]
-            if setting.flag_aliases: args.append(setting.flag_aliases)
+            if setting.flag_aliases: args.extend(setting.flag_aliases)
             default = str(setting.default) if setting.default else None
             argparse_instance.add_argument(
                 *args, type=setting.value_type, default=default, help=setting.doc)
@@ -105,7 +195,7 @@ class Settings:
             if self.debug_mode: print(f'setting {name} requested, but we have no information on it; returning None', file=sys.stderr)
             return None
 
-        if setting.cached_value and not ignore_cache:
+        if setting.cached_value and not setting.disable_cache and not ignore_cache:
             if self.debug_mode: print(f'returning cached value {name} = {setting.cached_value}', file=sys.stderr)
             return setting.cached_value
 
@@ -119,7 +209,7 @@ class Settings:
         if self.debug_mode:
             print(f'resolved and cached setting "{name}" \t to \t "{answer}" \t via {how}', file=sys.stderr)
 
-        setting.cached_value = answer
+        if not setting.disable_cache: setting.cached_value = answer
         return answer
 
     def __getitem__(self, name): return self.get(name)
