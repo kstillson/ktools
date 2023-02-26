@@ -34,6 +34,7 @@ def test_simple_yaml_only():
     assert s['n'] == 123
     assert s['missing'] is None
 
+
 def test_simple_env_only():
     si = S.Settings()
     s = si.parse_settings_file('testdata/settings2.env')
@@ -41,7 +42,7 @@ def test_simple_env_only():
     assert s['c'] == '321e'
     assert s['e1'] == '$e1e'                # no special arg resolution
     assert s['f'] == 'file:testdata/file1'  # no special arg resolution
-    assert s['n'] == '124'                  # note conversion to string...
+    assert s['n'] == '124'                  # note conversion to string (because .env file doesn't have types)
 
 
 def test_simple_dict_file_only():
