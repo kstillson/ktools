@@ -97,8 +97,6 @@ from dataclasses import dataclass, field
 import kcore.common as C
 
 
-# ----------
-
 @dataclass
 class Setting:
     name: str                       # required: internal name by which we refer to this setting
@@ -109,9 +107,9 @@ class Setting:
 
     # settings sources, listed in presidence order
     override_env_name: str = None   # name of environment variable that overrides all other sources.  Not used unless explicitly set.
-    flag_name: str = None           # name of flag to add for setting this setting.  Should not include "--" prefix (because it's going to have Settings.flag_prefix prepending).  This setting is disabled if Settings.flag_prefix is None.  If Settings.flag_prefix is not none (including ''), this defaults to .name
-    flag_aliases: list = field(default_factory=list)  # list of aliases for the flag_name;   should include the "-" or "--" prefixes.
-    setting_name: str = None        # name of the field in setting files where we look for this setting.  Defaults to .name
+    flag_name: str = None           # name of flag to add for setting this setting.  Should not include "--" prefix (because it's going to have Settings.flag_prefix prepending).  This setting is disabled if Settings.flag_prefix is None.  If Settings.flag_prefix is not none (including ''), this defaults to {name}
+    flag_aliases: list[str] = field(default_factory=list)  # list of aliases for the flag_name;   should include the "-" or "--" prefixes.
+    setting_name: str = None        # name of the field in setting files where we look for this setting.  Defaults to {name}
     env_name: str = None            # name of environment variable to use if other sources don't provide a value.  Not used unless explicitly set.
     default: ... = None             # default value to use if no other source provides one.  can be a string or a callable that returns a string.
 
@@ -128,7 +126,8 @@ class Settings:
 
     # ----- constructors
 
-    def __init__(self, settings_filename=None, settings_data_type='auto', env_list_sep=';',
+    def __init__(self, settings_filename=None, add_Settings=[],
+                 settings_data_type='auto', env_list_sep=';',
                  flag_prefix=None, include_directive='!include', debug=False):
         # store our controls
         self.settings_filename = settings_filename
@@ -144,7 +143,10 @@ class Settings:
         self._argparse_instance_cache = None
         self._args_dict_cache = {}             # arg name -> value
 
-        # parse the settings file, if provided
+        # add any initially provided settings
+        if add_Settings: self.add_Settings(add_Settings)
+
+        # parse settings file(s), if provided
         if settings_filename: self.parse_settings_file(settings_filename, settings_data_type)
 
 
@@ -158,6 +160,15 @@ class Settings:
 
     def add_Settings(self, iter_of_Settings):
         for setting in iter_of_Settings: self.add_Setting(setting)
+
+    def add_settings_groups(self, setting_groups, selected_groups=None):
+        if isinstance(setting_groups, dict): setting_groups = setting_groups.values()
+        if selected_groups:
+            for sel in selected_groups:
+                if sel not in setting_groups: raise ValueError(f'unknown group requested: {sel}')
+        for group in setting_groups:
+            if selected_groups and not group in selected_groups: continue
+            for setting in group.settings._settings_dict.values(): self.add_Setting(setting)
 
     def add_simple_settings(self, iter_of_setting_names):
         for name in iter_of_setting_names: self.add_setting(name)
@@ -192,6 +203,13 @@ class Settings:
             default = str(setting.default) if setting.default else None
             argparse_instance.add_argument(
                 *args, type=setting.value_type, default=default, help=setting.doc)
+
+    def add_flags_in_groups(self, argparse_instance, settings_groups, selected_groups=None):
+        if isinstance(settings_groups, dict): settings_groups = settings_groups.values()
+        for group in settings_groups:
+            if selected_groups and not group in selected_groups: continue
+            ap_group = argparse_instance.add_argument_group(group.name, group.doc)
+            group.settings.add_flags(ap_group)
 
     def set_args(self, parsed_args):
         self._args_dict_cache.update(vars(parsed_args))
@@ -255,6 +273,8 @@ class Settings:
             if self.debug: print('attempt to parse settings file, but no filename provided', file=sys.stderr)
             return False
 
+        filename = filename.replace('$HOME', os.environ['HOME']).replace('${HOME}', os.environ['HOME'])
+
         if not data_type: data_type = self.settings_data_type
         else: self.settings_data_type = data_type
         if data_type == 'auto':
@@ -311,6 +331,7 @@ class Settings:
         if resolve_special != answer:
             how += f'; after arg resolved for: {answer}'
             answer = resolve_special
+        if answer == '\-': answer = '-'  # undo escaping used to precent special_arg_resolver for intended value of "-"
 
         return answer, how
 
@@ -395,10 +416,17 @@ class Settings:
                 if count > 0: print(f'include directive {param} added {count} settings.')
                 else: print(f'WARNING: include directive {param} added no settings (failed glob?).')
 
-            print(f'@@ {self._settings_file_value_cache=}')
-
         for line_number in reversed(include_directive_lines): lines.pop(line_number)
         return '\n'.join(lines)
+
+
+# ---------- useful for creating a list of different SettingsGroup's
+
+@dataclass
+class SettingsGroup:
+    name: str
+    doc: str = None
+    settings: Settings = None
 
 
 # ---------- main
