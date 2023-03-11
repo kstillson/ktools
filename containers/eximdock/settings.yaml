@@ -4,11 +4,21 @@ autostart: 5
 ports:
   - 25:2525
 
-# Log is too verbose to send to syslog. 
+# Log is too verbose to send to syslog.
 log: JSON
 
-mount_persistent_test_copy_tree:
-  - var_log: /var/log
-  - var_spool: /var/spool
-  - var_mail: /var/mail
+mount_rw:
+  - var/log: /var/log
+  - var/spool: /var/spool
+  - var/mail: /var/mail
 
+vols:
+  - var/log/exim
+  - var/mail
+  - var/spool/exim/db
+  - var/spool/exim/input
+  - var/spool/exim/msglog
+
+vol_defaults:
+  owner: user/exim
+  perm: '0700'

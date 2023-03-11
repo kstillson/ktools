@@ -65,8 +65,8 @@ GROUPS = [
         S.Setting('d_src_dir2',                                                          doc='second directory to look in when searching for the source directory for containers to build/launch/whatever'),
         S.Setting('repo1',                                                               doc='when building, destination repo to save image to.  when launching, first repo to try for a matching image'),
         S.Setting('repo2',                                                               doc='second repo to try for a matching image'),
-        S.Setting('shift-gids',                                                          doc='user_ns mapping shift for group ids inside the container.  Used when auto-creating volume directories with specified ownerships.'),
-        S.Setting('shift-uids',                                                          doc='user_ns mapping shift for user ids inside the container.  Used when auto-creating volume directories with specified ownerships.'),
+        S.Setting('shift_gids',                                                          doc='user_ns mapping shift for group ids inside the container.  Used when auto-creating volume directories with specified ownerships.'),
+        S.Setting('shift_uids',                                                          doc='user_ns mapping shift for user ids inside the container.  Used when auto-creating volume directories with specified ownerships.'),
     ])),
 
     S.SettingsGroup('container launching', 'settings common to selecting containers to launch', S.Settings(add_Settings=[
@@ -104,10 +104,10 @@ GROUPS = [
         S.Setting('rm',          default='1', flag_type=bool,                            doc='if flags set or setting is "1" (the default), set the container to remove its leftovers once it stops'),
         S.Setting('shell',       default='0', flag_type=bool,                            doc='if flag set or setting is "1", override the container entrypoing and present an interactive shell instead'),
         S.Setting('tz',          default=r'\-',                                          doc='timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
-        S.Setting('vol-owner',                                                           doc='owner to use (if not otherwise specified) for any files or directories created by [vols]'),
-        S.Setting('vol-perms',                                                           doc='permissions to use (if not otherwise specified) for any files or directories created by [vols]'),
-        S.Setting('vol-base',                                                            doc='base directory for relative bind-mount source points'),
-        S.Setting('vols',                                                                doc='list of ";" separated directories (relative to [vol-base]) to create, if necessary, before launching'),
+        S.Setting('vol_owner',                                                           doc='owner to use (if not otherwise specified) for any files or directories created by [vols]'),
+        S.Setting('vol_perms',                                                           doc='permissions to use (if not otherwise specified) for any files or directories created by [vols]'),
+        S.Setting('vol_base',                                                            doc='base directory for relative bind-mount source points'),
+        S.Setting('vols',                                                                doc='list of ";" separated directories (relative to [vol_base]) to create, if necessary, before launching'),
     ]))
 ]
 
