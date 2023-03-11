@@ -481,7 +481,7 @@ def parse_main_args(argv):
     ap.add_argument('--settings_file_type', '-t', default='auto', help='yaml, env, or dict')
     ap.add_argument('--quotes',             '-q', action='store_true', help='add quotes around RHS of output (useful if feeding into shell assignments)')
     ap.add_argument('settings', nargs='*', help='list of settings to resolve')
-    return ap.parse_args(argv)
+    return ap.parse_args(argv) if argv else ap
 
 
 def main(argv=[]):

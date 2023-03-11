@@ -47,7 +47,7 @@ clean:
 
 prep:	etc/prep-stamp
 
-etc/prep-stamp:	private.d private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
+etc/prep-stamp:	private.d private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py $${HOME}/.ktools.settings
 	etc/check-package-deps.sh
 	if [[ -z "$$NO_TRACKING" ]]; then etc/tracking.sh "$@"; fi
 	touch etc/prep-stamp
@@ -84,3 +84,5 @@ services/homesec/private.d/data.py:
 	mkdir -p $(shell dirname $@)
 	touch $@
 
+$${HOME}/.ktools.settings: etc/initial-ktools.settings
+	cp -nv $^ $@

@@ -23,7 +23,7 @@ all:
 	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
 
 clean:
-	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
+	rm -rf $(TEST_LOG) __pycache__ */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
 	@printf "\n NOT cleaning the $(YELLOW)venv directory$(RESET).  use make target 'vclean' or remove manually if needed.\n\n"
 
 comp:
@@ -88,6 +88,7 @@ install-simple: tools/keymaster.crt
 	mkdir -p $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/keymaster.crt $(SIMPLE_BIN_DIR)/keymaster.crt
+	cp -puv tools/ktools_settings.py $(SIMPLE_BIN_DIR)/ktools_settings
 	cp -puv tools/nag.py $(SIMPLE_BIN_DIR)/nag
 	cp -puv tools/pcrypt.py $(SIMPLE_BIN_DIR)/pcrypt
 	cp -puv tools/ratelimiter.py $(SIMPLE_BIN_DIR)/ratelimiter

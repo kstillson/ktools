@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 '''common settings for ktools, split up into selectable groups
 
 common usage:
@@ -23,7 +25,7 @@ $HOME/.ktools/.settings if that isn't set.
 
 '''
 
-import os
+import os, sys
 import kcore.settings as S
 
 
@@ -152,3 +154,25 @@ def get_dict(): return s.get_dict()
 
 def _mode(production_value, test_mode_value):
     return test_mode_value if TEST_MODE else production_value
+
+
+# ---------- main (for printing setting values)
+
+def main(argv=[]):
+    ap = S.parse_main_args(None)
+    args, _ = ap.parse_known_args(argv or sys.argv[1:])
+    all_groups = [grp.name for grp in GROUPS]
+    settings = init(all_groups, [args.settings_filename], ap, debug=args.debug)    
+    settings_dict = settings.get_dict()
+
+    q = "'" if args.quotes else ""
+
+    if args.all:
+        for name, val in settings_dict.items(): print(f'{name}={q}{val}{q}')
+    else:
+        for name in args.settings: print(f'{name}={q}{settings_dict.get(name)}{q}')
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

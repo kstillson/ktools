@@ -3,26 +3,14 @@
 '''Launch a container.
 
 This scripts constructs the command-line parameters for Docker to launch a
-container.
-
-'''
-
-
-##@@ temp
-import sys
-import os
-p = os.path.abspath(os.path.join(os.path.dirname(__file__), '../pylib'))
-if sys.path[0] != p: sys.path.insert(0, p)
-##
-
-
+container. '''
 
 import glob, os, pprint, socket, subprocess, sys
 from dataclasses import dataclass
 
 import kcore.auth as A
 import kcore.common as C
-import kcore.ktools_settings as S
+import ktools.ktools_settings as S
 
 
 # ---------- global controls
