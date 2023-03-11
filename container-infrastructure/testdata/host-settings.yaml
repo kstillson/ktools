@@ -1,0 +1,8 @@
+
+repo1: repo1-val
+
+repo2: repo2-val
+
+vol_base: /tmp
+
+docker_exec: /bin/echo
