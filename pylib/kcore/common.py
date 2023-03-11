@@ -119,8 +119,9 @@ def get_initial_python_file_comment(filename=None):
 
 def argparse_epilog(*args, **kwargs):
     '''Return an argparse with populated epilog matching the caller's Python file comment.'''
-    filename = get_callers_module(levels=2).__file__
-    return argparse.ArgumentParser(epilog=get_initial_python_file_comment(filename),
+    module = get_callers_module(levels=2)
+    epilog = get_initial_python_file_comment(module.__file__) if module else None
+    return argparse.ArgumentParser(epilog=epilog,
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    *args, **kwargs)
 
@@ -165,12 +166,16 @@ def special_arg_resolver(input_val, argname='argument', env_value_default=None):
         return  getpass.getpass(f'Enter value for {argname}: ')
 
     elif val.startswith('$'):
-        varname = val[1:]
+        if val.startswith('${'):
+            varname, remainder = val[2:].split('}', 1)
+        else:
+            varname = val[1:]
+            remainder = ''
         output_value = os.environ.get(varname)
         if output_value is None:
             if env_value_default is not None: return env_value_default
             raise ValueError(f'{argname} indicated to use environment variable {val}, but variable is not set and no default provided.')
-        return output_value
+        return output_value + remainder
 
     elif val.startswith('*'):
         parts = val[1:].split('/')

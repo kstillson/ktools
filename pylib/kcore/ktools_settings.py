@@ -2,12 +2,12 @@
 
 common usage:
 
-import kcore.kcore_settings as S
+import kcore.ktools_settings as S
 settings = S.init()
 n = settings['name']
 
 That's nice and terse, but "settings" is a local variable, probably in main().
-To avoid you having to create your own global singleton, kcore_settings stores
+To avoid you having to create your own global singleton, ktools_settings stores
 one for you, so after calling init(), your code can reference settings without
 a local, using various different options:
 
@@ -17,15 +17,14 @@ hn = S.get('hostname')    # provided method implicitly uses the singleton
 d = S.get_dict()          # or grab a dict for the most terse subsequent retrieval
 n = d['name']
 
-
 Note that the defaults of init() will implicitly attempt to load a global
 settings file, which is specified in $KTOOLS_SETTINGS, but will default to
-$HOME/.ktools/.settings if that variable isn't set.
+$HOME/.ktools/.settings if that isn't set.
 
 '''
 
 import os
-import settings as S
+import kcore.settings as S
 
 
 # ----- module level state
@@ -72,7 +71,7 @@ GROUPS = [
 
     S.SettingsGroup('container launching', 'settings common to selecting containers to launch', S.Settings(add_Settings=[
         S.Setting('image',       default='@basedir',                                     doc='name of the image to build/launch'),
-        S.Setting('tag',         default=lambda: _mode('live', 'latest'),                doc='tagged or other version indicator of image to build or launch', flag_aliases=['-t']),
+        S.Setting('tag',         default=lambda: _mode('live', 'latest'),                doc='tagged or other version indicator of image to build or launch'),
     ])),
 
     S.SettingsGroup('autostart', 'setting for which auto-start wave to use for a container', S.Settings(add_Settings=[
@@ -83,25 +82,28 @@ GROUPS = [
         S.Setting('build_params',                                                        doc='a list of ";" separated params to send to the "${DOCKER_EXEC} build" command when building images'),
     ])),
 
-    S.SettingsGroup('d', 'settings for d.py', S.Settings(add_Settings=[
+    S.SettingsGroup('d-run', 'settings for d-run.py', S.Settings(add_Settings=[
         S.Setting('cmd',                                                                 doc='use this as the command to run as init in the container, rather than whatever is listed in the Dockerfile'),
         S.Setting('dns',         default='$KTOOLS_DRUN_DNS', default_env_value='',       doc='IP address of DNS server inside container'),
         S.Setting('env',                                                                 doc='list of ";" separated name=value pairs to add to the container\'s environment'),
         S.Setting('extra_docker',default='$KTOOLS_DRUN_EXTRA', default_env_value='',     doc='list of additional command line arguments to send to the container launch CLI'),
         S.Setting('extra_init',                                                          doc='list of additional arguments to pass to the init command within the container'),
-        S.Setting('fg',          default=lambda: _mode('0', '1'), value_type=bool,       doc='if flag set or setting is "1", run the container in foreground with interactive/pty settings'),
+        S.Setting('fg',          default=lambda: _mode('0', '1'), flag_type=bool,        doc='if flag set or setting is "1", run the container in foreground with interactive/pty settings'),
         S.Setting('hostname',    default=lambda: _mode('@basedir', 'test-@basedir'),     doc='host name to assign within the container'),
-        S.Setting('ip',          default=lambda: _mode('\-', '0'),                       doc='IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
-        S.Setting('ipv6_ports',  default='0', value_type=bool,                           doc='if flag set or setting is "1", enable IPv6 port mappings.'),
+        S.Setting('ip',          default=lambda: _mode(r'\-', '0'),                      doc='IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
+        S.Setting('ipv6_ports',  default='0', flag_type=bool,                            doc='if flag set or setting is "1", enable IPv6 port mappings.'),
         S.Setting('log',         default=lambda: _mode('none', 'passthrough'),           doc='log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url], n/none'),
         S.Setting('mount-ro',                                                            doc='list of ";" separated src:dest pairs to mount read-only inside the container'),
         S.Setting('mount-rw',                                                            doc='list of ";" separated src:dest pairs to mount read+write inside the container'),
         S.Setting('name',        default=lambda: _mode('@basedir', 'test-@basedir'),     doc='name to assign to the container (for container management)'),
+        S.Setting('no_rm',       default='0', flag_type=bool,                            doc='do not autoremove container remanants upon termination'),
         S.Setting('network',                                                             doc='container network to use'),
         S.Setting('ports',                                                               doc='list of ";" separated {host}:{container} ports to map'),
+        S.Setting('port_offset', default=lambda: _mode('0', '10000'),                    doc='shift host port assignments up by this much (mostly used for testing mode to avoid the production containers ports'),
         S.Setting('puid',        default='auto',                                         doc='if not "auto", pass the given value into $PUID inside the container.  "auto" will generate a consistent container-specific value.  Blank to disable.'),
-        S.Setting('rm',          default='1', value_type=bool,                           doc='if flags set or setting is "1" (the default), set the container to remove its leftovers once it stops'),
-        S.Setting('tz',          default='\-',                                           doc='timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
+        S.Setting('rm',          default='1', flag_type=bool,                            doc='if flags set or setting is "1" (the default), set the container to remove its leftovers once it stops'),
+        S.Setting('shell',       default='0', flag_type=bool,                            doc='if flag set or setting is "1", override the container entrypoing and present an interactive shell instead'),
+        S.Setting('tz',          default=r'\-',                                          doc='timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
         S.Setting('vol-owner',                                                           doc='owner to use (if not otherwise specified) for any files or directories created by [vols]'),
         S.Setting('vol-perms',                                                           doc='permissions to use (if not otherwise specified) for any files or directories created by [vols]'),
         S.Setting('vol-base',                                                            doc='base directory for relative bind-mount source points'),
@@ -112,17 +114,32 @@ GROUPS = [
 
 # ---------- API
 
-def init(selected_groups, argparse_instance=None, files_to_load=[], debug=False, test_mode=None):
+def init(selected_groups, files_to_load=[], argparse_instance=None,
+         flag_aliases={},
+         debug=False, test_mode=None):
     global s, TEST_MODE
     if test_mode is not None: TEST_MODE = test_mode
 
-    if KTOOLS_GLOBAL_SETTINGS and os.path.isfile(KTOOLS_GLOBAL_SETTINGS) and KTOOLS_GLOBAL_SETTINGS not in files_to_load:
+    if KTOOLS_GLOBAL_SETTINGS and os.path.exists(KTOOLS_GLOBAL_SETTINGS):
         files_to_load.insert(0, KTOOLS_GLOBAL_SETTINGS)
 
+    # Enable flags for each group (with no prefix).
+    for group in GROUPS: group.settings.flag_prefix = ''
+    
     s = S.Settings(files_to_load, flag_prefix='', debug=debug)
     s.add_settings_groups(GROUPS, selected_groups)
-    if argparse_instance: settings.add_flags_in_groups(arpparse_instance, GROUPS, selected_groups)
+
+    if flag_aliases: add_flag_aliases(s, flag_aliases)
+    if argparse_instance: s.add_flags_in_groups(argparse_instance, GROUPS, selected_groups)
     return s
+
+
+def add_flag_aliases(settings_instance, dict_name_to_alias):
+    for name, addl_alias in dict_name_to_alias.items():
+        setting = settings_instance.get_setting(name)
+        if not setting: raise ValueError(f'Alias provided for unknown setting: {name}')
+        if isinstance(addl_alias, list): setting.flag_aliases.extend(addl_alias)
+        else:                            setting.flag_aliases.append(addl_alias)
 
 
 # convenience methods for callers

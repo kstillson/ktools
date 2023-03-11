@@ -101,9 +101,9 @@ import kcore.common as C
 class Setting:
     name: str                       # required: internal name by which we refer to this setting
 
-    # settings metadata
-    doc: str = 'undocumented'       # only really used when constructing arpparse flags (see Settings.add_flags())
-    value_type: ... = str           # just used when add_flags() is creating argparse entries.
+    # settings metadata (used when add_flags() is creating argparse entries).
+    doc: str = 'undocumented'
+    flag_type: ... = str
 
     # settings sources, listed in presidence order
     override_env_name: str = None   # name of environment variable that overrides all other sources.  Not used unless explicitly set.
@@ -119,6 +119,7 @@ class Setting:
     # internal cache for already-resolved setting values
     disable_cache: bool = False
     cached_value: str = None
+    how: str = None                 # how the cached value was determined
 
 # ----------
 
@@ -161,14 +162,14 @@ class Settings:
     def add_Settings(self, iter_of_Settings):
         for setting in iter_of_Settings: self.add_Setting(setting)
 
-    def add_settings_groups(self, setting_groups, selected_groups=None):
+    def add_settings_groups(self, setting_groups, selected_groups=[]):
         if isinstance(setting_groups, dict): setting_groups = setting_groups.values()
-        if selected_groups:
-            for sel in selected_groups:
-                if sel not in setting_groups: raise ValueError(f'unknown group requested: {sel}')
+        group_names = [i.name for i in setting_groups]
+        for name in selected_groups:
+            if name not in group_names: raise ValueError(f'unknown group requested: {name}')
         for group in setting_groups:
-            if selected_groups and not group in selected_groups: continue
-            for setting in group.settings._settings_dict.values(): self.add_Setting(setting)
+            if selected_groups and not group.name in selected_groups: continue
+            self.add_Settings(group.settings._settings_dict.values())
 
     def add_simple_settings(self, iter_of_setting_names):
         for name in iter_of_setting_names: self.add_setting(name)
@@ -182,37 +183,57 @@ class Settings:
     # ----- tweak existing settings
     #       In-case you want to change things imported as simple settings.
 
-    def tweak_setting(self, name, attr, newval):
+    def tweak_setting(self, name, attr_name, newval):
         setting = self._settings_dict.get(name)
-        setattr(setting, attr, newval.replace('{name}', setting.name))
+        setattr(setting, attr_name, newval.replace('{name}', setting.name))
 
-    def tweak_all_settings(self, attr, newval):
+
+    def tweak_all_settings(self, attr_name, replacement, context=None):
+        # context is an arbitrary value passed as input to replacement() if replacemnt is callable.
         for setting in self._settings_dict.values():
-            setattr(setting, attr, newval.replace('{name}', setting.name))
+            orig_val = getattr(setting, attr_name)
+            newval = replacement(setting, attr_name, context) if callable(replacement) else replacement
+            if newval: newval = newval.replace('{name}', setting.name)
+            if newval != orig_val:
+                ##@@ if self.debug: print(f'DEBUG: setting {setting.name}.{attr_name} tweaked "{orig_val}" -> "{newval}"', file=sys.stderr)
+                setattr(setting, attr_name, newval)
 
 
     # ----- modify an argparse instance to add flags created by controls settings under our control.
 
     def add_flags(self, argparse_instance):
-        self._argparse_instance_cache = argparse_instance
+        if not self._argparse_instance_cache: self._argparse_instance_cache = argparse_instance
         for setting in self._settings_dict.values():
             flagname = self._get_flag_name(setting)
             if not flagname: continue
             args = [flagname]
             if setting.flag_aliases: args.extend(setting.flag_aliases)
-            default = str(setting.default) if setting.default else None
-            argparse_instance.add_argument(
-                *args, type=setting.value_type, default=default, help=setting.doc)
+            kwargs = {}
+            if setting.flag_type == bool:
+                default = eval_bool(setting.default)
+                kwargs['action'] = 'store_false' if default else 'store_true'
+                # Note: we do not propagate local var default to
+                # kwargs['default'], because then the flag would always return
+                # a value, and flags override explicit settings from files, so
+                # this would mean that a default would cause the flag default
+                # to always be used, even if no flag value was provided in the
+                # CLI args.  Instead, specifically set the flag default to None.
+                kwargs['default'] = None
+            else:
+                kwargs['type'] = setting.flag_type
+            argparse_instance.add_argument(*args, **kwargs, help=setting.doc)
 
     def add_flags_in_groups(self, argparse_instance, settings_groups, selected_groups=None):
+        if not self._argparse_instance_cache: self._argparse_instance_cache = argparse_instance
         if isinstance(settings_groups, dict): settings_groups = settings_groups.values()
         for group in settings_groups:
-            if selected_groups and not group in selected_groups: continue
+            if selected_groups and not group.name in selected_groups: continue
             ap_group = argparse_instance.add_argument_group(group.name, group.doc)
             group.settings.add_flags(ap_group)
 
     def set_args(self, parsed_args):
         self._args_dict_cache.update(vars(parsed_args))
+        if self.debug: print(f'DEBUG: args updated to: {self._args_dict_cache}', file=sys.stderr)
 
 
     # ----- return setting's values
@@ -237,7 +258,8 @@ class Settings:
         if self.debug:
             print(f'resolved and cached setting "{name}" \t to \t "{answer}" \t via {how}', file=sys.stderr)
 
-        if not setting.disable_cache: setting.cached_value = answer
+        if not setting.disable_cache:
+            setting.cached_value, setting.how = answer, how
         return answer
 
 
@@ -247,6 +269,14 @@ class Settings:
         return {name: self.get(name) for name in self._settings_dict.keys()}
 
     def get_setting(self, name): return self._settings_dict.get(name)
+
+    def get_bool(self, name, ignore_cache=False):
+        return eval_bool(self.get(name, ignore_cache))
+
+    def get_int(self, name, default=None, ignore_cache=False):
+        val = self.get(name, ignore_cache)
+        if isinstance(val, int): return val
+        return int(val) if val and val.isdigit() else default
 
 
     # ----- read in a settings file
@@ -283,17 +313,19 @@ class Settings:
         if self.debug: print(f'reading settings file {filename} of type {data_type}', file=sys.stderr)
 
         data = C.read_file(filename)
-        if not data: raise ValueError(f'unable to read settings file {filename}')
+        if data is False: raise ValueError(f'unable to read settings file {filename}')
         return self.parse_settings_data(data, data_type, filename)
 
 
-    def parse_settings_data(self, data, data_type, filename=None):  # filename just for logging...
+    def parse_settings_data(self, data, data_type, source=None):  # source just for logging...
         self.reset_cached_values()  # If settings already evaluated, results could be changed by this load.
         new_settings = {}
 
         if self.include_directive in data: data = self._handle_includes(data)
 
-        if data_type == 'yaml':
+        if not data: return data
+
+        if data_type in ('yaml', 'settings'):
             new_settings.update(yaml.safe_load(data))
 
         elif data_type == 'env':
@@ -308,7 +340,7 @@ class Settings:
         else:
             print(f'unknown settings_data_type: {data_type}', file=sys.stderr)
 
-        if self.debug: print(f'loaded {len(new_settings)} settings from {data_type} file {filename}', file=sys.stderr)
+        if self.debug: print(f'loaded {len(new_settings)} settings from {data_type} source {source}: {new_settings}', file=sys.stderr)
 
         self._settings_file_value_cache.update(new_settings)
         self.add_settings_from_settings_file_cache()
@@ -331,7 +363,7 @@ class Settings:
         if resolve_special != answer:
             how += f'; after arg resolved for: {answer}'
             answer = resolve_special
-        if answer == '\-': answer = '-'  # undo escaping used to precent special_arg_resolver for intended value of "-"
+        if answer == r'\-': answer = '-'  # undo escaping used to precent special_arg_resolver for intended value of "-"
 
         return answer, how
 
@@ -343,7 +375,8 @@ class Settings:
 
         # Try flag
         if not self._args_dict_cache and self._argparse_instance_cache:
-            self._args_dict_cache.update(vars(self._argparse_instance_cache.parse_args()))
+            tmp = vars(self._argparse_instance_cache.parse_args())
+            self._args_dict_cache.update(tmp)
         flagname = self._get_flag_name(setting)
         val = self._args_dict_cache.get(flagname.replace('--', '')) if flagname else None
         if val is not None: return val, f'flag {flagname}'
@@ -355,7 +388,7 @@ class Settings:
 
         # Try default environment variable
         val = self._get_env_value(setting.env_name, setting.name, self.env_list_sep)
-        if val: return val, f'environment variable ${setting.env_name}'
+        if val: return val, f'environment variable ${setting.env_name or setting.name}'
 
         # Return the fallback default value
         if isinstance(setting.default, str): return setting.default, 'default string'
@@ -427,6 +460,13 @@ class SettingsGroup:
     name: str
     doc: str = None
     settings: Settings = None
+
+
+# ---------- other assorted helpers
+
+def eval_bool(value):
+    if isinstance(value, bool): return value
+    return value in ['1', 'y', 'Y', 'T', 'true', 'True', 'TRUE']
 
 
 # ---------- main
