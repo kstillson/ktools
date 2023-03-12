@@ -93,6 +93,7 @@ OVERRIDE_color=yellow ./test.py -g global.dict -l local.env --color=brown --size
 
 import argparse, glob, os, sys, yaml
 from dataclasses import dataclass, field
+from typing import List
 
 import kcore.common as C
 
@@ -108,7 +109,7 @@ class Setting:
     # settings sources, listed in presidence order
     override_env_name: str = None   # name of environment variable that overrides all other sources.  Not used unless explicitly set.
     flag_name: str = None           # name of flag to add for setting this setting.  Should not include "--" prefix (because it's going to have Settings.flag_prefix prepending).  This setting is disabled if Settings.flag_prefix is None.  If Settings.flag_prefix is not none (including ''), this defaults to {name}
-    flag_aliases: list[str] = field(default_factory=list)  # list of aliases for the flag_name;   should include the "-" or "--" prefixes.
+    flag_aliases: List[str] = field(default_factory=list)  # list of aliases for the flag_name;   should include the "-" or "--" prefixes.
     setting_name: str = None        # name of the field in setting files where we look for this setting.  Defaults to {name}
     env_name: str = None            # name of environment variable to use if other sources don't provide a value.  Not used unless explicitly set.
     default: ... = None             # default value to use if no other source provides one.  can be a string or a callable that returns a string.
