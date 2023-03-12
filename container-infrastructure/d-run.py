@@ -3,170 +3,46 @@
 '''Launch a container.
 
 This scripts constructs the command-line parameters for Docker to launch a
-container.
+container. '''
 
-Most settings can come from multiple sources, the priority order is:
-  command-line flag, then
-  settings file, then
-  environment variable, then
-  a hard-coded "fallback" value
-
-See Readme-settings.yaml.md for a detailed description of the settings file.
-
-'''
-
-import argparse, glob, os, shutil, socket, subprocess, sys, yaml
+import glob, os, pprint, socket, subprocess, sys
 from dataclasses import dataclass
-from pathlib import Path
 
 import kcore.auth as A
 import kcore.common as C
+import ktools.ktools_settings as S
 
 
-# ---------- abstraction for a control set by various different sources
+# ---------- global controls
 
 DEBUG = False
-
-@dataclass
-class Ctrl:
-    control_name: str
-    override_flag: str   # should include the "-" or "--".  A prefix of plus(es) instead of minus(es) indicates a boolean that doesn't take a value.
-    override_env: str
-    setting_name: str
-    test_mode_default: str
-    normal_mode_default: str
-    doc: str
-
-    def __post_init__(self):
-        self.resolved = None
-
-    def debug(self, val, src):
-        if DEBUG: err(f'resolved control "{self.control_name}" \t to \t "{val}" \t from {src}')
-        return val
-
-    def resolve(self, args, settings, test_mode, dev_mode):
-        if self.resolved: return self.resolved
-        answer = self._resolve(args, settings, test_mode, dev_mode)
-        # Make sure dev- or test- prefix is in place
-        if self.control_name == 'name':
-            if dev_mode and not answer.startswith('dev-'):
-                answer = 'dev-' + answer
-            elif test_mode and not answer.startswith('test-'):
-                answer = 'test-' + answer
-        # Cache the answer to save time on duplicate calls and so _resolve doesn't emit dup debug messages.
-        self.resolved = answer
-        return self.resolved
-
-    def _resolve(self, args, settings, test_mode, dev_mode):
-        if test_mode and self.setting_name == 'log': return self.debug('none', 'special case: always disable logging in --test-mode')
-
-        if self.override_flag:
-            attrname = self.override_flag.replace('--', '').replace('-', '_').replace('+','')
-            tmp = getattr(args, attrname, None)
-            if self.override_flag.startswith('+'):
-                # The default here isn't None, it's False.  So only take this flag as specified if True.
-                if tmp is True: return self.debug('1', 'override flag (boolean mapped to "1")')
-            else:
-                if not tmp is None: return self.debug(tmp, 'override flag')
-
-        if self.override_env:
-            tmp = os.environ.get(self.override_env, None)
-            if not tmp is None: return self.debug(tmp, 'override env')
-
-        if dev_mode:
-            tmp = settings.get('dev_' + self.setting_name, None)
-            if not tmp is None: return self.debug(tmp, f'dev_{self.setting_name} from settings file')
-        elif test_mode:
-            tmp = settings.get('test_' + self.setting_name, None)
-            if not tmp is None: return self.debug(tmp, f'test_{self.setting_name} from settings file')
-        tmp = settings.get(self.setting_name, None)
-        if not tmp is None: return self.debug(tmp, f'settings file')
-
-        if test_mode:
-            tmp = self.test_mode_default
-            if dev_mode: tmp = tmp.replace('test', 'dev')
-        else: tmp = self.normal_mode_default
-        if not tmp: return self.debug(tmp, 'default value (which is None for this mode)')
-        tmp = tmp.replace('@basedir', settings['basedir'])
-        if not tmp.startswith('$'): return self.debug(tmp, 'mode default')
-        tmp2 = os.environ.get(tmp[1:], None)
-        return self.debug(tmp2, f'mode default via {tmp}')
-
-
-# ---------- control constants
-
-CONTROLS = [
-#        control name,   override_flag,    override_env,                      setting_name,  test-mode-default,     normal default         doc
-    Ctrl('autostart',    None,             None,                              'autostart',   None,                  None,                  'string indicating startup wave to auto-launch this container system system boot. Not used by this script.'),
-    Ctrl('command',      '--cmd',          None,                              'cmd',         None,                  None,                  'send this as the command to run within the container. If an entrypoint is in use, this because params to that entrypoint (i.e. same as --extra-init)'),
-    Ctrl('dns',          '--dns',          'KTOOLS_DRUN_OVERRIDE_DNS',        'dns',         '$KTOOLS_DRUN_DNS',    '$KTOOLS_DRUN_DNS',    'IP address to use as DNS server from inside container'),
-    Ctrl('docker_exec',  '--docker-exec',  'DOCKER_EXEC',                     'docker_exec', '/usr/bin/docker',     '/usr/bin/docker',     'container manager to use (docker or podman)'),
-    Ctrl('env',          '--env',          None,                              'env',         None,                  None,                  'list of {name}={value} pairs to set in environment within the container'),
-    Ctrl('extra_docker', '--extra-docker', 'KTOOLS_DRUN_OVERRIDE_EXTRA',      'extra_docker','$KTOOLS_DRUN_EXTRA', '$KTOOLS_DRUN_EXTRA',   'list of additional command line arguments to send to the container launch CLI'),
-    Ctrl('extra_init',   '--extra-init',   None,                              'extra_init',  None,                  None,                  'list of additional arguments to pass to the init command within the container'),
-    Ctrl('foreground',   '++fg',           None,                              'foreground',  '1',                   '0',                   'if flag set or env set to "1", run container in foreground with interactive/pty settings'),
-    Ctrl('hostname',     '--hostname',     'KTOOLS_DRUN_OVERRIDE_HOSTNAME',   'network',     'test-@basedir',       '@basedir',            'host name to assign within the container'),
-    Ctrl('image',        '--image',        None,                              'image',       '@basedir',            '@basedir',            'name of the image to launch'),
-    Ctrl('ip',           '--ip',           'KTOOLS_DRUN_OVERRIDE_IP',         'ip',          '0',                   '-',                   'IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
-    Ctrl('ipv6_ports',   '++ipv6',         None,                              'ipv6_ports',  '0',                   '0',                   'if flag set or env set to "1", enable IPv6 port mappings.'),
-    Ctrl('log',          '--log',          'KTOOLS_DRUN_OVERRIDE_LOG',        'log',         'none',                '-',                   'log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url]'),
-    Ctrl('ports',        '--ports',        None,                              'ports',       None,                  None,                  'list of {host}:{container} port pairs for mapping'),
-    Ctrl('puid',         '--puid',         'PUID',                            'puid',        'auto',                'auto',                'if not "auto", pass the given value into $PUID inside the container.  "auto" will generate a consistent container-specific value.  Blank to disable.'),
-    Ctrl('name',         '--name',         'KTOOLS_DRUN_OVERRIDE_NAME',       'name',        'test-@basedir',       '@basedir',            'name to assign to the launched container'),
-    Ctrl('network',      '--network',      'KTOOLS_DRUN_OVERRIDE_NETWORK',    'network',     '$KTOOLS_DRUN_TEST_NETWORK', '$KTOOLS_DRUN_NETWORK',  'container network to use'),
-    Ctrl('repo1',        '--repo',         'KTOOLS_DRUN_OVERRIDE_REPO',       'repo1',       '$KTOOLS_DRUN_REPO',   '$KTOOLS_DRUN_REPO',   'first repo to try for a matching image'),
-    Ctrl('repo2',        '--repo2',        'KTOOLS_DRUN_REPO2',               'repo2',       '$KTOOLS_DRUN_REPO2',  '$KTOOLS_DRUN_REPO2',   'second repo to try for a matching image'),
-    Ctrl('rm',           '++rm',           None,                              'rm',          '1',                   '1',                   'if flag set or env set to "1", pass --rm to container manager, which clears out container remanants (e.g. json logs) upon exit'),
-    Ctrl('tag',          '--tag',          'KTOOLS_DRUN_OVERRIDE_TAG',        'tag',         'latest',              'live',                'tagged or other version indicator of image to launch'),
-    Ctrl('timezone',     '--tz',           'KTOOLS_DRUN_OVERRIDE_TZ',         'tz',          '-',                   '-',                   'timezone to set inside the container (via $TZ).  Default of "-" will look for /etc/timezone'),
-    Ctrl('vol_base',     '--vol-base',     'DOCKER_VOL_BASE',                 'volbase',     '/rw/dv',              '/rw/dv',              'base directory for relative bind-mount source points'),
-]
-
-# Notes on subtlties above:
-#
-# - vol_base: test-mode-default should point to the same place as normal
-#   default, because for some mount-type (e.g. read-only), we want to mount
-#   the real versions.  We rely on map_dir() to take care of fixing the
-#   destination directories.
-
-class ControlsManager:
-    def __init__(self, args, settings, test_mode, dev_mode):
-        self.args, self.settings, self.dev_mode = args, settings, dev_mode
-        self.test_mode = test_mode or dev_mode
-
-    def resolve_control(self, control_name):
-        try:
-            ctrl = next(x for x in CONTROLS if x.control_name == control_name)
-            return ctrl.resolve(self.args, self.settings, self.test_mode, self.dev_mode) if ctrl else None
-        except StopIteration:
-            raise Exception(f'internal error; no such control {control_name}')
-
-    def resolve_setting(self, setting_name):
-        '''There are a few things, like mount_* directives, which are only in the settings file,
-           not reflected in the controls structure.  For those, this method can check for test_...
-           overrides directly in the settings.'''
-        regular_val = self.settings.get(setting_name)
-        if not self.test_mode: return regular_val
-        test_val = self.settings.get('test_' + setting_name)
-        if test_val is not None:
-            if DEBUG: err(f'resolved SETTING "{setting_name}" \t to \t "{test_val}" \t from setting test_{setting_name}')
-            return test_val
-        return regular_val
-
-
-CONTROLS_MANAGER = None  ## initialized by main()
-
-def get_control(name): return CONTROLS_MANAGER.resolve_control(name)
+TEST_MODE = False
 
 
 # ---------- general purpose helpers
 
-def err(msg):
-    sys.stderr.write("%s\n" % msg)
-    return None
+def Debug(msg):
+    if DEBUG: err('DEBUG: ' + msg)
+    
+
+def err(msg): sys.stderr.write("%s\n" % msg)
 
 
-# ---------- internal business logic
+def get_setting(name):
+    if TEST_MODE:
+        test_val = S.get('test_' + name)
+        if test_val is not None: return test_val
+    return S.get(name)
+
+
+def get_bool_setting(name):
+    if TEST_MODE:
+        test_val = S.s.get_bool('test_' + name)
+        if test_val is not None: return test_val
+    return S.s.get_bool(name)
+
+
+# ---------- internal business logic helpers
 
 def expand_log_shorthand(log, name):
     ctrl = log.lower()
@@ -191,7 +67,7 @@ def expand_log_shorthand(log, name):
     elif ctrl in ['j', 'journal', 'journald']:
         return ['--log-driver=journald']
     elif ctrl in ['j', 'json']:
-        if 'podman' in get_control('docker_exec'): return ['--log-driver=json-file']
+        if 'podman' in get_setting('docker_exec'): return ['--log-driver=json-file']
         return ['--log-driver=json-file',
                 '--log-opt', 'max-size=5m',
                 '--log-opt', 'max-file=3']
@@ -216,38 +92,34 @@ def add_devices(cmnd, dev_list):
     return cmnd
 
 
-def add_mounts(cmnd, mapper, readonly, name, mount_list):
-    vol_base = get_control('vol_base')
-    if not mount_list: return cmnd
-    for i in mount_list:
+def add_mounts(cmnd, container_name, control_name, read_only):
+    '''Appends mount params to cmnd, also returns a set of the source directories
+       so these can be used as implicit volume directories (to be created if needed).'''
+    vol_dir_srcs = set()
+    vol_base = get_setting('vol_base')
+    if not vol_base: raise ValueError('setting "vol_base" not defined and no sensible default available.')
+    mounts = get_setting(control_name)
+    if not mounts: return vol_dir_srcs
+    for i in mounts:
+        if isinstance(i, str):
+            k, v = i.split(',', 1)
+            i = {}
+            i[k.strip()] = v.strip()
         for src, dest in i.items():
-            if '/' not in src:
-                src = os.path.join(f'{vol_base}/{name}', src)
-            if '*' in src:
-                globs = glob.glob(src)
-                if not globs: err(f'WARNING: glob returned no items: {src}')
-                for g in globs:
-                    cmnd = add_mounts_internal(cmnd, mapper, readonly, name, g, dest)
-                continue
-            if not os.path.exists(src):
-                err(f'Creating non-existent mountpoint source: {src}')
-                Path(src).mkdir(parents=True, exist_ok=True)
-            cmnd = add_mounts_internal(cmnd, mapper, readonly, name, src, dest)
-    return cmnd
-
-def add_mounts_internal(cmnd, mapper, readonly, name, src, dest):
-    orig_src = src
-    if not dest: dest = src
-    if mapper: src = mapper(src, name)
-    if DEBUG: err(f'  adding mount {src} -> {dest}  [{readonly=}], mapper={mapper.__name__ if mapper else "None"}')
-    ro = ',readonly' if readonly else ''
-    cmnd.extend(['--mount', f'type=bind,source={src},destination={dest}{ro}'])
-    return cmnd
-
+            if not src.startswith('/'):
+                src = os.path.join(vol_base, container_name, src)
+            ro = ',readonly' if read_only else ''
+            cmnd.extend(['--mount', f'type=bind,source={src},destination={dest}{ro}'])
+            vol_dir_srcs.add(src)
+    return vol_dir_srcs
+    
 
 def add_ports(cmnd, ports_list, test_mode_shift, enable_ipv6):
     if not ports_list: return cmnd
     for pair in ports_list:
+        if isinstance(pair, dict):
+            first_key = next(iter(pair))
+            pair = f'{first_key}:{pair[first_key]}'
         if not enable_ipv6 and not '.' in pair: pair = '0.0.0.0:' + pair
         if test_mode_shift:
             parts = pair.split(':')
@@ -265,10 +137,10 @@ def add_ports(cmnd, ports_list, test_mode_shift, enable_ipv6):
 
 def add_simple_control(cmnd, control_name, param=None):
     if param is None: param = '--' + control_name
-    val = get_control(control_name)       # could be a list from json or a csv string from flags.
+    val = get_setting(control_name)       # could be a list from json or a csv string from flags.
     if not val: return None
 
-    val_list = val if isinstance(val, list) else val.split(',')
+    val_list = val if isinstance(val, list) else val.split(';')
     for i in val_list:
         if param: cmnd.extend([param, i])
         else: cmnd.append(i)
@@ -276,75 +148,11 @@ def add_simple_control(cmnd, control_name, param=None):
     return last_val
 
 
-def clone_dir(src, dest):
-    if os.path.exists(dest): return False
-    if os.path.isfile(src): return False
-    if not os.path.exists(src):
-        err(f'Creating non-existent mountpoint source: {src}')
-        Path(src).mkdir(parents=True)
-    Path(dest).mkdir(parents=True, exist_ok=True)
-    stat = os.stat(src)
-    os.chown(dest, stat.st_uid, stat.st_gid)
-    os.chmod(dest, stat.st_mode)
-    return True
-
-
 def does_image_exist(repo_name, image_name, tag_name):
     if not repo_name: return False
     if ':' in repo_name: return True  # TODO(defer): any way to really test this?
-    out = subprocess.check_output([get_control('docker_exec'), 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
+    out = subprocess.check_output([get_setting('docker_exec'), 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
     return out != b''
-
-
-def map_dir(destdir, name, include_tree=False, include_files=False):
-    vol_base = get_control('vol_base')
-    if '/' in destdir:
-        destdir = destdir.replace('TMP/', '')
-        mapped = '%s/TMP/%s/%s' % (vol_base, name, destdir.replace('/', '_'))
-    else:
-        mapped = vol_base + '/TMP'
-    if DEBUG: err(f'  cloning mapped dir {destdir} -> {mapped}  [tree:{include_tree}, files:{include_files}]')
-
-    # Safety check (we're about to rm -rf from the mapped dir; make sure it's in the right place!)
-    if 'TMP' not in mapped: raise Exception('Ouch- dir map failed: %s -> %s' % (destdir, mapped))
-    # Make sure the mapped parent dir exists.
-    clone_dir(os.path.dirname(destdir), os.path.dirname(mapped))
-    # Destructive replace of the mapped dir.
-    if os.path.exists(mapped):
-        err('Removing previous alt dir: %s' % mapped)
-        if os.path.isdir(mapped): shutil.rmtree(mapped)
-        else: os.unlink(mapped)
-    # If not including the tree, the only thing to do is clone the top level dir.
-    if not include_tree:
-        if include_files: raise Exception('Error- cannot include files with including tree')
-        clone_dir(destdir, mapped)
-        return mapped
-    # Copy over everything; trimming exsting files' contents if requested.
-    if os.path.isfile(destdir):
-        # Just the one file to copy over...
-        if include_files:
-            subprocess.check_call(['/bin/cp', '-a', destdir, mapped])
-            return mapped
-        else:
-            err(f'  likely config error: asked to clone file {destdir} -> {mapped} and not include files, but source is a file.  Doing nothing.')
-            return mapped
-    if not os.path.isdir(destdir):
-        # Nothing to copy, just create dest dir. (Ownership/perms might be wrong...)
-        os.mkdir(mapped)
-        return mapped
-    cmd = ['/bin/cp', '-a' ]
-    if not include_files: cmd.append('--attributes-only')
-    cmd.extend([destdir, mapped])
-    subprocess.check_call(cmd)
-    # and remove the empty files if not needed.
-    if not include_files: subprocess.check_call(['/usr/bin/find', mapped, '-type', 'f', '-size', '0b', '-delete'])
-    return mapped
-
-def map_to_empty_dir(destdir, name):  return map_dir(destdir, name, False, False)
-
-def map_to_empty_tree(destdir, name): return map_dir(destdir, name, True, False)
-
-def map_to_clone(destdir, name):      return map_dir(destdir, name, True, True)
 
 
 def get_ip(hostname):
@@ -353,13 +161,13 @@ def get_ip(hostname):
 
 
 def get_ip_to_use():
-    ip = get_control('ip')
+    ip = get_setting('ip')
     if ip in ['', '0']: return None
     if os.getuid() != 0: return err("skipping IP assignment; not running as root.")
 
     # If we don't see 3 dots, this must be a hostname we're intended to look up.
     if ip.count('.') != 3:
-        lookup_host = ip if ip != '-' else get_control('hostname')
+        lookup_host = ip if ip != '-' else get_setting('hostname')
         ip = get_ip(lookup_host)
     return ip
 
@@ -391,30 +199,160 @@ def search_for_dir(dir):
     return None    # Out of ideas...
 
 
-# ---------- settings file
+# ---------- creating mounted-volume directories (and sometimes files)
 
-def parse_settings(filename):
-    if not os.path.isfile(filename): raise Exception(f'settings file not found: {filename} .  Either run from the docker dir to launch, or see --cd flag.')
-    abspath = os.path.abspath(filename)
-    dirpath = os.path.dirname(abspath)
-    settings = {
-        'basedir': os.path.basename(dirpath),
-        'settings_basename': os.path.basename(filename),
-        'settings_pathname': abspath,
-        'settings_dir': dirpath,
-    }
-    with open(filename) as f:
-        y = yaml.load(f, Loader=yaml.FullLoader)
-    if y: settings.update(y)
-    return settings
+@dataclass
+class VolSpec:
+    path:      str = None
+    item_type: str = 'dir'
+    owner:     str = None
+    perm:      str = None
+    contents:  str = None    # Only used if item_type=='file'
 
+    def depth(self): return self.path.count('/')
+
+
+def assemble_vol_specs(mount_src_dirs, base_name):
+    specs = []
+    paths = set()
+
+    # Get defaults for unspecified details.
+    vol_base = get_setting('vol_base')
+    vol_defaults = get_setting('vol_defaults') or {}
+    default_owner = vol_defaults.get('owner')
+    default_perm = vol_defaults.get('perm')
+
+    if not vol_base: sys.exit('Need to specify setting vol_base, probably in the global settings file.')
+    
+    # Entries are either strings (which give the path to create), or dicts,
+    # which can selectively override default parameters.  In the dict case,
+    # there should be one item with no value- that key becomes the string that
+    # specifies the volume path name.  This looks odd data-structure-wise,
+    # but looks nice and intuitative in the yaml.
+    vols = get_setting('vols') or []
+    for vol in vols:
+        spec = VolSpec(vol, 'dir', default_owner, default_perm, None)
+        if isinstance(vol, dict):
+            for k, v in vol.items():
+                if v is None: spec.path = k
+                elif k == 'file_contents':
+                    spec.item_type = 'file'
+                    if v.startswith('file:'): spec.contents = C.read_file(v.replace('file:', ''))
+                    else: spec.contents = v
+                elif k == 'perm': spec.perm = v
+                elif k == 'owner': spec.owner = v
+                else: err(f'ignoring unknown param for volume "{k} for "{spec}"')
+                
+        if not spec.path.startswith('/'): spec.path = os.path.join(vol_base, base_name, spec.path)        
+        specs.append(spec)
+        paths.add(spec.path)
+
+    # Add in any implicit vols from the mount source points
+    for i in mount_src_dirs:
+        if i.startswith('/'): continue   # ignore abolsute paths, we're only creating local/relative volumes
+        if i in paths: continue          # ignore items we've already got queued
+        specs.append(VolSpec(i))
+
+    return specs
+        
+
+def create_vol_dirs(mount_src_dirs, base_name, test_mode):
+    vol_specs = assemble_vol_specs(mount_src_dirs, base_name)
+    if DEBUG: Debug(f'volume dirs to check/create:\n{pprint.pformat(vol_specs)}')
+
+    # Order such that parents created before children.  The creation logic
+    # actually contains a check to make sure parents exist, but that causes
+    # the parent to inherit the child's owner/perm settings.  If the user
+    # specified different settings for the parent, we want to use those, so
+    # create the parent first to give its settings priority.
+    for volspec in sorted(vol_specs, key=lambda x: x.depth()):
+        create_vol_item(volspec)
+
+    # For ownership fixes, we want to reverse the order: some changes will
+    # locks us out for further writes (or even reads), so we need to change
+    # the deepest items first so we still have access to shallower ones.
+    for volspec in sorted(vol_specs, key=lambda x: -x.depth()):
+        if volspec.owner: fix_ownership(volspec)
+
+
+def create_vol_item(volspec):
+    mode = int(volspec.perm, 8) if volspec.perm else None
+
+    # Note: we don't check the ownership or perms of existing directories or
+    # files; this script could easily get very complicated or not-as-smart as
+    # it thinks it is.  If something's already there, assume it's right.    
+    if ((volspec.item_type == 'file' and os.path.isfile(volspec.path)) or
+        (volspec.item_type == 'dir' and os.path.isdir(volspec.path))):
+        return Debug(f'{volspec.path} already exists')
+
+    # Create our parent directory if it's not already there.
+    parent = os.path.dirname(volspec.path)
+    if not os.path.isdir(parent):
+        Debug(f'making recursive call to create missing parent: {parent}')
+        create_vol_item(VolSpec(parent, 'dir', volspec.owner, volspec.perm))
+
+    # Create the requested item.
+    if volspec.item_type == 'file':
+        with open(volspec.path, 'w') as f: f.write(volspec.contents or '')
+        if mode: os.chmod(volspec.path, mode)
+
+    elif volspec.item_type == 'dir':
+        os.mkdir(volspec.path)
+        if mode: os.chmod(volspec.path, mode)
+
+    else: raise(f'internal error; unknown vtype "{volspec.item_type}" for {volspec.path}')
+    return Debug(f'created {str(volspec)}')
+
+
+def fix_ownership(volspec):
+    '''If using podman, we might not be root, so utilize the "unshare" option to
+       perform the chown inside the userns mapping.  This means we do not want
+       to shift the uid's: the userns will do that for us.  For Docker, there
+       is no unshare option, so we've got to be root and use traditional
+       chown.  But for this case, we do need to manually shift the target uid.'''
+    if not volspec.path or not volspec.owner: return
+
+    path = volspec.path   # local copies to allow modification
+    owner = volspec.owner
+
+    docker_exec = get_setting('docker_exec')
+
+    if owner.startswith('user/'):
+        user = owner.replace('user/', '')
+        uid = None
+        with open('files/etc/passwd') as f:
+            for line in f:
+                if line.startswith(f'{user}:'):
+                    parts = line.split(':')
+                    uid = int(parts[2])
+                    if 'podman' in docker_exec:
+                        owner = str(uid)
+                    else:
+                        shift = int(get_setting('shift_uids') or '0')
+                        owner = str(uid + shift)
+                    break
+        if uid is None:
+            err(f'unable to find files/etc/passwd entry for {owner} to chown {path}.  Will try just chowning to {user}')
+            owner = user
+    
+    if 'podman' in docker_exec:
+        Debug(f'  podman chown {path} -> {owner}')
+        rslt = C.popen([docker_exec, 'unshare', 'chown', owner, path])
+        if not rslt.ok: return err(f'error: attempt to podman/unshare chown {path} to {owner} failed: {rslt.out}')
+
+    elif os.getuid() == 0:
+        Debug(f'  root chown {path} -> {owner}')
+        rslt = C.popen(['chown', owner, path])
+        if not rslt.ok: return err(f'error: attempt to chown {path} to {owner} failed: {rslt.out}')
+
+    else:
+        return Debug(f'Skipping chown to {chown} for {path} because not root and not using podman.')
+
+
+# ---------- primary business logic: construct the launch command
 
 def gen_command():
-    args = CONTROLS_MANAGER.args
-    settings = CONTROLS_MANAGER.settings
-    test_mode = CONTROLS_MANAGER.test_mode
-
-    cmnd = [ get_control('docker_exec'), 'run' ]
+    cmnd = [ get_setting('docker_exec'), 'run' ]
 
     name = add_simple_control(cmnd, 'name')
     basename = name.replace('test-', '')
@@ -428,146 +366,157 @@ def gen_command():
     ip = get_ip_to_use()
     if ip: cmnd.extend(['--ip', ip])
 
-    fg_control = get_control('foreground')
-    fg = (fg_control == '1') or args.shell
-    if not fg: cmnd.append('-d')
+    if not (get_bool_setting('fg') or get_bool_setting('shell')): cmnd.append('-d')
 
-    cmnd.extend(expand_log_shorthand(get_control('log'), name))
+    cmnd.extend(expand_log_shorthand(get_setting('log'), name))
 
-    tz = get_control('timezone')
+    tz = get_setting('tz')  # timezone
     if tz == '-': tz = C.read_file('/etc/timezone').strip()
     if tz: cmnd.extend(['--env', f'TZ={tz}'])
 
-    if get_control('rm') == '1': cmnd.append('--rm')
+    if get_bool_setting('rm'): cmnd.append('--rm')
 
-    if args.shell: cmnd.extend(['--user', '0', '-ti', '--entrypoint', '/bin/bash'])
+    if get_bool_setting('shell'): cmnd.extend(['--user', '0', '-ti', '--entrypoint', '/bin/bash'])
 
-    # In test-mode, these have the side-effect of cloning parts of the bind-mount tree into the temp area.
+    add_devices(cmnd, get_setting('mount_devices'))
 
-    add_devices(cmnd, CONTROLS_MANAGER.resolve_setting('mount_devices'))
-    add_mounts(cmnd, None, True, basename, CONTROLS_MANAGER.resolve_setting('mount_ro'))
-    add_mounts(cmnd, None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent'))
-    add_mounts(cmnd, None, test_mode, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_ro'))
-    add_mounts(cmnd, map_to_empty_dir  if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_logs'))
-    add_mounts(cmnd, map_to_empty_dir  if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_copy'))
-    add_mounts(cmnd, map_to_empty_tree if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_copy_tree'))
-    add_mounts(cmnd, map_to_clone      if test_mode else None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_persistent_test_copy_files'))
-    if test_mode:
-        add_mounts(cmnd, None, False, basename, CONTROLS_MANAGER.resolve_setting('mount_test_only'))
+    mount_src_dirs =      add_mounts(cmnd, basename, 'mount-ro', True)
+    mount_src_dirs.update(add_mounts(cmnd, basename, 'mount-rw', False))
 
-    test_mode_shift = args.port_offset if test_mode else 0
-    add_ports(cmnd, get_control('ports'), test_mode_shift, get_control('ipv6_ports') == 1)
+    create_vol_dirs(mount_src_dirs, basename, TEST_MODE)
 
+    add_ports(cmnd, get_setting('ports'), S.s.get_int('port_shift'), get_bool_setting('ipv6_ports'))
 
-    puid = get_control('puid')
+    puid = get_setting('puid')
     if puid == 'auto': puid = get_puid(name)
     if puid: cmnd.extend(['--env', 'PUID=' + puid])
 
-    image_name = get_control('image')
-    tag_name = get_control('tag')
+    image_name = get_setting('image')
+    tag_name = get_setting('tag')
 
-    repo_name = get_control('repo1')
+    repo_name = get_setting('repo1')
     if not does_image_exist(repo_name, image_name, tag_name):
-        repo_name = get_control('repo2')
+        repo_name = get_setting('repo2')
         if not does_image_exist(repo_name, image_name, tag_name):
             repo_name = None
             err(f'This probably wont work; {image_name}:{tag_name} not found in primary or secondary repo.')
 
-    if repo_name:
-        full_spec = f'{repo_name}/{image_name}:{tag_name}'
-    else:
-        full_spec = f'{image_name}:{tag_name}'
+    if repo_name: full_spec = f'{repo_name}/{image_name}:{tag_name}'
+    else:         full_spec = f'{image_name}:{tag_name}'
     cmnd.append(full_spec)
 
-    cmd = get_control('command')
+    cmd = get_setting('command')
     if cmd: cmnd.extend(cmd.split(' '))
 
-    # Throw any additional init args on the end, if any are requested by flags or settings.
-    extra_init = get_control('extra_init')
-    if extra_init and not args.shell:
+    # Add any additional init args on the end.
+    extra_init = get_setting('extra_init')
+    if extra_init and not get_bool_setting('shell'):
         cmnd.extend(extra_init.strip().split(' '))
 
     return cmnd
 
 
-# ---------- args
+def tweak_basedir(setting, attrname, context_is_basedir):
+    val = getattr(setting, attrname)
+    if callable(val): val = val()
+    if val: val = val.replace('@basedir', context_is_basedir)
+    return val
 
-class DeprecatedAction(argparse.Action):
-    def __call__(self, *args, **kwargs): C.c0('warning', f'flag {self.option_strings} is deprecated and ignored.', out=2)
 
+# ---------- args & settings
+
+def try_dirs(dirlist):
+    for dir in dirlist:
+        if os.path.isdir(dir): return dir
+    
 
 def parse_args(argv=sys.argv[1:]):
-    ap = argparse.ArgumentParser(description='docker container launcher')
+    ap = C.argparse_epilog(description='docker container launcher', add_help=False)  # Defer help until after we've added our settings-based flags.
 
-    g1 = ap.add_argument_group('Modified run modes', 'Do something other than simply launching a container.')
+    g1 = ap.add_argument_group('d-run logic options', 'Do something other than simply launching a container.')
     g1.add_argument('--debug',         '-d', action='store_true', help='Print the source of each control value, and final command as a list (showing args are separate)')
-    g1.add_argument('--no-rm',         '-n', action='store_true', help='Do not automatically remove any remanants of previous containers with the same name (which would break launch if not done)')
+    g1.add_argument('--help',          '-h', action='store_true', help='print help')
     g1.add_argument('--print-cmd',           action='store_true', help='Launch the container as normal, but also print out the command being used for the launch.')
     g1.add_argument('--test',          '-t', action='store_true', help='Just print the command that would be run rather than running it.')
 
     g2 = ap.add_argument_group('Meta settings', 'Flags that effect how all the other settings are set.')
-    g2.add_argument('--cd',                default=None, help='Normally d-run is run from the docker directory of the container to launch.  If that is inconvenient, specify the name of the subdir of ~/docker-dev here, and we start by switching to that dir.')
-    g2.add_argument('--port-offset', '-P', default=10000, help='add this value to host-side port mappings in --test-mode or --dev-mode (default is 10,000)')
-    g2.add_argument('--settings',    '-s', default='settings.yaml', help='location of the settings yaml file.  default of None will use "settings.yaml" in the current working dir.')
-    g2.add_argument('--shell',       '-S', action='store_true', help='Override the entrypoint to an interactve tty-enable bash shell')
-    g2.add_argument('--dev-mode',    '-D', action='store_true', help="Same as --test-mode, except change prefixes from 'test-' to 'dev-'")
-    g2.add_argument('--test-mode',   '-T', action='store_true', help="Launch the container in test mode (changes most setting's defaults)")
+    g2.add_argument('--cd',            '-N', help='The directory within which to find --settings (if not specified in --settings).  Can be relative to the global setting "d_src_dir" or "d_src_dir2", meaning that this can just be the basename of the container you want to launch (hence the alias -N for name)')
+    g2.add_argument('--settings',      '-s', default='settings.yaml', help='file with container specific settings')
+    g2.add_argument('--host_level_settings', '-H', default='${HOME}/.kcore.settings', help='file with host-level overall settings')
+    g2.add_argument('--test-mode',     '-T', action='store_true', help='@@')
 
     g3 = ap.add_argument_group('shortcuts')
-    g3.add_argument('--latest',      '-l', action='store_true', help='shortcut for "--tag latest"')
-    g3.add_argument('-v',                  action='store_true', help='shortcut for "--test-mode" (kept for compatibility)  TODO: get rid of this and use -v as shortcut for --debug')
+    g3.add_argument('--latest',        '-l', action='store_true', help='shortcute for --tag=latest')
 
-    g4 = ap.add_argument_group('DEPRECATED', 'These are ignored, but are listed here so they dont cause an error if specified by old code')
-    g4.add_argument('--name_prefix',       action=DeprecatedAction,   help='IGNORED')
-    g4.add_argument('--subnet',            action=DeprecatedAction,   help='IGNORED')
+    args, _ = ap.parse_known_args(argv)   # Parse enough flags to get the settings dir & filename(s)
 
-    g5 = ap.add_argument_group('Individual launch params', 'These override settings and environment variable defaults')
-    for c in CONTROLS:
-        if not c.override_flag: continue
-        if c.override_flag.startswith('+'):
-            g5.add_argument(c.override_flag.replace('+', '-'), action='store_true', help=c.doc)
-        else:
-            g5.add_argument(c.override_flag, help=c.doc)
+    # Now we have the initially known args, so we can initialize the settings
+    # system and let it fully populate our flags.
 
-    args = ap.parse_args(argv)
+    flag_aliases = {
+        'repo1': '-r',
+        'image': '-i',
+        'cmd':   '-c',
+        'shell': '-S',
+    }
+    s = S.init(['containers', 'container launching', 'd-run'],
+               C.special_arg_resolver(args.host_level_settings),
+               ap, flag_aliases, args.debug, args.test_mode)
+
+    # Add environment varaible fallbacks for all settings.
+    s.tweak_all_settings('env_name', 'DRUN_{name}')
+
+    # Now that our flags are populated, we can go ahead and fully parse those.
+    args = ap.parse_args(argv)            # parse for real this time.
+    s.set_args(args)
+    
+    # Now we know d_src_dir[2], so we can locate and load the container-specific settings file.
+    if args.cd:
+        found_dir = try_dirs([args.cd,
+                              os.path.join(s['d_src_dir'], args.cd),
+                              os.path.join(s['d_src_dir2'], args.cd)])
+        if found_dir: os.chdir(found_dir)
+        else: err(f'warning- unable to find directory for --cd: {args.cd}')
+
+    try:
+        s.parse_settings_file(args.settings)
+    except ValueError:
+        err('\n\nUnable to find settings file to launch.  Try --cd or --settings flags.\n\n')
+        print(ap.format_help())
+        sys.exit(1)
+
+    # Now that we know the settings filename, replace any defaults of "@basedir" with the settings dir.
+    basedir = os.path.basename(os.path.dirname(args.settings))
+    s.tweak_all_settings('default', tweak_basedir, context=basedir)
+    
+
+    # ----- Okay, args and settings are fully loaded, there are a few simple ones we can handle locally.
+    
+    # Handle help
+    if args.help:
+        print(ap.format_help())
+        sys.exit(0)
 
     # Handle shortcuts
-    if args.latest: args.tag = 'latest'
-    if args.v: args.test_mode = True
+    if args.latest:
+        args.tag = 'latest'
+        s.tweak_setting('tag', 'cached_value', 'latest')
 
-    return args
+    # Handle simple global toggles
+    global DEBUG, TEST_MODE
+    DEBUG = args.debug
+    TEST_MODE = args.test_mode
+    
+    return args    # No need to return s, that's available via the module ktools_settings singleton "s"
 
 
 # ---------- main
 
 def main():
-    # gather the controls that affect command generation.
-
     args = parse_args()
 
-    global DEBUG
-    if args.debug: DEBUG = True
-
-    if args.cd:
-        src_dir = search_for_dir(args.cd)
-        if src_dir:
-            os.chdir(src_dir)
-            if DEBUG: err(f'Using source directory {src_dir}')
-        else: err(f'dont know how to find directory: {args.cd}')
-
-    settings = parse_settings(args.settings)
-
-    global CONTROLS_MANAGER
-    CONTROLS_MANAGER = ControlsManager(args, settings, args.test_mode, args.dev_mode)
-
     # generate the launch command and output any requested debugging info.
-
     cmnd = gen_command()
-
-    if DEBUG:
-        out = {i.control_name: i.resolved for i in CONTROLS if i.resolved is not None}
-        err(f'\nargs: {args}\n\nsettings: {settings}\n\nresolved controls: {out}\n')
-        err(f'cmnd: {cmnd}\n')
 
     if DEBUG or args.print_cmd or args.test:
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
@@ -576,13 +525,11 @@ def main():
         if args.test: sys.exit(0)
 
     # clear out any terminated-but-still-laying-around remanents of previous runs.
-
-    if not args.no_rm:
+    if not S.s['no_rm']:
         with open('/dev/null', 'w') as z:
-            subprocess.call([get_control('docker_exec'), 'rm', get_control('name')], stdout=z, stderr=z)
+            subprocess.call([get_setting('docker_exec'), 'rm', get_setting('name')], stdout=z, stderr=z)
 
     # actually run the launch command
-
     return subprocess.call(cmnd)
 
 

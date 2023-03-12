@@ -67,11 +67,34 @@ A simple mechanism for keeping an in-memory cache of a Python data structure
 up-to-date wrt a human-readable serialized copy.
 
 
+# ktools_settings.py
+
+This is built on-top of settings.py (see below), and provides an abstraction
+and container for all the settings used by command-line level tools throughout
+the ktools system.  See ../../container-infrastructure/d-run.py for an example
+client that makes use of just about all the features.
+
+
 # neo.py
 
 Provides abstractions for Adafruit Neopixels that provide an identical API
 that works on Raspberry PIs, Circuit Python micro-controllers, full C Python
 (using a graphical simulation), and a headless simulation mode.
+
+
+## settings.py
+
+Provides a unified system for loading settings from a variety of sources, with
+a clearly specified prioritzation order.  Settings can come from:
+
+- files or strings containing:
+  - yaml, serialized dict (see persister.py), one-per-line name=value pairs
+- command line flags
+- environment variables that override other types of settings
+- environment variables that provide defaults when other settings don't.
+
+Fully integrated with command.special_arg_resolver (i.e. settings can load
+file contents, query password values from the user, query keymaster).
 
 
 ## timequeue.py

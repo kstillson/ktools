@@ -119,8 +119,9 @@ def get_initial_python_file_comment(filename=None):
 
 def argparse_epilog(*args, **kwargs):
     '''Return an argparse with populated epilog matching the caller's Python file comment.'''
-    filename = get_callers_module(levels=2).__file__
-    return argparse.ArgumentParser(epilog=get_initial_python_file_comment(filename),
+    module = get_callers_module(levels=2)
+    epilog = get_initial_python_file_comment(module.__file__) if module else None
+    return argparse.ArgumentParser(epilog=epilog,
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    *args, **kwargs)
 
@@ -136,27 +137,48 @@ def resolve_special_arg(args, argname, required=True):
     return new_value
 
 
-def special_arg_resolver(input_val, argname='argument'):
+def special_arg_resolver(input_val, argname='argument', env_value_default=None):
     '''The input value can have any of these special forms:
        - "-" to read as a password from the tty
        - $X to read the value from environment variable X
        - *A[/B/C] to query keymaster for key A (optionally under username B and password C)
        - file:X or f:X to read the value from file X
        - or can just be a normal string (which is returned unchanged)
+
+       If $X is specified as input_val, but X is not present in the environment, then
+       env_value_default will be returned.  If env_value_default is None (the default),
+       a ValueError will be raised, as we have no source for the correct value.
     '''
 
-    if input_val == "-":
+    if not input_val: return input_val
+    val = input_val
+
+    if isinstance(val, list):
+        return [special_arg_resolver(i) for i in val]
+
+    if isinstance(val, dict):
+        return {k: special_arg_resolver(v) for k, v in val.items()}
+
+    if not isinstance(val, str): val = str(val)
+
+    if val == "-":
         import getpass
         return  getpass.getpass(f'Enter value for {argname}: ')
 
-    elif input_val and input_val.startswith('$'):
-        varname = input_val[1:]
+    elif val.startswith('$'):
+        if val.startswith('${'):
+            varname, remainder = val[2:].split('}', 1)
+        else:
+            varname = val[1:]
+            remainder = ''
         output_value = os.environ.get(varname)
-        if output_value is None: raise ValueError(f'{argname} indicated to use environment variable {input_val}, but variable is not set.')
-        return output_value
+        if output_value is None:
+            if env_value_default is not None: return env_value_default
+            raise ValueError(f'{argname} indicated to use environment variable {val}, but variable is not set and no default provided.')
+        return output_value + remainder
 
-    elif input_val and input_val.startswith('*'):
-        parts = input_val[1:].split('/')
+    elif val.startswith('*'):
+        parts = val[1:].split('/')
         keyname = parts[0]
         username = parts[1] if len(parts) >= 2 else None
         password = parts[2] if len(parts) >= 3 else None
@@ -165,11 +187,11 @@ def special_arg_resolver(input_val, argname='argument'):
         if output_value.startswith('ERROR:'): raise ValueError(f'failed to retrieve {keyname} from keymaster: {output_value}.')
         return output_value
 
-    elif input_val and (input_val.startswith('file:') or input_val.startswith('f:')):
-        _, filename = input_val.split(':', 1)
+    elif val.startswith('file:') or val.startswith('f:'):
+        _, filename = val.split(':', 1)
         return read_file(filename, wrap_exceptions=False)
 
-    return input_val
+    return input_val   # Return original (which might be un-converted non-string)
 
 
 # ---------- ad-hoc

@@ -108,7 +108,7 @@ Here are the contents expected for each container source directory:
 
 - settings.yaml: This file provides the instructions to the `d-run` tool
   on how to construct the docker command-line arguments to launch a
-  container.  See [Readme-settings.yaml.md](Readme-settings.yaml.md).
+  container.
 
 - Test: This is an executable file (generally Python), which performs a
   series of functionality tests on a container.

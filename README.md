@@ -147,11 +147,6 @@ However, you'll probably find it more useful to review
 [Readme-makefiles.md](Readme-makefiles.md) to find out more about what you'll
 be getting and what your options are.
 
-Generally things work correctly with none of these set, but as you use the
-system more and start wanting to customize things, you'll probably want to
-review [Readme-environ-variables.md](Readme-environ-variables.md) for the list
-of Linux environment variables that affect the way ktools operates.
-
 - - -
 
 I'd like to call attention to the

@@ -1,0 +1,27 @@
+# comment
+
+a: val-a
+
+c: '321'
+
+d:
+  k1: v1
+  k2: v2
+  
+l:
+  - l1
+  - l2
+
+e1: $e1
+
+e2: $e2
+
+ex:
+  - $e1
+  - $e2
+
+f: file:testdata/file1
+
+n: 123
+
+extra: "mostly harmless"
