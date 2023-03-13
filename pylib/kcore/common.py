@@ -32,8 +32,8 @@ class PopenOutput:
     def __post_init__(self):
         if self.exception_str:
             self.out = 'ERROR: exception: ' + self.exception_str
-        elif self.ok and self.stdout:
-            self.out = self.stdout
+        elif self.ok:
+            self.out = self.stdout or ''
         else:
             self.out = f'ERROR: [{self.returncode}] {self.stderr}'
     def __str__(self): return self.out
