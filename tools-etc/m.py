@@ -12,8 +12,10 @@ moint-points for an encfs configuration are remote, the encfs config can
 
 '''
 
-import argparse, os, subprocess, sys
+import os, subprocess, sys
 from collections import namedtuple
+
+import kcore.common as C
 
 # ---------- types
 
@@ -37,10 +39,14 @@ CONFIGS = [
     Mp('mov',           ['m'],          Encfs('mov',     'mnt/data1/mov'),                 'data1',  'mnt/mov'),
     Mp('bp',            ['b'],          Encfs('bp',      'mnt/data1/bp'),                  'data1',  'mnt/bp'),
     # jack
-    Mp('jroot',         ['R'],          Sshfs('-r',      'j:/'),                           None,     'mnt/jroot'),
+    Mp('jroot',         ['r'],          Sshfs('',        'j:/rw/root'),                    None,     'mnt/jroot'),
+    Mp('jrootdir',      ['R'],          Sshfs('-r',      'j:/'),                           None,     'mnt/jrootdir'),
     Mp('html',          ['H'],          Sshfs('',        'j:/rw/dv/webdock/var_www/html'), None,     'mnt/html'),
     # a1
     Mp('aroot',         ['A'],          Sshfs('',        'a1:/'),                          None,     'mnt/aroot'),
+    # steamdeck
+    Mp('sdd',           ['S'],          Sshfs('',        'sdd:/run/media/mmcblk0p1'),      None,     'mnt/sdd'),
+    Mp('sdh',           [],             Sshfs('',        'sdd:/home/deck'),                None,     'mnt/tmp'),
 ]
 
 BASEDIR = os.environ.get('BASEDIR', os.environ.get('HOME'))
@@ -150,10 +156,11 @@ def unmounter():
 # ---------- main
 
 def parse_args(argv):
-  ap = argparse.ArgumentParser(description='authN token generator')
-  ap.add_argument('--allow-root', '-A', action='store_true', help='allow root to access mounted filesystems')
-  ap.add_argument('targets', nargs="*", help='list of mountpoint_config names (or aliases) to mount.  special targets: a=all, t=test, u=umount')
-  return ap.parse_args(argv)
+    extra = 'Available targets:\n\n' + '\n'.join([f'   {c.name:<12}\t{c.aliases}\t{c.mp_provides}' for c in CONFIGS])
+    ap = C.argparse_epilog(description='authN token generator', epilog_extra=extra)
+    ap.add_argument('--allow-root', '-A', action='store_true', help='allow root to access mounted filesystems')
+    ap.add_argument('targets', nargs="*", help='list of mountpoint_config names (or aliases) to mount.  special targets: a=all, t=test, u=umount')
+    return ap.parse_args(argv)
 
 
 def main(argv=[]):

@@ -120,7 +120,9 @@ def get_initial_python_file_comment(filename=None):
 def argparse_epilog(*args, **kwargs):
     '''Return an argparse with populated epilog matching the caller's Python file comment.'''
     module = get_callers_module(levels=2)
-    epilog = get_initial_python_file_comment(module.__file__) if module else None
+    epilog = get_initial_python_file_comment(module.__file__) if module else ''
+    extra = kwargs.pop('epilog_extra', None)
+    if extra: epilog += extra
     return argparse.ArgumentParser(epilog=epilog,
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
                                    *args, **kwargs)
