@@ -304,17 +304,12 @@ class WebServerBase:
 # ---------- Other helper functions
 
 def varz_handler(request, extra_dict=None):
-    if extra_dict:
-        varz = dict(V.VARZ)
-        varz.update(extra_dict)
-    else:
-        varz = V.VARZ
+    varz = dict(V.get_dict())
+    if extra_dict: varz.update(extra_dict)
     if '?' in request.full_path:
         _, var = request.full_path.split('?')
         return str(varz.get(var))
     return H.dict_to_page(varz, 'varz')
-
-
 
 
 # in: full url with get params, out: dict of get params.
