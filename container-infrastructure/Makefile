@@ -23,10 +23,9 @@ private.d/d-cowscan.ignore:
 
 # ---------- testing
 
-# TODO: add some tests
 $(TEST_LOG): $(wildcard *.py) $(STAGING_DIR)
+	script -e -c "pytest-3 tests" $(TEST_LOG)
 	touch $(TEST_LOG)
-	# script -e -c "pytest-3 test_*.py" $(TEST_LOG)
 
 # ---------- pass-throughs
 

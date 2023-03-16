@@ -5,11 +5,12 @@
 This scripts constructs the command-line parameters for Docker to launch a
 container. '''
 
-import glob, os, pprint, socket, subprocess, sys
+import glob, os, pprint, pwd, shutil, socket, subprocess, sys
 from dataclasses import dataclass
 
 import kcore.auth as A
 import kcore.common as C
+import kcore.settings as KS
 import ktools.ktools_settings as S
 
 
@@ -23,23 +24,20 @@ TEST_MODE = False
 
 def Debug(msg):
     if DEBUG: err('DEBUG: ' + msg)
-    
+
 
 def err(msg): sys.stderr.write("%s\n" % msg)
 
 
-def get_setting(name):
-    if TEST_MODE:
+def get_setting(name, skip_auto_test_mode=False):
+    if TEST_MODE and not skip_auto_test_mode:
         test_val = S.get('test_' + name)
         if test_val is not None: return test_val
     return S.get(name)
 
 
 def get_bool_setting(name):
-    if TEST_MODE:
-        test_val = S.s.get_bool('test_' + name)
-        if test_val is not None: return test_val
-    return S.s.get_bool(name)
+    return KS.eval_bool(get_setting(name))
 
 
 # ---------- internal business logic helpers
@@ -93,7 +91,7 @@ def add_devices(cmnd, dev_list):
 
 
 def add_mounts(cmnd, container_name, control_name, read_only):
-    '''Appends mount params to cmnd, also returns a set of the source directories
+    '''Appends mount params to cmnd, also returns a set of the vol_base-relative source directories
        so these can be used as implicit volume directories (to be created if needed).'''
     vol_dir_srcs = set()
     vol_base = get_setting('vol_base')
@@ -108,11 +106,11 @@ def add_mounts(cmnd, container_name, control_name, read_only):
         for src, dest in i.items():
             if not src.startswith('/'):
                 src = os.path.join(vol_base, container_name, src)
+                vol_dir_srcs.add(src)
             ro = ',readonly' if read_only else ''
             cmnd.extend(['--mount', f'type=bind,source={src},destination={dest}{ro}'])
-            vol_dir_srcs.add(src)
     return vol_dir_srcs
-    
+
 
 def add_ports(cmnd, ports_list, test_mode_shift, enable_ipv6):
     if not ports_list: return cmnd
@@ -138,9 +136,9 @@ def add_ports(cmnd, ports_list, test_mode_shift, enable_ipv6):
 def add_simple_control(cmnd, control_name, param=None):
     if param is None: param = '--' + control_name
     val = get_setting(control_name)       # could be a list from json or a csv string from flags.
-    if not val: return None
+    if val is None: return None
 
-    val_list = val if isinstance(val, list) else val.split(';')
+    val_list = val if isinstance(val, list) else val.split(S.STR_LIST_SEP)
     for i in val_list:
         if param: cmnd.extend([param, i])
         else: cmnd.append(i)
@@ -203,11 +201,11 @@ def search_for_dir(dir):
 
 @dataclass
 class VolSpec:
-    path:      str = None
-    item_type: str = 'dir'
-    owner:     str = None
-    perm:      str = None
-    contents:  str = None    # Only used if item_type=='file'
+    path:      str = None    # remember not to prefix with "/" if relative to vol_base
+    item_type: str = 'dir'   # can be specified as "type:" in a serialized VolSpec dict.
+    owner:     str = None    # can be a uid (as a string), a username, or "user/{container uid}"
+    perm:      str = None    # expect a base 8 number in string form, e.g. "0750"
+    contents:  str = None    # only useful if item_type=='file'
 
     def depth(self): return self.path.count('/')
 
@@ -223,7 +221,7 @@ def assemble_vol_specs(mount_src_dirs, base_name):
     default_perm = vol_defaults.get('perm')
 
     if not vol_base: sys.exit('Need to specify setting vol_base, probably in the global settings file.')
-    
+
     # Entries are either strings (which give the path to create), or dicts,
     # which can selectively override default parameters.  In the dict case,
     # there should be one item with no value- that key becomes the string that
@@ -231,34 +229,41 @@ def assemble_vol_specs(mount_src_dirs, base_name):
     # but looks nice and intuitative in the yaml.
     vols = get_setting('vols') or []
     for vol in vols:
+        if isinstance(vol, str) and not spec.path.startswith('/'):
+            vol = os.path.join(vol_base, base_name, spec.path)
+
         spec = VolSpec(vol, 'dir', default_owner, default_perm, None)
+
         if isinstance(vol, dict):
             for k, v in vol.items():
-                if v is None: spec.path = k
-                elif k == 'file_contents':
-                    spec.item_type = 'file'
-                    if v.startswith('file:'): spec.contents = C.read_file(v.replace('file:', ''))
-                    else: spec.contents = v
-                elif k == 'perm': spec.perm = v
-                elif k == 'owner': spec.owner = v
+                if v is None or v == 'path':
+                    if not k.startswith('/'): k = os.path.join(vol_base, base_name, k)
+                    spec.path = k
+                if k == 'type': k = 'item_type'   # "type" is a reserved Python word, so internally we use item_type to avoid an illegal field name in VolSpec.
+                if k == 'contents': spec.item_type = 'file'
+                if hasattr(spec, k): setattr(spec, k, v)
                 else: err(f'ignoring unknown param for volume "{k} for "{spec}"')
-                
-        if not spec.path.startswith('/'): spec.path = os.path.join(vol_base, base_name, spec.path)        
         specs.append(spec)
         paths.add(spec.path)
 
     # Add in any implicit vols from the mount source points
     for i in mount_src_dirs:
-        if i.startswith('/'): continue   # ignore abolsute paths, we're only creating local/relative volumes
         if i in paths: continue          # ignore items we've already got queued
         specs.append(VolSpec(i))
 
     return specs
-        
+
 
 def create_vol_dirs(mount_src_dirs, base_name, test_mode):
     vol_specs = assemble_vol_specs(mount_src_dirs, base_name)
     if DEBUG: Debug(f'volume dirs to check/create:\n{pprint.pformat(vol_specs)}')
+
+    # Remove any previous auto-created test items.  Order such that children go
+    # before parents, so we don't attempt double deletes.
+    if test_mode and (get_setting('vol_base', skip_auto_test_mode=True) !=
+                      get_setting('test_vol_base', skip_auto_test_mode=True)):
+        for volspec in sorted(vol_specs, key=lambda x: -x.depth()):
+            delete_vol_item(volspec)
 
     # Order such that parents created before children.  The creation logic
     # actually contains a check to make sure parents exist, but that causes
@@ -280,7 +285,7 @@ def create_vol_item(volspec):
 
     # Note: we don't check the ownership or perms of existing directories or
     # files; this script could easily get very complicated or not-as-smart as
-    # it thinks it is.  If something's already there, assume it's right.    
+    # it thinks it is.  If something's already there, assume it's right.
     if ((volspec.item_type == 'file' and os.path.isfile(volspec.path)) or
         (volspec.item_type == 'dir' and os.path.isdir(volspec.path))):
         return Debug(f'{volspec.path} already exists')
@@ -293,7 +298,7 @@ def create_vol_item(volspec):
 
     # Create the requested item.
     if volspec.item_type == 'file':
-        with open(volspec.path, 'w') as f: f.write(volspec.contents or '')
+        with open(volspec.path, 'w') as f: f.write(_vol_eval_contents(volspec.contents, volspec.path))
         if mode: os.chmod(volspec.path, mode)
 
     elif volspec.item_type == 'dir':
@@ -302,6 +307,35 @@ def create_vol_item(volspec):
 
     else: raise(f'internal error; unknown vtype "{volspec.item_type}" for {volspec.path}')
     return Debug(f'created {str(volspec)}')
+
+
+def _vol_eval_contents(val, target_path):
+    if not val: return ''
+    val = val.replace('%target%', target_path).replace('%targetdir%', os.path.dirname(target_path))
+    if   val.startswith('file:'):    val = C.read_file(val.replace('file:', ''))
+    elif val.startswith('cmd:'):     val = _vol_popen_contents(val, target_path)
+    elif val.startswith('command:'): val = _vol_popen_contents(val, target_path)
+    elif val.startswith('popen:'):   val = _vol_popen_contents(val, target_path)
+    return val
+
+
+def _vol_popen_contents(val, target_path):
+    _, cmd = val.split(':', 1)
+    newval = C.popener(cmd, shell=True)
+    if DEBUG: Debug(f'Generated volume contents for file "{target_path}" via command "{cmd}" -> "{newval}"')
+    return newval
+
+
+def delete_vol_item(volspec):
+    path = volspec.path
+    # TODO(defer): remove once we're confident in this; fails if test_vol_base doesn't contain 'TEST'.
+    if not 'TEST' in path: raise ValueError(f'attempt to delete non TEST volspec item: {path=}')
+    if volspec.item_type == 'dir' and os.path.isdir(path):
+        err('!! Removing previous test dir: %s' % path)
+        shutil.rmtree(path)
+    elif volspec.item_type == 'file' and os.path.isfile(path):
+        err('!! Removing previous test file: %s' % path)
+        os.unlink(path)
 
 
 def fix_ownership(volspec):
@@ -313,7 +347,7 @@ def fix_ownership(volspec):
     if not volspec.path or not volspec.owner: return
 
     path = volspec.path   # local copies to allow modification
-    owner = volspec.owner
+    owner = str(volspec.owner)
 
     docker_exec = get_setting('docker_exec')
 
@@ -332,9 +366,12 @@ def fix_ownership(volspec):
                         owner = str(uid + shift)
                     break
         if uid is None:
-            err(f'unable to find files/etc/passwd entry for {owner} to chown {path}.  Will try just chowning to {user}')
-            owner = user
-    
+            try:
+                owner = str(pwd.getpwnam(user).pw_uid)
+            except KeyError:
+                err(f'unable to find files/etc/passwd entry for {owner} to chown {path}.  Will try just chowning to {user}')
+                owner = user
+
     if 'podman' in docker_exec:
         Debug(f'  podman chown {path} -> {owner}')
         rslt = C.popen([docker_exec, 'unshare', 'chown', owner, path])
@@ -346,7 +383,7 @@ def fix_ownership(volspec):
         if not rslt.ok: return err(f'error: attempt to chown {path} to {owner} failed: {rslt.out}')
 
     else:
-        return Debug(f'Skipping chown to {chown} for {path} because not root and not using podman.')
+        return Debug(f'Skipping chown to {owner} for {path} because not root and not using podman.')
 
 
 # ---------- primary business logic: construct the launch command
@@ -363,8 +400,9 @@ def gen_command():
     add_simple_control(cmnd, 'hostname')
     add_simple_control(cmnd, 'network')
 
-    ip = get_ip_to_use()
-    if ip: cmnd.extend(['--ip', ip])
+    if get_setting('network') != 'none':
+        ip = get_ip_to_use()
+        if ip: cmnd.extend(['--ip', ip])
 
     if not (get_bool_setting('fg') or get_bool_setting('shell')): cmnd.append('-d')
 
@@ -380,12 +418,12 @@ def gen_command():
 
     add_devices(cmnd, get_setting('mount_devices'))
 
-    mount_src_dirs =      add_mounts(cmnd, basename, 'mount-ro', True)
-    mount_src_dirs.update(add_mounts(cmnd, basename, 'mount-rw', False))
+    mount_src_dirs =      add_mounts(cmnd, basename, 'mount_ro', True)
+    mount_src_dirs.update(add_mounts(cmnd, basename, 'mount_rw', False))
 
     create_vol_dirs(mount_src_dirs, basename, TEST_MODE)
 
-    add_ports(cmnd, get_setting('ports'), S.s.get_int('port_shift'), get_bool_setting('ipv6_ports'))
+    add_ports(cmnd, get_setting('ports'), S.s.get_int('port_offset'), get_bool_setting('ipv6_ports'))
 
     puid = get_setting('puid')
     if puid == 'auto': puid = get_puid(name)
@@ -405,7 +443,7 @@ def gen_command():
     else:         full_spec = f'{image_name}:{tag_name}'
     cmnd.append(full_spec)
 
-    cmd = get_setting('command')
+    cmd = get_setting('cmd')
     if cmd: cmnd.extend(cmd.split(' '))
 
     # Add any additional init args on the end.
@@ -416,19 +454,12 @@ def gen_command():
     return cmnd
 
 
-def tweak_basedir(setting, attrname, context_is_basedir):
-    val = getattr(setting, attrname)
-    if callable(val): val = val()
-    if val: val = val.replace('@basedir', context_is_basedir)
-    return val
-
-
 # ---------- args & settings
 
 def try_dirs(dirlist):
     for dir in dirlist:
         if os.path.isdir(dir): return dir
-    
+
 
 def parse_args(argv=sys.argv[1:]):
     ap = C.argparse_epilog(description='docker container launcher', add_help=False)  # Defer help until after we've added our settings-based flags.
@@ -443,7 +474,7 @@ def parse_args(argv=sys.argv[1:]):
     g2.add_argument('--cd',            '-N', help='The directory within which to find --settings (if not specified in --settings).  Can be relative to the global setting "d_src_dir" or "d_src_dir2", meaning that this can just be the basename of the container you want to launch (hence the alias -N for name)')
     g2.add_argument('--settings',      '-s', default='settings.yaml', help='file with container specific settings')
     g2.add_argument('--host_level_settings', '-H', default='${HOME}/.kcore.settings', help='file with host-level overall settings')
-    g2.add_argument('--test-mode',     '-T', action='store_true', help='@@')
+    g2.add_argument('--test-mode',     '-T', action='store_true', help='Launch with alternate settings, so version under test does not interfere with production version.')
 
     g3 = ap.add_argument_group('shortcuts')
     g3.add_argument('--latest',        '-l', action='store_true', help='shortcute for --tag=latest')
@@ -469,7 +500,7 @@ def parse_args(argv=sys.argv[1:]):
     # Now that our flags are populated, we can go ahead and fully parse those.
     args = ap.parse_args(argv)            # parse for real this time.
     s.set_args(args)
-    
+
     # Now we know d_src_dir[2], so we can locate and load the container-specific settings file.
     if args.cd:
         found_dir = try_dirs([args.cd,
@@ -478,6 +509,10 @@ def parse_args(argv=sys.argv[1:]):
         if found_dir: os.chdir(found_dir)
         else: err(f'warning- unable to find directory for --cd: {args.cd}')
 
+    settings_filename = os.path.abspath(args.settings)
+    basedir = os.path.basename(os.path.dirname(settings_filename))
+    s.set_replacement_map({'@basedir': basedir, 'test-@basedir': 'test-' + basedir})
+
     try:
         s.parse_settings_file(args.settings)
     except ValueError:
@@ -485,13 +520,9 @@ def parse_args(argv=sys.argv[1:]):
         print(ap.format_help())
         sys.exit(1)
 
-    # Now that we know the settings filename, replace any defaults of "@basedir" with the settings dir.
-    basedir = os.path.basename(os.path.dirname(args.settings))
-    s.tweak_all_settings('default', tweak_basedir, context=basedir)
-    
 
     # ----- Okay, args and settings are fully loaded, there are a few simple ones we can handle locally.
-    
+
     # Handle help
     if args.help:
         print(ap.format_help())
@@ -506,7 +537,7 @@ def parse_args(argv=sys.argv[1:]):
     global DEBUG, TEST_MODE
     DEBUG = args.debug
     TEST_MODE = args.test_mode
-    
+
     return args    # No need to return s, that's available via the module ktools_settings singleton "s"
 
 

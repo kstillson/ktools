@@ -37,8 +37,8 @@ def test_settings():
     assert s['ip'] == '1.2.3.4'
     assert s['network'] == 'net2'
     assert s['ports'][0][8080] == 8081
-    assert s['mount-ro'][0] == 'localvol, /tmp/localvol'
-    assert s['mount-rw'][0] == '/tmp/hosttmp, /tmp/hosttmp'
+    assert s['mount_ro'][0] == 'localvol, /tmp/localvol'
+    assert s['mount_rw'][0] == '/tmp/hosttmp, /tmp/hosttmp'
 
     # Assert settings from host-level settings file
     assert s['repo1'] == 'repo1-val'

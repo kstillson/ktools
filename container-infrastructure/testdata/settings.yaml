@@ -6,8 +6,8 @@ network: net2
 ports:
   - 8080: 8081
 
-mount-ro:
+mount_ro:
   - localvol, /tmp/localvol
 
-mount-rw:
+mount_rw:
   - /tmp/hosttmp, /tmp/hosttmp
