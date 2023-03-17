@@ -29,6 +29,11 @@ import os, sys
 import kcore.settings as S
 
 
+# ----- constants for external reference
+
+STR_LIST_SEP = ';'
+
+
 # ----- module level state
 
 s = None             # singleton built by init(), put here for easy reference by callers (so they don't need a singleton in their namespace)

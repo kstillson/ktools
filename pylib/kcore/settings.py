@@ -130,13 +130,15 @@ class Settings:
 
     def __init__(self, settings_filename=None, add_Settings=[],
                  settings_data_type='auto', env_list_sep=';',
-                 flag_prefix=None, include_directive='!include', debug=False):
+                 flag_prefix=None, include_directive='!include',
+                 replacement_map={}, debug=False):
         # store our controls
         self.settings_filename = settings_filename
         self.settings_data_type = settings_data_type
         self.env_list_sep = env_list_sep
         self.flag_prefix = flag_prefix
         self.include_directive = include_directive
+        self.replacement_map = replacement_map
         self.debug = debug
 
         # init internal caches
@@ -184,10 +186,13 @@ class Settings:
     # ----- tweak existing settings
     #       In-case you want to change things imported as simple settings.
 
+    def set_replacement_map(self, replacement_map):
+        '''Mostly for things like mapping "@basedir" to actual base directory values.'''
+        self.replacement_map = replacement_map
+
     def tweak_setting(self, name, attr_name, newval):
         setting = self._settings_dict.get(name)
         setattr(setting, attr_name, newval.replace('{name}', setting.name))
-
 
     def tweak_all_settings(self, attr_name, replacement, context=None):
         # context is an arbitrary value passed as input to replacement() if replacemnt is callable.
@@ -256,6 +261,14 @@ class Settings:
             return setting.cached_value
 
         answer, how = self._resolve(setting)
+
+        if self.replacement_map:
+            if isinstance(answer, str):
+                replacement = self.replacement_map.get(answer, False)
+                if replacement is not False and replacement != answer:
+                    how += f' (and replacement_map mapped from original value of "{answer})"'
+                    answer = replacement
+
         if self.debug:
             print(f'resolved and cached setting "{name}" \t to \t "{answer}" \t via {how}', file=sys.stderr)
 
