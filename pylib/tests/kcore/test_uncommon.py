@@ -203,3 +203,13 @@ def test_ParallelQueue_single_threaded():
     assert TEST_DATA.get('d') == 2
     assert q1.join() == [1, 2]
 
+def test_para_queue():
+    start_time = time.time()
+    out = UC.para_queue([
+        lambda: thread_tester(0.5, 'a', 1),
+        lambda: thread_tester(4.0, 'a', 2)], timeout=1.0)
+    delta = time.time() - start_time
+    assert delta > 0.5
+    assert delta < 2.5
+    assert TEST_DATA.get('a') is 1
+    assert out == [1, None]

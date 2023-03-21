@@ -323,3 +323,7 @@ class ParallelQueue:
         return out
 
 
+def para_queue(list_of_callables, timeout=None):
+    pq = ParallelQueue()
+    for i in list_of_callables: pq.add(i)
+    return pq.join(timeout)
