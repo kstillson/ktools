@@ -36,24 +36,25 @@ def test_sending_email(container_to_test):
     send_email(cookie, 'localhost', 25 + container_to_test.port_shift)
 
     time.sleep(5)
-    prefix = container_to_test.vol_dir + ('/' if prod_mode else '/_rw_dv_eximdock_')
+    ## prefix = container_to_test.vol_dir + ('/' if prod_mode else '/_rw_dv_eximdock_')
+    prefix = container_to_test.vol_dir + '/'
 
     if have_pswd:
         # If we have a real email client password, try to send the mail for real, and expect success.
-        D.file_expect('Completed', prefix + 'var_log/exim/mainlog')
-        D.file_expect('error', prefix + 'var_log/exim/mainlog', invert=True)
-        D.file_expect('denied', prefix + 'var_log/exim/mainlog', invert=True)
-        D.file_expect('Frozen', prefix + 'var_log/exim/mainlog', invert=True)
-        D.file_expect(' ', prefix + 'var_log/exim/paniclog', invert=True, missing_ok=True)
-        D.file_expect(' ', prefix + 'var_log/exim/rejectlog', invert=True, missing_ok=True)
-        D.file_expect(cookie, prefix + 'var_mail/outbound-archive')
+        D.file_expect('Completed', prefix + 'var/log/exim/mainlog')
+        D.file_expect('error',     prefix + 'var/log/exim/mainlog',   invert=True)
+        D.file_expect('denied',    prefix + 'var/log/exim/mainlog',   invert=True)
+        D.file_expect('Frozen',    prefix + 'var/log/exim/mainlog',   invert=True)
+        D.file_expect(' ',         prefix + 'var/log/exim/paniclog',  invert=True, missing_ok=True)
+        D.file_expect(' ',         prefix + 'var/log/exim/rejectlog', invert=True, missing_ok=True)
+        D.file_expect(cookie,      prefix + 'var/mail/outbound-archive')
         print('pass')
 
     else:
         # Otherwise, try to send the mail, and expect it to fail
-        D.file_expect('SMTP error from remote mail server', prefix + 'var_log/exim/mainlog')
-        D.file_expect('Authentication Required', prefix + 'var_log/exim/mainlog')
-        D.file_expect('Frozen', prefix + 'var_log/exim/mainlog')
-        D.file_expect(cookie, prefix + 'var_mail/outbound-archive')
+        D.file_expect('SMTP error from remote mail server', prefix + 'var/log/exim/mainlog')
+        D.file_expect('Authentication Required', prefix + 'var/log/exim/mainlog')
+        D.file_expect('Frozen', prefix + 'var/log/exim/mainlog')
+        D.file_expect(cookie, prefix + 'var/mail/outbound-archive')
         warnings.warn('exim test passed, but in crippled mode; could not send real mail due to no credentials.')
         print('pass')

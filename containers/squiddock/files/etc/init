@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Create directories if needed
+/usr/sbin/squid -z || true
+sleep 2
+
+exec /usr/sbin/squid --foreground

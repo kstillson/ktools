@@ -5,12 +5,24 @@ ports:
   - 25:2525
 
 # Log is too verbose to send to syslog.
-log: JSON
+log: j
+
+mount_persistent_test_copy_tree:
+  - var_log: /var/log
+  - var_spool: /var/spool
+  - var_mail: /var/mail
+
+# ----
 
 mount_rw:
-  - var/log: /var/log
+  - var/log:   /var/log
   - var/spool: /var/spool
-  - var/mail: /var/mail
+  - var/mail:  /var/mail
+
+vol_defaults:
+  owner: user/exim
+  group: dwatch
+  perm: '02750'
 
 vols:
   - var/log/exim
@@ -18,7 +30,3 @@ vols:
   - var/spool/exim/db
   - var/spool/exim/input
   - var/spool/exim/msglog
-
-vol_defaults:
-  owner: user/exim
-  perm: '0700'

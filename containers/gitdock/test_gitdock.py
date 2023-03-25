@@ -21,7 +21,6 @@ def cleanup(tmpdir, orig_dir):
 
 # ---------- tests
 
-@pytest.mark.skipif(D.not_required_host('jack'), reason='test contains host-specific configuration requirements (see TODO in settings.yaml)')
 def test_gitdock(container_to_test):
     orig_dir = os.getcwd()
     tmpdir = tempfile.mkdtemp()
@@ -29,8 +28,8 @@ def test_gitdock(container_to_test):
 
     os.chdir(tmpdir)
     subprocess.check_call(
-        ['git', 'clone', 'git-ro@%s:git/rc.git' % container_to_test.ip],
-        env={ 'GIT_SSH_COMMAND': f'/usr/bin/ssh -i {container_to_test.settings_dir}/git-ro-test-key -o StrictHostKeyChecking=no' })
-    D.file_expect('exit with status', 'rc/.profile')
+        ['git', 'clone', 'git-ro@%s:git' % container_to_test.ip],
+        env={ 'GIT_SSH_COMMAND': f'/usr/bin/ssh -i {container_to_test.settings_dir}/testdata/git-ro-test-key -o StrictHostKeyChecking=no' })
+    D.file_expect('hithere', 'git/file.txt')
 
     print('pass')

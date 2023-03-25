@@ -1,30 +1,24 @@
 
-# docker improvements
-
-  - ./containers needs a :prep
-    - set up /rw/dv/...
-    - sshdock/gitdock need generated host-keys
-    - idempotent setup of docker networks ?
-
 # bugs to fix
 
   - make for things like services/keymaster/km_helper fail until
     kcore is installed.  breaks the normal make,test,install order.
+  - settings: "how" is wrong if setting comes from a settings file that was overriden by a
+    later load.  instance only holds a single filename- the latest one loaded.
 
-# queued larger ideas improvements
-
-  - shift from env settings to config file
+  - doc: add section about security from structure and layers rather than trying
+    to have bullet-proof code...  Assume code has vulns and things will get popped;
+    use structure to make minimize harm and recovery time.
 
 # new subsystems
 
-  - add homesec client modules...?
+  - add example homesec client modules...?
   - iptables abstraction (easier to read/write/analyze) + assoc. tools
 
 # homectrl new features
 
   - add RPi.GPIO (i.e. buttons) to circuitpy_sim and kcore/gpio
   - graphical interface for inputs and outputs
-  - homectrl push update to all
 
 # new project name?
 

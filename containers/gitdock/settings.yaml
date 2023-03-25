@@ -12,3 +12,27 @@ mount_persistent_test_ro:
 mount_ro:
   - authkeys: /etc/ssh/authkeys
   - hostkeys: /etc/ssh/hostkeys
+
+mount_rw:
+  - home: /home
+
+test_vols:
+  - authkeys:
+    perm: "0755"
+    
+  - authkeys/git-ro:
+    contents: "file:testdata/git-ro-test-key.pub"
+    perm: "0644"
+    
+  - home:
+    perm: "0755"
+
+  - home/git-ro:
+    owner: "user/git-ro"
+
+  - home/git-ro/git-extract.out:
+    owner: "user/git-ro"
+    contents: "command: tar -C %targetdir% -xvf testdata/test-repo.tar; chown -R %owner% %targetdir%/git"
+    
+  - hostkeys/host_keygen.out:
+    contents: "command: mkdir -p /tmp/_sshkeygen/etc/ssh/; ssh-keygen -A -f /tmp/_sshkeygen; install -o %owner% -g %group% -m 0600 /tmp/_sshkeygen/etc/ssh/* %targetdir%; rm -rf /tmp/_sshkeygen"

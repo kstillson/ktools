@@ -9,7 +9,7 @@ log: J
 
 # Must manually assign IP; can't do DNS lookup when DNS isn't up yet.
 ip: 192.168.2.2
-test_ip: "-"
+test_ip: "\\-"
 
 # caps required by dnsmasq
 extra_docker:
@@ -25,4 +25,7 @@ ports:
 ##  - '67:67'
 
 mount_logs:
+  - var_log_dnsmasq: /var/log/dnsmasq
+
+mount_rw:
   - var_log_dnsmasq: /var/log/dnsmasq

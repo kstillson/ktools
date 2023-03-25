@@ -15,4 +15,9 @@ mount_devices:
 mount_logs:
   - var_log: /var/log
 
+mount_rw:
+  - var_log: /var/log
 
+vols:
+  - var_log:
+    owner: user/buttonrelay

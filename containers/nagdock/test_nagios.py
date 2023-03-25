@@ -12,9 +12,9 @@ def container_to_test(): return D.find_or_start_container_env()
 
 # ---------- helpers
 
-CMD_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/rw/nagios.cmd'
-LOG_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_log_nagios/nagios.log'
-STATUS_FILE = '/rw/dv/TMP/nagdock/_rw_dv_nagdock_var_nagios/status.dat'
+CMD_FILE = '/rw/dv/TEST/nagdock/var_nagios/rw/nagios.cmd'
+LOG_FILE = '/rw/dv/TEST/nagdock/var_log_nagios/nagios.log'
+STATUS_FILE = '/rw/dv/TEST/nagdock/var_nagios/status.dat'
 MAX_UPDATE_DELAY = 20
 
 

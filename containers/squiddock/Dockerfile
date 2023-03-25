@@ -9,5 +9,4 @@ COPY files /
 RUN /prep
 
 USER squid
-ENTRYPOINT ["/usr/sbin/squid"]
-CMD ["--foreground"]
+ENTRYPOINT ["/etc/init"]

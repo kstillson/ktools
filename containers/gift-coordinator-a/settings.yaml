@@ -11,3 +11,12 @@ mount_persistent_test_copy_files:
 # -----
 
 test_ports: ['8100:8080']
+
+# ----
+
+mount_rw:
+  - data: /home/santa/data
+
+vols:
+  - data:
+    owner: user/santa

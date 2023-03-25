@@ -12,3 +12,8 @@ mount_logs:
 
 test_env: "TEST=1"
 test_ports: ['4444:4444']
+
+# ----
+
+mount_rw:
+  - var_log_km: /var/log/km

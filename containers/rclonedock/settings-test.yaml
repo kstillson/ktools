@@ -7,5 +7,10 @@ mount_logs:
 mount_persistent:
   - /rw/mnt/rsnap/echo-back: /root/echo-back
 
+# ----
+
+mount_rw:
+  - /rw/mnt/rsnap/echo-back: /root/echo-back
+
 # need to use DNS assigned IP address to retrieve from keymaster, even in testing mode.
-ip: "-"
+ip: "\\-"
