@@ -93,8 +93,8 @@ DEVICES = {
     'neotree:off'        : 'WEB:neotree2/0',
     'neotree:on'         : 'WEB:neotree2/1',
 
-    'mon:off'            : 'WEB:blue:2222/0',
-    'monitor:off'        : 'WEB:blue:2222/0',
+    'mon:off'            : 'WEB:blue:2222/L',
+    'monitor:off'        : 'WEB:blue:2222/L',
 
     # Outside lighting controller: pout*
     ## 'out-all:off'        : 'WEB:pout:8080/a0', 'WEB:pout2:8080/a0',
