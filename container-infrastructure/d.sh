@@ -187,8 +187,8 @@ function list-up() {
 }
 
 function list-testable() {
-
-    ls -1 ${D_SRC_DIR}/*/Test ${D_SRC_DIR2}/*/Test 2>/dev/null | get_container_names
+    # old style tests: ls -1 ${D_SRC_DIR}/*/Test ${D_SRC_DIR2}/*/Test 2>/dev/null | get_container_names
+    ls -1 ${D_SRC_DIR}/*/test_*.py ${D_SRC_DIR2}/*/test_*.py 2>/dev/null | get_container_names
 }
 
 # ------------------------------
@@ -225,7 +225,7 @@ function up() {
     ./Run ${extra_flags}
   else
     # This substitution only supports a single param to the right of the "--".
-    extra_flags=${extra_flags/-- /--extra-init=}
+    extra_flags=${extra_flags/-- /--extra_init=}
     d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
   fi
 }
@@ -234,7 +234,9 @@ function test() {
   name=$1
   shift
 
-  out="/rw/dv/TMP/${name}/test.out"
+  outdir="/rw/dv/TEST/OUT"
+  out="${outdir}/${name}.out"
+  mkdir -p $outdir
   emitc blue "Testing ${name} -> ${out}"
   cd_sel "${name}"
 

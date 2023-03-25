@@ -5,7 +5,7 @@
 This scripts constructs the command-line parameters for Docker to launch a
 container. '''
 
-import glob, os, pprint, pwd, shutil, socket, subprocess, sys
+import glob, grp, os, pprint, pwd, shutil, socket, subprocess, sys
 from dataclasses import dataclass
 
 import kcore.auth as A
@@ -26,7 +26,9 @@ def Debug(msg):
     if DEBUG: err('DEBUG: ' + msg)
 
 
-def err(msg): sys.stderr.write("%s\n" % msg)
+def err(msg):
+    sys.stderr.write("%s\n" % msg)
+    return False
 
 
 def get_setting(name, skip_auto_test_mode=False):
@@ -138,8 +140,10 @@ def add_simple_control(cmnd, control_name, param=None):
     val = get_setting(control_name)       # could be a list from json or a csv string from flags.
     if val is None: return None
 
+    last_val = None
     val_list = val if isinstance(val, list) else val.split(S.STR_LIST_SEP)
     for i in val_list:
+        if not i: continue
         if param: cmnd.extend([param, i])
         else: cmnd.append(i)
         last_val = i
@@ -204,6 +208,7 @@ class VolSpec:
     path:      str = None    # remember not to prefix with "/" if relative to vol_base
     item_type: str = 'dir'   # can be specified as "type:" in a serialized VolSpec dict.
     owner:     str = None    # can be a uid (as a string), a username, or "user/{container uid}"
+    group:     str = None    # can be a gid (as a string), a group-name, or "group/{container gid}"
     perm:      str = None    # expect a base 8 number in string form, e.g. "0750"
     contents:  str = None    # only useful if item_type=='file'
 
@@ -211,16 +216,17 @@ class VolSpec:
 
 
 def assemble_vol_specs(mount_src_dirs, base_name):
-    specs = []
-    paths = set()
+    specs = []               # output list of VolSpec's
+    paths = set()            # list of processed paths to avoid duplicates
 
     # Get defaults for unspecified details.
     vol_base = get_setting('vol_base')
     vol_defaults = get_setting('vol_defaults') or {}
-    default_owner = vol_defaults.get('owner')
+    default_owner = _resolve_inside_container_owner(vol_defaults.get('owner'))
+    default_group = _resolve_inside_container_group(vol_defaults.get('group'))
     default_perm = vol_defaults.get('perm')
 
-    if not vol_base: sys.exit('Need to specify setting vol_base, probably in the global settings file.')
+    if not vol_base: raise ValueError('Need to specify setting vol_base, probably in the global settings file.')
 
     # Entries are either strings (which give the path to create), or dicts,
     # which can selectively override default parameters.  In the dict case,
@@ -229,29 +235,83 @@ def assemble_vol_specs(mount_src_dirs, base_name):
     # but looks nice and intuitative in the yaml.
     vols = get_setting('vols') or []
     for vol in vols:
-        if isinstance(vol, str) and not spec.path.startswith('/'):
-            vol = os.path.join(vol_base, base_name, spec.path)
+        if isinstance(vol, str):
+            path = vol if vol.startswith('/') else os.path.join(vol_base, base_name, vol)
+            spec = VolSpec(path, 'dir', default_owner, default_group, default_perm, None)
 
-        spec = VolSpec(vol, 'dir', default_owner, default_perm, None)
-
-        if isinstance(vol, dict):
+        elif isinstance(vol, dict):
+            spec = VolSpec('?', 'dir', default_owner, default_group, default_perm, None)
             for k, v in vol.items():
-                if v is None or v == 'path':
-                    if not k.startswith('/'): k = os.path.join(vol_base, base_name, k)
-                    spec.path = k
                 if k == 'type': k = 'item_type'   # "type" is a reserved Python word, so internally we use item_type to avoid an illegal field name in VolSpec.
+                if v is None or v == 'path':
+                    spec.path = k if k.startswith('/') else os.path.join(vol_base, base_name, k)
+                    continue
                 if k == 'contents': spec.item_type = 'file'
                 if hasattr(spec, k): setattr(spec, k, v)
-                else: err(f'ignoring unknown param for volume "{k} for "{spec}"')
+                else: err(f'ignoring unknown param "{k}" with value "{v}" for volume "{spec}"')
+            if spec.path == '?': raise ValueError(f'Unknown path for volspec: {vol}')
+
+        else: raise ValueError('Do not know how to process volspec: {vol}')
+
+        spec.owner = _resolve_inside_container_owner(spec.owner)
+        spec.group = _resolve_inside_container_group(spec.group)
         specs.append(spec)
         paths.add(spec.path)
 
-    # Add in any implicit vols from the mount source points
+    # Add in any remaining implicit vols from the mount source points
     for i in mount_src_dirs:
         if i in paths: continue          # ignore items we've already got queued
-        specs.append(VolSpec(i))
+        specs.append(VolSpec(i, 'dir', default_owner, default_group, default_perm, None))
 
     return specs
+
+
+def _resolve_inside_container_owner(owner):
+    if not owner.startswith('user/'): return owner
+    user = owner.replace('user/', '')
+    uid = None
+    with open('files/etc/passwd') as f:
+        for line in f:
+            if line.startswith(f'{user}:'):
+                parts = line.split(':')
+                uid = int(parts[2])
+                if 'podman' in get_setting('docker_exec'):
+                    owner = str(uid)
+                else:
+                    shift = int(get_setting('shift_uids') or '0')
+                    owner = str(uid + shift)
+                break
+    if uid is None:
+        try:
+            owner = str(pwd.getpwnam(user).pw_uid)
+        except KeyError:
+            err(f'unable to find files/etc/passwd entry for {owner} to chown {path}.  Will try just chowning to {user}')
+            owner = user
+    return owner
+
+
+def _resolve_inside_container_group(group):
+    if not group.startswith('group/'): return group
+    group_name = group.replace('group/', '')
+    gid = None
+    with open('files/etc/group') as f:
+        for line in f:
+            if line.startswith(f'{group_name}:'):
+                parts = line.split(':')
+                gid = int(parts[2])
+                if 'podman' in get_setting('docker_exec'):
+                    group = str(gid)
+                else:
+                    shift = int(get_setting('shift_gids') or '0')
+                    group = str(gid + shift)
+                break
+    if gid is None:
+        try:
+            group = str(grp.getgrnam(group_name).gr_gid)
+        except KeyError:
+            err(f'unable to find files/etc/group entry for {group} to chown {path}.  Will try just chowning to {group}')
+            group = group_name
+    return group
 
 
 def create_vol_dirs(mount_src_dirs, base_name, test_mode):
@@ -267,17 +327,11 @@ def create_vol_dirs(mount_src_dirs, base_name, test_mode):
 
     # Order such that parents created before children.  The creation logic
     # actually contains a check to make sure parents exist, but that causes
-    # the parent to inherit the child's owner/perm settings.  If the user
-    # specified different settings for the parent, we want to use those, so
-    # create the parent first to give its settings priority.
+    # the parent to inherit the child's owner/group/perm settings.  If the
+    # user specified different settings for the parent, we want to use those,
+    # so create the parent first to give its settings priority.
     for volspec in sorted(vol_specs, key=lambda x: x.depth()):
         create_vol_item(volspec)
-
-    # For ownership fixes, we want to reverse the order: some changes will
-    # locks us out for further writes (or even reads), so we need to change
-    # the deepest items first so we still have access to shallower ones.
-    for volspec in sorted(vol_specs, key=lambda x: -x.depth()):
-        if volspec.owner: fix_ownership(volspec)
 
 
 def create_vol_item(volspec):
@@ -294,11 +348,11 @@ def create_vol_item(volspec):
     parent = os.path.dirname(volspec.path)
     if not os.path.isdir(parent):
         Debug(f'making recursive call to create missing parent: {parent}')
-        create_vol_item(VolSpec(parent, 'dir', volspec.owner, volspec.perm))
+        create_vol_item(VolSpec(parent, 'dir', volspec.owner, volspec.group, volspec.perm))
 
     # Create the requested item.
     if volspec.item_type == 'file':
-        with open(volspec.path, 'w') as f: f.write(_vol_eval_contents(volspec.contents, volspec.path))
+        with open(volspec.path, 'w') as f: f.write(_vol_eval_contents(volspec))
         if mode: os.chmod(volspec.path, mode)
 
     elif volspec.item_type == 'dir':
@@ -306,16 +360,23 @@ def create_vol_item(volspec):
         if mode: os.chmod(volspec.path, mode)
 
     else: raise(f'internal error; unknown vtype "{volspec.item_type}" for {volspec.path}')
+
+    fix_ownership(volspec)
     return Debug(f'created {str(volspec)}')
 
 
-def _vol_eval_contents(val, target_path):
+def _vol_eval_contents(volspec):
+    val = volspec.contents
     if not val: return ''
-    val = val.replace('%target%', target_path).replace('%targetdir%', os.path.dirname(target_path))
+    val = val.replace('%target%',    volspec.path)
+    val = val.replace('%targetdir%', os.path.dirname(volspec.path))
+    val = val.replace('%owner%',     volspec.owner)
+    val = val.replace('%group%',     volspec.group)
+
     if   val.startswith('file:'):    val = C.read_file(val.replace('file:', ''))
-    elif val.startswith('cmd:'):     val = _vol_popen_contents(val, target_path)
-    elif val.startswith('command:'): val = _vol_popen_contents(val, target_path)
-    elif val.startswith('popen:'):   val = _vol_popen_contents(val, target_path)
+    elif val.startswith('cmd:'):     val = _vol_popen_contents(val, volspec.path)
+    elif val.startswith('command:'): val = _vol_popen_contents(val, volspec.path)
+    elif val.startswith('popen:'):   val = _vol_popen_contents(val, volspec.path)
     return val
 
 
@@ -344,43 +405,30 @@ def fix_ownership(volspec):
        to shift the uid's: the userns will do that for us.  For Docker, there
        is no unshare option, so we've got to be root and use traditional
        chown.  But for this case, we do need to manually shift the target uid.'''
-    if not volspec.path or not volspec.owner: return
+    if not volspec.path: return
 
     path = volspec.path   # local copies to allow modification
-    owner = str(volspec.owner)
-
+    owner = str(volspec.owner or '')
+    group = str(volspec.group or '')
     docker_exec = get_setting('docker_exec')
-
-    if owner.startswith('user/'):
-        user = owner.replace('user/', '')
-        uid = None
-        with open('files/etc/passwd') as f:
-            for line in f:
-                if line.startswith(f'{user}:'):
-                    parts = line.split(':')
-                    uid = int(parts[2])
-                    if 'podman' in docker_exec:
-                        owner = str(uid)
-                    else:
-                        shift = int(get_setting('shift_uids') or '0')
-                        owner = str(uid + shift)
-                    break
-        if uid is None:
-            try:
-                owner = str(pwd.getpwnam(user).pw_uid)
-            except KeyError:
-                err(f'unable to find files/etc/passwd entry for {owner} to chown {path}.  Will try just chowning to {user}')
-                owner = user
 
     if 'podman' in docker_exec:
         Debug(f'  podman chown {path} -> {owner}')
-        rslt = C.popen([docker_exec, 'unshare', 'chown', owner, path])
-        if not rslt.ok: return err(f'error: attempt to podman/unshare chown {path} to {owner} failed: {rslt.out}')
+        if owner:
+            rslt = C.popen([docker_exec, 'unshare', 'chown', owner, path])
+            if not rslt.ok: return err(f'error: attempt to podman/unshare chown {path} to {owner} failed: {rslt.out}')
+        if group:
+            rslt = C.popen([docker_exec, 'unshare', 'chgrp', group, path])
+            if not rslt.ok: return err(f'error: attempt to podman/unshare chgrp {path} to {group} failed: {rslt.out}')
 
     elif os.getuid() == 0:
-        Debug(f'  root chown {path} -> {owner}')
-        rslt = C.popen(['chown', owner, path])
-        if not rslt.ok: return err(f'error: attempt to chown {path} to {owner} failed: {rslt.out}')
+        Debug(f'  root chown {path} -> {owner}.{group}')
+        if owner:
+            rslt = C.popen(['chown', owner, path])
+            if not rslt.ok: return err(f'error: attempt to chown {path} to {owner} failed: {rslt.out}')
+        if group:
+            rslt = C.popen(['chgrp', group, path])
+            if not rslt.ok: return err(f'error: attempt to chgrp {path} to {group} failed: {rslt.out}')
 
     else:
         return Debug(f'Skipping chown to {owner} for {path} because not root and not using podman.')
@@ -449,7 +497,8 @@ def gen_command():
     # Add any additional init args on the end.
     extra_init = get_setting('extra_init')
     if extra_init and not get_bool_setting('shell'):
-        cmnd.extend(extra_init.strip().split(' '))
+        if isinstance(extra_init, list): cmnd.extend(extra_init)
+        else: cmnd.extend(extra_init.strip().split(' '))
 
     return cmnd
 
@@ -550,6 +599,7 @@ def main():
     cmnd = gen_command()
 
     if DEBUG or args.print_cmd or args.test:
+        # err(f'@@ {cmnd}')  # Used to seek out param separation problems...
         temp = ' '.join(map(lambda x: x.replace('--', '\t\\\n  --'), cmnd))
         last_space = temp.rfind(' ')
         err(temp[:last_space] + '\t\\\n ' + temp[last_space:])
