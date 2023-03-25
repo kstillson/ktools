@@ -10,8 +10,12 @@ import kcore.docker_lib as D
 def container_to_test(): return D.find_or_start_container_env()
 
 
+def skip_if(): return D.check_env_for_prod_mode() and D.not_required_host('a1')
+
+
 # ---------- tests
 
+@pytest.mark.skipif(skip_if(), reason='prod test requires host a1')
 def test_gift_coord(container_to_test):
     time.sleep(3)  # Give things a chance to start-up.
     ip = 'localhost'

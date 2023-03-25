@@ -21,6 +21,7 @@ def cleanup(tmpdir, orig_dir):
 
 # ---------- tests
 
+@pytest.mark.skipif(D.check_env_for_prod_mode(), reason='creds only work in test mode')
 def test_gitdock(container_to_test):
     orig_dir = os.getcwd()
     tmpdir = tempfile.mkdtemp()

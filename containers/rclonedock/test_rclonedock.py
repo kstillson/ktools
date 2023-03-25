@@ -40,9 +40,12 @@ def comp_file(filename, expected_contents):
     return match
 
 
+def skip_if():
+    return D.not_required_host('jack') or D.check_env_for_prod_mode()
+
 # ---------- tests
 
-@pytest.mark.skipif(D.not_required_host('jack'), reason='test contains host-specific configuration requirements')
+@pytest.mark.skipif(skip_if(), reason='test contains host-specific configuration requirements (wasabi creds) and only works in test mode.')
 def test_rclonedock(setup_session):
     cookie, container_to_test = setup_session
     for i in range(5):

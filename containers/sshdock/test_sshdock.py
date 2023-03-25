@@ -15,6 +15,7 @@ def container_to_test():
 
 # ---------- tests
 
+@pytest.mark.skipif(D.check_env_for_prod_mode(), reason='test requires test-vol specific creds/config.')
 def test_sshdock(container_to_test):
     port = 2222 + container_to_test.port_shift
     ssh_key = os.path.join(container_to_test.settings_dir, 'testdata/ssh-test-key')

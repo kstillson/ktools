@@ -16,6 +16,7 @@ def container_to_test(): return D.find_or_start_container_env()
 
 # ---------- tests
 
+@pytest.mark.skipif(D.check_env_for_prod_mode(), reason='test requires test-vol specific config.')
 def test_rsnapdock(container_to_test):
     # Wait for test file to show up in target dir.
     for i in range(10):

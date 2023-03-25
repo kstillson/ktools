@@ -14,5 +14,5 @@ def container_to_test(): return D.find_or_start_container_env()
 
 def test_homesecdock(container_to_test):
     port = 1111 + container_to_test.port_shift
-    # D.web_expect('tardy triggers', 'localhost', '/healthz', port=port)
-    D.web_expect('ok', 'localhost', '/healthz', port=port)
+    server = container_to_test.ip if D.check_env_for_prod_mode() else 'localhost'
+    D.web_expect('ok', server, '/healthz', port=port)
