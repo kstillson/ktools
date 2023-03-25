@@ -261,6 +261,7 @@ def assemble_vol_specs(mount_src_dirs, base_name):
     # Add in any remaining implicit vols from the mount source points
     for i in mount_src_dirs:
         if i in paths: continue          # ignore items we've already got queued
+        Debug(f'adding implicit volspec for dir {i}')
         specs.append(VolSpec(i, 'dir', default_owner, default_group, default_perm, None))
 
     return specs
@@ -340,10 +341,9 @@ def create_vol_item(volspec):
     mode = int(volspec.perm, 8) if volspec.perm else None
 
     # Note: we don't check the ownership or perms of existing directories or
-    # files; this script could easily get very complicated or not-as-smart as
-    # it thinks it is.  If something's already there, assume it's right.
-    if ((volspec.item_type == 'file' and os.path.isfile(volspec.path)) or
-        (volspec.item_type == 'dir' and os.path.isdir(volspec.path))):
+    # files; this script could easily get very complicated or not-as-smart-as-
+    # it-thinks-it-is.  If something's already there, assume it's right.
+    if os.path.exists(volspec.path):
         return Debug(f'{volspec.path} already exists')
 
     # Create our parent directory if it's not already there.

@@ -145,7 +145,7 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
             thread = threading.Thread(target=start_test_container, args=[settings])
             thread.daemon = True
             thread.start()
-            time.sleep(2)  # Give time for container to start.
+            time.sleep(3)  # Give time for container to start.
     else:
         if cid:
             print(f'running against existing prod container {fullname} {cid}', file=sys.stderr)

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, pytest, sys
+import os, pytest, sys, time
 import kcore.docker_lib as D
 
 
@@ -13,6 +13,8 @@ def container_to_test(): return D.find_or_start_container_env()
 # ---------- tests
 
 def test_webdock(container_to_test):
+    time.sleep(2)   # Give apache a moment to start up
+
     port_http = 8080 + container_to_test.port_shift
     port_https = 8443 + container_to_test.port_shift
 
@@ -23,9 +25,9 @@ def test_webdock(container_to_test):
     # comes via dnat, not when it's sent directly.  Something to do with the
     # VirtualHost directive perhaps?  Dunno; it looks right to me.  Anyway,
     # this allows the test to pass in prod mode, but uses a Ken-specific
-    # container name.  Not sure how to generalize this...    
+    # container name.  Not sure how to generalize this...
     server = 'webdock' if D.check_env_for_prod_mode() else 'localhost'
-    
+
     # Using popen_expect rather than web_expect because it doesn't follow redirects,
     # and we want to check the content of the redirects.
     D.popen_expect(['/usr/bin/curl', f'http://{server}:{port_http}/'], 'moved')
@@ -56,8 +58,8 @@ def test_webdock(container_to_test):
 
 def skip_if_not_ken_and_prod():
     return D.not_required_host('jack') or not D.check_env_for_prod_mode()
-    
-    
+
+
 @pytest.mark.skipif(skip_if_not_ken_and_prod(), reason='test requires ken-specific and prod-specific private.d contents')
 def test_ken_prod_cgis(container_to_test):
     port_http = 8080 + container_to_test.port_shift
