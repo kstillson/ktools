@@ -247,7 +247,7 @@ class Settings:
     def get(self, name, ignore_cache=False):
         # find our setting instance from the name
         setting = self._settings_dict.get(name)
-        if not setting:
+        if setting is None:
             answer = self._settings_file_value_cache.get(name)
             if answer:
                 if self.debug: print(f'resolved setting "{name}" \t to \t "{answer}" \t as an unregistered setting from settings file', file=sys.stderr)
@@ -256,7 +256,7 @@ class Settings:
             return None
 
         # handle already-cached values
-        if setting.cached_value and not setting.disable_cache and not ignore_cache:
+        if (setting.cached_value is not None) and not setting.disable_cache and not ignore_cache:
             if self.debug: print(f'returning cached value {name} = {setting.cached_value}', file=sys.stderr)
             return setting.cached_value
 
@@ -385,7 +385,7 @@ class Settings:
     def _search_sources_for_setting(self, setting):
         # try override environment variable
         val = self._get_env_value(setting.override_env_name, setting.name, self.env_list_sep)
-        if val: return val, f'override environment variable ${setting.override_env_name}'
+        if not val is None: return val, f'override environment variable ${setting.override_env_name}'
 
         # Try flag
         if not self._args_dict_cache and self._argparse_instance_cache:
@@ -398,11 +398,11 @@ class Settings:
         # Try settings file content
         setting_name = self._get_setting_name(setting)
         val = self._settings_file_value_cache.get(setting_name)
-        if val: return val, f'setting {setting_name} from file {self.settings_filename}'
+        if not val is None: return val, f'setting {setting_name} from file {self.settings_filename}'
 
         # Try default environment variable
         val = self._get_env_value(setting.env_name, setting.name, self.env_list_sep)
-        if val: return val, f'environment variable ${setting.env_name or setting.name}'
+        if not val is None: return val, f'environment variable ${setting.env_name or setting.name}'
 
         # Return the fallback default value
         if isinstance(setting.default, str): return setting.default, 'default string'
