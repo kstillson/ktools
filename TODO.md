@@ -10,6 +10,8 @@
     to have bullet-proof code...  Assume code has vulns and things will get popped;
     use structure to make minimize harm and recovery time.
 
+  - add a warning for "command:" contents in non-test [vols]
+
 # new subsystems
 
   - add example homesec client modules...?

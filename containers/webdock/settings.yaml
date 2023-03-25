@@ -28,7 +28,7 @@ mount_rw:
   - var_log_apache2: /var/log/apache2
   - /rw/dv/nagdock/var_nagios/rw: /var/nagios/rw
 
-vols:
+test_vols:
   - var_log_apache2:
     owner: user/apache
     group: group/apache
