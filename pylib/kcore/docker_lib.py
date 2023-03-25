@@ -145,7 +145,6 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
             thread = threading.Thread(target=start_test_container, args=[settings])
             thread.daemon = True
             thread.start()
-            time.sleep(3)  # Give time for container to start.
     else:
         if cid:
             print(f'running against existing prod container {fullname} {cid}', file=sys.stderr)
@@ -156,7 +155,15 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
         fullname = name
 
     cow = find_cow_dir(fullname)
-    if 'error' in cow.lower(): raise Exception(f'container {fullname} not found;  cow dir returned: {cow}')
+
+    # Give the container a moment to start if it needs it (can heavily depend on server load)
+    retries = 0
+    while 'error' in cow.lower() and retries < 5:
+        retries += 1
+        time.sleep(2)
+        cow = find_cow_dir(fullname)
+    if 'error' in cow.lower(): raise Exception(f'container {fullname} not found;  cow dir returned: {cow}; tried {retries} times...')
+
     # TODO(defer): ideally, at least the vol_dir and port_shift fields should
     # be populated by getting that data our of the d-run command rather than
     # manually re-creating it here.  But we run d-run foreground/syncronously

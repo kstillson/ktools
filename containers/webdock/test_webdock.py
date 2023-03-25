@@ -44,13 +44,6 @@ def test_webdock(container_to_test):
     D.popen_expect(['/usr/bin/curl', '--header', 'Host: a', f'http://{server}:{port_http}/123'],
                       'document has moved <a href="http://adafru.it/123">here')
 
-    # homesec static and status pages (no login required)
-    D.web_expect('color:', server, '/homesec/static/style.css', port_https, https=True, verify_ssl=False)
-    D.web_expect(['ok','tardy'], server, '/homesec/healthz', port_https, https=True, verify_ssl=False)
-
-    # Check internal proxy
-    D.web_expect('<title>procmon', server, '/procmon', port_https, expect_status=200, https=True, verify_ssl=False)
-
     # Check cgi script basics
     D.web_expect('ok', server, '/cgi-bin/test', port_https, https=True, verify_ssl=False)
 
@@ -68,3 +61,11 @@ def test_ken_prod_cgis(container_to_test):
 
     D.web_expect('wget', server, '/rc/i/', port_https, https=True, verify_ssl=False)
     D.web_expect('pax_global_header', server, '/rc', port_https, https=True, verify_ssl=False)
+
+    # homesec static and status pages (no login required)
+    D.web_expect('color:', server, '/homesec/static/style.css', port_https, https=True, verify_ssl=False)
+    D.web_expect(['ok','tardy'], server, '/homesec/healthz', port_https, https=True, verify_ssl=False)
+
+    # Check internal proxy
+    D.web_expect('<title>procmon', server, '/procmon', port_https, expect_status=200, https=True, verify_ssl=False)
+
