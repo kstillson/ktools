@@ -165,7 +165,7 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
     #
     return ContainerData(
         fullname, find_ip_for(fullname), cow,
-        f'{DV_BASE}/TMP/{name}' if test_mode else f'{DV_BASE}/{name}',
+        f'{DV_BASE}/TEST/{name}' if test_mode else f'{DV_BASE}/{name}',
         10000 if test_mode else 0,
         settings_dir)
 
