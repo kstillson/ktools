@@ -267,6 +267,7 @@ def assemble_vol_specs(mount_src_dirs, base_name):
 
 
 def _resolve_inside_container_owner(owner):
+    if not owner: return owner
     if not owner.startswith('user/'): return owner
     user = owner.replace('user/', '')
     uid = None
@@ -291,6 +292,7 @@ def _resolve_inside_container_owner(owner):
 
 
 def _resolve_inside_container_group(group):
+    if not group: return group
     if not group.startswith('group/'): return group
     group_name = group.replace('group/', '')
     gid = None
