@@ -75,7 +75,7 @@ def set(var_name, value):
     '''value can be a normal value (of any basic type), or a callable function to be evaluated upon each get.  note that callables do not work with prometheus,'''
     global VARZ
     VARZ[var_name] = value
-    if USE_PROM and not callable(val):
+    if USE_PROM and not callable(value):
         # TODO(defer): can callables be made compatible with Prometheus ?
         if isinstance(value, int) or isinstance(value, float):
             _get_prom_instance(var_name, PC.Gauge).set(value)
