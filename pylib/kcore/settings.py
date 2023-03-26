@@ -490,10 +490,12 @@ def parse_main_args(argv):
 
     ap = C.argparse_epilog(description='settings resolver')
     ap.add_argument('--all',                '-a', action='store_true', help='just parse the settings file and dump its contents, do not attempt to resolve settings from other sources (environment, defaults, etc)')
+    ap.add_argument('--bare',               '-b', action='store_true', help='output just the specified settings values, not the form {name}="{value}"')
     ap.add_argument('--debug',              '-d', action='store_true', help='verbose settings resolution data to stsderr')
+    ap.add_argument('--none',               '-n', action='store_true', help='include values that evaluate to None')
     ap.add_argument('--settings_filename',  '-s', default=default_settings_file, help='name of settings file to parse')
     ap.add_argument('--settings_file_type', '-t', default='auto', help='yaml, env, or dict')
-    ap.add_argument('--quotes',             '-q', action='store_true', help='add quotes around RHS of output (useful if feeding into shell assignments)')
+    ap.add_argument('--quotes',             '-q', action='store_true', help='add quotes around RHS of output (useful if feeding into shell assignments / eval)')
     ap.add_argument('settings', nargs='*', help='list of settings to resolve')
     return ap.parse_args(argv) if argv else ap
 
@@ -505,10 +507,12 @@ def main(argv=[]):
 
     q = "'" if args.quotes else ""
 
-    if args.all:
-        for name, val in settings_dict.items(): print(f'{name}={q}{val}{q}')
-    else:
-        for name in args.settings: print(f'{name}={q}{settings_dict.get(name)}{q}')
+    settings = settings_dict.keys() if args.all else args.settings
+    for name in settings:
+        val = settings_dict.get(name)
+        if val is None and not args.none: continue
+        if args.bare: print(val)
+        else: print(f'{name}={q}{val}{q}')
     return 0
 
 

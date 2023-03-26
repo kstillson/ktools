@@ -292,4 +292,11 @@ def test_cli():
         ret = S.main(argv)
         assert ret == 0
         assert 'f=hello world' in cap.out
+        assert '=None' not in cap.out
 
+    argv = ['--bare', '--settings_filename', 'testdata/settings2.env', 'a']
+    with UC.Capture() as cap:
+        ret = S.main(argv)
+        assert ret == 0
+        assert cap.out == 'val-ae'
+        assert cap.err == ''

@@ -99,7 +99,7 @@ GROUPS = [
         S.Setting('hostname',    default=lambda: _mode('@basedir', 'test-@basedir'),     doc='host name to assign within the container'),
         S.Setting('ip',          default=lambda: _mode(r'\-', '0'),                      doc='IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
         S.Setting('ipv6_ports',  default='0', flag_type=bool,                            doc='if flag set or setting is "1", enable IPv6 port mappings.'),
-        S.Setting('log',         default=lambda: _mode('none', 'passthrough'),           doc='log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url], n/none'),
+        S.Setting('log',         default='none',                                         doc='log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url], n/none'),
         S.Setting('mount-ro',                                                            doc='list of ";" separated src:dest pairs to mount read-only inside the container'),
         S.Setting('mount-rw',                                                            doc='list of ";" separated src:dest pairs to mount read+write inside the container'),
         S.Setting('name',        default=lambda: _mode('@basedir', 'test-@basedir'),     doc='name to assign to the container (for container management)'),
@@ -121,18 +121,19 @@ GROUPS = [
 
 # ---------- API
 
-def init(selected_groups, files_to_load=[], argparse_instance=None,
-         flag_aliases={},
-         debug=False, test_mode=None):
+def init(selected_groups=None, files_to_load=[], argparse_instance=None,
+         flag_aliases={}, debug=False, test_mode=None):
     global s, TEST_MODE
     if test_mode is not None: TEST_MODE = test_mode
+
+    if selected_groups is None: selected_groups = [i.name for i in GROUPS]
 
     if KTOOLS_GLOBAL_SETTINGS and os.path.exists(KTOOLS_GLOBAL_SETTINGS):
         files_to_load.insert(0, KTOOLS_GLOBAL_SETTINGS)
 
     # Enable flags for each group (with no prefix).
     for group in GROUPS: group.settings.flag_prefix = ''
-    
+
     s = S.Settings(files_to_load, flag_prefix='', debug=debug)
     s.add_settings_groups(GROUPS, selected_groups)
 
@@ -167,15 +168,17 @@ def main(argv=[]):
     ap = S.parse_main_args(None)
     args, _ = ap.parse_known_args(argv or sys.argv[1:])
     all_groups = [grp.name for grp in GROUPS]
-    settings = init(all_groups, [args.settings_filename], ap, debug=args.debug)    
+    settings = init(all_groups, [args.settings_filename], ap, debug=args.debug)
     settings_dict = settings.get_dict()
 
     q = "'" if args.quotes else ""
 
-    if args.all:
-        for name, val in settings_dict.items(): print(f'{name}={q}{val}{q}')
-    else:
-        for name in args.settings: print(f'{name}={q}{settings_dict.get(name)}{q}')
+    settings = settings_dict.keys() if args.all else args.settings
+    for name in settings:
+        val = settings_dict.get(name)
+        if val is None and not args.none: continue
+        if args.bare: print(val)
+        else: print(f'{name}={q}{val}{q}')
     return 0
 
 
