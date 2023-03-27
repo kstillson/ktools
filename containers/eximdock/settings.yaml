@@ -6,6 +6,7 @@ ports:
 
 # Log is too verbose to send to syslog.
 log: j
+test_log: none
 
 mount_rw:
   - var/log:   /var/log
