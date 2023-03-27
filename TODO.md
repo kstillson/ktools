@@ -3,8 +3,6 @@
 
   - make for things like services/keymaster/km_helper fail until
     kcore is installed.  breaks the normal make,test,install order.
-  - settings: "how" is wrong if setting comes from a settings file that was overriden by a
-    later load.  instance only holds a single filename- the latest one loaded.
 
   - doc: add section about security from structure and layers rather than trying
     to have bullet-proof code...  Assume code has vulns and things will get popped;

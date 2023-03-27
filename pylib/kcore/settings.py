@@ -157,10 +157,14 @@ class Settings:
     # ----- add settings this instance is to control
 
     def add_setting(self, name, *args, **kwargs):
+        if name in self._settings_dict: return False
         self._settings_dict[name] = Setting(name, *args, **kwargs)
 
-    def add_Setting(self, instance_of_Settings):
-        self._settings_dict[instance_of_Settings.name] = instance_of_Settings
+    def add_Setting(self, instance_of_Setting):
+        if not instance_of_Setting.how:
+            old_val = self._settings_dict.get(instance_of_Setting.name)
+            if old_val and old_val.how: instance_of_Setting.how = old_val.how
+        self._settings_dict[instance_of_Setting.name] = instance_of_Setting
 
     def add_Settings(self, iter_of_Settings):
         for setting in iter_of_Settings: self.add_Setting(setting)
@@ -177,10 +181,11 @@ class Settings:
     def add_simple_settings(self, iter_of_setting_names):
         for name in iter_of_setting_names: self.add_setting(name)
 
-    def add_settings_from_settings_file_cache(self):
+    def add_settings_from_settings_file_cache(self, source):
         for name, val in self._settings_file_value_cache.items():
             if not name in self._settings_dict:
                 self.add_setting(name)
+                self._settings_dict[name].how = source
 
 
     # ----- tweak existing settings
@@ -201,7 +206,6 @@ class Settings:
             newval = replacement(setting, attr_name, context) if callable(replacement) else replacement
             if newval: newval = newval.replace('{name}', setting.name)
             if newval != orig_val:
-                ##@@ if self.debug: print(f'DEBUG: setting {setting.name}.{attr_name} tweaked "{orig_val}" -> "{newval}"', file=sys.stderr)
                 setattr(setting, attr_name, newval)
 
 
@@ -252,7 +256,7 @@ class Settings:
             if answer:
                 if self.debug: print(f'resolved setting "{name}" \t to \t "{answer}" \t as an unregistered setting from settings file', file=sys.stderr)
                 return answer
-            if self.debug: print(f'setting {name} requested, but we have no information on it; returning None', file=sys.stderr)
+            if self.debug: print(f'setting "{name}" requested, but we have no information on it; returning None', file=sys.stderr)
             return None
 
         # handle already-cached values
@@ -356,7 +360,7 @@ class Settings:
         if self.debug: print(f'loaded {len(new_settings)} settings from {data_type} source {source}: {new_settings}', file=sys.stderr)
 
         self._settings_file_value_cache.update(new_settings)
-        self.add_settings_from_settings_file_cache()
+        self.add_settings_from_settings_file_cache(source)
         return new_settings
 
     # ----- other state maintenance
@@ -396,11 +400,12 @@ class Settings:
 
         # Try settings file content
         setting_name = self._get_setting_name(setting)
+        how = f'file {setting.how or ("? " + str(self.settings_filename))}'
         val = self._settings_file_value_cache.get(setting_name)
-        if not val is None: return val, f'setting {setting_name} from file {self.settings_filename}'
+        if not val is None: return val, how
 
         # Try default environment variable
-        val = self._get_env_value(setting.env_name, setting.name, self.env_list_sep)
+        val = self._get_env_value(setting.env_name, setting_name, self.env_list_sep)
         if not val is None: return val, f'environment variable ${setting.env_name or setting.name}'
 
         # Return the fallback default value
@@ -488,35 +493,45 @@ def parse_main_args(argv):
     default_settings_file = os.path.join(os.environ.get('HOME'), '.ktools.settings')
 
     ap = C.argparse_epilog(description='settings resolver')
-    ap.add_argument('--all',                '-a', action='store_true', help='just parse the settings file and dump its contents, do not attempt to resolve settings from other sources (environment, defaults, etc)')
-    ap.add_argument('--bare',               '-b', action='store_true', help='output just the specified settings values, not the form {name}="{value}"')
-    ap.add_argument('--cap',                '-c', action='store_true', help='capitalize LHS of the output assignment (useful for shell imports)')
-    ap.add_argument('--debug',              '-d', action='store_true', help='verbose settings resolution data to stsderr')
-    ap.add_argument('--none',               '-n', action='store_true', help='include values that evaluate to None')
-    ap.add_argument('--settings_filename',  '-s', default=default_settings_file, help='name of settings file to parse')
+    ap.add_argument('--debug',              '-d', action='store_true', help='verbose settings resolution data to stderr')
     ap.add_argument('--settings_file_type', '-t', default='auto', help='yaml, env, or dict')
-    ap.add_argument('--quotes',             '-q', action='store_true', help='add double quotes around RHS of output (useful if feeding into shell assignments / eval)')
+    ap.add_argument('--settings_filename',  '-s', default=default_settings_file, help='name of settings file to parse')
     ap.add_argument('settings', nargs='*', help='list of settings to resolve')
+
+    g1 = ap.add_argument_group('print options')
+    g1.add_argument('--all',                '-a', action='store_true', help='just parse the settings file and dump its contents, do not attempt to resolve settings from other sources (environment, defaults, etc)')
+    g1.add_argument('--bare',               '-b', action='store_true', help='output just the specified settings values, not the form {name}="{value}"')
+    g1.add_argument('--cap',                '-c', action='store_true', help='capitalize LHS of the output assignment (useful for shell imports)')
+    g1.add_argument('--how',                '-H', action='store_true', help='include information on the source for each setting value (ignored if --bare)')
+    g1.add_argument('--quotes',             '-q', action='store_true', help='add double quotes around RHS of output (useful if feeding into shell assignments / eval)')
+
+    g2 = ap.add_argument_group('deprecated options (options have no effect; left here to avoid fatal errors when used)')
+    g2.add_argument('--none',               '-n', action='store_true', help='(ignored; will always print settings with None/blank values...')
+
     return ap.parse_args(argv) if argv else ap
 
 
 def print_selected_settings(settings, settings_to_print, args):
     if settings_to_print == '*': settings_to_print = settings.get_dict().keys()
     q = '"' if args.quotes else ""
+    out = ''
     for name in settings_to_print:
         setting = settings.get_setting(name)
         setting_type = setting.flag_type if setting else None
+        how = f'\t{setting.how}' if setting and args.how else ''
         val = settings.get_bool(name) if setting_type == bool else settings.get(name)
-        if val is None:
-            if not args.none: continue
-            else: val = ''
+        if val is None: val = ''
         elif val is True: val = '1'
         elif val is False: val = '0'
-        elif isinstance(val, list): val = ' '.join(val)
+        elif isinstance(val, list): val = ' '.join([str(i) for i in val])
         if args.cap: name = name.upper()
-        if args.bare: print(val)
-        else: print(f'{name}={q}{val}{q}')
-    
+        if args.bare: out += f'{val}\n'
+        else: out += f'{name}={q}{val}{q}{how}\n'
+    if args.how:
+        print(C.popener("sort -t'\t' -k2 | column -t -s'\t'", stdin_str=out, shell=True))
+    else:
+        print(out)
+
 
 def main(argv=[]):
     args = parse_main_args(argv or sys.argv[1:])

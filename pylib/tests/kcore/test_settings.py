@@ -80,7 +80,7 @@ def test_yaml_plus_environment():
 
     assert settings.get('a') == 'val-a'  # from yaml
     assert settings.get_setting('a').cached_value == 'val-a'  # check value was cached
-    assert settings.get_setting('a').how == 'setting a from file testdata/settings1.yaml'
+    assert settings.get_setting('a').how == 'file testdata/settings1.yaml'
     assert settings['missing'] is None   # Check completely unknown control.
 
     # Try a few via get_dict()
@@ -91,14 +91,14 @@ def test_yaml_plus_environment():
     # Check that yaml file referening env-vars works.
     assert s['e1'] == 'e1val-env'
     assert s['e2'] == 'e2val-env'
-    assert settings.get_setting('e2').how == 'setting e2 from file testdata/settings1.yaml; after arg resolved for: $e2'
+    assert settings.get_setting('e2').how == 'file testdata/settings1.yaml; after arg resolved for: $e2'
 
     assert s['ex'][0] == 'e1val-env'
     assert s['ex'][1] == 'e2val-env'
-    assert settings.get_setting('e2').how == 'setting e2 from file testdata/settings1.yaml; after arg resolved for: $e2'
+    assert settings.get_setting('e2').how == 'file testdata/settings1.yaml; after arg resolved for: $e2'
 
     assert s['f'].startswith('hello')   # Check that file loading works.
-    assert settings.get_setting('f').how == 'setting f from file testdata/settings1.yaml; after arg resolved for: file:testdata/file1'
+    assert settings.get_setting('f').how == 'file testdata/settings1.yaml; after arg resolved for: file:testdata/file1'
 
     assert s['q1'] == 'q1val-env'       # Check that environment default works.
     assert settings.get_setting('q1').how == 'environment variable $q1'

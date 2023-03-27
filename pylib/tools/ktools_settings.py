@@ -56,7 +56,7 @@ GROUPS = [
 
     S.SettingsGroup('pylib runtime', 'run-time controls for most of ktools/pylib', S.Settings(add_Settings=[
         S.Setting('keymaster_host',                                                      doc='{host}:{port} for the keymaster instance to use when retrieving keys'),
-        
+
         # Note: the setting to control varz Prometheus has been left in the env variable $KTOOLS_VARZ_PROM
         # (because varz.py and webserver_base.py are lower-level than the ../tools/ktools_settings.py system)
     ])),
@@ -108,8 +108,8 @@ GROUPS = [
         S.Setting('ip',          default=lambda: _mode(r'\-', '0'),                      doc='IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
         S.Setting('ipv6_ports',  default='0', flag_type=bool,                            doc='if flag set or setting is "1", enable IPv6 port mappings.'),
         S.Setting('log',         default='none',                                         doc='log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url], n/none'),
-        S.Setting('mount-ro',                                                            doc='list of ";" separated src:dest pairs to mount read-only inside the container'),
-        S.Setting('mount-rw',                                                            doc='list of ";" separated src:dest pairs to mount read+write inside the container'),
+        S.Setting('mount_ro',                                                            doc='list of ";" separated src:dest pairs to mount read-only inside the container'),
+        S.Setting('mount_rw',                                                            doc='list of ";" separated src:dest pairs to mount read+write inside the container'),
         S.Setting('name',        default=lambda: _mode('@basedir', 'test-@basedir'),     doc='name to assign to the container (for container management)'),
         S.Setting('no_rm',       default='0', flag_type=bool,                            doc='do not autoremove container remanants upon termination'),
         S.Setting('network',                                                             doc='container network to use'),
@@ -133,7 +133,7 @@ def init(selected_groups=None, files_to_load=[], argparse_instance=None,
          flag_aliases={}, global_settings_filename=KTOOLS_GLOBAL_SETTINGS,
          debug=False, test_mode=None):
     global s, TEST_MODE
-    
+
     if selected_groups is None: selected_groups = [i.name for i in GROUPS]
     if isinstance(files_to_load, str): files_to_load = [files_to_load]
     if test_mode is not None: TEST_MODE = test_mode
