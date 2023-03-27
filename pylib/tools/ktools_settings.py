@@ -92,7 +92,7 @@ GROUPS = [
     ])),
 
     S.SettingsGroup('container building', 'settings for building containers', S.Settings(add_Settings=[
-        S.Setting('build_params',                                                        doc='a list of ";" separated params to send to the "${DOCKER_EXEC} build" command when building images'),
+        S.Setting('build_params',                                                        doc='a list of ";" separated params to send to the "[docker_exec] build" command when building images'),
         S.Setting('build_push_opts', default='--tls-verify=false',                       doc='extra params to use when pushing a build to a repo'),
         S.Setting('build_push_to',   default='localhost:5000',                           doc='default repo to push to'),
     ])),
