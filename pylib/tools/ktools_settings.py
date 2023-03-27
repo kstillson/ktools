@@ -132,8 +132,12 @@ def init(selected_groups=None, files_to_load=[], argparse_instance=None,
          debug=False, test_mode=None):
     global s, TEST_MODE
 
-    if selected_groups is None: selected_groups = [i.name for i in GROUPS]
+    # If called by implicit/lazy call to get, we might still need to be able to parse global settings...
+    if not files_to_load: files_to_load = os.environ.get('KTOOLS_SETTINGS', '${HOME}/.ktools.settings')
+
+    # other param fix-ups
     if isinstance(files_to_load, str): files_to_load = [files_to_load]
+    if selected_groups is None: selected_groups = [i.name for i in GROUPS]
     if test_mode is not None: TEST_MODE = test_mode
 
     # Enable flags for each group (with no prefix).

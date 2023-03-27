@@ -317,13 +317,15 @@ class Settings:
         if isinstance(filename, list):
             cumulative = {}
             for f in filename:
-                new_settings = self.parse_settings_file(f)
+                new_settings = self.parse_settings_file(f, 'auto')
                 if new_settings: cumulative.update(new_settings)
             return cumulative
 
         elif '*' in filename:
             cumulative = {}
-            for f in glob.glob(filename): cumulative.update(self.parse_settings_file(f))
+            for f in glob.glob(filename):
+                new_settings = self.parse_settings_file(f, 'auto')
+                if new_settings: cumulative.update(new_settings)
             return cumulative
 
         # Handle a regular filename
@@ -339,16 +341,21 @@ class Settings:
                '_settings_basedir': os.path.basename(os.path.dirname(os.path.abspath(filename))) }
         self.add_settings_from_value_dict(tmp, 'set by parse_settings_file()')
 
-        if not data_type: data_type = self.settings_data_type
-        else: self.settings_data_type = data_type
+        if not data_type:
+            data_type = self.settings_data_type or 'auto'
+        else:
+            self.settings_data_type = data_type
         if data_type == 'auto':
             _, ext = os.path.splitext(filename)
-            data_type = ext[1:]  # strip leading "."
+            if ext:
+                data_type = ext[1:]  # strip leading "."
+            else:
+                data_type = 'yaml'   # assumption for global settings file with no extension.
         if self.debug: print(f'reading settings file {filename} of type {data_type}', file=sys.stderr)
 
         data = C.read_file(filename)
         if data is False:
-            if self.debug: print(f'unable to read settings file {filename} failed')
+            if self.debug: print(f'unable to read settings file {filename} of type {data_type}')
             return False
 
         return self.parse_settings_data(data, data_type, filename)
