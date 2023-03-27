@@ -512,6 +512,7 @@ def print_selected_settings(settings, settings_to_print, args):
             else: val = ''
         elif val is True: val = '1'
         elif val is False: val = '0'
+        elif isinstance(val, list): val = ' '.join(val)
         if args.cap: name = name.upper()
         if args.bare: print(val)
         else: print(f'{name}={q}{val}{q}')
