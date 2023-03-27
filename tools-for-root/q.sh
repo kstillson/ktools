@@ -30,32 +30,31 @@ set -e
 # ---------- flag defaults
 
 DEBUG=0          # don't delete tempfiles
-EXCLUDE="${KTOOLS_Q_EXCLUDE:-}"  # csv list of hosts to exclude
 HOST_SUBST="@"   # replace this substring with hostnames in some commands
 PARA=1           # run commands for multiple hosts in parallel
 TEST=0           # for commands that would make changes, print them rather than running them
 TIMEOUT=90       # default ssh connect timeout
 VERBOSE=0        # print commands as they are run
 
-# ---------- control constants
-# Anything with "LIST_" in the name here should be space separated values (ssv).
-
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 # default flags to run_para command (see ../pylib_tools):
 RP_FLAGS_BASE="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
 RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
-D_SRC_DIR="${D_SRC_DIR_DIR:-/root/dev/ktools/containers}"                   # Directory containing docker source dirs.
-DD="${KTOOLS_Q_DD:-${D_SRC_DIR}/dnsdock/files/etc/dnsmasq/private.d}"       # Where dnsmasq config files are stored.
-GIT_DIRS="${KTOOLS_Q_GIT_DIRS}"                                             # List of git dirs this script manages.
-KM="https://${KMHOST:-localhost:4444}"
-KMD_P="${KTOOLS_Q_KMD_P:-$HOME/dev/ktools/private.d/km.data.pcrypt}"        # Location of encrypted keymaster secrets file
-LIST_LINUX="${KTOOLS_Q_LIST_LINUX}"                                         # list of non-RPi linux hosts
-LIST_PIS="${KTOOLS_Q_LIST_PIS}"                                             # list of RPi linux hosts
-LEASES="${KTOOLS_Q_LEASES:-/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases}"  # Location of dnsmasq leases (output/generated) file.
-PROCMON=${PROCMON:-localhost:8080}                                          # host:port of the procmon instance to work with.
-PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                               # Location of ../services/procmon output file
+# ---------- control constants
+
+eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linux_hosts q_pi_hosts vol_base)
+
+# derived controls (overridble from the environment, in-case these default
+# formulae are wrong for you).
+
+DD="${KTOOLS_Q_DD:-${D_SRC_DIR}/dnsdock/files/etc/dnsmasq/private.d}"                 # Where dnsmasq config files are stored.
+KMD_P="${KTOOLS_Q_KMD_P:-${D_SRC_DIR}/private.d/km.data.pcrypt}"                      # Location of encrypted keymaster secrets file
+LEASES="${KTOOLS_Q_LEASES:-${VOL_BASE}/dnsdock/var_log_dnsmasq/dnsmasq.leases}"       # Location of dnsmasq leases (output/generated) file.
+PROCMON="${PROCMON:-localhost:8080}"                                                  # host:port of the procmon instance to work with.
+PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                                         # Location of ../services/procmon output file
 RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
+
 
 # ---------- colorizers
 
@@ -199,7 +198,7 @@ function runner() {
     fi
 }
 
-# Wrapper around /usr/local/bin/run_para which repects EXCLUDE, RP_FLAGS and
+# Wrapper around /usr/local/bin/run_para which repects Q_EXCLUDE, RP_FLAGS and
 # TEST.  This method assumes --ssh mode unless $1 is "LOCAL", in which case it
 # uses --cmd mode.  ssv hosts in $1, command to run in $2+.
 function RUN_PARA() {
@@ -217,7 +216,7 @@ function RUN_PARA() {
         emit "TEST; would run: $cmd '$@'"
         return
     fi
-    echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | $cmd "$@"
+    echo "$hosts" | tr ' ' '\n' | without - "$Q_EXCLUDE" | $cmd "$@"
     return $?
 }
 
@@ -250,7 +249,7 @@ function git_add_repo() {
 # Check all known git dirs for any local changes; output dirs with changes.
 function git_check_all() {
     pushd . >& /dev/null
-    for dir in $GIT_DIRS; do
+    for dir in $Q_GIT_DIRS; do
         if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; continue; fi
         cd $dir
         git_status=$(git status -s)
@@ -284,7 +283,7 @@ function git_sync() {
 # Sync all known git dirs.
 function git_sync_all() {
     need_ssh_agent
-    for dir in $GIT_DIRS; do git_sync $dir; done
+    for dir in $Q_GIT_DIRS; do git_sync $dir; done
     emitc green "all done\n"
 }
 
@@ -304,7 +303,7 @@ function pi_root() {
 # Runs a pull in all known local git dirs.
 function git_pull_all() {
     need_ssh_agent
-    for dir in $GIT_DIRS; do
+    for dir in $Q_GIT_DIRS; do
         if [[ ! -d $dir ]]; then emit "missing dir: $dir"; continue; fi
         runner "cd $dir"
         runner "git pull"
@@ -655,17 +654,17 @@ function keymaster_logs() {
 # Enter the keymaster password to get the service ready.
 function keymaster_reload() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
-    stat=$(curl -ksS ${KM}/healthz)
+    stat=$(curl -ksS ${KEYMASTER_HOST}/healthz)
     if [[ "$stat" == "ok" ]]; then emitc blue "already ok"; return 0; fi
     read -s -p "km password: " passwd
     echo ""
-    stat=$(curl -ksS -d "password=$passwd" "${KM}/load" | html2text)
+    stat=$(curl -ksS -d "password=$passwd" "${KEYMASTER_HOST}/load" | html2text)
     if [[ "$stat" != "ok" ]]; then emitc red "$stat"; return 1; fi
     emitc green ok
 }
 
 function keymaster_status() {
-    curl -ksS "${KM}/healthz"
+    curl -ksS "${KEYMASTER_HOST}/healthz"
     echo ""
 }
 
@@ -695,10 +694,10 @@ function keymaster_update() {
 
 # Disable the keymaster.
 function keymaster_zap() {
-    stat=$(curl -ksS ${KM}/healthz)
+    stat=$(curl -ksS ${KEYMASTER_HOST}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc blue "already zapped"; return 0; fi
-    runner "curl -ksS ${KM}/qqq >/dev/null"
-    stat=$(curl -ksS ${KM}/healthz)
+    runner "curl -ksS ${KEYMASTER_HOST}/qqq >/dev/null"
+    stat=$(curl -ksS ${KEYMASTER_HOST}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc orange "zapped"; return 0; fi
     emitc red "zap failed: $stat"
 }
@@ -719,12 +718,12 @@ function list_all() {
 }
 
 function list_linux() {
-    echo -n "$LIST_LINUX"
+    echo -n "$Q_LINUX_HOSTS"
     list_pis
 }
 
 function list_pis() {
-    echo $LIST_PIS
+    echo $Q_PI_HOSTS
 }
 
 function list_rsnap_hosts() {
@@ -825,7 +824,7 @@ function main() {
         case "$flag" in
     # Note: flags mostly only affect multi-host commands...
             --debug | -d) DEBUG=1 ;;                      ## leave temp files in place
-            --exclude | -x) EXCLUDE=$2; shift ;;          ## csv list of substring match patterns
+            --exclude | -x) Q_EXCLUDE=$2; shift ;;          ## csv list of substring match patterns
             --help    | -h) myhelp ;;
             --nopara  | -n | -1) PARA=0 ;;                ## run sequentually rather than in parallel
             --host-subst | -H) HOST_SUBST="$2"; shift ;;  ## use $1 instead of "@" for host subst char
@@ -897,12 +896,12 @@ function main() {
             updater "$(list_linux | without jack,blue,mc2)" ;;
         uptime | uta | ut)                                         ## uptime for all linux hosts list multiple hosts (or multiple other things)
             RUN_PARA "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;
-        list-all | la) list_all | without $EXCLUDE ;;              ## list all known local-network hosts (respecting -x) via dhcp server leases
-        list-git-dirs | lg) echo $GIT_DIRS ;;                      ## list all known git dirs (hard-coded list)
-        list-linux | ll) list_linux | without $EXCLUDE ;;          ## list all linux machines (hard-coded list)
-        list-pis | lp) list_pis | without $EXCLUDE ;;              ## list all pi's (hard-coded list)
-        list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;   ## list all hosts using rsnapshot (hard-coded list)
-        list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
+        list-all | la) list_all | without $Q_EXCLUDE ;;            ## list all known local-network hosts (respecting -x) via dhcp server leases
+        list-git-dirs | lg) echo $Q_GIT_DIRS ;;                    ## list all known git dirs (hard-coded list)
+        list-linux | ll) list_linux | without $Q_EXCLUDE ;;        ## list all linux machines (hard-coded list)
+        list-pis | lp) list_pis | without $Q_EXCLUDE ;;            ## list all pi's (hard-coded list)
+        list-rsnaps | lr) list_rsnap_hosts | without $Q_EXCLUDE ;; ## list all hosts using rsnapshot (hard-coded list)
+        list-tps | ltp | lt) list_tps | without $Q_EXCLUDE ;;      ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
         listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems; TODO
             RUN_PARA LOCAL "$(cat)" "$@" ;;

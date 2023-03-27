@@ -27,7 +27,7 @@ def test_settings():
 
     assert DRUN.DEBUG
     assert not DRUN.TEST_MODE
-    s = DRUN.S.s
+    s = DRUN.KS.s
 
     # Assert settings via flags (that should override values from settings files)
     assert s['tag'] == 'latest'

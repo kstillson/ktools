@@ -276,7 +276,6 @@ class Settings:
             setting.cached_value, setting.how = answer, how
         return answer
 
-
     def __getitem__(self, name): return self.get(name)
 
     def get_dict(self):
@@ -491,28 +490,37 @@ def parse_main_args(argv):
     ap = C.argparse_epilog(description='settings resolver')
     ap.add_argument('--all',                '-a', action='store_true', help='just parse the settings file and dump its contents, do not attempt to resolve settings from other sources (environment, defaults, etc)')
     ap.add_argument('--bare',               '-b', action='store_true', help='output just the specified settings values, not the form {name}="{value}"')
+    ap.add_argument('--cap',                '-c', action='store_true', help='capitalize LHS of the output assignment (useful for shell imports)')
     ap.add_argument('--debug',              '-d', action='store_true', help='verbose settings resolution data to stsderr')
     ap.add_argument('--none',               '-n', action='store_true', help='include values that evaluate to None')
     ap.add_argument('--settings_filename',  '-s', default=default_settings_file, help='name of settings file to parse')
     ap.add_argument('--settings_file_type', '-t', default='auto', help='yaml, env, or dict')
-    ap.add_argument('--quotes',             '-q', action='store_true', help='add quotes around RHS of output (useful if feeding into shell assignments / eval)')
+    ap.add_argument('--quotes',             '-q', action='store_true', help='add double quotes around RHS of output (useful if feeding into shell assignments / eval)')
     ap.add_argument('settings', nargs='*', help='list of settings to resolve')
     return ap.parse_args(argv) if argv else ap
 
 
+def print_selected_settings(settings, settings_to_print, args):
+    if settings_to_print == '*': settings_to_print = settings.get_dict().keys()
+    q = '"' if args.quotes else ""
+    for name in settings_to_print:
+        setting = settings.get_setting(name)
+        setting_type = setting.flag_type if setting else None
+        val = settings.get_bool(name) if setting_type == bool else settings.get(name)
+        if val is None:
+            if not args.none: continue
+            else: val = ''
+        elif val is True: val = '1'
+        elif val is False: val = '0'
+        if args.cap: name = name.upper()
+        if args.bare: print(val)
+        else: print(f'{name}={q}{val}{q}')
+    
+
 def main(argv=[]):
     args = parse_main_args(argv or sys.argv[1:])
     settings = Settings(args.settings_filename, debug=args.debug)
-    settings_dict = settings.get_dict()
-
-    q = "'" if args.quotes else ""
-
-    settings = settings_dict.keys() if args.all else args.settings
-    for name in settings:
-        val = settings_dict.get(name)
-        if val is None and not args.none: continue
-        if args.bare: print(val)
-        else: print(f'{name}={q}{val}{q}')
+    print_selected_settings(settings, '*' if args.all else args.settings, args)
     return 0
 
 

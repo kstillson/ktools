@@ -3,7 +3,6 @@
 
 # Control variables inherited from the environment:
 #   BUILD_DOCKER_CONTAINERS
-#   BUILD_SIMPLE
 #   NO_TRACKING
 #   SUBDIRS
 

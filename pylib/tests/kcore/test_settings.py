@@ -284,7 +284,7 @@ def test_cli():
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0
-        assert cap.out == "a='val-ae'\nc='321e'\ne2='e2e-e'"
+        assert cap.out == 'a="val-ae"\nc="321e"\ne2="e2e-e"'
         assert cap.err == ''
 
     argv = ['--settings_filename', 'testdata/settings2.env', '--all']

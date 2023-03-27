@@ -6,8 +6,10 @@ all:	docker-all
 
 # ---------- control variables
 
-UID_SEARCH ?= nagios   # causes $(UID_OUTSIDE) to be set.
-GID_SEARCH ?= nagios   # causes $(GID_OUTSIDE) to be set.
+DOCKER_EXEC ?= $(shell ktools_settings -b docker_exec)
+
+UID_SEARCH ?= nagios   # causes $(UID_OUTSIDE) to be set by Makefile-docker.
+GID_SEARCH ?= nagios   # causes $(GID_OUTSIDE) to be set by Makefile-docker.
 
 include ../../etc/Makefile-docker
 
@@ -21,8 +23,8 @@ VOL_DIRS := $(VOLS)/var_log_nagios $(VN) $(VN)/archive $(VN)/rw $(VN)/spool $(VN
 vol_dirs: ${VOL_DIRS}
 	@if [[ "$$UID" == "0" ]]; then \
 	    chown ${UID_OUTSIDE}:${GID_OUTSIDE} ${VOL_DIRS}; \
-	elif [[ "$$DOCKER_EXEC" == *"podman" ]]; then \
-	    ${DOCKER_EXEC} unshare chown ${UID_INSIDE}:${GID_INSIDE} ${VOL_DIRS}; \
+	elif [[ "$DOCKER_EXEC" == *"podman" ]]; then \
+	    $DOCKER_EXEC unshare chown ${UID_INSIDE}:${GID_INSIDE} ${VOL_DIRS}; \
 	else \
 	    printf "\n$(YELLOW) WARNING $(RESET)- not root, so cant fix ownership on volume dirs.  owner should be ${UID_OUTSIDE}:${GID_OUTSIDE} for ${VOL_DIRS}\n\n"; \
 	fi

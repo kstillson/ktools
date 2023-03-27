@@ -22,15 +22,10 @@
 
 
 # ---------- control constants
-# can be overriden from calling environment or flags.
 
-D_SRC_DIR=${D_SRC_DIR:-~/docker-dev}
-D_SRC_DIR2=${D_SRC_DIR2:-}
-DOCKER_EXEC="${DOCKER_EXEC:-docker}"
-DOCKER_VOL_BASE="${DOCKER_VOL_BASE:-/rw/dv}"
-
-DBUILD_PARAMS="${DBUILD_PARAMS:-}"
-DBUILD_REPO="${DBUILD_REPO:-ktools}"
+eval $(ktools_settings -cnq d_src_dir d_src_dir2 docker_exec vol_base build_params repo1 repo2)
+       
+# TODO:
 DBUILD_PODMAN_SHARED_APK_CACHE="${DBUILD_PODMAN_SHARED_APK_CACHE:-1}"
 
 
@@ -57,7 +52,7 @@ function run_build() {
     if [[ "$DBUILD_PODMAN_SHARED_APK_CACHE" == "1" &&
 	      "$DOCKER_EXEC" == *"podman" ]]; then
 	echo "adding shared APK cache dir..."
-	apk_cache_dir="${DOCKER_VOL_BASE}/apk_cache_dir"
+	apk_cache_dir="${VOL_BASE}/apk_cache_dir"
 	mkdir -p $apk_cache_dir
 	params="-v $apk_cache_dir:/var/cache/apk $params"
     elif [[ "$DBUILD_PODMAN_SHARED_APK_CACHE" != "2" ]]; then
@@ -127,10 +122,10 @@ function main() {
     push=0
     run_tests=0
 
-    build_params="$DBUILD_PARAMS"
+    build_params="$BUILD_PARAMS"
     cd="."
     name=""
-    repo="$DBUILD_REPO"
+    repo="$REPO1"
     tag="latest"
 
     # ---- parse flags
@@ -141,10 +136,10 @@ function main() {
             --setlive | -s) just_live=1 ;;                ## run mode: just tag :latest to :live and exit
             --test | -t) run_tests=1 ;;                   ## run mode: build and run tests, then exit
 
-            --build_params | -b) build_params="$1" ;;     ## params for "docker build" (defaults to $DBUILD_PARAMS)
+            --build_params | -b) build_params="$1" ;;     ## params for "docker build" (defaults to $BUILD_PARAMS)
             --cd) cd="$1"; shift ;;                       ## location of Dockerfile to build (can be relative to $D_SRC_DIR)
             --name) name="$1"; shift ;;                   ## output image name; defaults to basename of directory
-            --repo) repo="$1"; shift ;;                   ## repo to build image into; defaults to $DBUILD_REPO
+            --repo) repo="$1"; shift ;;                   ## repo to build image into; defaults to $REPO1
             --tag) tag="$1"; shift ;;                     ## tag to set after build.  defaults to ":latest"
 
             --help | -h) myhelp; exit 0 ;;

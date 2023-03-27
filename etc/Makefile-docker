@@ -10,13 +10,13 @@ SHELL := /bin/bash
 # ---------- control constants
 
 DIRNAME ?= $(shell basename $(shell pwd))
-DOCKER_EXEC ?= /usr/bin/docker
-DOCKER_VOLS ?= /rw/dv
+DOCKER_EXEC ?= $(shell ktools_settings -b docker_exec)
+DOCKER_VOLS ?= $(shell ktools_settings -b vol_base)
 UID := $(shell id -u)
 
-DBUILD_PUSH_OPTS ?= --tls-verify=false
-DBUILD_PUSH_TO ?= localhost:5000
-DBUILD_REPO ?= ktools
+DBUILD_PUSH_OPTS ?= $(shell ktools_settings -b build_push_opts)
+DBUILD_PUSH_TO ?= $(shell ktools_settings -b build_push_to)
+DBUILD_REPO ?= $(shell ktools_settings -b repo1)
 
 
 # ----- directory constants (need to be updated with Python versions)
@@ -38,12 +38,12 @@ endif
 
 # ----- determine docker uid namespace mapping offsets
 
-DOCKER_MAP_UID ?= $(shell grep dmap: /etc/subuid | cut -d: -f2)
+DOCKER_MAP_UID ?= $(shell ktools_settings -b shift_uids)
 ifeq ($(DOCKER_MAP_UID),)
   DOCKER_MAP_UID := 0
 endif
 
-DOCKER_MAP_GID ?= $(shell grep dmap: /etc/subgid | cut -d: -f2)
+DOCKER_MAP_GID ?= $(shell ktools_settings -b shift_gids)
 ifeq ($(DOCKER_MAP_GID),)
   DOCKER_MAP_GID := 0
 endif

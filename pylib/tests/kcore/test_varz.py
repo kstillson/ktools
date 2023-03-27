@@ -63,7 +63,7 @@ def test_prometheus_metrics():
     # Only test Prometheus if it's enabled in the environment; otherwise
     # test will fail if prometheus_client library isn't available.
     if os.environ.get('KTOOLS_VARZ_PROM') != '1':
-        print('Prometheus tests skipped, as $KTOOLS_VARZ_PROM != "1"')
+        print('Prometheus tests skipped as $KTOOLS_VARZ_PROM != "1"')
         return
 
     ws = start()

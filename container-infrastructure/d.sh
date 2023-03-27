@@ -15,10 +15,8 @@ spec="$1"
 shift || true
 extra_flags="$@"
 
-# Overridable from the environment
-DOCKER_EXEC=${DOCKER_EXEC:-/usr/bin/docker}
-D_SRC_DIR=${D_SRC_DIR:-/root/docker-dev}
-D_SRC_DIR2=${D_SRC_DIR2:-}
+# Load settings
+eval $(ktools_settings -cn docker_exec d_src_dir d_src_dir2 timeout)
 TIMEOUT=${TIMEOUT:-60}
 
 if [[ "$TESTER" == "" ]]; then

@@ -8,11 +8,15 @@ TODO: move the IGNORE_LIST to a config file.
 import argparse, datetime, glob, os, socket
 import kcore.common as C
 import kcore.uncommon as UC
+import ktools.ktools_settings as KS
 
 # ---------- global controls
 
-DLIB = os.environ.get('DLIB', '/var/lib/docker/200000.200000')
-DOCKER_EXEC = os.environ.get('DOCKER_EXEC', '/usr/bin/docker')
+DOCKER_EXEC = KS.get('docker_exec')
+
+SHIFT_UIDS = KS.get('shift_uids')
+SHIFT_GIDS = KS.get('shift_gids')
+DLIB = f'/var/lib/docker/{SHIFT_UIDS}.{SHIFT_GIDS}' if SHIFT_UIDS else '/var/lib/docker'
 
 # ---------- global state
 

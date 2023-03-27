@@ -10,8 +10,8 @@ from dataclasses import dataclass
 
 import kcore.auth as A
 import kcore.common as C
-import kcore.settings as KS
-import ktools.ktools_settings as S
+import kcore.settings as S
+import ktools.ktools_settings as KS
 
 
 # ---------- global controls
@@ -33,13 +33,13 @@ def err(msg):
 
 def get_setting(name, skip_auto_test_mode=False):
     if TEST_MODE and not skip_auto_test_mode:
-        test_val = S.get('test_' + name)
+        test_val = KS.get('test_' + name)
         if test_val is not None: return test_val
-    return S.get(name)
+    return KS.get(name)
 
 
 def get_bool_setting(name):
-    return KS.eval_bool(get_setting(name))
+    return S.eval_bool(get_setting(name))
 
 
 # ---------- internal business logic helpers
@@ -141,7 +141,7 @@ def add_simple_control(cmnd, control_name, param=None):
     if val is None: return None
 
     last_val = None
-    val_list = val if isinstance(val, list) else val.split(S.STR_LIST_SEP)
+    val_list = val if isinstance(val, list) else val.split(KS.STR_LIST_SEP)
     for i in val_list:
         if not i: continue
         if param: cmnd.extend([param, i])
@@ -183,11 +183,11 @@ def get_puid(name):
 # Try to find the location of the specified docker container dir.
 def search_for_dir(dir):
     if os.path.isdir(dir): return dir
-    d_src_dir = os.environ.get('D_SRC_DIR')
+    d_src_dir = KS.get('d_src_dir')
     if d_src_dir:
         candidate = os.path.join(d_src_dir, dir)
         if os.path.isdir(candidate): return candidate
-    d_src_dir2 = os.environ.get('D_SRC_DIR2')
+    d_src_dir2 = KS.get('d_src_dir2')
     if d_src_dir2:
         candidate = os.path.join(d_src_dir2, dir)
         if os.path.isdir(candidate): return candidate
@@ -473,7 +473,7 @@ def gen_command():
 
     create_vol_dirs(mount_src_dirs, basename, TEST_MODE)
 
-    add_ports(cmnd, get_setting('ports'), S.s.get_int('port_offset'), get_bool_setting('ipv6_ports'))
+    add_ports(cmnd, get_setting('ports'), KS.s.get_int('port_offset'), get_bool_setting('ipv6_ports'))
 
     puid = get_setting('puid')
     if puid == 'auto': puid = get_puid(name)
@@ -524,7 +524,7 @@ def parse_args(argv=sys.argv[1:]):
     g2 = ap.add_argument_group('Meta settings', 'Flags that effect how all the other settings are set.')
     g2.add_argument('--cd',            '-N', help='The directory within which to find --settings (if not specified in --settings).  Can be relative to the global setting "d_src_dir" or "d_src_dir2", meaning that this can just be the basename of the container you want to launch (hence the alias -N for name)')
     g2.add_argument('--settings',      '-s', default='settings.yaml', help='file with container specific settings')
-    g2.add_argument('--host_level_settings', '-H', default='${HOME}/.kcore.settings', help='file with host-level overall settings')
+    g2.add_argument('--host_level_settings', '-H', default='${HOME}/.ktools.settings', help='file with host-level overall settings')
     g2.add_argument('--test-mode',     '-T', action='store_true', help='Launch with alternate settings, so version under test does not interfere with production version.')
 
     g3 = ap.add_argument_group('shortcuts')
@@ -541,9 +541,10 @@ def parse_args(argv=sys.argv[1:]):
         'cmd':   '-c',
         'shell': '-S',
     }
-    s = S.init(['containers', 'container launching', 'd-run'],
-               C.special_arg_resolver(args.host_level_settings),
-               ap, flag_aliases, args.debug, args.test_mode)
+    s = KS.init(['containers', 'container launching', 'd-run'],
+                C.special_arg_resolver(args.host_level_settings),
+                argparse_instance=ap, flag_aliases=flag_aliases,
+                debug=args.debug, test_mode=args.test_mode)
 
     # Add environment varaible fallbacks for all settings.
     s.tweak_all_settings('env_name', 'DRUN_{name}')
@@ -608,7 +609,7 @@ def main():
         if args.test: sys.exit(0)
 
     # clear out any terminated-but-still-laying-around remanents of previous runs.
-    if not S.s['no_rm']:
+    if not KS.s['no_rm']:
         with open('/dev/null', 'w') as z:
             subprocess.call([get_setting('docker_exec'), 'rm', get_setting('name')], stdout=z, stderr=z)
 

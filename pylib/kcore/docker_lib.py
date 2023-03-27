@@ -11,13 +11,17 @@ Some highlights:
 
 import atexit, os, random, socket, ssl, sys, threading, time, warnings
 import kcore.common as C
+import ktools.ktools_settings as KS
 
 from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
 
-DOCKER_BIN = os.environ.get('DOCKER_EXEC', 'docker')
-DV_BASE = os.environ.get('DOCKER_VOL_BASE', '/rw/dv')
+s = KS.init(test_mode=True)
+DOCKER_BIN = s.get('docker_exec')
+DV_BASE = s.get('vol_base')
+TEST_DV_BASE = s.get('test_vol_base')
+TEST_PORT_SHIFT = KS.get('port_offset')
 
 # Testing related
 OUT = sys.stdout
@@ -164,16 +168,10 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
         cow = find_cow_dir(fullname)
     if 'error' in cow.lower(): raise Exception(f'container {fullname} not found;  cow dir returned: {cow}; tried {retries} times...')
 
-    # TODO(defer): ideally, at least the vol_dir and port_shift fields should
-    # be populated by getting that data our of the d-run command rather than
-    # manually re-creating it here.  But we run d-run foreground/syncronously
-    # (better for watching test results unfold), so getting any output from it
-    # would be tricky.  Oh well.
-    #
     return ContainerData(
         fullname, find_ip_for(fullname), cow,
-        f'{DV_BASE}/TEST/{name}' if test_mode else f'{DV_BASE}/{name}',
-        10000 if test_mode else 0,
+        f'{TEST_DV_BASE}/{name}' if test_mode else f'{DV_BASE}/{name}',
+        int(TEST_PORT_SHIFT) if test_mode else 0,
         settings_dir)
 
 
@@ -265,7 +263,7 @@ def popen_inside_expect(container_name, cmd, expect_out, expect_err=None, expect
 # containers on the same network can.  So we create such a container.
 def testing_container_expect(cmd, expect_out, expect_err=None):
     # This needs to be kept in sync with the logic in launch_test_container()
-    test_net = os.environ.get('KTOOLS_DRUN_TEST_NETWORK') or 'bridge'
+    test_net = KS.init(test_mode=True).get('network')
 
     cmd2 = [DOCKER_BIN, 'run', '--rm', '-i', '--name', 'tmp_test_container', '--network', test_net, 'alpine:latest']
     return popen_expect(cmd2, expect_out, expect_err, send_in=cmd)

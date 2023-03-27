@@ -4,7 +4,6 @@ SHELL := /bin/bash
 all: prep
 
 include ../etc/Makefile-colors
-##include ../etc/Makefile-docker
 
 # WARNING- all docker containers (except kcore-baseline) depend on
 # kcore-baseline being built AND INSTALLED (i.e. marked :live) before the
@@ -14,6 +13,9 @@ include ../etc/Makefile-colors
 # for kcore-baseline will BUILD, test AND INSTALL.
 #
 SUBDIRS ?= kcore-baseline $(shell ls */Makefile | cut -d/ -f1 | fgrep -v kcore-baseline)
+
+DOCKER_EXEC ?= $(shell ktools_settings -b docker_exec)
+
 
 # This also includes "all"; both rules will run.
 $(TOP_TARGETS): $(SUBDIRS)
@@ -36,7 +38,7 @@ clean:
 # ---------- custom targets
 
 purge:
-	@read -p 'About to purge ALL docker images (not just the ones created by this Makefile). ok (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E $(DOCKER_EXEC) image prune -a; else exit -1; fi
+	@read -p 'About to purge ALL docker images (not just the ones created by this Makefile). ok (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E $DOCKER_EXEC image prune -a; else exit -1; fi
 
 
 # ---------- 1-time preparation sequence

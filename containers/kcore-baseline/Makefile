@@ -20,9 +20,10 @@ baseline-stamp: $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* file
 include ../../etc/Makefile-common
 
 KCORE_DIR ?= $(PLIB)/kcore
+KTOOLS_DIR ?= $(PLIB)/ktools
 
 FULB := files/usr/local/bin
-COPIED_FILES := $(FULB)/kmc $(FULB)/keymaster.crt $(KCORE_DIR)
+COPIED_FILES := $(FULB)/kmc $(FULB)/keymaster.crt $(KCORE_DIR) $(KTOOLS_DIR)
 
 
 # ---------- local customizations
@@ -50,8 +51,13 @@ files/usr/local/bin/keymaster.crt: ../../private.d/keymaster.crt
 	chmod 644 $@
 
 $(KCORE_DIR): ../../pylib/kcore
-	mkdir -p $(PLIB)
-	cp -rpuv $^ $(PLIB)
+	mkdir -p $@
+	cp -rpuv $^/* $@
+	chmod -R go+rX $@
+
+$(KTOOLS_DIR): ../../pylib/tools
+	mkdir -p $@
+	cp -rpuv $^/* $@
 	chmod -R go+rX $@
 
 

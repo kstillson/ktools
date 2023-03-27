@@ -19,9 +19,13 @@ hn = S.get('hostname')    # provided method implicitly uses the singleton
 d = S.get_dict()          # or grab a dict for the most terse subsequent retrieval
 n = d['name']
 
-Note that the defaults of init() will implicitly attempt to load a global
-settings file, which is specified in $KTOOLS_SETTINGS, but will default to
-$HOME/.ktools/.settings if that isn't set.
+Note: the defaults of init() will implicitly attempt to load a global settings
+file, which is specified in $KTOOLS_SETTINGS, but will default to
+$HOME/.ktools_settings if that isn't set.
+
+Note: several of the default values below include special looking values like
+"@basedir".  These are not processed by the ktools_settings system; they must
+be resolved by the application using the settings.
 
 '''
 
@@ -39,7 +43,7 @@ STR_LIST_SEP = ';'
 s = None             # singleton built by init(), put here for easy reference by callers (so they don't need a singleton in their namespace)
 TEST_MODE = False    # optionally set by init(), allows for mode-dependent defaults; see _mode() below.
 
-KTOOLS_GLOBAL_SETTINGS = os.environ.get('KTOOLS_SETTINGS', '${HOME}/.ktools.settings')
+KTOOLS_GLOBAL_SETTINGS = os.environ.get('KTOOLS_SETTINGS', os.path.expanduser('~/.ktools.settings'))
 
 
 # ---------- groupings of independently selectable Settings
@@ -52,7 +56,9 @@ GROUPS = [
 
     S.SettingsGroup('pylib runtime', 'run-time controls for most of ktools/pylib', S.Settings(add_Settings=[
         S.Setting('keymaster_host',                                                      doc='{host}:{port} for the keymaster instance to use when retrieving keys'),
-        S.Setting('varz_prom',   default='0',                                            doc='if not "0", varz will auto-generate Prometheus streams for all varz data.  Requires the Prometheus libraries be installed.'),
+        
+        # Note: the setting to control varz Prometheus has been left in the env variable $KTOOLS_VARZ_PROM
+        # (because varz.py and webserver_base.py are lower-level than the ../tools/ktools_settings.py system)
     ])),
 
     S.SettingsGroup('q', 'settings for q.py', S.Settings(add_Settings=[
@@ -87,6 +93,8 @@ GROUPS = [
 
     S.SettingsGroup('container building', 'settings for building containers', S.Settings(add_Settings=[
         S.Setting('build_params',                                                        doc='a list of ";" separated params to send to the "${DOCKER_EXEC} build" command when building images'),
+        S.Setting('build_push_opts', default='--tls-verify=false',                       doc='extra params to use when pushing a build to a repo'),
+        S.Setting('build_push_to',   default='localhost:5000',                           doc='default repo to push to'),
     ])),
 
     S.SettingsGroup('d-run', 'settings for d-run.py', S.Settings(add_Settings=[
@@ -122,14 +130,16 @@ GROUPS = [
 # ---------- API
 
 def init(selected_groups=None, files_to_load=[], argparse_instance=None,
-         flag_aliases={}, debug=False, test_mode=None):
+         flag_aliases={}, global_settings_filename=KTOOLS_GLOBAL_SETTINGS,
+         debug=False, test_mode=None):
     global s, TEST_MODE
+    
+    if selected_groups is None: selected_groups = [i.name for i in GROUPS]
+    if isinstance(files_to_load, str): files_to_load = [files_to_load]
     if test_mode is not None: TEST_MODE = test_mode
 
-    if selected_groups is None: selected_groups = [i.name for i in GROUPS]
-
-    if KTOOLS_GLOBAL_SETTINGS and os.path.exists(KTOOLS_GLOBAL_SETTINGS):
-        files_to_load.insert(0, KTOOLS_GLOBAL_SETTINGS)
+    if global_settings_filename and os.path.exists(global_settings_filename) and not global_settings_filename in files_to_load:
+        files_to_load.insert(0, global_settings_filename)
 
     # Enable flags for each group (with no prefix).
     for group in GROUPS: group.settings.flag_prefix = ''
@@ -151,9 +161,19 @@ def add_flag_aliases(settings_instance, dict_name_to_alias):
 
 
 # convenience methods for callers
+# includes lazy call to init() if needed (loads just the default and global settings)
 
-def get(name): return s.get(name)
-def get_dict(): return s.get_dict()
+def get(name):
+    if not s: init()
+    return s.get(name)
+
+def get_bool(name):
+    if not s: init()
+    return s.get_bool(name)
+
+def get_dict():
+    if not s: init()
+    return s.get_dict()
 
 
 # ---------- internal helpers
@@ -167,18 +187,8 @@ def _mode(production_value, test_mode_value):
 def main(argv=[]):
     ap = S.parse_main_args(None)
     args, _ = ap.parse_known_args(argv or sys.argv[1:])
-    all_groups = [grp.name for grp in GROUPS]
-    settings = init(all_groups, [args.settings_filename], ap, debug=args.debug)
-    settings_dict = settings.get_dict()
-
-    q = "'" if args.quotes else ""
-
-    settings = settings_dict.keys() if args.all else args.settings
-    for name in settings:
-        val = settings_dict.get(name)
-        if val is None and not args.none: continue
-        if args.bare: print(val)
-        else: print(f'{name}={q}{val}{q}')
+    settings = init(None, [args.settings_filename], ap, debug=args.debug)
+    S.print_selected_settings(settings, '*' if args.all else args.settings, args)
     return 0
 
 

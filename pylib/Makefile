@@ -6,6 +6,8 @@ TEST_LOG ?= test.log
 LOCAL_SITE_DIR ?= $(shell python3 -m site --user-site)
 SIMPLE_BIN_DIR ?= ~/.local/bin
 
+BUILD_SIMPLE ?= $(shell ktools_settings -b simple)
+
 INSTALL_BASE := $(shell echo $${VIRTUAL_ENV:-$(LOCAL_SITE_DIR)})
 
 CIRCUITPY_DIR ?= /media/$$USER/CIRCUITPY
@@ -20,7 +22,7 @@ include ../etc/Makefile-colors
 # ---------- standard targets
 
 all:
-	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
 
 clean:
 	rm -rf $(TEST_LOG) __pycache__ */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
@@ -30,12 +32,12 @@ comp:
 	$(COMP) -b "$(INSTALL_BASE)" -L 'tools/ktools' circuitpy_sim/*.py home_control/*.py kcore/*.py tools/*.py
 
 install:
-	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
 
 test: $(TEST_LOG)
 
 uninstall:
-	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) uninstall-simple; else $(MAKE) uninstall-wheel; fi
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) uninstall-simple; else $(MAKE) uninstall-wheel; fi
 
 update:
 	$(MAKE) all test install
@@ -121,7 +123,7 @@ uninstall-simple:
 
 install-system:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
-	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-system-simple; else $(MAKE) install-system-wheel; fi
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) install-system-simple; else $(MAKE) install-system-wheel; fi
 
 install-system-simple:
 	SIMPLE_BIN_DIR=/usr/local/bin $(MAKE) install-simple

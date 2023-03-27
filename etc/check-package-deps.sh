@@ -3,6 +3,9 @@
 # Are we looking for "default" or "docker" dependencies?
 dep_set="${1:-default}"
 
+# controls
+BUILD_SIMPLE=$(ktools_settings -b simple)
+
 # List of packages that need to be installed.
 OUT=$(mktemp)
 
