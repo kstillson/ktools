@@ -131,14 +131,14 @@ class Settings:
     def __init__(self, settings_filename=None, add_Settings=[],
                  settings_data_type='auto', env_list_sep=';',
                  flag_prefix=None, include_directive='!include',
-                 replacement_map={}, debug=False):
+                 value_mapper='default', debug=False):
         # store our controls
         self.settings_filename = settings_filename
         self.settings_data_type = settings_data_type
         self.env_list_sep = env_list_sep
         self.flag_prefix = flag_prefix
         self.include_directive = include_directive
-        self.replacement_map = replacement_map
+        self.value_mapper = self.default_value_mapper if value_mapper == 'default' else value_mapper
         self.debug = debug
 
         # init internal caches
@@ -157,7 +157,8 @@ class Settings:
     # ----- add settings this instance is to control
 
     def add_setting(self, name, *args, **kwargs):
-        if name in self._settings_dict: return False
+        if name in self._settings_dict and not 'how' in kwargs:
+            kwargs['how'] = self._settings_dict[name].how
         self._settings_dict[name] = Setting(name, *args, **kwargs)
 
     def add_Setting(self, instance_of_Setting):
@@ -181,8 +182,9 @@ class Settings:
     def add_simple_settings(self, iter_of_setting_names):
         for name in iter_of_setting_names: self.add_setting(name)
 
-    def add_settings_from_settings_file_cache(self, source):
-        for name, val in self._settings_file_value_cache.items():
+    def add_settings_from_value_dict(self, new_data_dict, source):
+        self._settings_file_value_cache.update(new_data_dict)
+        for name, val in new_data_dict.items():
             if not name in self._settings_dict:
                 self.add_setting(name)
                 self._settings_dict[name].how = source
@@ -191,9 +193,8 @@ class Settings:
     # ----- tweak existing settings
     #       In-case you want to change things imported as simple settings.
 
-    def set_replacement_map(self, replacement_map):
-        '''Mostly for things like mapping "@basedir" to actual base directory values.'''
-        self.replacement_map = replacement_map
+    def set_value_mapper(self, new_mapper):
+        self.value_mapper = new_mapper
 
     def tweak_setting(self, name, attr_name, newval):
         setting = self._settings_dict.get(name)
@@ -266,19 +267,28 @@ class Settings:
 
         answer, how = self._resolve(setting)
 
-        if self.replacement_map:
-            if isinstance(answer, str):
-                replacement = self.replacement_map.get(answer, False)
-                if replacement is not False and replacement != answer:
-                    how += f' (and replacement_map mapped from original value of "{answer})"'
-                    answer = replacement
+        # Check integration with special_arg_resolver (file and keymaster integration)
+        resolve_special = C.special_arg_resolver(answer, setting.name, setting.default_env_value)
+        if resolve_special != answer:
+            how += f'; after arg resolved for: {answer}'
+            answer = resolve_special
+        if answer == r'\-': answer = '-'  # undo escaping used to precent special_arg_resolver for intended value of "-"
+
+        # Check for value mapper changes.
+        if self.value_mapper:
+            mapped_answer = self.value_mapper(answer, setting, settings=self, fail_value=None)
+            if mapped_answer != answer:
+                how += f'; after value mapper called for: {answer}'
+                answer = mapped_answer
 
         if self.debug:
             print(f'resolved and cached setting "{name}" \t to \t "{answer}" \t via {how}', file=sys.stderr)
 
         if not setting.disable_cache:
             setting.cached_value, setting.how = answer, how
+
         return answer
+
 
     def __getitem__(self, name): return self.get(name)
 
@@ -322,6 +332,12 @@ class Settings:
 
         filename = filename.replace('$HOME', os.environ['HOME']).replace('${HOME}', os.environ['HOME'])
 
+        # Set special implicit settings with filename and basedir.
+        # Note that if multiple settings files are processed, this only refers to the last processed file.
+        tmp = {'_settings_filename': filename,
+               '_settings_basedir': os.path.dirname(filename) }
+        self.add_settings_from_value_dict(tmp, 'set by parse_settings_file()')
+
         if not data_type: data_type = self.settings_data_type
         else: self.settings_data_type = data_type
         if data_type == 'auto':
@@ -340,7 +356,7 @@ class Settings:
 
         if self.include_directive in data: data = self._handle_includes(data)
 
-        if not data: return data
+        if not data: return new_settings
 
         if data_type in ('yaml', 'settings'):
             new_settings.update(yaml.safe_load(data))
@@ -359,9 +375,9 @@ class Settings:
 
         if self.debug: print(f'loaded {len(new_settings)} settings from {data_type} source {source}: {new_settings}', file=sys.stderr)
 
-        self._settings_file_value_cache.update(new_settings)
-        self.add_settings_from_settings_file_cache(source)
+        self.add_settings_from_value_dict(new_settings, source)
         return new_settings
+
 
     # ----- other state maintenance
 
@@ -373,19 +389,6 @@ class Settings:
     #       (done here rather than in Setting, as need access to the various caches)
 
     def _resolve(self, setting):
-        answer, how = self._search_sources_for_setting(setting)
-
-        # Check integration with special_arg_resolver (file and keymaster integration)
-        resolve_special = C.special_arg_resolver(answer, setting.name, setting.default_env_value)
-        if resolve_special != answer:
-            how += f'; after arg resolved for: {answer}'
-            answer = resolve_special
-        if answer == r'\-': answer = '-'  # undo escaping used to precent special_arg_resolver for intended value of "-"
-
-        return answer, how
-
-
-    def _search_sources_for_setting(self, setting):
         # try override environment variable
         val = self._get_env_value(setting.override_env_name, setting.name, self.env_list_sep)
         if not val is None: return val, f'override environment variable ${setting.override_env_name}'
@@ -413,6 +416,25 @@ class Settings:
         if callable(setting.default): return setting.default(), f'default value function {setting.default.__name__}'
         if setting.default: return str(setting.default), 'default value converted to string'
         return None, 'no value or default value provided'
+
+    def default_value_mapper(self, value, setting=None, settings=None, fail_value=None):
+        if not value or not isinstance(value, str): return value
+        if not settings: settings = self
+
+        # Check for one setting that refers to another one.
+        pos = value.find('%{')
+        if pos >= 0:
+            pos2 = value.find('}', pos)
+            name = value[pos+2:pos2]
+            new_setting = settings.get_setting(name)
+            if not new_setting:
+                if fail_value: return fail_value
+                else: raise ValueError(f'setting "{setting.name}" referred to setting "{name}", but that setting does not exist, and no value-upon-fail provided.')
+            new_value = settings.get(name) or ''
+            value = value[0:pos] + new_value + value[pos2+1:]
+
+        return value
+
 
     # ----- internal naming helpers
 

@@ -10,6 +10,8 @@ import kcore.uncommon as UC
 # ---------- infrastructure
 
 ENV = None
+
+@pytest.fixture
 def reset_env():
     global ENV
     if not ENV:
@@ -21,8 +23,7 @@ def reset_env():
 
 # ---------- tests
 
-def test_simple_yaml_only():
-    reset_env()
+def test_simple_yaml_only(reset_env):
     os.environ['e1'] = 'e1val-env9'
 
     s = S.Settings('testdata/settings1.yaml')
@@ -38,7 +39,7 @@ def test_simple_yaml_only():
     assert s['missing'] is None
 
 
-def test_simple_env_only():
+def test_simple_env_only(reset_env):
     s = S.Settings(debug=True)
     s.add_setting('e1', default_env_value='e1missing')
 
@@ -51,7 +52,7 @@ def test_simple_env_only():
     assert parse_results['f'].startswith('file:')
 
 
-def test_simple_dict_file_only():
+def test_simple_dict_file_only(reset_env):
     s = S.Settings('testdata/settings3.dict')
     s.get_setting('e1').default_env_value = 'e1missing2'
     assert s['a'] == 'val-ad'
@@ -64,8 +65,7 @@ def test_simple_dict_file_only():
     assert s['n'] == 125
 
 
-def test_yaml_plus_environment():
-    reset_env()
+def test_yaml_plus_environment(reset_env):
     os.environ['e1'] = 'e1val-env'
     os.environ['e2'] = 'e2val-env'
     os.environ['q1'] = 'q1val-env'
@@ -114,8 +114,7 @@ def test_yaml_plus_environment():
     assert settings._settings_file_value_cache.get('extra') == 'mostly harmless'
 
 
-def test_env_values_only_when_requested():
-    reset_env()
+def test_env_values_only_when_requested(reset_env):
     os.environ['q1'] = 'q1val-x'
     os.environ['eo_q1'] = 'q1val-xx'
 
@@ -136,8 +135,7 @@ def test_env_values_only_when_requested():
     assert settings4['q1'] == 'q1val-x'
 
 
-def test_including_flags_in_the_mix():
-    reset_env()
+def test_including_flags_in_the_mix(reset_env):
     settings = S.Settings('testdata/settings2.env', flag_prefix="f_", debug=True)
     settings.add_simple_settings(['a', 'c', 'd', 'l', 'e1', 'e2', 'ex', 'f', 'n', 'q1', 'q2', 'q3'])
     settings.tweak_all_settings('override_env_name', 'eo_{name}')
@@ -182,11 +180,14 @@ def test_including_flags_in_the_mix():
     assert settings.get('q1', ignore_cache=True) == 'q1val2'
 
 
-def test_multiple_settings_files():
+def test_multiple_settings_files(reset_env):
     settings = S.Settings('testdata/settings1.yaml', debug=True)
     settings.add_simple_settings(['a', 'd'])
     assert settings['a'] == 'val-a'
     assert settings['d']['k1'] == 'v1'
+
+    assert settings['_settings_filename'] == 'testdata/settings1.yaml'
+    assert settings['_settings_basedir'] == 'testdata'
 
     # Note that we are not asserting ignore_cache=True; parse_settings_file()
     # should invalidate the cache automatically.
@@ -196,7 +197,7 @@ def test_multiple_settings_files():
     assert settings['d']['k1'] == 'v1'     # unchanged (not set in the 2nd file)
 
 
-def test_list_of_Settings():
+def test_list_of_Settings(reset_env):
     settings = S.Settings('testdata/settings3.dict', debug=True)
     settings.add_Settings([
         S.Setting('z1', setting_name='a',       default='d1'),
@@ -208,7 +209,7 @@ def test_list_of_Settings():
     assert settings['z2'] == 'd2'
     assert settings.get('z3') == 125
 
-def test_default_callable():
+def test_default_callable(reset_env):
     settings = S.Settings(debug=True)
     toggle = True
     settings.add_setting('s', disable_cache=True, default=lambda: 'is-true' if toggle else 'is-false')
@@ -216,8 +217,7 @@ def test_default_callable():
     toggle = False
     assert settings['s'] == 'is-false'
 
-def test_env_sep():
-    reset_env()
+def test_env_sep(reset_env):
     os.environ['s'] = 'a;b'
     settings = S.Settings(debug=True)
     settings.add_setting('s', env_name='s')
@@ -229,14 +229,14 @@ def test_env_sep():
     assert settings['s2'] == ['a', 'b']
 
 
-def test_chained_include_directives():
+def test_chained_include_directives(reset_env):
     settings = S.Settings('testdata/settings4.env', debug=True)
     assert settings['a'] == '1'    # from settings4
     assert settings['b'] == '2'    # from settings4
     assert settings['c'] == 5      # from settings5
     assert settings['d'] == 6      # from settings6
 
-def test_settings_file_glob_and_include_dir():
+def test_settings_file_glob_and_include_dir(reset_env):
     settings = S.Settings(['testdata/settings2.env', 'testdata/settings7.e*'], debug=True)
     assert settings['a'] == '9'    # from settings7
     assert settings['b'] is None
@@ -244,8 +244,7 @@ def test_settings_file_glob_and_include_dir():
     assert settings['d'] == 'dval' # from data.d/file2.env
     assert settings['f'].startswith('hello')  # from settings2.env
 
-def test_typed_settings():
-    reset_env()
+def test_typed_settings(reset_env):
     settings = S.Settings('testdata/settings2.env', debug=True)
 
     # bool
@@ -268,8 +267,23 @@ def test_typed_settings():
     assert settings.get_int('e1', -1, True) == -1
 
 
-def test_cli():
-    reset_env()
+def test_one_setting_inlines_another(reset_env):
+    settings = S.Settings(debug=True)
+    settings.add_Settings([
+        S.Setting('a', default='aval'),
+        S.Setting('b', default='b1-%{a}-b2'),
+    ])
+    assert settings['b'] == 'b1-aval-b2'
+
+
+def test_custom_mapper(reset_env):
+    custom_mapper= lambda value, setting, settings, fail_value: value.replace('a', 'x')
+    settings = S.Settings(value_mapper=custom_mapper, debug=True)
+    settings.add_setting('a', default='123abcaa9')
+    assert settings['a'] == '123xbcxx9'
+
+
+def test_cli(reset_env):
     os.environ['e1e'] = 'e1e-e'
     os.environ['e2e'] = 'e2e-e'
 
@@ -300,3 +314,4 @@ def test_cli():
         assert ret == 0
         assert cap.out == 'val-ae'
         assert cap.err == ''
+
