@@ -4,16 +4,8 @@ autostart: 5
 ports:
   - 3333:8080
   
-mount_logs:
-  - var_log_hc: /var/log/hc
-
-mount_persistent_test_ro:
-  - /dev/log: /dev/log
-
-test_env: "TEST=1"
-
-
-
 mount_rw:
   - var_log_hc: /var/log/hc
   - /dev/log: /dev/log
+
+test_env: "TEST=1"

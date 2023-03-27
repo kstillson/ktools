@@ -18,10 +18,8 @@ extra_docker:
 extra_init: "interactive"
 foreground: 1
 
-mount_logs:
+mount_rw:
   - var_log: /var/log
-
-mount_persistent:
   - /home/ken/share/encfs/default: /root/gdrive
   - /rw/mnt/data1/photos-backup: /root/photos-backup
   - /rw/mnt/rsnap/echo-back: /root/echo-back

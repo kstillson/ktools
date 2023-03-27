@@ -12,9 +12,6 @@ mount_devices:
   - /dev/ttyACM*
   - /dev/ttyUSB*
 
-mount_logs:
-  - var_log: /var/log
-
 mount_rw:
   - var_log: /var/log
 

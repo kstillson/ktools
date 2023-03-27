@@ -1,14 +1,6 @@
 
 extra_init: ["-v", "test"]
 
-mount_logs:
-  - var_log: /var/log
-
-mount_persistent:
-  - /rw/mnt/rsnap/echo-back: /root/echo-back
-
-# ----
-
 mount_rw:
   - /rw/mnt/rsnap/echo-back: /root/echo-back
 

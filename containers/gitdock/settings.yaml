@@ -6,9 +6,6 @@ ports:
 
 debug_extra_init: -d
 
-mount_persistent_test_ro:
-  - home: /home
-
 mount_ro:
   - authkeys: /etc/ssh/authkeys
   - hostkeys: /etc/ssh/hostkeys

@@ -6,7 +6,5 @@ extra_docker: -ti
 test_cmd: "sleep 5"
 test_extra_docker: ""
 
-# ----
-
 fg: true
 test_fg: false

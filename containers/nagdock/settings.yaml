@@ -1,18 +1,8 @@
 
 autostart: 5
 
-mount_logs:
-  - var_log_nagios: /var/log/nagios
-
-mount_persistent_test_copy_tree:
-  - var_nagios: /var/nagios
-
-# -----
-
 test_env: "TEST=1"
 test_ports: ['1234:1234']
-
-# ----
 
 mount_rw:
   - var_log_nagios: /var/log/nagios

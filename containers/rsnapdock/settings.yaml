@@ -4,15 +4,7 @@ extra_docker: "--userns=host"
 
 log: j
 
-mount_logs:
-  - var_log: /var/log
-
-mount_persistent_test_copy:
-  - /rw/mnt/rsnap: /root/dest
-
 test_extra_init: "test"
-
-# ----
 
 mount_rw:
   - var_log: /var/log

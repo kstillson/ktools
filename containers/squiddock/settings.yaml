@@ -4,10 +4,6 @@ autostart: 5
 ports:
   - 3128:3128
 
-mount_persistent_test_copy_tree:
-  - var_log_squid: /var/log/squid
-  - var_cache_squid: /var/cache/squid
-
 mount_rw:
   - var_log_squid: /var/log/squid
   - var_cache_squid: /var/cache/squid

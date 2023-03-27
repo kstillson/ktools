@@ -7,13 +7,6 @@ ports:
 # Log is too verbose to send to syslog.
 log: j
 
-mount_persistent_test_copy_tree:
-  - var_log: /var/log
-  - var_spool: /var/spool
-  - var_mail: /var/mail
-
-# ----
-
 mount_rw:
   - var/log:   /var/log
   - var/spool: /var/spool

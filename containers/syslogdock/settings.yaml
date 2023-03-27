@@ -6,14 +6,8 @@ autostart: 5
 # Can't use default syslog driver, as we would miss our own failures.
 log: journald
 
-mount_logs:
+mount_rw:
   - /rw/log: /var/log
-
-# -----
 
 test_ports: ['1514:1514']
 
-# ----
-
-mount_rw:
-  - /rw/log: /var/log

@@ -12,17 +12,7 @@ mount_ro:
   - var_www: /var/www
   - /rw/dv/nagdock/var_nagios: /var/nagios
 
-mount_logs:
-  - var_log_apache2: /var/log/apache2
-
-mount_persistent:
-  - /rw/dv/nagdock/var_nagios/rw: /var/nagios/rw
-
-# -----
-
 test_ports: ['8080:8080', '8443:8443']
-
-# ----
 
 mount_rw:
   - var_log_apache2: /var/log/apache2
