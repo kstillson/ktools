@@ -11,4 +11,4 @@ mount_ro:
   - /rw/dv: /root/dv
   - /rw/dv/dnsdock/var_log_dnsmasq: /root/dnsmasq
   - /home/ken/share/rcam: /root/rcam
-  - /rw/dv/eximdock/var_spool/exim/input: /root/exim
+  - /rw/dv/eximdock/var/spool/exim/input: /root/exim
