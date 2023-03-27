@@ -287,28 +287,28 @@ def test_cli(reset_env):
     os.environ['e1e'] = 'e1e-e'
     os.environ['e2e'] = 'e2e-e'
 
-    argv = ['--settings_filename', 'testdata/settings2.env', 'a']
+    argv = ['--settings', 'testdata/settings2.env', 'a']
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0
         assert cap.out == 'a=val-ae'
         assert cap.err == ''
 
-    argv = ['--settings_filename', 'testdata/settings2.env', '--quotes', 'a', 'c', 'e2']
+    argv = ['--settings', 'testdata/settings2.env', '--quotes', 'a', 'c', 'e2']
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0
         assert cap.out == 'a="val-ae"\nc="321e"\ne2="e2e-e"'
         assert cap.err == ''
 
-    argv = ['--settings_filename', 'testdata/settings2.env', '--all']
+    argv = ['--settings', 'testdata/settings2.env', '--all']
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0
         assert 'f=hello world' in cap.out
         assert '=None' not in cap.out
 
-    argv = ['--bare', '--settings_filename', 'testdata/settings2.env', 'a']
+    argv = ['--bare', '--settings', 'testdata/settings2.env', 'a']
     with UC.Capture() as cap:
         ret = S.main(argv)
         assert ret == 0

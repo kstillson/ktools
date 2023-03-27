@@ -35,24 +35,6 @@ script (which is run automatically by make commands run explicitly inside the
   as small as possible (no cached apks)
 
 
-## Docker controls: launching containers
-
-These affect how containers are launched by container-infrastructure/d-run.sh
-
-- KTOOLS_DRUN_DNS: If set, this becomes the default value for the setting
-  'dns' for pylib/tools/ktools_settings.py.  This should be the IP address of
-  the dns server to use when launching or testing containers.  If not set, the
-  default is '', which leaves dns server determination up to the container
-  manager.  Either a container-specific or the global settings file will
-  override this environment varaiable.
-
-- KTOOLS_DRUN_EXTRA: If set, this becomes the default value for the setting
-  'ktools_drun_extra' for pylib/tools/ktools_settings.py.  This is basically a
-  list of ";"-separated additional params to pass to the container manager
-  during a launch.  Either a container-specific or the global settings file
-  will override this environment varaiable.
-
-
 ## Docker controls: testing containers
 
 - KTOOLS_DRUN_TEST_PROD: when tests are requested (e.g "d.sh test" or "make

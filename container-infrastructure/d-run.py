@@ -524,7 +524,7 @@ def parse_args(argv=sys.argv[1:]):
     g2 = ap.add_argument_group('Meta settings', 'Flags that effect how all the other settings are set.')
     g2.add_argument('--cd',            '-N', help='The directory within which to find --settings (if not specified in --settings).  Can be relative to the global setting "d_src_dir" or "d_src_dir2", meaning that this can just be the basename of the container you want to launch (hence the alias -N for name)')
     g2.add_argument('--settings',      '-s', default='settings.yaml', help='file with container specific settings')
-    g2.add_argument('--host_level_settings', '-H', default='${HOME}/.ktools.settings', help='file with host-level overall settings')
+    g2.add_argument('--host_settings', '-H', default='${HOME}/.ktools.settings', help='file with host-level overall settings')
     g2.add_argument('--test-mode',     '-T', action='store_true', help='Launch with alternate settings, so version under test does not interfere with production version.')
 
     g3 = ap.add_argument_group('shortcuts')
@@ -541,8 +541,8 @@ def parse_args(argv=sys.argv[1:]):
         'cmd':   '-c',
         'shell': '-S',
     }
-    s = KS.init(['containers', 'container launching', 'd-run'],
-                C.special_arg_resolver(args.host_level_settings),
+    s = KS.init(selected_groups=['containers', 'container launching', 'd-run'],
+                files_to_load=[args.host_settings, args.settings],
                 argparse_instance=ap, flag_aliases=flag_aliases,
                 debug=args.debug, test_mode=args.test_mode)
 
@@ -560,10 +560,6 @@ def parse_args(argv=sys.argv[1:]):
                               os.path.join(s['d_src_dir2'], args.cd)])
         if found_dir: os.chdir(found_dir)
         else: err(f'warning- unable to find directory for --cd: {args.cd}')
-
-    settings_filename = os.path.abspath(args.settings)
-    basedir = os.path.basename(os.path.dirname(settings_filename))
-    s.set_replacement_map({'@basedir': basedir, 'test-@basedir': 'test-' + basedir})
 
     try:
         s.parse_settings_file(args.settings)

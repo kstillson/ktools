@@ -28,7 +28,7 @@ def test_simple_init():
 
 
 def test_cli():
-    argv = ['--bare', '--settings_filename', 'testdata/ktools_settings1.yaml', 'extra']
+    argv = ['--bare', '--settings', 'testdata/ktools_settings1.yaml', '--host_settings', '', 'extra']
     with UC.Capture() as cap:
         ret = KS.main(argv)
         assert ret == 0

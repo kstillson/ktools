@@ -23,10 +23,6 @@ Note: the defaults of init() will implicitly attempt to load a global settings
 file, which is specified in $KTOOLS_SETTINGS, but will default to
 $HOME/.ktools_settings if that isn't set.
 
-Note: several of the default values below include special looking values like
-"@basedir".  These are not processed by the ktools_settings system; they must
-be resolved by the application using the settings.
-
 '''
 
 import os, sys
@@ -83,7 +79,7 @@ GROUPS = [
     ])),
 
     S.SettingsGroup('container launching', 'settings common to selecting containers to launch', S.Settings(add_Settings=[
-        S.Setting('image',       default='@basedir',                                     doc='name of the image to build/launch'),
+        S.Setting('image',       default='%{name}',                                      doc='name of the image to build/launch'),
         S.Setting('tag',         default=lambda: _mode('live', 'latest'),                doc='tagged or other version indicator of image to build or launch'),
     ])),
 
@@ -99,18 +95,20 @@ GROUPS = [
 
     S.SettingsGroup('d-run', 'settings for d-run.py', S.Settings(add_Settings=[
         S.Setting('cmd',                                                                 doc='use this as the command to run as init in the container, rather than whatever is listed in the Dockerfile'),
-        S.Setting('dns',         default='$KTOOLS_DRUN_DNS', default_env_value='',       doc='IP address of DNS server inside container'),
+        S.Setting('dns',                                                                 doc='IP address of DNS server inside container'),
         S.Setting('env',                                                                 doc='list of ";" separated name=value pairs to add to the container\'s environment'),
-        S.Setting('extra_docker',default='$KTOOLS_DRUN_EXTRA', default_env_value='',     doc='list of additional command line arguments to send to the container launch CLI'),
+        S.Setting('extra_docker',                                                        doc='list of additional command line arguments to send to the container launch CLI'),
         S.Setting('extra_init',                                                          doc='list of additional arguments to pass to the init command within the container'),
         S.Setting('fg',          default=lambda: _mode('0', '1'), flag_type=bool,        doc='if flag set or setting is "1", run the container in foreground with interactive/pty settings'),
-        S.Setting('hostname',    default=lambda: _mode('@basedir', 'test-@basedir'),     doc='host name to assign within the container'),
+        S.Setting('hostname',    default='%{name}',                                      doc='host name to assign within the container'),
         S.Setting('ip',          default=lambda: _mode(r'\-', '0'),                      doc='IP address to assign container.  Use "-" for dns lookup of container\'s hostname.  Use "0" (or dns failure) for auto assignment'),
         S.Setting('ipv6_ports',  default='0', flag_type=bool,                            doc='if flag set or setting is "1", enable IPv6 port mappings.'),
         S.Setting('log',         default='none',                                         doc='log driver for stdout/stderr from the container.  p/passthrough, j/journald, J/json, s/syslog[:url], n/none'),
         S.Setting('mount_ro',                                                            doc='list of ";" separated src:dest pairs to mount read-only inside the container'),
         S.Setting('mount_rw',                                                            doc='list of ";" separated src:dest pairs to mount read+write inside the container'),
-        S.Setting('name',        default=lambda: _mode('@basedir', 'test-@basedir'),     doc='name to assign to the container (for container management)'),
+        S.Setting('name',                                                                doc='name to assign to the container (for container management)',
+                  default=lambda: _mode('%{_settings_basedir}', 'test-%{_settings_basedir}'),
+                  default_env_value='?'),    # in-case something like settings.get_dict() is called, but we haven't successfully loaded a settings file yet.
         S.Setting('no_rm',       default='0', flag_type=bool,                            doc='do not autoremove container remanants upon termination'),
         S.Setting('network',                                                             doc='container network to use'),
         S.Setting('ports',                                                               doc='list of ";" separated {host}:{container} ports to map'),
@@ -137,9 +135,6 @@ def init(selected_groups=None, files_to_load=[], argparse_instance=None,
     if selected_groups is None: selected_groups = [i.name for i in GROUPS]
     if isinstance(files_to_load, str): files_to_load = [files_to_load]
     if test_mode is not None: TEST_MODE = test_mode
-
-    if global_settings_filename and os.path.exists(global_settings_filename) and not global_settings_filename in files_to_load:
-        files_to_load.insert(0, global_settings_filename)
 
     # Enable flags for each group (with no prefix).
     for group in GROUPS: group.settings.flag_prefix = ''
@@ -187,8 +182,10 @@ def _mode(production_value, test_mode_value):
 def main(argv=[]):
     ap = S.parse_main_args(None)
     args, _ = ap.parse_known_args(argv or sys.argv[1:])
-    settings = init(None, [args.settings_filename], ap, debug=args.debug)
-    S.print_selected_settings(settings, '*' if args.all else args.settings, args)
+    settings = init(selected_groups=None,
+                    files_to_load=[args.host_settings, args.settings],
+                    argparse_instance=ap, debug=args.debug)
+    S.print_selected_settings(settings, '*' if args.all else args.settings_list, args)
     return 0
 
 

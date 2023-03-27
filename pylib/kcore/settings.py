@@ -115,7 +115,8 @@ class Setting:
     default: ... = None             # default value to use if no other source provides one.  can be a string or a callable that returns a string.
 
     # other controls
-    default_env_value: str = None   # if value contains $X but $X not defined, return this.  If None, raise a ValueError.
+    default_env_value: str = None   # if value contains $X but $X not defined, or value refers to setting %{x},
+                                    # but setting "x" is not defined, return this.  If None, raise a ValueError.
 
     # internal cache for already-resolved setting values
     disable_cache: bool = False
@@ -133,7 +134,7 @@ class Settings:
                  flag_prefix=None, include_directive='!include',
                  value_mapper='default', debug=False):
         # store our controls
-        self.settings_filename = settings_filename
+        self.settings_filename = settings_filename   # string or list of strings
         self.settings_data_type = settings_data_type
         self.env_list_sep = env_list_sep
         self.flag_prefix = flag_prefix
@@ -276,7 +277,7 @@ class Settings:
 
         # Check for value mapper changes.
         if self.value_mapper:
-            mapped_answer = self.value_mapper(answer, setting, settings=self, fail_value=None)
+            mapped_answer = self.value_mapper(answer, setting, settings=self, fail_value=setting.default_env_value)
             if mapped_answer != answer:
                 how += f'; after value mapper called for: {answer}'
                 answer = mapped_answer
@@ -315,7 +316,9 @@ class Settings:
         # Handle special types of incoming filenames (lists and globs)
         if isinstance(filename, list):
             cumulative = {}
-            for f in filename: cumulative.update(self.parse_settings_file(f))
+            for f in filename:
+                new_settings = self.parse_settings_file(f)
+                if new_settings: cumulative.update(new_settings)
             return cumulative
 
         elif '*' in filename:
@@ -324,8 +327,6 @@ class Settings:
             return cumulative
 
         # Handle a regular filename
-        if not filename: filename = self.settings_filename
-        else: self.settings_filename = filename
         if not filename:
             if self.debug: print('attempt to parse settings file, but no filename provided', file=sys.stderr)
             return False
@@ -335,18 +336,21 @@ class Settings:
         # Set special implicit settings with filename and basedir.
         # Note that if multiple settings files are processed, this only refers to the last processed file.
         tmp = {'_settings_filename': filename,
-               '_settings_basedir': os.path.dirname(filename) }
+               '_settings_basedir': os.path.basename(os.path.dirname(os.path.abspath(filename))) }
         self.add_settings_from_value_dict(tmp, 'set by parse_settings_file()')
 
         if not data_type: data_type = self.settings_data_type
         else: self.settings_data_type = data_type
         if data_type == 'auto':
-            _, ext = os.path.splitext(self.settings_filename)
+            _, ext = os.path.splitext(filename)
             data_type = ext[1:]  # strip leading "."
         if self.debug: print(f'reading settings file {filename} of type {data_type}', file=sys.stderr)
 
         data = C.read_file(filename)
-        if data is False: raise ValueError(f'unable to read settings file {filename}')
+        if data is False:
+            if self.debug: print(f'unable to read settings file {filename} failed')
+            return False
+
         return self.parse_settings_data(data, data_type, filename)
 
 
@@ -512,53 +516,55 @@ def eval_bool(value):
 # ---------- main
 
 def parse_main_args(argv):
-    default_settings_file = os.path.join(os.environ.get('HOME'), '.ktools.settings')
-
     ap = C.argparse_epilog(description='settings resolver')
     ap.add_argument('--debug',              '-d', action='store_true', help='verbose settings resolution data to stderr')
-    ap.add_argument('--settings_file_type', '-t', default='auto', help='yaml, env, or dict')
-    ap.add_argument('--settings_filename',  '-s', default=default_settings_file, help='name of settings file to parse')
-    ap.add_argument('settings', nargs='*', help='list of settings to resolve')
+    ap.add_argument('--host_settings',      '-H', default='${HOME}/.ktools.settings', help='name of host-level settings file to parse')
+    ap.add_argument('--settings_type',      '-t', default='auto', help='yaml, env, or dict')
+    ap.add_argument('--settings',           '-s', default='settings.yaml', help='name of settings file to parse')
+    ap.add_argument('settings_list', nargs='*', help='list of settings to resolve')
 
     g1 = ap.add_argument_group('print options')
     g1.add_argument('--all',                '-a', action='store_true', help='just parse the settings file and dump its contents, do not attempt to resolve settings from other sources (environment, defaults, etc)')
     g1.add_argument('--bare',               '-b', action='store_true', help='output just the specified settings values, not the form {name}="{value}"')
     g1.add_argument('--cap',                '-c', action='store_true', help='capitalize LHS of the output assignment (useful for shell imports)')
-    g1.add_argument('--how',                '-H', action='store_true', help='include information on the source for each setting value (ignored if --bare)')
+    g1.add_argument('--report',             '-R', action='store_true', help='report on all variables and where their values came from')
     g1.add_argument('--quotes',             '-q', action='store_true', help='add double quotes around RHS of output (useful if feeding into shell assignments / eval)')
 
     g2 = ap.add_argument_group('deprecated options (options have no effect; left here to avoid fatal errors when used)')
     g2.add_argument('--none',               '-n', action='store_true', help='(ignored; will always print settings with None/blank values...')
 
+    # outside callers (e.g. ../tools/ktools_settings.py) can pass argv=None,
+    # and get back the argparse instance rather than the parsed args...
     return ap.parse_args(argv) if argv else ap
 
 
 def print_selected_settings(settings, settings_to_print, args):
+    if args.report: settings_to_print = '*'
     if settings_to_print == '*': settings_to_print = settings.get_dict().keys()
     q = '"' if args.quotes else ""
-    out = ''
     for name in settings_to_print:
         setting = settings.get_setting(name)
         setting_type = setting.flag_type if setting else None
-        how = f'\t{setting.how}' if setting and args.how else ''
+        how = setting.how if setting and args.report else '??'
+
+        # get value and make friendly for printing
         val = settings.get_bool(name) if setting_type == bool else settings.get(name)
         if val is None: val = ''
         elif val is True: val = '1'
         elif val is False: val = '0'
         elif isinstance(val, list): val = ' '.join([str(i) for i in val])
+        if not isinstance(val, str): val = str(val)
+
         if args.cap: name = name.upper()
-        if args.bare: out += f'{val}\n'
-        else: out += f'{name}={q}{val}{q}{how}\n'
-    if args.how:
-        print(C.popener("sort -t'\t' -k2 | column -t -s'\t'", stdin_str=out, shell=True))
-    else:
-        print(out)
+        if args.bare: print(f'{val}')
+        elif args.report: print(f'{name:<20.20} {val:<30.30} {how}')
+        else: print(f'{name}={q}{val}{q}')
 
 
 def main(argv=[]):
     args = parse_main_args(argv or sys.argv[1:])
-    settings = Settings(args.settings_filename, debug=args.debug)
-    print_selected_settings(settings, '*' if args.all else args.settings, args)
+    settings = Settings([args.host_settings, args.settings], debug=args.debug)
+    print_selected_settings(settings, '*' if args.all else args.settings_list, args)
     return 0
 
 

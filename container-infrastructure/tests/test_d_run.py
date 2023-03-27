@@ -22,7 +22,7 @@ def assert_pair(haystack, needle1, needle2):
 def test_settings():
     os.environ['DRUN_tz'] = 'America/ZZZ'
     DRUN.parse_args(['--debug', '-l', '-S',
-                   '--host_level_settings', 'testdata/host-settings.yaml',
+                   '--host_settings', 'testdata/host-settings.yaml',
                    '--settings', 'testdata/settings.yaml'])
 
     assert DRUN.DEBUG
@@ -55,14 +55,14 @@ def test_settings():
 def test_generated_command():
     os.environ['DRUN_tz'] = 'America/ZZZ'
     DRUN.parse_args(['--debug', '--name', 'test123', '-l', '-S',
-                   '--host_level_settings', 'testdata/host-settings.yaml',
+                   '--host_settings', 'testdata/host-settings.yaml',
                    '--settings', 'testdata/settings.yaml'])
 
     cmnd = DRUN.gen_command()
     assert cmnd[0] == '/bin/echo'
     assert cmnd[1] == 'run'
     assert_pair(cmnd, '--name', 'test123')
-    assert_pair(cmnd, '--hostname', 'testdata')
+    assert_pair(cmnd, '--hostname', 'test123')
     assert_pair(cmnd, '--network', 'net2')
     assert '--log-driver=none' in cmnd
     assert_pair(cmnd, '--user', '0')
@@ -73,4 +73,5 @@ def test_generated_command():
     assert_pair(cmnd, '--publish', '0.0.0.0:8080:8081')
     assert_pair(cmnd, '--env', 'TZ=America/ZZZ')
     if os.getuid() == 0: assert_pair(cmnd, '--ip', '1.2.3.4')
-    assert 'repo1-val/testdata:latest' in cmnd
+    import sys
+    assert 'repo1-val/test123:latest' in cmnd
