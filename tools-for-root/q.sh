@@ -605,8 +605,8 @@ function checks_real() {
     /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
     /root/bin/d check-all-up |& expect "docker instances" "all ok"
     /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect_exact "exim queue empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect_exact "exim panic log empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect_exact "exim reject log empty" "0"
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/paniclog |& expect_exact "exim panic log empty" "0"
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/rejectlog |& expect_exact "exim reject log empty" "0"
     cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect_exact "no unencrpted ktools secrets" "0"
     git_check_all |& expect_exact "git dirs with local changes" ""
 }
