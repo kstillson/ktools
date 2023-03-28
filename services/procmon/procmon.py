@@ -34,6 +34,7 @@ simply by emptying or deleting this file.
 WARNING: procmon supports a "/zap" handler that will clear the queue via a
 http GET request, with no particular authentication requirements.  If you're
 not in a trusted environment, you'll want to make sure that's disabled.
+(/zap does send a critical level syslog message, see flag --no-syslog)
 
 procmon is one of the few services I run outsied a Docker container.  It needs
 to be running on the real host in order to have visibility into all the
@@ -441,6 +442,7 @@ def scan_handler(request):
 def zap_handler(request):
   if ARGS.no_zap_handler: return W.Response('zap disabled', status_code=403)
   with open(ARGS.queue, 'w') as f: pass
+  C.log_critical('procmon queue cleared by /zap request')
   return 'zapped'
 
 
@@ -456,6 +458,7 @@ def parse_args(argv):
   parser.add_argument('--nodupchk',        action='store_true', help='skip checking if the same uid (other than root) is used in multiple containers.')
   parser.add_argument('--noro',            action='store_true', help='skip root-read-only check (used for testing)')
   parser.add_argument('--no-scan-handler', action='store_true', help='do not allow use of demand /scan')
+  parser.add_argument('--no-syslog',       action='store_true', help='do not send critical level logs to syslog')
   parser.add_argument('--no-zap-handler',  action='store_true', help='do not allow clearing the alert queue via /zap')
   parser.add_argument('--output',  '-o',   default='/var/procmon/output', help='filename for statistics from last scan')
   parser.add_argument('--port',    '-p',   type=int, default=8080, help='web port to listen on.  0 to disable.')
@@ -469,7 +472,8 @@ def main(argv=[]):
   global ARGS
   ARGS = parse_args(argv or sys.argv[1:])
   C.init_log('procmon', ARGS.logfile,
-             filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER)
+             filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER,
+             filter_level_syslog=C.NEVER if ARGS.no_syslog else C.CRITICAL)
 
   global WL
   WL = UC.load_file_as_module(ARGS.whitelist)
