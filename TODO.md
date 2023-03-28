@@ -4,11 +4,15 @@
   - make for things like services/keymaster/km_helper fail until
     kcore is installed.  breaks the normal make,test,install order.
 
+  - add a warning for "command:" contents in non-test [vols]
+
+# doc bugs to fix
+
+  - and simple user-manual for adding hosts/secrets for using pcrypt/km
+  
   - doc: add section about security from structure and layers rather than trying
     to have bullet-proof code...  Assume code has vulns and things will get popped;
     use structure to make minimize harm and recovery time.
-
-  - add a warning for "command:" contents in non-test [vols]
 
 # new subsystems
 
@@ -30,3 +34,5 @@
 # other general thoughts
 
   - Makefile: add BUILD_SUDO_OK, etc/check-sudo-ok
+  - publish launchpad?
+
