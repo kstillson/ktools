@@ -1,7 +1,7 @@
 
 import context_ci
 
-import os
+import os, sys
 
 # We can't just import d-run.py, as it's got an invalid module name...
 import kcore.uncommon as UC
@@ -73,5 +73,5 @@ def test_generated_command():
     assert_pair(cmnd, '--publish', '0.0.0.0:8080:8081')
     assert_pair(cmnd, '--env', 'TZ=America/ZZZ')
     if os.getuid() == 0: assert_pair(cmnd, '--ip', '1.2.3.4')
-    import sys
-    assert 'repo1-val/test123:latest' in cmnd
+    print(f'{cmnd=}', file=sys.stderr)
+    assert 'repo1-val/testdata:latest' in cmnd

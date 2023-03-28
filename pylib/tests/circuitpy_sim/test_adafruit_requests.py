@@ -25,7 +25,7 @@ adafruit_requests API is sufficiently good as to fool this client program
 # SPDX-License-Identifier: MIT
 
 
-import os, sys
+import os, pytest, sys
 CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
 if not CIRCUITPYTHON: sys.path.insert(0, 'circuitpy_sim')
 
@@ -39,6 +39,7 @@ from adafruit_esp32spi import adafruit_esp32spi
 import adafruit_requests as requests
 
 
+@pytest.mark.timeout(10)
 def test_adafruit_requests_under_circuitpy_sim():
 
     # If you are using a board with pre-defined ESP32 Pins:
@@ -99,4 +100,3 @@ def test_adafruit_requests_under_circuitpy_sim():
     json_resp = response.json()
     assert json_resp["json"]['Date'] == 'July 25, 2019'
     response.close()
-

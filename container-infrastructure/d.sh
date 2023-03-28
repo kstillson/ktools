@@ -179,7 +179,7 @@ function list-autostart-waves() {
 }
 
 function list-autostart() {
-    list-autostart-waves | cut -d' ' -f2
+    list-autostart-waves | cut -f2 | tr -d ' '
 }
 
 function list-buildable() {
