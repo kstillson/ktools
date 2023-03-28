@@ -79,7 +79,7 @@ GROUPS = [
     ])),
 
     S.SettingsGroup('container launching', 'settings common to selecting containers to launch', S.Settings(add_Settings=[
-        S.Setting('image',       default='%{name}',                                      doc='name of the image to build/launch'),
+        S.Setting('image',       default='%{_settings_basedir}',                         doc='name of the image to build/launch'),
         S.Setting('tag',         default=lambda: _mode('live', 'latest'),                doc='tagged or other version indicator of image to build or launch'),
     ])),
 
