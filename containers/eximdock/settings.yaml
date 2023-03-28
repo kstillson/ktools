@@ -4,9 +4,8 @@ autostart: 5
 ports:
   - 25:2525
 
-# Log is too verbose to send to syslog.
-log: j
-test_log: none
+# console output is redundant to exim logs.
+log: none
 
 mount_rw:
   - var/log:   /var/log
