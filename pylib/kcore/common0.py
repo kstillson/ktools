@@ -251,10 +251,15 @@ def log(msg, level=INFO):
             with open(LOG_FILENAME, 'a') as f: f.write(msg + '\n')
     if level >= FILTER_LEVEL_STDOUT: print(msg2)
     if level >= FILTER_LEVEL_STDERR: stderr(msg2)
-    if level >= FILTER_LEVEL_SYSLOG:
-        syslog.syslog(SYSLOG_LEVEL_MAP.get(level, syslog.LOG_INFO), msg2)
-        varz.bump('log-sent-syslog')
+    if level >= FILTER_LEVEL_SYSLOG: log_syslog(msg2, level)
     return True
+
+
+def log_syslog(msg, level=INFO, ident=None, facility=None):
+    if ident or facility: syslog.openlog(ident=ident, facility=facility)
+    syslog.syslog(SYSLOG_LEVEL_MAP.get(level, syslog.LOG_INFO), msg)
+    if ident or facility: syslog.closelog()
+    varz.bump('log-sent-syslog')
 
 
 def clear_log():
@@ -299,7 +304,7 @@ def init_log_tracking(log_title):
 
 
 def log_crit(msg):     return log(msg, level=CRITICAL)
-def log_crit0cal(msg): return log(msg, level=CRITICAL)
+def log_critical(msg): return log(msg, level=CRITICAL)
 def log_alert(msg):    return log(msg, level=CRITICAL)
 def log_error(msg):    return log(msg, level=ERROR)
 def log_warning(msg):  return log(msg, level=WARNING)
