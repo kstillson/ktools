@@ -167,8 +167,14 @@ function list-autostart-waves() {
     for s in $(list-all-settings); do
 	dir=$(dirname $s)
 	name=$(basename $dir)
+        src_dir=$(dirname $dir)
+        if [[ "$src_dir" == "$D_SRC_DIR2" ]]; then
+            src="(src-dir 2)"
+        else
+            src=""
+        fi
 	wave=$(get_autostart_wave $dir)
-	if [[ "$wave" != "" ]]; then echo "$wave $name"; fi
+	if [[ "$wave" != "" ]]; then printf "$wave \t $name \t $src \n"; fi
     done | sort -n
 }
 
