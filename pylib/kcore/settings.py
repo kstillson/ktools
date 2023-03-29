@@ -89,6 +89,28 @@ echo "color=pink" > local.env
 ./test.py -g global.dict -l local.env --color=brown
 OVERRIDE_color=yellow ./test.py -g global.dict -l local.env --color=brown --size=extra-medium
 
+-----
+
+Supported file formats include:
+  - .dict (a serialized Python dictionary)
+  - .env  (a list of name=value pairs, one per line, no quotes)
+  - .yaml
+
+This code can also be executed at the command-line, where it will resolve
+listed settings (or --all) and output their values, by default in a format
+that can be eval'd in bash to set local shell environment variables.  There's
+also a --report function that lists all known settings and explains where/how
+each setting got its resolved value.
+
+See also ../tools/ktools_settings.py.  That's a layer built on-top of this
+library, which defines all the settings used by ktools itself (although with
+their defaults, documentation, alternate sources, etc), and divvies those
+settings into groups- so you can add just a subset of the groups into a
+program's flags.
+
+See ../../container-infrastructure/d-run.py for a fully-fledged example use of
+both this library and ktools_settings.py, as used in real code.
+
 '''
 
 import argparse, glob, os, sys, yaml
