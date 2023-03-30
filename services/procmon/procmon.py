@@ -100,7 +100,6 @@ import kcore.webserver as W
 WEB_HANDLERS = {
   '/':        lambda request: root_handler(request),
   '/healthz': lambda request: healthz_handler(request),
-  '/panic':   lambda request: panic_handler(request),
   '/pstree':  lambda request: pstree_handler(request),
   '/scan':    lambda request: scan_handler(request),
   '/zap':     lambda request: zap_handler(request),
@@ -422,10 +421,6 @@ def healthz_handler(request):
   return f'{summary}\n\n{out}'
 
 
-def panic_handler(request):
-  return C.popener(['/usr/bin/sudo', '/usr/local/bin/panic'])
-
-
 def pstree_handler(request):
   return C.popener(['/bin/ps', 'aux', '--forest'])
 
@@ -493,6 +488,7 @@ def main(argv=[]):
 
   ws = W.WebServer(WEB_HANDLERS, wrap_handlers=not ARGS.debug)
   ws.start(port=ARGS.port)
+  ws.add_handlers(WL.ADDL_HANDLERS)
 
   SCANNER.scan()
   while True:

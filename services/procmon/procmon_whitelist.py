@@ -104,7 +104,7 @@ WHITELIST = [
     WL('nagdock',   'dnagios',     True,  True,  '/usr/sbin/nagios'),
     WL('nddock',    '201',         True,  False, '/usr/sbin/netdata.*'),
     WL('nddock',    'root',        False, False, '/bin/bash'),
-    WL('prometheus','265534',      False, True,  '/bin/prometheus --config.file=/etc/prometheus/prometheus.yml'),    
+    WL('prometheus','265534',      False, True,  '/bin/prometheus --config.file=/etc/prometheus/prometheus.yml'),
     WL('rclonedock','droot',       False, False, '/bin/bash /etc/init'),
     WL('rclonedock','droot',       False, False, '/root/bin/rclone (sync|copy)'),
     WL('rclonedock','droot',       False, False, '/usr/bin/encfs --extpass /usr/local/bin/kmc encfs-default /root/gdrive /root/gdrive-efs'),
@@ -156,3 +156,11 @@ GREYLIST = [
     WL('/',         'root',        True,  False,  'sshd: root@pts/.'),
     WL('git',       'root',        False, False,  'sshd: ken'),
 ]
+
+# You can add custom/additional handlers here.  (Placed here because this file
+# is generally overriden by private.d/procmon_whitelist.py, so this enables
+# private handlers).
+
+ADDL_HANDLERS = {
+    '/example': lambda request: 'hithere!'
+}
