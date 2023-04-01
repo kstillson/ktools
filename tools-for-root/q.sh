@@ -718,7 +718,7 @@ function list_all() {
 }
 
 function list_linux() {
-    echo -n "$Q_LINUX_HOSTS"
+    echo -n "$Q_LINUX_HOSTS "
     list_pis
 }
 

@@ -1,6 +1,9 @@
 
 # bugs to fix
 
+  - settings: OVERRIDE_ doesn't seem to work from shell for ktools_settings;
+    do the examples showing overrides in settings.py actually still work?
+
   - make for things like services/keymaster/km_helper fail until
     kcore is installed.  breaks the normal make,test,install order.
 
