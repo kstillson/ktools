@@ -873,7 +873,7 @@ function main() {
         ps) ps_fixer ;;                                            ## colorized and improved ps output
         sort-skip-header | sort | snh) sort_skip_header ;;         ## sort stdin->stdout but skip 1 header row
         systemd-daemon-reload | sdr | sR)                                    ## systemd daemon refresh
-            runner "systemctl daemon-reload && emit 'reloaded'" ;;
+            runner "systemctl daemon-reload" && emit 'reloaded' ;;
         systemd-down | s0) runner "systemctl stop ${1:-procmon}" ;;          ## stop a specified service (procmon by default)
         systemd-restart | sr) runner "systemctl restart ${1:-procmon}" ;;    ## restart a specified service (procmon by default)
         systemd-status | ss | sq) runner "systemctl status ${1:-procmon}" ;; ## check service status (procmon by default)
