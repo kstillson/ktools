@@ -2,8 +2,6 @@
 # Need to disable user-ns mapping so target id's (which are set inside the container) get their correct values.  Otherwise chown's fail and everything ends up owned by root.  Tried using a usermap, but too hard to maintain.
 extra_docker: "--userns=host"
 
-log: j
-
 test_extra_init: "test"
 
 mount_rw:
