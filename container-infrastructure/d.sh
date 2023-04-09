@@ -15,6 +15,10 @@ spec="$1"
 shift || true
 extra_flags="$@"
 
+# Make sure /root/bin is on the path (needed by things like cron and logrotate
+# that don't use .bashrc or .profile).
+if [[ "$PATH" != "/root/bin"* ]]; then PATH="/root/bin:${PATH}"; fi
+
 # Load settings
 eval $(ktools_settings -cn docker_exec d_src_dir d_src_dir2 timeout)
 TIMEOUT=${TIMEOUT:-60}
