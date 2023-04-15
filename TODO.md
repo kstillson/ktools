@@ -38,4 +38,4 @@
 
   - Makefile: add BUILD_SUDO_OK, etc/check-sudo-ok
   - publish launchpad?
-
+  - publish browser launchers?
