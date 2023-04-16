@@ -18,6 +18,5 @@ chmod u-s /usr/sbin/exim
 mv -f /etc/exim/private.d/* /etc/exim || true
 
 # Fix perms
-chgrp -R exim /etc/exim
+chgrp -R exim /etc/exim /etc/email-addresses
 chmod -R g+rX /etc/exim
-

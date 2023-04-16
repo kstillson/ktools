@@ -1,6 +1,4 @@
 
-##autostart: 5
-
 ports:
   - 8084:8080
 

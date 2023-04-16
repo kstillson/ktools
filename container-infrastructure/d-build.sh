@@ -95,11 +95,12 @@ function setlive() {
 }
 
 function try_dir() {
-    dir="$1"
+    d="$1"
+    dir="."
     if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
-    dir="$D_SRC_DIR/$dir"
+    dir="$D_SRC_DIR/$d"
     if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
-    dir="$D_SRC_DIR2/$dir"
+    dir="$D_SRC_DIR2/$d"
     if [[ -f "$dir/Dockerfile" ]]; then cd "$dir"; return; fi
     echo "unable to find $1/Dockerfile.  Run from directory with Dockerfile or use --cd flag."
     exit -2
@@ -137,7 +138,7 @@ function main() {
             --test | -t) run_tests=1 ;;                   ## run mode: build and run tests, then exit
 
             --build_params | -b) build_params="$1" ;;     ## params for "docker build" (defaults to $BUILD_PARAMS)
-            --cd) cd="$1"; shift ;;                       ## location of Dockerfile to build (can be relative to $D_SRC_DIR)
+            --cd) cd="$2"; shift ;;                       ## location of Dockerfile to build (can be relative to $D_SRC_DIR)
             --name) name="$1"; shift ;;                   ## output image name; defaults to basename of directory
             --repo) repo="$1"; shift ;;                   ## repo to build image into; defaults to $REPO1
             --tag) tag="$1"; shift ;;                     ## tag to set after build.  defaults to ":latest"

@@ -104,7 +104,6 @@ import argparse, copy, hashlib, getpass, json, os, socket, subprocess, sys, time
 from dataclasses import dataclass
 
 import kcore.persister as P
-import kcore.uncommon as UC
 
 PY_VER = sys.version_info[0]
 
