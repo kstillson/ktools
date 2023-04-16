@@ -60,7 +60,7 @@ def count_by_status(by_status):
 
 
 def scan(status_file):
-    '''returns a dict from StatusEnum to lists of names of items with that status.'''
+    '''returns a dict from StatusEnum to lists of Status instances with that status.'''
     by_status = {}
     for i in StatusEnum: by_status[i] = []
 
@@ -157,7 +157,7 @@ def generate_color(by_status):
 def gen_ack_for_one_item(host, service):
     now = get_now()
     if not service:
-      return f'[{now}] ACKNOWLEDGE_HOST_PROBLEM;{host};1;1;1;1;Admin;via nag cmd\n'
+      return f'[{now}] ACKNOWLEDGE_HOST_PROBLEM;{host};2;1;0;Admin;via nag cmd\n'
     else:
       return f'[{now}] ACKNOWLEDGE_SVC_PROBLEM;{host};{service};1;1;1;Admin;via nag cmd\n'
 
@@ -199,6 +199,7 @@ def parse_args():
     ap.add_argument('--color',          action='store_true', help='Output just the color of the overall status block (suitable for a cgi-bin call)')
     ap.add_argument('--html',           action='store_true', help='Output html format (suitable for a cgi-bin call)')
     ap.add_argument('--include_test', '-T', action='store_true', help='Do not filter services contianing the word "test"')
+    ap.add_argument('--just', '-j',     default=None, help='process only service(s) matching this string')
     ap.add_argument('--retry_all', '-R', action='store_true', help='Equivalent to --retry --all')
     ap.add_argument('--retry', '-r',    action='store_true', help='Queue all non-ok services for a retry')
     ap.add_argument('--status_file', '-i', default='/rw/dv/nagdock/var_nagios/status.dat', help='Location of nagios status file')
@@ -225,10 +226,16 @@ def main():
 
     # Create the list of things to display/process (all items if
     # --all used, otherwise all things not in status ok).
-    the_list = []
-    for status in StatusEnum:
-        if status == StatusEnum.OK and not ARGS.all: continue
-        the_list.extend(by_status[status])
+    the_list = []   # List of Status instances
+
+    if ARGS.just:
+        for i in by_status.values():
+            for j in i:
+                if j.service == ARGS.just: the_list.append(j)
+    else:
+        for status in StatusEnum:
+            if status == StatusEnum.OK and not ARGS.all: continue
+            the_list.extend(by_status[status])
 
     if ARGS.ack:
         out = run_list(the_list, ack=True)
