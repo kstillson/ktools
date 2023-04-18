@@ -281,10 +281,20 @@ class Scanner(object):
 
   def add_docker_tree(self, pd):
     shim_children_pids = pd.child_pids
-    init_pid = shim_children_pids[0]
     try:
-      with open('/proc/%s/cpuset' % init_pid) as f: cpuset = f.readline()
-      cid = cpuset.replace('/docker/', '')[:12]
+      # old docker; TODO(defer): auto-detect
+      # init_pid = shim_children_pids[0]
+      # with open('/proc/%s/cpuset' % init_pid) as f: cpuset = f.readline()
+      # cid = cpuset.replace('/docker/', '')[:12]
+      init_pid = pd.pid
+      with open(f'/proc/{init_pid}/cmdline', mode='rb') as f: cmdline = f.read()
+      parts = cmdline.split(b'\0')
+      for i, part in enumerate(parts):
+        if part == b'-id':
+          cid = parts[i + 1].decode()[:12]
+          break
+      else:
+        return self.add_error_process(pd, f'unable to get container id for pid {init_pid}')
       cname = DOCKER_MAP[cid]
     except Exception as e:
       if cid: cname = 'cid:' + cid    # Cant get name, but we have cid; use that.

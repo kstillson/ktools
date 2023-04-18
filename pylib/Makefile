@@ -126,7 +126,7 @@ install-system:
 	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) install-system-simple; else $(MAKE) install-system-wheel; fi
 
 install-system-simple:
-	SIMPLE_BIN_DIR=/usr/local/bin $(MAKE) install-simple
+	SIMPLE_BIN_DIR=/usr/local/bin LOCAL_SITE_DIR=$(shell python3 -c 'import site; print(site.getsitepackages()[0])') $(MAKE) install-simple
 
 install-system-wheel: $(WHEEL)
 	umask 022; pip3 install -t /usr/local --upgrade $(WHEEL)
