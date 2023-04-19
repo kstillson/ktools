@@ -3,5 +3,5 @@ extra_init: ["-v", "full-photos"]
 
 mount_rw:
   - var_log: /var/log
-  - /home/photos/archive: /root/photos-archive
+  - /mnt/data1/photos/archive: /root/photos-archive
 

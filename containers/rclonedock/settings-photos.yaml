@@ -3,5 +3,5 @@ extra_init: "photos"
 
 mount_rw:
   - var_log: /var/log
-  - /home/photos/backup: /root/photos-backup
+  - /mnt/data1/photos/backup: /root/photos-backup
 
