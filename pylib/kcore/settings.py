@@ -120,6 +120,10 @@ from typing import List
 import kcore.common as C
 
 
+# Sometimes $HOME won't be set, if called from cron or during early startup
+HOME = os.environ.get('HOME', None) or ('/root' if os.getuid() == 0 else os.path.join('home', os.getlogin()))
+
+
 @dataclass
 class Setting:
     name: str                       # required: internal name by which we refer to this setting
@@ -355,7 +359,7 @@ class Settings:
             if self.debug: print('attempt to parse settings file, but no filename provided', file=sys.stderr)
             return False
 
-        filename = filename.replace('$HOME', os.environ['HOME']).replace('${HOME}', os.environ['HOME'])
+        filename = filename.replace('$HOME', HOME).replace('${HOME}', HOME)
 
         # Set special implicit settings with filename and basedir.
         # Note that if multiple settings files are processed, this only refers to the last processed file.
