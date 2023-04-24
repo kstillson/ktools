@@ -1,6 +1,8 @@
 
 # see gift_coordinator.py for doc
 
+import dataclasses
+
 import os
 import model
 import kcore.common as C
@@ -15,7 +17,7 @@ DEBUG = False                   # set by flag
 SESSION_COOKIE_NAME = 'gc_sesion_id'
 TEMPLATE_DIR = 'templates'
 
-USER_SELECTOR = H.list_to_select_input('user', model.USERS, autofocus=True)
+USER_SELECTOR = H.list_to_select_input('user', [''] + model.USERS, autofocus=True).replace('autofocus', 'autofocus required')
 
 
 # ---------- general purpose
@@ -92,8 +94,9 @@ def add_view(request):
 def edit_view(request):
     session_data = get_session_data(request)
     if not session_data: return W.Response('invalid session', 500)
-    key =request.get_params.get('key')
+    key = request.get_params.get('key')
     gi = model.get_gift_idea(key)
+    orig_gi = dataclasses.replace(gi)
     if not gi: return done('edit', f'edit handler by {session_data.get("user")} with gi not found for key {key}', False)
 
     if request.get_params.get('del') == '1':
@@ -116,6 +119,9 @@ def edit_view(request):
     gi.taken = pp.get('taken')
     gi.url = pp.get('url')
     gi.notes = pp.get('notes')
+    if gi.taken != orig_gi.taken:
+        gi.taken_by = session_data.get("user")
+        gi.taken_on = model.now()
     ok = model.edit_gift_idea(gi)
     return done('edit', f'edit save by {session_data.get("user")} for key={key}, gi={gi}', ok)
     
@@ -126,6 +132,19 @@ def export_view(request):
     
 def healthz_view(request):
     return 'ok'
+
+
+def hold_view(request):
+    session_data = get_session_data(request)
+    if not session_data: return W.Response('invalid session', 500)
+    key = request.get_params.get('key')
+    gi = model.get_gift_idea(key)
+
+    gi.taken = 'hold'
+    gi.taken_by = session_data.get("user")
+    gi.taken_on = model.now()
+    ok = model.edit_gift_idea(gi)
+    return done('edit', f'hold by {session_data.get("user")} for key={key}, gi={gi}', ok)
 
 
 def login_form_view(request):
@@ -175,8 +194,16 @@ def root_view(request):
         if url:
             if not url.startswith('http'): url = f'https://{gi.url}'
             notes += f'<p>[ <a href="{url}" target="_new">link</a> ]'
-        controls = f'<form action="edit?key={gi.key}" method="post"><input type="submit" value="edit"/></form>'
-        tab.append([controls, gi.recip, gi.item, gi.taken, gi.entered_by, notes])
+        controls = f'''
+   <button onclick="window.location.href='edit?key={gi.key}';">edit</button>
+   <button onclick="window.location.href='take?key={gi.key}';">take</button>
+   <button onclick="window.location.href='hold?key={gi.key}';">hold</button>'''
+
+        status = 'available'
+        if gi.taken == 'taken': status = f'taken by {gi.taken_by}'
+        elif gi.taken == 'hold': status = f'on hold by {gi.taken_by}'
+        
+        tab.append([controls, gi.recip, gi.item, status, gi.entered_by, notes])
 
     tab.sort(key=lambda i: i[3] + i[1] + i[2])  # sort by: taken?, then recip, then item.
     out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"', 
@@ -185,3 +212,16 @@ def root_view(request):
 
     out += '<p>[ <a href="./add">Add a gift idea</a> ]'
     return H.html_page_wrap(out, 'Gift Coordinator')
+
+
+def take_view(request):
+    session_data = get_session_data(request)
+    if not session_data: return W.Response('invalid session', 500)
+    key = request.get_params.get('key')
+    gi = model.get_gift_idea(key)
+
+    gi.taken = 'taken'
+    gi.taken_by = session_data.get("user")
+    gi.taken_on = model.now()
+    ok = model.edit_gift_idea(gi)
+    return done('edit', f'taken by {session_data.get("user")} for key={key}, gi={gi}', ok)

@@ -42,12 +42,14 @@ class GiftIdea:
   key: str    # primary key
   recip: str
   item: str
-  taken: str
-  notes: str
-  url: str
-  entered_by: str
-  entered_on: int
-  deleted: int
+  taken: str = 'available'
+  notes: str = ''
+  url: str = ''
+  entered_by: str = '?'
+  entered_on: int = 0
+  deleted: int = 0
+  taken_by: str = '?'
+  taken_on: int = 0
 
 
 GIFT_IDEAS = P.DictOfDataclasses('data/gift_ideas.data', GiftIdea)
