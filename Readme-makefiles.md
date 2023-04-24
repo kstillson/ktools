@@ -29,7 +29,7 @@ bunch of (mostly internal) dependencies must be *installed* before images can
 be built or tested, and the constructed containers likely won't be useful
 (might not even pass their internal tests) until you do some customization to
 fit them to your system.  So to avoid confusion, the top level Makefile will
-not descend into the docker-containers subdirectory unless this variable is
+not descend into the containers subdirectory unless this variable is
 set to "1".
 
 - **NO_TRACKING**
@@ -46,14 +46,14 @@ subset of its default value if there's part of the system you want to skip.
 
 ### pylib Makefile variables
 
-- **BUILD_SIMPLE=1**
+- **control "simple" == "1"**
 
 By default, pylib/Makefile will build a Python "wheel" (.whl) file (the :all
 target), and then install that using PIP (for the :install target).  Wheel
 files are kinda cool, they track metadata like dependencies and allow for
 platform-dependent builds.  But this system doesn't need any of that, so
 really going through a wheel just slows things down unnecessarily.  Set
-BUILD_SIMPLE=1 to skip the whole wheel thing, and "make install" things just
+simple=1 to skip the whole wheel thing, and "make install" things just
 by copying them into place.
 
 
@@ -69,16 +69,16 @@ The following targets are accepted both at the top-level and in the individual s
   "make all" depends on "make prep," so you don't really need to know about
   it, but still it's a useful abstraction, so I thought I'd point it out.
 
-- "**make all**" If using BUILD_SIMPLE and not building Docker containers,
+- "**make all**" If using SIMPLE mode and not building Docker containers,
   ":all" doesn't do very much exciting.  Mostly it depends on :prep, and
   copies a few files around to make sure they're where they need to be.
 
-   If not using BUILD_SIMPLE, then :all actually builds the Python "wheel"
+   If not using SIMPLE mode, then :all actually builds the Python "wheel"
    file for pylib/, and if BUILD_DOCKER_CONTAINERS=1, then Docker container
    images are actually built.
 
 - "**make test**" runs tests.  For pylib/ these are very simple in-place
-  unit tests.  For services/ and docker-containers/, this involves actually
+  unit tests.  For services/ and containers/, this involves actually
   starting up real servers (generally on random high ports) and peppering
   them with requests to confirm operation.
 

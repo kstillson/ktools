@@ -1,0 +1,6 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(relay)"
+GROUP_DONT_DELETE_REGEX="^(relay)"
+
+# Fix permissions from copying.
+chmod -R go+rX /home

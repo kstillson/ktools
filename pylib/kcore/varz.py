@@ -48,7 +48,15 @@ WEBSERVER = None           # Populated by webserver_base:__init__ if $KTOOLS_VAR
 # ---------- getters
 
 def get(counter_name=None):
-    return VARZ.get(counter_name, None) if counter_name else VARZ
+    if not counter_name: return get_dict()
+    val = VARZ.get(counter_name, None)
+    if callable(val): val = val()
+    return val
+
+
+def get_dict():
+    copy = {(k, v() if callable(v) else v) for k, v in VARZ.items()}
+    return copy
 
 
 # ---------- setters
@@ -64,9 +72,11 @@ def inc(counter_name, add=1):
 
 
 def set(var_name, value):
+    '''value can be a normal value (of any basic type), or a callable function to be evaluated upon each get.  note that callables do not work with prometheus,'''
     global VARZ
     VARZ[var_name] = value
-    if USE_PROM:
+    if USE_PROM and not callable(value):
+        # TODO(defer): can callables be made compatible with Prometheus ?
         if isinstance(value, int) or isinstance(value, float):
             _get_prom_instance(var_name, PC.Gauge).set(value)
         else:

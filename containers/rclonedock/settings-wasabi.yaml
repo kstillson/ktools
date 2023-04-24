@@ -1,0 +1,13 @@
+
+# Need to disable user-ns mapping because it was also disabled in rsnapdock, so files in /mnt/rsnap are owned by their real-uid owners and we need access.
+extra_docker: "--userns=host"
+
+extra_init: "wasabi"
+
+mount_rw:
+  - var_log: /var/log
+  - /rw/mnt/rsnap/echo-back: /root/echo-back
+
+mount_ro:
+  - /rw/mnt/rsnap/daily.0: /root/src
+

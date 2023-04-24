@@ -8,7 +8,7 @@ systems (either for direct use or at least for monitoring).
 
 All of these services (except procmon) are intended to be wrapped into Docker
 micro-service containers, see the directories with the matching name under
-../../docker-containers.  These should all run fine outside a container, but
+../../containers.  These should all run fine outside a container, but
 see ../best-practices for why that's not advised.
 
 Below is a quick overview, but all of these have much more details in the

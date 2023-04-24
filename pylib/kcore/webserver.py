@@ -95,6 +95,9 @@ class Worker(BaseHTTPRequestHandler):
         else: postvars = {}
         return postvars
 
+    def log_message(self, format, *args):
+        if args[0] in ['GET', 'POST']: return    # Already handled by logging adapter.
+        C.log_info(format % args)                # Probably redundant, but better not to miss something accidentally.
 
 class WebServer(WebServerBase):
     def __init__(self, *args, **kwargs):

@@ -34,6 +34,7 @@ simply by emptying or deleting this file.
 WARNING: procmon supports a "/zap" handler that will clear the queue via a
 http GET request, with no particular authentication requirements.  If you're
 not in a trusted environment, you'll want to make sure that's disabled.
+(/zap does send a critical level syslog message, see flag --no-syslog)
 
 procmon is one of the few services I run outsied a Docker container.  It needs
 to be running on the real host in order to have visibility into all the
@@ -41,7 +42,7 @@ system's processes.  This outside-a-container position makes procmon a good
 place to check a number of other security-like conditions, so a bunch of other
 checks are added-on.
 
-Specifically- procmon can run d-cowscan (see ../../docker-infrastructure),
+Specifically- procmon can run d-cowscan (see ../../container-infrastructure),
 which identifies unexpected copy-on-write filesystem changes inside
 containers.  Additionally, procmon can check to see if the root filesystem is
 mounted read-only; I generally keep mine locked-down, and it's handy for
@@ -99,7 +100,6 @@ import kcore.webserver as W
 WEB_HANDLERS = {
   '/':        lambda request: root_handler(request),
   '/healthz': lambda request: healthz_handler(request),
-  '/panic':   lambda request: panic_handler(request),
   '/pstree':  lambda request: pstree_handler(request),
   '/scan':    lambda request: scan_handler(request),
   '/zap':     lambda request: zap_handler(request),
@@ -137,7 +137,7 @@ class ProcessData:
 def get_docker_map():
   '''returns dict: cid:str -> container_name:str'''
   cid_map = {}
-  for i in UC.popener(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
+  for i in C.popener(['/usr/bin/sudo', '/root/bin/d-map']).strip().split('\n'):
     if not i: continue
     if not ' ' in i:
       C.log_error(f'unexpected output from d-map: {i}')
@@ -204,7 +204,7 @@ class Scanner(object):
       with open(ARGS.output, 'w') as f: f.write(str(WL.WHITELIST).replace(' WL', '\n WL'))
 
   def scan_cow(self):
-    for i in UC.popener(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
+    for i in C.popener(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
       if 'all ok' in i: continue
       self.cow_errors.append(i)
 
@@ -281,10 +281,20 @@ class Scanner(object):
 
   def add_docker_tree(self, pd):
     shim_children_pids = pd.child_pids
-    init_pid = shim_children_pids[0]
     try:
-      with open('/proc/%s/cpuset' % init_pid) as f: cpuset = f.readline()
-      cid = cpuset.replace('/docker/', '')[:12]
+      # old docker; TODO(defer): auto-detect
+      # init_pid = shim_children_pids[0]
+      # with open('/proc/%s/cpuset' % init_pid) as f: cpuset = f.readline()
+      # cid = cpuset.replace('/docker/', '')[:12]
+      init_pid = pd.pid
+      with open(f'/proc/{init_pid}/cmdline', mode='rb') as f: cmdline = f.read()
+      parts = cmdline.split(b'\0')
+      for i, part in enumerate(parts):
+        if part == b'-id':
+          cid = parts[i + 1].decode()[:12]
+          break
+      else:
+        return self.add_error_process(pd, f'unable to get container id for pid {init_pid}')
       cname = DOCKER_MAP[cid]
     except Exception as e:
       if cid: cname = 'cid:' + cid    # Cant get name, but we have cid; use that.
@@ -421,12 +431,8 @@ def healthz_handler(request):
   return f'{summary}\n\n{out}'
 
 
-def panic_handler(request):
-  return UC.popener(['/usr/bin/sudo', '/usr/local/bin/panic'])
-
-
 def pstree_handler(request):
-  return UC.popener(['/bin/ps', 'aux', '--forest'])
+  return C.popener(['/bin/ps', 'aux', '--forest'])
 
 
 def scan_handler(request):
@@ -441,13 +447,14 @@ def scan_handler(request):
 def zap_handler(request):
   if ARGS.no_zap_handler: return W.Response('zap disabled', status_code=403)
   with open(ARGS.queue, 'w') as f: pass
+  C.log_critical('procmon queue cleared by /zap request')
   return 'zapped'
 
 
 # ---------- main
 
 def parse_args(argv):
-  parser = UC.argparse_epilog(description='process scanner')
+  parser = C.argparse_epilog(description='process scanner')
   parser.add_argument('--debug',   '-D',   action='store_true', help='output debugging data to stdout (works best with -t)')
   parser.add_argument('--delay',   '-d',   type=int, default=120, help='delay between automatic rescans (seconds)')
   parser.add_argument('--logfile', '-l',   default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
@@ -456,6 +463,7 @@ def parse_args(argv):
   parser.add_argument('--nodupchk',        action='store_true', help='skip checking if the same uid (other than root) is used in multiple containers.')
   parser.add_argument('--noro',            action='store_true', help='skip root-read-only check (used for testing)')
   parser.add_argument('--no-scan-handler', action='store_true', help='do not allow use of demand /scan')
+  parser.add_argument('--no-syslog',       action='store_true', help='do not send critical level logs to syslog')
   parser.add_argument('--no-zap-handler',  action='store_true', help='do not allow clearing the alert queue via /zap')
   parser.add_argument('--output',  '-o',   default='/var/procmon/output', help='filename for statistics from last scan')
   parser.add_argument('--port',    '-p',   type=int, default=8080, help='web port to listen on.  0 to disable.')
@@ -469,7 +477,8 @@ def main(argv=[]):
   global ARGS
   ARGS = parse_args(argv or sys.argv[1:])
   C.init_log('procmon', ARGS.logfile,
-             filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER)
+             filter_level_stderr=C.DEBUG if ARGS.debug else C.NEVER,
+             filter_level_syslog=C.NEVER if ARGS.no_syslog else C.CRITICAL)
 
   global WL
   WL = UC.load_file_as_module(ARGS.whitelist)
@@ -489,6 +498,7 @@ def main(argv=[]):
 
   ws = W.WebServer(WEB_HANDLERS, wrap_handlers=not ARGS.debug)
   ws.start(port=ARGS.port)
+  ws.add_handlers(WL.ADDL_HANDLERS)
 
   SCANNER.scan()
   while True:

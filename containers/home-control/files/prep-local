@@ -1,0 +1,9 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(root|hc)"
+GROUP_DONT_DELETE_REGEX="^(root|hc)"
+
+# Fix ownersip.
+chgrp -R hc /home/hc
+
+# fix perms
+chmod -R go+rX /etc/passwd /etc/group /etc/init /usr/lib/python3.10/site-packages/kcore /usr/lib/python3.*/site-packages/home_control

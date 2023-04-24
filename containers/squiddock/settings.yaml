@@ -1,0 +1,15 @@
+
+autostart: 5
+
+ports:
+  - 3128:3128
+
+mount_rw:
+  - var_log_squid: /var/log/squid
+  - var_cache_squid: /var/cache/squid
+
+vols:
+  - var_log_squid:
+    owner: user/squid
+  - var_cache_squid:
+    owner: user/squid

@@ -22,7 +22,7 @@ install: check_kcore_installed install-stamp
 install-stamp: $(PLAIN_TARGETS)
 	mkdir --mode 755 -p $(INSTALL_DIR)
 	$(MAKE) common_install
-	cp -pr $(SUBDIRS_TO_COPY) $(INSTALL_DIR)
+	cp -pr --dereference $(SUBDIRS_TO_COPY) $(INSTALL_DIR)
 
 $(TEST_LOG): $(wildcard *.py tests/*.py)
 	script -e -c "pytest-3 tests" $(TEST_LOG)

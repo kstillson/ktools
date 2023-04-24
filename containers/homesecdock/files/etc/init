@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SVC="/home/hs/homesec.py"
+
+if [[ -v TEST ]]; then
+    echo "!! TEST MODE !!"
+    COMMAND="$SVC --port 1111 --debug --logfile - --kauth-db-filename kcore_auth_db-test.data.pcrypt --kauth-db-password test123 --pb-token test123"
+
+elif [[ -v DEBUG ]]; then
+    echo "!! DEBUG MODE !!"
+    COMMAND="$SVC --port 1111 --debug --logfile -"
+    
+else
+    COMMAND="$SVC --port 1111 --logfile /var/log/homesec/homesec.log --syslog"
+fi
+
+echo "init transferring to: $COMMAND"
+exec $COMMAND

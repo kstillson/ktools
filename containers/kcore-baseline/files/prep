@@ -1,0 +1,159 @@
+#!/bin/bash
+
+# This script performs a customizable set of hardening procedures on an Alpine
+# Docker image, during image construction.  It is executed by the Dockerfile
+# after any additional packages are installed and customized (as it
+# potentially removes some of the tools packages may need to install
+# properly).
+#
+# To customize, add a file /prep-local in your image that overrides the
+# hardening environment variables in the section below.  To temporarily
+# disable all hardening, simply place "exit 0" into your /prep-local file;
+# this will exit the hardening process, but leave the pieces in place so you
+# can enable them later or experiement with them piecewise.
+#
+# When this script completes, it will tidy-up by deleting itself and
+# /prep-local (unless HARDEN_SELF_REMOVE is set to "0").
+
+# ---------- hardening setting defaults
+
+set -e
+set -x
+
+ACCOUNTS_DONT_DELETE_REGEX="^(user1|user2)"
+APK_CLEANUP=1
+CRONTABS_REMOVE=1
+GROUP_DONT_DELETE_REGEX="^(group1|group2)"
+KMC_RM=1
+HARDEN_SELF_REMOVE=1
+ROOT_RM_HOMEDIR=1
+SBIN_DONT_DELETE_REGEX="nologin|/bin/zzz"
+SHELL_DISABLE_LOGIN=1
+SUID_DONT_DELETE_REGEX="/bin/suid1|suid2"
+SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|chown|ln|od|strings|su)$"
+SYSDIRS_UID0_AND_755=1
+WORLD_WRITABLE_DIRS_RM=1
+WORLD_WRITABLE_FILES_RM=1
+
+DIR=$(dirname $0)
+LOCAL=${DIR}/prep-local
+
+# --------------------
+# Perform any image-specific customization.
+# This can be modification of the above variables, 
+# or any other arbitrary customization needed for the image.
+
+if [[ -f ${LOCAL} ]]; then
+  . ${LOCAL}
+fi
+
+# --------------------
+# Docker image hardening sequence.
+
+# Remove existing crontabs, if any.
+if [[ "${CRONTABS_REMOVE}" == "1" ]]; then
+  rm -fr /var/spool/cron
+  rm -fr /etc/crontabs
+  rm -fr /etc/periodic
+fi
+
+# Remove all but a handful of admin commands.
+find /sbin /usr/sbin ! -type d | \
+  egrep -v "${SBIN_DONT_DELETE_REGEX}" | \
+  xargs -I@ rm @
+
+# Remove world-writable permissions.
+# This breaks apps that need to write to /tmp,
+# such as ssh-agent.
+if [[ "${WORLD_WRITABLE_DIRS_RM}" == "1" ]]; then
+  find / -xdev -type d -perm /0002 -exec chmod o-w {} +
+fi
+if [[ "${WORLD_WRITABLE_FILES_RM}" == "1" ]]; then
+  find / -xdev -type f -perm /0002 -exec chmod o-w {} +
+fi
+
+# Make sure passwd and group have global read perms
+# (sometimes git loses these when copying over)
+chmod 644 /etc/passwd /etc/group
+
+# Remove unnecessary user accounts.
+if [[ -n "${ACCOUNTS_DONT_DELETE_REGEX}" ]]; then
+  cp -f /etc/passwd /tmp/tmp
+  egrep "${ACCOUNTS_DONT_DELETE_REGEX}" < /tmp/tmp > /etc/passwd || true
+  rm -f /tmp/tmp
+fi
+
+# Remove unnecessary user groups.
+if [[ -n "${GROUPS_DONT_DELETE_REGEX}" ]]; then
+  cp -f /etc/group /tmp/tmp
+  egrep "${GROUPS_DONT_DELETE_REGEX}" < /tmp/tmp > /etc/group
+  rm -f /tmp/tmp
+fi
+
+# Remove root homedir since we do not need it.
+if [[ "${ROOT_RM_HOMEDIR}" == "1" ]]; then
+  rm -fr /root
+fi
+
+# Disable interactive login for everybody.
+if [[ "${SHELL_DISABLE_LOGIN}" == "1" ]]; then
+  sed -i -r 's#^(.*):[^:]*$#\1:/sbin/nologin#' /etc/passwd
+fi
+
+sysdirs="
+ /bin
+ /etc
+ /lib
+ /sbin
+ /usr"
+
+# Remove apk configs.
+if [[ "${APK_CLEANUP}" == "2" ]]; then
+    rm -rf /var/cache/apk/*
+elif [[ "${APK_CLEANUP}" == "1" ]]; then
+  find $sysdirs -xdev -regex '.*apk.*' -exec rm -fr {} +
+fi
+
+# Ensure system dirs are owned by root and not writable by anybody else.
+if [[ "${SYSDIRS_UID0_AND_755}" == "1" ]]; then
+  find $sysdirs -xdev -type d \
+    -exec chown 0:0 {} \; \
+    -exec chmod 0755 {} \;
+fi
+
+# Remove all suid files.
+find $sysdirs -xdev -type f -a -perm /4000 | egrep -v "${SUID_DONT_DELETE_REGEX}" | xargs -I@ rm @
+
+# Remove other programs that could be dangerous.
+find $sysdirs -xdev | egrep "${SYSDIRS_RM_REGEX}" | xargs -I@ rm @
+
+# Remove kmc binary and container dirs if not needed.
+if [[ "${KMC_RM}" == "1" ]]; then
+  rm -f /usr/local/bin/kmc
+  rmdir /usr/local/bin /usr/local || true
+fi
+
+# --------------------
+# Unconditional cleanups.
+
+# Remove crufty backup files (e.g. shadow-, passwd-, group-)
+find $sysdirs -xdev -type f -regex '.*-$' -exec rm -f {} +
+
+# Remove init scripts since we do not use them.
+rm -fr /etc/conf.d /etc/init.d /etc/inittab /etc/rc.conf /etc/runlevels /lib/rc
+
+# Remove kernel tunables since we do not need them.
+rm -fr /etc/acpi /etc/mdev.conf /etc/modprobe.d /etc/modules /etc/sysctl*
+
+# Remove fstab since we do not need it.
+rm -f /etc/fstab
+
+# Remove broken symlinks (because we removed the targets above).
+find $sysdirs -xdev -type l -exec test ! -e {} \; -delete
+
+# --------------------
+# Remove this script; no point showing off our handwork.
+
+if [[ "${HARDEN_SELF_REMOVE}" == "1" ]]; then
+  rm -f ${0}*
+fi

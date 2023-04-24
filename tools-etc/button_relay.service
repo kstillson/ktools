@@ -1,0 +1,21 @@
+[Unit]
+Description=button relay service
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+WorkingDirectory=/root/ktools/tools-etc
+ExecStartPre=/bin/sleep 3
+ExecStart=/root/ktools/tools-etc/button_relay.py --port 8084 --logfile /var/log/button_relay.log
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+User=nobody
+# group adm for access to /root/... dirs
+Group=adm
+# group dialout for access to /dev/ttyUSB*
+SupplementaryGroups=dialout
+# auto export /varz to /metrics
+Environment=KTOOLS_VARZ_PROM=1
+
+[Install]
+WantedBy=multi-user.target

@@ -104,7 +104,6 @@ import argparse, copy, hashlib, getpass, json, os, socket, subprocess, sys, time
 from dataclasses import dataclass
 
 import kcore.persister as P
-import kcore.uncommon as UC
 
 PY_VER = sys.version_info[0]
 
@@ -443,7 +442,7 @@ def get_shared_secret_from_db(db_passwd, db_filename, token_hostname, client_add
   REGISTRATION_DB.password = db_passwd
   reg = REGISTRATION_DB.get_data()
   if not reg:
-    debug_msg(f'failed to load registration db: {REGISTRATION.__dict__}')
+    debug_msg(f'failed to load registration db: {REGISTRATION_DB.__dict__}')
     return None
 
   srch = f'{token_hostname}:{username}'
@@ -467,7 +466,7 @@ def get_shared_secret_from_db(db_passwd, db_filename, token_hostname, client_add
     return lookup
   else: debug_msg(f'trying {srch} in reg db didnt work...')
 
-  debug_msg(f'no matching hostname in secrets DB.')
+  debug_msg(f'no matching entry in reg_db: {reg.__dict__}')
 
 
 def register(shared_secret, db_passwd, db_filename=DEFAULT_DB_FILENAME,

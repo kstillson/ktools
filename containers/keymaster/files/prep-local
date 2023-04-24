@@ -1,0 +1,8 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(root|km)"
+GROUP_DONT_DELETE_REGEX="^(root|km)"
+
+# Fix km runtime specific permissions.
+chgrp -R km /home/km
+
+chmod -R go+rX /home /etc/passwd /etc/group /etc/init /usr/lib/python*/site-packages/kcore

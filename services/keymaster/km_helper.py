@@ -88,7 +88,7 @@ def parse_args(argv):
 def main(argv=[]):
   args = parse_args(argv or sys.argv[1:])
 
-  password = UC.resolve_special_arg(args, 'password', required=False)
+  password = C.resolve_special_arg(args, 'password', required=False)
   secrets = Secrets(filename=args.datafile, rhs_type=Secret, password=password)
 
   # ----- alternate run modes
@@ -119,7 +119,7 @@ def main(argv=[]):
 
   if keyname in secrets and not args.force: sys.exit(f'key {keyname} already exists in database, and --force not specified')
 
-  new_secret = UC.resolve_special_arg(args, 'secret')
+  new_secret = C.resolve_special_arg(args, 'secret')
 
   acl = list(map(str.split, args.acl.split(',')))
   entry = Secret(secret=new_secret, acl=acl, comment=args.comment)

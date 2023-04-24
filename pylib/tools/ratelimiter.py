@@ -27,6 +27,7 @@ file with r+w access.  The lock file remains.
 '''
 
 import os, sys, time
+import kcore.common as C
 import kcore.uncommon as UC
 
 VERBOSE = False
@@ -66,7 +67,7 @@ def save_state(rl, statefile):
 
 
 def parse_args(argv):
-    ap = UC.argparse_epilog(description='stateful ratelimiter')
+    ap = C.argparse_epilog(description='stateful ratelimiter')
     ap.add_argument('--init', '-i', default=None, help='initialize state file with rate,per(seconds).  Overwrites any existing state file with new limit and cleared allowance')
     ap.add_argument('--cmd', '-c', default=None, help='if provided, run this command if rate limit allows (or run it after limit allows, if -w is also specified)')
     ap.add_argument('--limit', '-l', default=None, help='same as --init, but leaves an existing state file alone; only does anything if a new state file needs to be created.')

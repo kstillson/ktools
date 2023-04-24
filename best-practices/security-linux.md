@@ -31,10 +31,9 @@ the idea that the contents of the root partition are very unlikely to change
 without me coming and manually enabling the rw remount.
 
 Btw, you'll find that many of the Makefile throughout this repo check for the
-environment variable ROOT_RO, and if they see a "1", then they'll
-automatically remount,rw at the start of an install phase, and remount,ro when
-they're done.  This minimizes the inconvenience when installing lots of
-things.
+control setting "root_ro", and if they see a "1", then they'll automatically
+remount,rw at the start of an install phase, and remount,ro when they're done.
+This minimizes the inconvenience when installing lots of things.
 
 
 ## Firewalls

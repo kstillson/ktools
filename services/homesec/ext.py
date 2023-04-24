@@ -1,8 +1,7 @@
 
 # see homesec.py for doc
 
-import subprocess, syslog
-import smtplib
+import os, smtplib, syslog
 from email.mime.text import MIMEText
 
 import kcore.common as C
@@ -11,6 +10,7 @@ import kcore.uncommon as UC
 # ---------- Global state and controls
 
 DEBUG = False
+PB_PUSH_TOKEN = None   # Set by homesec.py:main() during init.
 
 # ----- rate limiters
 
@@ -90,11 +90,19 @@ def push_notification(msg, level='other'):
     C.log_warning(f'rate limited push notification: [level={level}: {msg}')
     return -2
 
+  # If keymaster ends up panicing, the external script pb-push will stop working
+  # because it can no longer query its access token.  So cache it here if we can.
+  if not PB_PUSH_TOKEN:
+    C.log_error(f'unable to push msg to pb due to missing token: {msg}/{level}')
+
+  env = dict(os.environ)
+  env['ACCESS_TOKEN'] = PB_PUSH_TOKEN
+
   C.log(f'pushbullet sending [level={level}]: {msg}')
   if level != 'other': msg += ' !%s' % level
-  ok = subprocess.call(["/usr/local/bin/pb-push", msg])
-  if ok != 0: C.log_warning(f'pushbullet returned unexpected status {ok}')
-  return ok == 0
+  rslt = C.popen(['/usr/local/bin/pb-push', msg], env=env)
+  if not rslt.ok: C.log_warning(f'pushbullet returned unexpected status: {rslt.out}')
+  return rslt.ok
 
 
 def send_emails(from_addr, to, subj, contents):

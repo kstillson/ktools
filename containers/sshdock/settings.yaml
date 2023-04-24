@@ -1,0 +1,48 @@
+
+autostart: 5
+
+ports:
+  - "2222:22"
+
+debug_extra_init: "-d"
+
+mount_ro:
+  - authkeys: /etc/ssh/authkeys
+  - hostkeys: /etc/ssh/hostkeys
+  - passwd: /etc/passwd
+
+mount_rw:
+  - home: /home
+
+# Old rps config sends syslog to "sys"; redirect that to syslogdock.
+extra_docker: "--add-host=sys:192.168.2.12"
+
+# -----
+
+test_extra_init: "/usr/sbin/sshd -d"
+
+test_mount_ro: []
+
+test_mount_rw:
+  - authkeys: /etc/ssh/authkeys
+  - hostkeys: /etc/ssh/hostkeys
+  - passwd: /etc/passwd
+
+test_vols:
+  - authkeys:
+    perm: "0755"
+    
+  - authkeys/test:
+    contents: "file:testdata/ssh-test-key.pub"
+    perm: "0644"
+    
+  - home/test:
+    perm: "0755"
+
+  - passwd:
+    perm: "0644"
+    contents: "file:testdata/passwd"
+
+  - hostkeys/host_keygen.out:
+    contents: "command: mkdir -p /tmp/_sshkeygen/etc/ssh/; ssh-keygen -A -f /tmp/_sshkeygen; install -o %owner% -g %group% -m 0600 /tmp/_sshkeygen/etc/ssh/* %targetdir%; rm -rf /tmp/_sshkeygen"
+

@@ -1,0 +1,14 @@
+
+autostart: 5
+
+ports:
+  - 8082:8080
+  - 8083:8080
+
+mount_ro:
+  - /mnt/rsnap: /root/rsnap
+  - /rw/log: /root/syslog
+  - /rw/dv: /root/dv
+  - /rw/dv/dnsdock/var_log_dnsmasq: /root/dnsmasq
+  - /home/ken/share/rcam: /root/rcam
+  - /rw/dv/eximdock/var/spool/exim/input: /root/exim

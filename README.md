@@ -93,7 +93,7 @@ ready-to-use functionality provided by this project.  Here's an
 The services can stand alone, but it's generally better when services are run
 in a single-purpose **docker containers** (see the "best-practices" section
 for why).  Most of these containers have just the minimal substance to
-accomplish that.  **[Docker containers overview](docker-containers/README-containers.md)**
+accomplish that.  **[Docker containers overview](containers/README-containers.md)**
 
 The **"tools"** are used as-needed directly from the command-line (not wrapped
 in services or containers).  The ones provided come in several flavors,
@@ -103,7 +103,7 @@ located in different parts of the directory tree:
 - **[tools for users](pylib/tools/README-user-tools.md)**
 - **[somewhat more ad-hoc tools for users](tools-etc/README-tools-etc.md)**
 - **[smart-home control](pylib/home_control/README-home-control.md)**
-- **[tools for docker](docker-infrastructure/README-docker-tools.md)**
+- **[tools for docker](container-infrastructure/README-docker-tools.md)**
 - **[tools for circuit python](pylib/circuitpy_sim/README-circuitpy.md)**
 
 <!-- slimy way to force a break to beyond the image: -->
@@ -146,11 +146,6 @@ If that seems to work, then "make install" will copy things into place.
 However, you'll probably find it more useful to review
 [Readme-makefiles.md](Readme-makefiles.md) to find out more about what you'll
 be getting and what your options are.
-
-Generally things work correctly with none of these set, but as you use the
-system more and start wanting to customize things, you'll probably want to
-review [Readme-environ-variables.md](Readme-environ-variables.md) for the list
-of Linux environment variables that affect the way ktools operates.
 
 - - -
 

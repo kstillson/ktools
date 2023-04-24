@@ -10,12 +10,21 @@ import kcore.common as C
 import kcore.uncommon as UC
 
 
+# ---------- helpers
+
+def err(msg):
+    print(msg, file=sys.stderr)
+    return None
+
+
+# ---------- tests
+
 # ----- I/O
 
 def test_capture():
     with UC.Capture(strip=False) as cap:
         print('test1')
-        sys.stderr.write("test2\n")
+        err("test2")
         assert '%s' % cap == 'test1\n'
         assert str(cap) == 'test1\n'
         assert cap.out == 'test1\n'
@@ -62,17 +71,6 @@ def test_exec_wrapper():
     assert UC.exec_wrapper('print(kcore.varz.VARZ["x"])', globals()).out == 'y'
 
 
-# ----- Python file based
-
-def test_get_callers_module():
-    assert UC.get_callers_module().__file__ == __file__
-
-
-def test_get_initial_python_file_comment():
-    assert UC.get_initial_python_file_comment(__file__) == 'tests for uncommon.py'
-    assert UC.get_initial_python_file_comment() == 'tests for uncommon.py'
-
-
 # ----- module based
 
 def test_load_file_as_module():
@@ -83,59 +81,6 @@ def test_load_file_as_module():
 def test_load_file_into_module():
     m = UC.load_file_into_module('testdata/bad-filename.py')
     assert data == 'hithere'
-
-
-def test_popen():
-    assert UC.popen('echo 1+2 | bc', shell=True).out == '3'
-
-    assert str(UC.popen(['/usr/bin/cut', '-d:', '-f2'], 'abc:123:def')) == '123'
-
-    assert UC.popen('/bin/cat', 'hello world').out == 'hello world'
-
-    rslt = UC.popen(['/bin/ls', '/etc'])
-    assert rslt.ok
-    assert rslt.returncode == 0
-    assert 'passwd' in str(rslt)
-
-    rslt = UC.popen(['/bin/ls', '/invalid'])
-    assert not rslt.ok
-    assert 'ERROR' in rslt.out
-    assert rslt.returncode == 2
-    assert rslt.stdout == ''
-    assert 'cannot access' in rslt.stderr
-    assert rslt.exception_str is None
-    assert rslt.out == f'ERROR: [2] {rslt.stderr}'
-
-    rslt = UC.popen(['/invalid'])
-    assert not rslt.ok
-    assert str(rslt) == f'ERROR: exception: {rslt.exception_str}'
-    assert 'No such file' in str(rslt)
-
-    rslt = UC.popen('echo hello', shell=True)
-    assert rslt.ok
-    assert rslt.stdout == str(rslt)
-    assert rslt.stderr == ''
-    assert rslt.exception_str is None
-    assert rslt.stdout == 'hello'
-
-    rslt = UC.popen(['/bin/sleep', '3'], timeout=1)
-    assert not rslt.ok
-    assert rslt.stdout is None
-    assert rslt.stderr is None
-    assert 'timed out' in rslt.exception_str
-    assert 'timed out' in str(rslt)
-    try:
-        os.kill(rslt.pid, 0)
-        assert 'expected exception on attempt to kill timed out pid' == ''
-    except:
-        pass
-
-
-def test_popener():
-    assert UC.popener('echo 3+4|bc', shell=True) == '7'
-    assert 'shadow' in UC.popener(['/bin/ls', '/etc'])
-    assert UC.popener(['/bin/ls', '/invalid']).startswith('ERROR')
-    assert 'exception' in UC.popener('/bin/invalid')
 
 
 # ----- rate limiter tests & infrastructure
@@ -185,7 +130,10 @@ def test_symmetric_encryption():
 
 def test_gpg_symmetric():
     # not supported in python2
-    if sys.version_info[0] == 2: return
+    if sys.version_info[0] == 2: return err('test_gpg_symmetric not supported in py2; skipping test.')
+    # not supported if ~/.gnupg is a broken symlink
+    chkpath = os.environ.get('HOME') + '/.gnupg'
+    if os.path.islink(chkpath) and not os.path.exists(chkpath): return err(f'test_gpg_symmetric not supported with broken symlink {chkpath}')
 
     crypted = UC.gpg_symmetric('hello', 'password1', decrypt=False)
     assert 'PGP MESSAGE' in crypted
@@ -194,8 +142,8 @@ def test_gpg_symmetric():
     plain = UC.gpg_symmetric(crypted, 'password1')
     assert plain == 'hello'
 
-    err = UC.gpg_symmetric(crypted, 'bad-password')
-    assert err.startswith('ERROR:')
+    error = UC.gpg_symmetric(crypted, 'bad-password')
+    assert error.startswith('ERROR:')
 
 
 # ----- parallel queue tests & infrastructure
@@ -255,37 +203,13 @@ def test_ParallelQueue_single_threaded():
     assert TEST_DATA.get('d') == 2
     assert q1.join() == [1, 2]
 
-
-# ----- argparse helper tests
-
-@dataclass
-class FakeArgs:
-    x: str
-
-def test_resolve_special_arg():
-    args = FakeArgs('plain')
-    assert UC.resolve_special_arg(args, 'x') == 'plain'
-
-    os.environ['tmp1'] = 'value1'
-    args.x = '$tmp1'
-    assert UC.resolve_special_arg(args, 'x') == 'value1'
-    assert args.x == 'value1'
-
-    args.x = '$missing'
-    try:
-        UC.resolve_special_arg(args, 'x')
-        assert '' == 'expected exception for missing variable'
-    except ValueError:
-        pass
-
-    os.environ['tmp1'] = ''
-    args.x = '$tmp1'
-    try:
-        UC.resolve_special_arg(args, 'x')
-        assert '' == 'expected exception for empty required value'
-    except ValueError:
-        pass
-
-    args.x = '$tmp1'
-    assert UC.resolve_special_arg(args, 'x', required=False) == ''
-    assert args.x == ''
+def test_para_queue():
+    start_time = time.time()
+    out = UC.para_queue([
+        lambda: thread_tester(0.5, 'a', 1),
+        lambda: thread_tester(4.0, 'a', 2)], timeout=1.0)
+    delta = time.time() - start_time
+    assert delta > 0.5
+    assert delta < 2.5
+    assert TEST_DATA.get('a') is 1
+    assert out == [1, None]

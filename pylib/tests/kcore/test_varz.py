@@ -30,6 +30,11 @@ def url(path, tls=False):
     protocol = 'https' if tls else 'http'
     return '%s://localhost:%d/%s' % (protocol, PORT, path)
 
+MY_CALLABLE_OUT = None
+def my_callable():
+    return MY_CALLABLE_OUT
+
+
 # ---------- tests
 
 def test_varz_basics():
@@ -45,15 +50,22 @@ def test_varz_basics():
     assert C.read_web(url('varz?counter1')) == '11'
     assert C.read_web(url('varz?text1')) == 'value0'
     assert '<td>stamp1</td>' in C.read_web(url('varz'))
-    
+
+    # test callables
+    global MY_CALLABLE_OUT
+    V.set('c', my_callable)
+    assert C.read_web(url('varz?c')) == 'None'
+    MY_CALLABLE_OUT = '123'
+    assert C.read_web(url('varz?c')) == '123'
+
 
 def test_prometheus_metrics():
     # Only test Prometheus if it's enabled in the environment; otherwise
     # test will fail if prometheus_client library isn't available.
     if os.environ.get('KTOOLS_VARZ_PROM') != '1':
-        print('Prometheus tests skipped, as $KTOOLS_VARZ_PROM != "1"')
+        print('Prometheus tests skipped as $KTOOLS_VARZ_PROM != "1"')
         return
-    
+
     ws = start()
     V.reset()
 
@@ -74,7 +86,7 @@ def test_prometheus_metrics():
     assert 'healthz_status{program="pytest-3"} 0.0' in metrics
 
     global HEALTHZ_OUT
-    HEALTHZ_OUT = 'error1'    
+    HEALTHZ_OUT = 'error1'
     V.inc('counter1', add=10)
     V.set('info1', 'value2')
     V.stamp('stamp1')

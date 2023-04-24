@@ -11,12 +11,18 @@ import kcore.varz as V
 
 # ---------- API presented to the view
 
+PRIMARY_USER = 'ken'  ## TODO(defer): generalize...?
+
 def get_statusz_state():
   arm_state = model.partition_state_resolve_auto('default')
-  touches = model.get_touches()
-  return '%s/%s/%s' % (arm_state,
-                       touches[1].value if len(touches) > 1 else '?',
-                       touches[0].value if len(touches) > 0 else '/')
+  
+  primary_user_state = 'away'
+  other_users_state = 'away'
+  for t in model.get_presence_touches():
+    if t.value == 'home':
+      if t.trigger == PRIMARY_USER: primary_user_state = 'home'
+      else: other_users_state = 'home'
+  return '%s/%s/%s' % (arm_state, other_users_state, primary_user_state)
 
 
 def run_trigger(request_dict, name, trigger_param=None):

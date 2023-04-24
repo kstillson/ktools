@@ -1,8 +1,0 @@
-
-# Use nat rather than docker proxy to preserve incoming source IP addr.
-
-# Can't use default syslog driver, as we would miss our own failures.
-log: JSON
-
-mount_logs:
-  - /rw/log: /var/log

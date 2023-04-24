@@ -30,32 +30,31 @@ set -e
 # ---------- flag defaults
 
 DEBUG=0          # don't delete tempfiles
-EXCLUDE="${KTOOLS_Q_EXCLUDE:-}"  # csv list of hosts to exclude
 HOST_SUBST="@"   # replace this substring with hostnames in some commands
 PARA=1           # run commands for multiple hosts in parallel
 TEST=0           # for commands that would make changes, print them rather than running them
 TIMEOUT=90       # default ssh connect timeout
 VERBOSE=0        # print commands as they are run
 
-# ---------- control constants
-# Anything with "LIST_" in the name here should be space separated values (ssv).
-
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 # default flags to run_para command (see ../pylib_tools):
 RP_FLAGS_BASE="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
 RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
-DOCKBASE="${DOCKER_BASE_DIR:-/root/docker-dev}"                             # Directory containing docker source dirs.
-DD="${KTOOLS_Q_DD:-${DOCKBASE}/dnsdock/files/etc/dnsmasq/private.d}"        # Where dnsmasq config files are stored.
-GIT_DIRS="${KTOOLS_Q_GIT_DIRS}"                                             # List of git dirs this script manages.
-KM="https://${KMHOST:-localhost:4444}"
-KMD_P="${KTOOLS_Q_KMD_P:-$HOME/dev/ktools/private.d/km.data.pcrypt}"        # Location of encrypted keymaster secrets file
-LIST_LINUX="${KTOOLS_Q_LIST_LINUX}"                                         # list of non-RPi linux hosts
-LIST_PIS="${KTOOLS_Q_LIST_PIS}"                                             # list of RPi linux hosts
-LEASES="${KTOOLS_Q_LEASES:-/rw/dv/dnsdock/var_log_dnsmasq/dnsmasq.leases}"  # Location of dnsmasq leases (output/generated) file.
-PROCMON=${PROCMON:-localhost:8080}                                          # host:port of the procmon instance to work with.
-PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                               # Location of ../services/procmon output file
-RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${DOCKBASE}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
+# ---------- control constants
+
+eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linux_hosts q_pi_hosts vol_base)
+
+# derived controls (overridble from the environment, in-case these default
+# formulae are wrong for you).
+
+DD="${KTOOLS_Q_DD:-${D_SRC_DIR}/dnsdock/files/etc/dnsmasq/private.d}"                 # Where dnsmasq config files are stored.
+KMD_P="${KTOOLS_Q_KMD_P:-${D_SRC_DIR}/private.d/km.data.pcrypt}"                      # Location of encrypted keymaster secrets file
+LEASES="${KTOOLS_Q_LEASES:-${VOL_BASE}/dnsdock/var_log_dnsmasq/dnsmasq.leases}"       # Location of dnsmasq leases (output/generated) file.
+PROCMON="${PROCMON:-localhost:8080}"                                                  # host:port of the procmon instance to work with.
+PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                                         # Location of ../services/procmon output file
+RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
+
 
 # ---------- colorizers
 
@@ -154,11 +153,25 @@ function append_if() {
 
 # Expect stdin to match $2, print status decorated by title in $1 and output stdin upon mismatch.
 # For example, if you expect a file to be empty:  cat file | expect "file should be empty" ""
+function expect_exact() {
+    title="$1"
+    expect="$2"
+    got=$(cat)
+    if [[ "$got" == "$expect" ]]; then
+        emit "$title - ok"
+        return 0
+    fi
+    emit "$title - error"
+    echoC yellow "$title: "
+    echo "$got"
+}
+
+# Same as expect_exact, but $2 is expected to appear anywhere in stdin; other data in stdin is ignored.
 function expect() {
     title="$1"
     expect="$2"
     got=$(cat)
-    if [[ "$expect" == "$got" ]]; then
+    if [[ "$got" == *"$expect"* ]]; then
         emit "$title - ok"
         return 0
     fi
@@ -185,7 +198,7 @@ function runner() {
     fi
 }
 
-# Wrapper around /usr/local/bin/run_para which repects EXCLUDE, RP_FLAGS and
+# Wrapper around /usr/local/bin/run_para which repects Q_EXCLUDE, RP_FLAGS and
 # TEST.  This method assumes --ssh mode unless $1 is "LOCAL", in which case it
 # uses --cmd mode.  ssv hosts in $1, command to run in $2+.
 function RUN_PARA() {
@@ -203,7 +216,7 @@ function RUN_PARA() {
         emit "TEST; would run: $cmd '$@'"
         return
     fi
-    echo "$hosts" | tr ' ' '\n' | without - "$EXCLUDE" | $cmd "$@"
+    echo "$hosts" | tr ' ' '\n' | without - "$Q_EXCLUDE" | $cmd "$@"
     return $?
 }
 
@@ -236,7 +249,7 @@ function git_add_repo() {
 # Check all known git dirs for any local changes; output dirs with changes.
 function git_check_all() {
     pushd . >& /dev/null
-    for dir in $GIT_DIRS; do
+    for dir in $Q_GIT_DIRS; do
         if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; continue; fi
         cd $dir
         git_status=$(git status -s)
@@ -270,7 +283,7 @@ function git_sync() {
 # Sync all known git dirs.
 function git_sync_all() {
     need_ssh_agent
-    for dir in $GIT_DIRS; do git_sync $dir; done
+    for dir in $Q_GIT_DIRS; do git_sync $dir; done
     emitc green "all done\n"
 }
 
@@ -290,7 +303,7 @@ function pi_root() {
 # Runs a pull in all known local git dirs.
 function git_pull_all() {
     need_ssh_agent
-    for dir in $GIT_DIRS; do
+    for dir in $Q_GIT_DIRS; do
         if [[ ! -d $dir ]]; then emit "missing dir: $dir"; continue; fi
         runner "cd $dir"
         runner "git pull"
@@ -303,7 +316,8 @@ function git_update_pis() {
     set +e
     t=$(gettemp git-updates.out)
     RP_FLAGS="${RP_FLAGS_BASE} --output $t"
-    hosts=$(list_pis | without hs-front,pi1,pi2-wifi,lightning)
+    # TODO(defer): add lightning
+    hosts="hs-family hs-lounge hs-mud pibr pout trellis1 twinkle"
     echo "pulling git updates..."
     RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
@@ -564,6 +578,7 @@ function procmon_update() {
     runner "make install"
     runner ":>$PROCQ"
     runner "systemctl restart procmon"
+    runner "nag -r"
 }
 
 # push an update of the pylib wheel distribute to select RPI's
@@ -583,17 +598,17 @@ function push_wheel() {
 function checks_real() {
     nag |& expect "nagios checks" "all ok"
     leases_list_orphans |& expect "dns orphans" "all ok"
-    cat $PROCQ |& expect "procmon queue" ""
-    fgrep -v 'session opened' /rw/log/queue | expect "syslog queue" ""
+    cat $PROCQ |& expect_exact "procmon queue" ""
+    fgrep -v 'session opened' /rw/log/queue | expect_exact "syslog queue" ""
     $0 dup-check |& expect "$(basename $0) dup cmds" "all ok"
     dns_check |& expect "dns config check" "all ok"
     /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
     /root/bin/d check-all-up |& expect "docker instances" "all ok"
-    /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect "exim queue empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/paniclog |& expect "exim panic log empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var_log/exim/rejectlog |& expect "exim reject log empty" "0"
-    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect "no unencrpted ktools secrets" "0"
-    git_check_all |& expect "git dirs with local changes" ""
+    /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect_exact "exim queue empty" "0"
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/paniclog |& expect_exact "exim panic log empty" "0"
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/rejectlog |& expect_exact "exim reject log empty" "0"
+    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect_exact "no unencrpted ktools secrets" "0"
+    git_check_all |& expect_exact "git dirs with local changes" ""
 }
 
 # Wrapper around checks_real that does formatting and checks for overall status.
@@ -639,17 +654,17 @@ function keymaster_logs() {
 # Enter the keymaster password to get the service ready.
 function keymaster_reload() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
-    stat=$(curl -ksS ${KM}/healthz)
+    stat=$(curl -ksS ${KEYMASTER_HOST}/healthz)
     if [[ "$stat" == "ok" ]]; then emitc blue "already ok"; return 0; fi
     read -s -p "km password: " passwd
     echo ""
-    stat=$(curl -ksS -d "password=$passwd" "${KM}/load" | html2text)
+    stat=$(curl -ksS -d "password=$passwd" "${KEYMASTER_HOST}/load" | html2text)
     if [[ "$stat" != "ok" ]]; then emitc red "$stat"; return 1; fi
     emitc green ok
 }
 
 function keymaster_status() {
-    curl -ksS "${KM}/healthz"
+    curl -ksS "${KEYMASTER_HOST}/healthz"
     echo ""
 }
 
@@ -659,7 +674,7 @@ function keymaster_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     read -s -p "km password: " passwd
     tmp=$(gettemp kmd)
-    gpg_s -p'$passwd' -i "$KMD_P" -o "$tmp"
+    pcrypt -p "$passwd" -i "$KMD_P" -o "$tmp"
     s1=$(stat -t $tmp)
     emacs $tmp
     s2=$(stat -t $tmp)
@@ -667,7 +682,7 @@ function keymaster_update() {
     read -p "ok to proceed? " ok
     if [[ "$ok" != "y" ]]; then emitc yellow "aborted."; rm $tmp; return; fi
     mv -f $KMD_P ${KMD_P}.prev
-    pcrypt -p'$passwd' -i "$tmp" -o "$KMD_P"
+    pcrypt -p "$passwd" -i "$tmp" -o "$KMD_P"
     rm $tmp
     emitc green "re-encryption done; attempting to rebuild kmdock"
     d u keymaster   # allow -e to abort if this fails.
@@ -679,10 +694,10 @@ function keymaster_update() {
 
 # Disable the keymaster.
 function keymaster_zap() {
-    stat=$(curl -ksS ${KM}/healthz)
+    stat=$(curl -ksS ${KEYMASTER_HOST}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc blue "already zapped"; return 0; fi
-    runner "curl -ksS ${KM}/qqq >/dev/null"
-    stat=$(curl -ksS ${KM}/healthz)
+    runner "curl -ksS ${KEYMASTER_HOST}/qqq >/dev/null"
+    stat=$(curl -ksS ${KEYMASTER_HOST}/healthz)
     if [[ "$stat" == *"not ready"* ]]; then emitc orange "zapped"; return 0; fi
     emitc red "zap failed: $stat"
 }
@@ -703,12 +718,12 @@ function list_all() {
 }
 
 function list_linux() {
-    echo -n "$LIST_LINUX"
+    echo -n "$Q_LINUX_HOSTS "
     list_pis
 }
 
 function list_pis() {
-    echo $LIST_PIS
+    echo $Q_PI_HOSTS
 }
 
 function list_rsnap_hosts() {
@@ -809,7 +824,7 @@ function main() {
         case "$flag" in
     # Note: flags mostly only affect multi-host commands...
             --debug | -d) DEBUG=1 ;;                      ## leave temp files in place
-            --exclude | -x) EXCLUDE=$2; shift ;;          ## csv list of substring match patterns
+            --exclude | -x) Q_EXCLUDE=$2; shift ;;          ## csv list of substring match patterns
             --help    | -h) myhelp ;;
             --nopara  | -n | -1) PARA=0 ;;                ## run sequentually rather than in parallel
             --host-subst | -H) HOST_SUBST="$2"; shift ;;  ## use $1 instead of "@" for host subst char
@@ -858,7 +873,7 @@ function main() {
         ps) ps_fixer ;;                                            ## colorized and improved ps output
         sort-skip-header | sort | snh) sort_skip_header ;;         ## sort stdin->stdout but skip 1 header row
         systemd-daemon-reload | sdr | sR)                                    ## systemd daemon refresh
-            runner "systemctl daemon-reload && emit 'reloaded'" ;;
+            runner "systemctl daemon-reload" && emit 'reloaded' ;;
         systemd-down | s0) runner "systemctl stop ${1:-procmon}" ;;          ## stop a specified service (procmon by default)
         systemd-restart | sr) runner "systemctl restart ${1:-procmon}" ;;    ## restart a specified service (procmon by default)
         systemd-status | ss | sq) runner "systemctl status ${1:-procmon}" ;; ## check service status (procmon by default)
@@ -881,12 +896,12 @@ function main() {
             updater "$(list_linux | without jack,blue,mc2)" ;;
         uptime | uta | ut)                                         ## uptime for all linux hosts list multiple hosts (or multiple other things)
             RUN_PARA "$(list_linux)" "uptime" | sed -e 's/: *[0-9:]* /:/' -e 's/:up/@up/' -e 's/,.*//' -e 's/ssh: con.*/@???/' | column -s@ -t | sort ;;
-        list-all | la) list_all | without $EXCLUDE ;;              ## list all known local-network hosts (respecting -x) via dhcp server leases
-        list-git-dirs | lg) echo $GIT_DIRS ;;                      ## list all known git dirs (hard-coded list)
-        list-linux | ll) list_linux | without $EXCLUDE ;;          ## list all linux machines (hard-coded list)
-        list-pis | lp) list_pis | without $EXCLUDE ;;              ## list all pi's (hard-coded list)
-        list-rsnaps | lr) list_rsnap_hosts | without $EXCLUDE ;;   ## list all hosts using rsnapshot (hard-coded list)
-        list-tps | ltp | lt) list_tps | without $EXCLUDE ;;        ## list all tplink hosts (via dhcp leases prefix search)
+        list-all | la) list_all | without $Q_EXCLUDE ;;            ## list all known local-network hosts (respecting -x) via dhcp server leases
+        list-git-dirs | lg) echo $Q_GIT_DIRS ;;                    ## list all known git dirs (hard-coded list)
+        list-linux | ll) list_linux | without $Q_EXCLUDE ;;        ## list all linux machines (hard-coded list)
+        list-pis | lp) list_pis | without $Q_EXCLUDE ;;            ## list all pi's (hard-coded list)
+        list-rsnaps | lr) list_rsnap_hosts | without $Q_EXCLUDE ;; ## list all hosts using rsnapshot (hard-coded list)
+        list-tps | ltp | lt) list_tps | without $Q_EXCLUDE ;;      ## list all tplink hosts (via dhcp leases prefix search)
     # run arbitrary commands on multiple hosts
         listp)                                                     ## run $@ locally with --host-subst, taking list of substitutions from stdin rather than a fixed host list.  spaces in stdin cause problems; TODO
             RUN_PARA LOCAL "$(cat)" "$@" ;;

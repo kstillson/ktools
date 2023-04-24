@@ -29,7 +29,7 @@ expressions when multiple rules match.
 I've included one of my actual configurations as an example.
 
 Note #1- my syslog-ng configuration (see
-../../docker-containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf) is
+../../containers/syslogdock/files/etc/syslog-ng/syslog-ng.conf) is
 designed to take messages from cron daemons and put them into separate files
 named by the host they came from, i.e. /root/syslog/cron-{hostname}.log.  In
 this way, I can have a glob rule for /root/syslog/cron* that will alert if any
@@ -78,7 +78,7 @@ def find_newest_file(target):
   files = glob.glob(f'{dirname}/*')
   if not files: raise RuntimeError('no files for newest check')
   try:
-    return max(files, key=os.path.getctime)
+    return max(files, key=os.path.getmtime)
   except Exception as e:
     raise RuntimeError(f'Exception finding newst file (possibly broken symlink?): {target}: {e}')
 

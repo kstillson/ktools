@@ -60,7 +60,7 @@ also don't want to be overly annoyed by them.  So when procmon "raises an
 alert," what it's actually doing is changing it's [/healthz web
 handler](development.md) to stop indicating that all is well.  This will
 eventually bubble up through my normal Nagios monitoring
-[config](../docker-containers/nagdock/files/etc/nagios/conf.d/jack.cfg), first
+[config](../containers/nagdock/files/etc/nagios/conf.d/jack.cfg), first
 showing up as a check failure in Nagios, and eventually alerting on my phone
 via aNag.  This gives me several ways I can temporarily silence an alert (if I
 want to get to it later), or "acknowledge" it, which basically makes it go

@@ -4,6 +4,10 @@ SHELL := /bin/bash
 TEST_LOG ?= test.log
 
 LOCAL_SITE_DIR ?= $(shell python3 -m site --user-site)
+SIMPLE_BIN_DIR ?= ~/.local/bin
+
+BUILD_SIMPLE ?= $(shell ktools_settings -b simple)
+
 INSTALL_BASE := $(shell echo $${VIRTUAL_ENV:-$(LOCAL_SITE_DIR)})
 
 CIRCUITPY_DIR ?= /media/$$USER/CIRCUITPY
@@ -18,22 +22,22 @@ include ../etc/Makefile-colors
 # ---------- standard targets
 
 all:
-	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) all-simple; else $(MAKE) all-wheel; fi
 
 clean:
-	rm -rf $(TEST_LOG) */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
+	rm -rf $(TEST_LOG) __pycache__ */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
 	@printf "\n NOT cleaning the $(YELLOW)venv directory$(RESET).  use make target 'vclean' or remove manually if needed.\n\n"
 
 comp:
 	$(COMP) -b "$(INSTALL_BASE)" -L 'tools/ktools' circuitpy_sim/*.py home_control/*.py kcore/*.py tools/*.py
 
 install:
-	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) install-simple; else $(MAKE) install-wheel; fi
 
 test: $(TEST_LOG)
 
 uninstall:
-	if [[ "$$BUILD_SIMPLE" == "1" ]]; then $(MAKE) uninstall-simple; else $(MAKE) uninstall-wheel; fi
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) uninstall-simple; else $(MAKE) uninstall-wheel; fi
 
 update:
 	$(MAKE) all test install
@@ -66,7 +70,7 @@ install-wheel: $(WHEEL)
 # But when making lots of changes, this is quicker (when it works).
 install-simple: tools/keymaster.crt
 	rm -rf */__pycache__ */.pytest_cache
-	mkdir -p $(LOCAL_SITE_DIR) ~/.local/bin
+	mkdir -p $(LOCAL_SITE_DIR) $(SIMPLE_BIN_DIR)
 	# circuitpy_sim
 	rm -rf $(LOCAL_SITE_DIR)/circuitpy_sim
 	mkdir -p $(LOCAL_SITE_DIR)/circuitpy_sim
@@ -75,23 +79,26 @@ install-simple: tools/keymaster.crt
 	rm -rf $(LOCAL_SITE_DIR)/home_control
 	mkdir -p $(LOCAL_SITE_DIR)/home_control
 	cp -puv home_control/* $(LOCAL_SITE_DIR)/home_control
-	cp -puv home_control/hc.py ~/.local/bin/hc
+	cp -puv home_control/hc.py $(SIMPLE_BIN_DIR)/hc
 	# kcore
 	rm -rf $(LOCAL_SITE_DIR)/kcore
 	mkdir -p $(LOCAL_SITE_DIR)/kcore
 	cp -puv kcore/* $(LOCAL_SITE_DIR)/kcore
-	cp -puv kcore/auth.py ~/.local/bin/k_auth
+	cp -puv kcore/auth.py $(SIMPLE_BIN_DIR)/k_auth
 	# ktools
 	rm -rf $(LOCAL_SITE_DIR)/ktools
 	mkdir -p $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
-	cp -puv tools/keymaster.crt ~/.local/bin/keymaster.crt
-	cp -puv tools/nag.py ~/.local/bin/nag
-	cp -puv tools/pcrypt.py ~/.local/bin/pcrypt
-	cp -puv tools/ratelimiter.py ~/.local/bin/ratelimiter
-	cp -puv tools/run_para.py ~/.local/bin/run_para
+	cp -puv tools/keymaster.crt $(SIMPLE_BIN_DIR)/keymaster.crt
+	cp -puv tools/ktools_settings.py $(SIMPLE_BIN_DIR)/ktools_settings
+	cp -puv tools/nag.py $(SIMPLE_BIN_DIR)/nag
+	cp -puv tools/pcrypt.py $(SIMPLE_BIN_DIR)/pcrypt
+	cp -puv tools/ratelimiter.py $(SIMPLE_BIN_DIR)/ratelimiter
+	cp -puv tools/run_para.py $(SIMPLE_BIN_DIR)/run_para
+	cp -puv tools/substring_counter.py $(SIMPLE_BIN_DIR)/substring_counter
 	#
 	$(MAKE) link
+	chmod -R go+rX $(LOCAL_SITE_DIR)
 
 
 # ----- :test
@@ -114,9 +121,16 @@ uninstall-simple:
 
 # ---------- specialized installation targets
 
-install-system: $(WHEEL)
+install-system:
 	@if [[ -v VIRTUAL_ENV ]]; then echo "ERROR- install-system not compatible with virtual environment.  Try command 'deactivate' and run again."; exit 1; fi
-	umask 022; pip3 install --system --upgrade $(WHEEL)
+	if [[ "${BUILD_SIMPLE}" == "1" ]]; then $(MAKE) install-system-simple; else $(MAKE) install-system-wheel; fi
+
+install-system-simple:
+	SIMPLE_BIN_DIR=/usr/local/bin LOCAL_SITE_DIR=$(shell python3 -c 'import site; print(site.getsitepackages()[0])') $(MAKE) install-simple
+
+install-system-wheel: $(WHEEL)
+	umask 022; pip3 install -t /usr/local --upgrade $(WHEEL)
+
 
 # Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
 link:

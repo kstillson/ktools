@@ -1,0 +1,14 @@
+
+autostart: 5;host=a2.point0.net
+
+# web server accesses docker port 8080 directly...
+#ports:
+#  - 8100:8080
+test_ports: ['8100:8080']
+
+mount_rw:
+  - data: /home/santa/data
+
+vols:
+  - data:
+    owner: user/santa

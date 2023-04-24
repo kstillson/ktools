@@ -1,0 +1,8 @@
+
+extra_init: ["-v", "test"]
+
+mount_rw:
+  - /rw/mnt/rsnap/echo-back: /root/echo-back
+
+# need to use DNS assigned IP address to retrieve from keymaster, even in testing mode.
+ip: "\\-"

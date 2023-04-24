@@ -1,0 +1,13 @@
+
+ip: 1.2.3.4
+
+network: net2
+
+ports:
+  - 8080: 8081
+
+mount_ro:
+  - localvol, /tmp/localvol
+
+mount_rw:
+  - /tmp/hosttmp, /tmp/hosttmp

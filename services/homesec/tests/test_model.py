@@ -55,7 +55,7 @@ def test_other_touch_tests(setup_test):
     assert M.get_touch_status_for('dad') == 'away'
     assert M.get_touch_status_for('invalid') is None
 
-    touches = M.get_touches()
+    touches = M.get_presence_touches()
     assert touches[0].last_update == 123
     assert touches[1].last_update == 456
 

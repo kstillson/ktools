@@ -1,0 +1,72 @@
+
+# This is the an example ktools settings file, copied by the Makefile :prep
+# stage from etc/initial-ktools.settings to ~/.ktools.settings.  You should
+# probably customize these settings for your system and erase this comment to
+# indicate you've done so.
+#
+# See pylib/kcore/ktools_settings.py for more details on what these settings
+# control, and what default values are used if no setting is set.
+#
+# In general, ktools should operate okay without these settings significantly
+# customized, with the exception of tools_for_root/q.sh, which really needs
+# some of the "q settings" section populated, and any of the commands that
+# launch or manipulate containers, which will need most of the container
+# related sections populated.  
+#
+# Values below where the correct setting is inherently system-specific and
+# there's no sensible value I can provide are commented-out with "###".  The
+# various ktools try to have sensible defaults for all of these, with the
+# exception of vol_base; most of the container tools won't run without that
+# being set to something.
+
+# This file is in YAML format.
+
+
+# ---------- Makefile settings
+
+root_ro: false
+simple: false
+
+
+# ---------- pylib runtime settings
+
+### keymaster_host: ""
+varz_prom: false
+
+
+# ---------- q settings
+
+### q_exclude: ""
+### q_git_dirs: []
+### q_linux_hosts: []
+### q_pi_hosts: []
+
+
+# ---------- hc settings
+
+### hc_data: ""
+
+
+# ---------- containers settings
+
+### docker_exec: podman
+### d_src_dir: ""
+### d_src_dir2: ""
+repo1: ktools
+### repo2: ""
+### shift_gids: 100000
+### shift_uids: 100000
+
+
+# ---------- container building settings
+
+build_params: ""
+
+
+# ---------- container d-run settings
+
+dns: ""
+log: none
+ip: "\\-"
+network: bridge
+### vol_base: ""

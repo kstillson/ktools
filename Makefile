@@ -3,15 +3,14 @@
 
 # Control variables inherited from the environment:
 #   BUILD_DOCKER_CONTAINERS
-#   BUILD_SIMPLE
 #   NO_TRACKING
 #   SUBDIRS
 
 TOP_TARGETS = all clean comp install test uninstall update
-SUBDIRS ?= pylib tools-for-root services docker-infrastructure
+SUBDIRS ?= pylib tools-etc tools-for-root services container-infrastructure
 
 ifeq ($(BUILD_DOCKER_CONTAINERS), 1)
-  SUBDIRS := $(SUBDIRS) docker-containers
+  SUBDIRS := $(SUBDIRS) containers
 endif
 
 SHELL := /bin/bash
@@ -24,7 +23,7 @@ include etc/Makefile-colors
 # Both rules will run..  So we do the local :prep receipe first, and then echo "all" into the subdirs.
 #
 all:	prep
-	@if [[ "$$BUILD_DOCKER_CONTAINERS" != "1" ]]; then printf "\n  $(YELLOW)NOTE: $(RESET) docker-containers/... not included in the build.\n         If you think you want it, check README.md and then set 'BUILD_DOCKER_CONTAINERS=1'.\n\n"; fi
+	@if [[ "$$BUILD_DOCKER_CONTAINERS" != "1" ]]; then printf "\n  $(YELLOW)NOTE: $(RESET) containers/... not included in the build.\n         If you think you want it, check README.md and then set 'BUILD_DOCKER_CONTAINERS=1'.\n\n"; fi
 
 # This also includes "all"; both rules will run.
 $(TOP_TARGETS): $(SUBDIRS)
@@ -47,13 +46,15 @@ clean:
 
 prep:	etc/prep-stamp
 
-etc/prep-stamp:	private.d private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py
+etc/prep-stamp:	private.d private.d/kcore_auth_db.data.pcrypt private.d/keymaster.pem private.d/wifi_secrets.py services/homesec/private.d/data.py $${HOME}/.ktools.settings
 	etc/check-package-deps.sh
 	if [[ -z "$$NO_TRACKING" ]]; then etc/tracking.sh "$@"; fi
 	touch etc/prep-stamp
 
 private.d:
 	mkdir -p $@
+	# Create the subdir tree within private.d expected by the various private.d symlinks.
+	mkdir -p $(shell find . -type l | egrep "private.d$$" | sed -e "s:/private.d::" -e "s/^\./private.d/")
 
 private.d/kcore_auth_db.data.pcrypt:
 	touch $@
@@ -82,3 +83,5 @@ services/homesec/private.d/data.py:
 	mkdir -p $(shell dirname $@)
 	touch $@
 
+$${HOME}/.ktools.settings: etc/initial-ktools.settings
+	cp -nv $^ $@

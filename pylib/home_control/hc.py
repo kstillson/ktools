@@ -108,6 +108,7 @@ successfully queued.
 import argparse, fnmatch, glob, os, pprint, site, sys, time
 from dataclasses import dataclass
 from typing import Any
+import ktools.ktools_settings as KS
 import kcore.uncommon as UC
 import kcore.varz as V
 
@@ -196,7 +197,7 @@ def file_finder2(list_of_dirs, privdir, list_of_globs):
 def file_finder(primary_base_dirs, privdir, list_of_globs):
   try1 = file_finder2(primary_base_dirs, privdir, list_of_globs)
   if try1: return try1
-  srch2 = [os.environ.get('HC_DATA_DIR'),
+  srch2 = [KS.get('hc_data'),
            os.path.dirname(__file__),
            os.path.join(site.getusersitepackages(), 'home_control')]
   return file_finder2(srch2, privdir, list_of_globs)
@@ -251,6 +252,7 @@ def find_target(search_dict, target, command):
   if SETTINGS['nosub']: return None
   matches = []
   for k, v in search_dict.items():
+    if ':' in k: continue  # ignore command-specific overrides when searching for substrings; will basicaly always create a useless dup of the non-overidden target.
     if target in k: matches.append(k)
 
   if len(matches) == 1:

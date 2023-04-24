@@ -23,7 +23,7 @@ def init():
 # ---------- our test server
 
 def start_test_server(port):
-    handlers = { None: lambda request: test_handler(request) }
+    handlers = { None: lambda request: server_handler(request) }
     print(f'start test server on port {port}', file=sys.stderr)
     ws = W.WebServer(handlers, port)
     ws.start()
@@ -33,7 +33,7 @@ def start_test_server(port):
 HANDLER_DELAY = 0
 HANDLER_DELAY_NEXT = None
 LAST_REQUEST = None
-def test_handler(request):
+def server_handler(request):
     if not isinstance(request, W.Request): return '?'  # Test seems to pass a RequestFramework object occasionally; no idea what/why that is.  Ignore it seems to work.
     global HANDLER_DELAY, LAST_REQUEST
     LAST_REQUEST = request

@@ -38,3 +38,10 @@ job separated, and shows the real-time output of jobs in a dashboard.
 
 See the module doc for various examples of what this is useful for.
 
+
+### substring_counter.py
+
+Replaces lines from stdin that match a list of substrings with a count of how
+many lines were replaced.  I use this in tools-for-root/etc/rsnap-diff,
+although I suspect it has many other uses.
+

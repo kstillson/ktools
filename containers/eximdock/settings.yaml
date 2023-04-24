@@ -1,0 +1,25 @@
+
+autostart: 5
+
+ports:
+  - 25:2525
+
+# console output is redundant to exim logs.
+log: none
+
+mount_rw:
+  - var/log:   /var/log
+  - var/spool: /var/spool
+  - var/mail:  /var/mail
+
+vol_defaults:
+  owner: user/exim
+  group: dwatch
+  perm: '02750'
+
+vols:
+  - var/log/exim
+  - var/mail
+  - var/spool/exim/db
+  - var/spool/exim/input
+  - var/spool/exim/msglog

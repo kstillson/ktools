@@ -1,24 +1,49 @@
 
 SHELL := /bin/bash
 
-# Note: several targets depend on docker-infrastructure being INSTALLED
+# Note: several targets depend on container-infrastructure being INSTALLED
 # before these targets can be BUILT.
 
 # Furthermore, docker containers other than kds-baseline depend on
-# kds-baseline being INSTALLED (i.e. marked live) before they can be BUILT.
+# kcore-baseline being INSTALLED (i.e. tagged "live") before they can be BUILT.
 
 # ---------- control constants
 
-DOCKER_VOLS ?= /rw/dv
+DIRNAME ?= $(shell basename $(shell pwd))
+DOCKER_EXEC ?= $(shell ktools_settings -b docker_exec)
+DOCKER_VOLS ?= $(shell ktools_settings -b vol_base)
+UID := $(shell id -u)
 
-# ---------- determine docker uid namespace mapping offsets
+DBUILD_PUSH_OPTS ?= $(shell ktools_settings -b build_push_opts)
+DBUILD_PUSH_TO ?= $(shell ktools_settings -b build_push_to)
+DBUILD_REPO ?= $(shell ktools_settings -b repo1)
 
-DOCKER_MAP_UID ?= $(shell grep dmap: /etc/subuid | cut -d: -f2)
+
+# ----- directory constants (need to be updated with Python versions)
+
+PLIB := files/usr/lib/python3.10/site-packages
+KCORE_DIR := $(PLIB)/kcore
+KTOOLS_DIR := $(PLIB)/ktools
+
+
+# ----- determine if we need sudo
+
+NEED_SUDO := 1
+ifeq ($(UID), 0)
+  NEED_SUDO := 0
+endif
+ifeq ($(DOCKER_EXEC), podman)
+  NEED_SUDO := 0
+endif
+
+# ----- determine docker uid namespace mapping offsets
+
+DOCKER_MAP_UID ?= $(shell ktools_settings -b shift_uids)
 ifeq ($(DOCKER_MAP_UID),)
   DOCKER_MAP_UID := 0
 endif
 
-DOCKER_MAP_GID ?= $(shell grep dmap: /etc/subgid | cut -d: -f2)
+DOCKER_MAP_GID ?= $(shell ktools_settings -b shift_gids)
 ifeq ($(DOCKER_MAP_GID),)
   DOCKER_MAP_GID := 0
 endif
@@ -33,14 +58,14 @@ ifneq ($(GID_SEARCH),)
 endif
 
 
-# ----------
+# ---------- top level logic
 
 docker-all: build-stamp
 
 docker-clean:
-	rm -f *-stamp
+	rm -rf *-stamp __pycache__ .pytest_cache
 
-docker-install: install-stamp docker-all docker-test
+docker-install: docker-all docker-test install-stamp
 
 docker-test: docker-all test-stamp
 
@@ -49,26 +74,53 @@ docker-uninstall:
 
 docker-update: all docker-test docker-install
 
+# force to :live without testing...
+promote: install-stamp
 
-# ----------
+# force push without testing or even checking if :live exists (i.e. probably want to "promote" first).
+push: build-stamp
+	$(DOCKER_EXEC) push $(DBUILD_PUSH_OPTS) $(DBUILD_REPO)/$(DIRNAME):live $(DBUILD_PUSH_TO)/$(DBUILD_REPO)/$(DIRNAME):live
+
+
+# ---------- second & third level logic
 
 build-stamp: ../kcore-baseline/baseline-stamp $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) build-stamp-sudo; else $(MAKE) build-stamp-run; fi
+
+build-stamp-sudo:
 	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
-	sudo -E /root/bin/d-build    # -E to preserve d-build environment vars
+	exit 2
+	sudo -E $(MAKE) build-stamp-run    # -E to preserve d-build environment vars
+
+build-stamp-run:
+	d-build
 	touch build-stamp
 
-install-stamp: build-stamp
+install-stamp:
+	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) install-stamp-sudo; else $(MAKE) install-stamp-run; fi
+
+install-stamp-sudo: build-stamp
 	@echo "about to sudo for docker container d-build command.  Containers can only be built by root."
-	sudo -E /root/bin/d-build -s
+	sudo -E $(MAKE) install-stamp-run
+
+install-stamp-run: build-stamp
+	d-build -s
 	touch install-stamp
 
-test-stamp: Test $(wildcard Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+
+test-stamp: $(wildcard Test* Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) test-stamp-sudo; else $(MAKE) test-stamp-run; fi
+
+test-stamp-sudo:
 	@echo "about to sudo for docker container Test command.  Testing involves starting up a container, which only root can do."
-	sudo -E ./Test -r
+	sudo -E $(MAKE) test-stamp-run
+
+test-stamp-run:
+	pytest-3
 	touch test-stamp
+
 
 # ----------
 
 ../kcore-baseline/baseline-stamp:
 	$(MAKE) -C ../kcore-baseline all
-
