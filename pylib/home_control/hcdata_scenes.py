@@ -93,6 +93,9 @@ SCENES = {
   'k'           : [ 'kitchen' ],
   'o'           : [ 'outside' ],
   'O'           : [ 'office' ],
+
+# Special dynamically expanded
+  'TP'          : [ '$PLUGIN_NAME:TPLINK*' ],
 }
 
 

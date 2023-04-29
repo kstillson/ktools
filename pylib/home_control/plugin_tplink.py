@@ -27,7 +27,7 @@ percentage above 0%).
 '''
 
 import argparse, socket, sys
-from struct import pack
+from struct import pack, unpack
 
 DEFAULT_TIMEOUT = 5
 SETTINGS = {}
@@ -71,7 +71,7 @@ CMD_LOOKUP = {
   'on'       : '{"system":{"set_relay_state":{"state":1}}}',
   'off'      : '{"system":{"set_relay_state":{"state":0}}}',
 
- # ---------- dimmer wall switches (e.g. hs220)
+  # ---------- dimmer wall switches (e.g. hs220)
   'dim:@@'   : [ '{"system":{"set_relay_state":{"state":1}}}',
                  '{"smartlife.iot.dimmer":{"set_brightness":{"brightness":@@}}}' ],
   'dim'      : [ '{"system":{"set_relay_state":{"state":1}}}',
@@ -91,12 +91,18 @@ CMD_LOOKUP = {
   'bulb-med'     : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":2000,"on_off":1,"brightness":40}}}',
   'bulb-full'    : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":1000,"on_off":1,"brightness":100}}}',
 
+# ---------- in common to most tplink targets
+
+  'info'       : '{"system":{"get_sysinfo":{}}}',
+  'level'      : '{"system":{"get_sysinfo":{}}}',  # same query as info, but will return current dimming level
+  'bulb-info'  : '{"system":{"get_sysinfo":{}}}',
+  'bulb-level' : '{"system":{"get_sysinfo":{}}}',  # same query as info, but will return current dimming level
+
  #
  # ========== NON-NORMALIZABLE COMMANDS (only send these to the correc device types)
  #
 
  # ---------- in common to most tplink targets
-  'info'     : '{"system":{"get_sysinfo":{}}}',
   'cloudinfo': '{"cnCloud":{"get_info":{}}}',
   'wlanscan' : '{"netif":{"get_scaninfo":{"refresh":0}}}',
   'time'     : '{"time":{"get_time":{}}}',
@@ -189,20 +195,47 @@ def tplink_send(hostname, command):
   raw_cmds = CMD_LOOKUP.get(command)
   if not raw_cmds: return False, f'{hostname}: unknown tplink command: {command}'
 
-  if not isinstance(raw_cmds, list):
-    return tplink_send_raw(hostname, raw_cmds, cmd_param)
+  if command in ['info', 'level', 'bulb-info', 'bulb-level']:
+    ok, out = tplink_send_raw(hostname, raw_cmds, cmd_param, return_raw=True, fast_mode=False)
+    if command in ['level', 'bulb-level']: out = f'{hostname}: {parse_json_level(command, out)}'
+    return ok, out
 
+  if not isinstance(raw_cmds, list):
+    ok, out = tplink_send_raw(hostname, raw_cmds, cmd_param)
+    return ok, out
+
+  # We have a list of commands to run, do them in sequence...
   all_ok = True
   answers = []
   for i in raw_cmds:
     ok, resp = tplink_send_raw(hostname, i, cmd_param)
     if not ok: all_ok = False
     answers.append(resp)
-  return all_ok, ','.join(answers)  # device level commands are supposed to return strings, not lists, so much the answers together.
+  return all_ok, ','.join(answers)  # device level commands are supposed to return strings (not lists), so moosh the answers together.
 
 
-def tplink_send_raw(hostname, raw_cmd, cmd_param=None):
+def parse_json_level(command, raw_output):
+    import json
+    try:
+      _, json_from_device = raw_output.split(': ', 1)  # format is "hostname: json"
+      data = json.loads(json_from_device)
+      si = data['system']['get_sysinfo']
+      if command.startswith('bulb-'):
+        relay = si['light_state']['on_off']
+        if relay in [0, '0']: return 'off'
+        return si.get('brightness', 'on') ##@@
+      else:
+        relay = si['relay_state']
+        if relay in [0, '0']: return 'off'
+        return si.get('brightness', 'on')
+    except Exception as e:
+      return f'?: {str(e)}: {raw_output}'
+
+
+def tplink_send_raw(hostname, raw_cmd, cmd_param=None, return_raw='auto', fast_mode='auto'):
   if cmd_param: raw_cmd = raw_cmd.replace('@@', cmd_param)
+  if return_raw == 'auto': return_raw = SETTINGS.get('raw', False)
+  if fast_mode == 'auto': fast_mode = SETTINGS.get('fast', False)
 
   if SETTINGS['test']: return True, f'would send {hostname} : {raw_cmd}'
   if SETTINGS['debug']: print(f'DEBUG: sending {hostname} : {raw_cmd}')
@@ -213,15 +246,29 @@ def tplink_send_raw(hostname, raw_cmd, cmd_param=None):
     sock_tcp.connect((hostname, 9999))
     sock_tcp.send(encrypt(raw_cmd))
   except Exception as e:
-    return False, f'{hostname}: error: {str(e)}'
-  if SETTINGS.get('fast'):   # async mode; send and forget
+    return False, f'{hostname}: error exception: {str(e)}'
+  if fast_mode:   # async mode; send and forget
     sock_tcp.close()
     return True, f'{hostname}: sent'
-  resp = sock_tcp.recv(2048)
+
+  packed_length = sock_tcp.recv(4)
+  length = unpack('>I', packed_length)[0]
+  if SETTINGS['debug']: print(f'DEBUG: header indcates expected length of {length}')
+
+  resp = b''
+  chunk_len = 256
+  while len(resp) < length:
+    chunk = sock_tcp.recv(chunk_len, socket.MSG_WAITALL)
+    resp += chunk
+    if SETTINGS['debug']: print(f'DEBUG: received chunk of len {len(chunk)}')
+    if not chunk or not return_raw: break
+
   sock_tcp.close()
-  out = decrypt(resp[4:])
+  out = decrypt(resp)
+
+  if SETTINGS['debug']: print(f'DEBUG: command to {hostname} returned: {out}')
   ok = '"err_code":0' in out
-  if SETTINGS.get('raw', False) is False and ok: out = 'ok'
+  if not return_raw: out = 'ok' if ok else 'error'
   return ok, f'{hostname}: {out}'
 
 
