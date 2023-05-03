@@ -33,7 +33,7 @@ CONFIG = {
     
   # syslog based
   '/root/syslog/daemon.log':                     SYS_LOG_AGE,
-  '/root/dv/eximdock/var_log/exim/mainlog':      3 * DAY,
+  '/root/dv/eximdock/var/log/exim/mainlog':      3 * DAY,
     
   ## '/root/dv/mysqldock/var_log_mysql/mysql.log':  SYS_LOG_AGE_SLOW,
   '/root/dv/nagdock/var_log_nagios/nagios.log':  SYS_LOG_AGE,
