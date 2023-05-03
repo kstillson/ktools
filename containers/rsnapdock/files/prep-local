@@ -9,4 +9,5 @@ SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|ln|od|strings|su)$"
 
 # Some files stored in private.d subdirs to keep them out of git;
 # move them into their real positions.
+mv /etc/private.d/* /etc || true
 mv /root/.ssh/private.d/* /root/.ssh || true

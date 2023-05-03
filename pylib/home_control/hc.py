@@ -265,10 +265,21 @@ def find_target(search_dict, target, command):
   return None  # Couldn't find a matching target.
 
 
+def expand_dynamic_scene_targets(scene_action_list):
+  out = []
+  for i in scene_action_list:
+    if i.startswith('$PLUGIN_NAME:'):
+      _, pattern = i.split(':', 1)
+      for d_name, d_plug in DEVICES.items():
+        if fnmatch.fnmatch(d_plug, pattern): out.append(d_name)
+    else: out.append(i)
+  return out
+
+
 def run_scene_expansion(scene_action_list, command):
   q = UC.ParallelQueue(single_threaded=SETTINGS['debug'])
   for i in scene_action_list:
-    if ':' in i:
+    if ':' in i:   # allow a scene-specific command to override the arg-provided one.
       target_i, command_i = i.split(':', 1)
     else:
       target_i = i
@@ -354,7 +365,7 @@ def control(target, command='on', settings=None, top_level_call=True):
   new_target = find_target(SCENES, target, command)
   if new_target:
     target = new_target
-    scene_action_list = SCENES[target]
+    scene_action_list = expand_dynamic_scene_targets(SCENES[target])
     if SETTINGS['debug']: print(f'DEBUG: scene {target}:{command} -> {scene_action_list}')
     overall_okay, outputs = run_scene_expansion(scene_action_list, command)
     if top_level_call: V.bump('scenes-success' if overall_okay else 'scenes-not-full-success')

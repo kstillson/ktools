@@ -8,13 +8,6 @@
 /var/cache/***
 USB*
 dlnadock/var_cache_minidlna
-home/*/.ssh/id_rsa
-home/kal/share/efs
-home/kasm/qemu/kasm/kasm1.qcow
-home/ken/share/efs
-home/pi/media1
-home/pi/mnt/encfs
 home/rsnapshot/***
 mlocate.db
-root/.ssh/id_rsa
 rw/var/lib/docker/***
