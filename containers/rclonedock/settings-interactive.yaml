@@ -21,7 +21,7 @@ foreground: 1
 mount_rw:
   - var_log: /var/log
   - /home/ken/share/encfs/default: /root/gdrive
-  - /rw/mnt/data1/photos-backup: /root/photos-backup
+  - /rw/mnt/data1/photos: /root/photos
   - /rw/mnt/rsnap/echo-back: /root/echo-back
 
 mount_ro:
