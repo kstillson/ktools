@@ -307,7 +307,7 @@ function upgrade() {
 function do-in-waves() {
     op="$1"
     set +e
-    list-autostart-waves | waves | while read -r line; do
+    list-autostart-waves | cut -f1,2 | waves | while read -r line; do
 	if [[ "$line" == +* ]]; then
 	    emitc green "starting wave: ${line/+ /}"
 	else

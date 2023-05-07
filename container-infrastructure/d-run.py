@@ -494,7 +494,9 @@ def gen_command():
     cmnd.append(full_spec)
 
     cmd = get_setting('cmd')
-    if cmd: cmnd.extend(cmd.split(' '))
+    if cmd:
+        if isinstance(cmd, list): cmnd.extend(cmd)
+        else: cmnd.extend(cmd.split(' '))
 
     # Add any additional init args on the end.
     extra_init = get_setting('extra_init')

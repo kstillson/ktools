@@ -74,6 +74,7 @@ fi
 
 function mount_efs() {
     TEST="/root/gdrive-efs/gdrive/active"
+    mkdir -p /root/gdrive-efs
     while [ ! -d ${TEST} ]; do
 	/usr/bin/encfs --extpass "/usr/local/bin/kmc encfs-default" /root/gdrive /root/gdrive-efs
 	if [ ! -d ${TEST} ]; then echo "encfs fail; retrying after delay."; sleep 20; fi

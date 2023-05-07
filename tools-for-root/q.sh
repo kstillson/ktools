@@ -239,8 +239,7 @@ function git_add_repo() {
     if [[ ! "$name" == *.git ]]; then name="${name}.git"; fi
     dir="/rw/dv/gitdock/home/ken/git/$name"
     runner "mkdir $dir"
-    runner "cd $dir"
-    runner "git init --bare"
+    runner "cd $dir; git init --bare"
     runner "chown -R dken.200802 $dir"
     runner "chmod -R go+rx,g+w $dir"
     emitc green "ready: git:git/${name}"
