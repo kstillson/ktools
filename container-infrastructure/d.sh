@@ -98,8 +98,6 @@ function get_autostart_wave() {
 	if [[ "$wave" == "" ]]; then
 	    emitC yellow "warn: found empty autostart file; assuming wave 5; $dir"
 	    wave="5"
-	else
-	    emitC yellow "info: found both autostart file and settings.yaml wave.  Using autostart file contents; $dir"
 	fi
     fi
     echo "$wave"
@@ -165,7 +163,7 @@ function list-all() {
 }
 
 function list-all-settings() {
-    ls -1 ${D_SRC_DIR}/*/settings*.yaml ${D_SRC_DIR2}/*/settings*.yaml 2>/dev/null
+    ls -1 ${D_SRC_DIR}/*/*.yaml ${D_SRC_DIR2}/*/*.yaml 2>/dev/null
 }
 
 function list-autostart-waves() {
@@ -197,7 +195,11 @@ function list-up() {
 
 function list-testable() {
     # old style tests: ls -1 ${D_SRC_DIR}/*/Test ${D_SRC_DIR2}/*/Test 2>/dev/null | get_container_names
-    ls -1 ${D_SRC_DIR}/*/test_*.py ${D_SRC_DIR2}/*/test_*.py 2>/dev/null | get_container_names
+    ls -1 ${D_SRC_DIR}/*/test_*.py \
+          ${D_SRC_DIR}/*/docker-compose.yaml \
+          ${D_SRC_DIR2}/*/test_*.py \
+          ${D_SRC_DIR2}/*/docker-compose.yaml \
+       2>/dev/null | get_container_names
 }
 
 # ------------------------------
