@@ -1,0 +1,26 @@
+
+version: "3.9"
+
+services:
+
+# ---------- prod
+
+  x-prod:
+    dns: 192.168.2.2
+    environment: { TZ: America/New_York }
+    logging: { driver: none }
+    networks:
+      docker1:
+        ipv4_address: ${IP?:must set $$IP}
+    restart: on-failure
+
+
+# ---------- tests
+
+  x-test:
+    dns: 192.168.2.2
+    environment: { TZ: America/New_York }
+    logging: { driver: none }
+    profiles: [ test ]
+    networks: [ docker2 ]
+    restart: no

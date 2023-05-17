@@ -1,6 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk -U add python3
+RUN apk -U add py3-pytest
 
 EXPOSE 8080
 
@@ -10,4 +10,4 @@ RUN /prep
 
 USER watch
 WORKDIR /home/watch
-ENTRYPOINT ["/home/watch/filewatch"]
+CMD ["/home/watch/filewatch"]

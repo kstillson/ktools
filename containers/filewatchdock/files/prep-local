@@ -2,9 +2,9 @@
 ACCOUNTS_DONT_DELETE_REGEX="^(root|watch|nobody)"
 GROUP_DONT_DELETE_REGEX="^(root|watch|nobody)"
 SUID_DONT_DELETE_REGEX="fusermount"
+WORLD_WRITABLE_DIRS_RM=0
 
 # ---------- fix ownership / permissions
 
-chgrp -R watch /home
+chgrp -R watch /home /tmp
 chmod -R g+rX /home
-

@@ -1,0 +1,46 @@
+version: "3.9"
+
+networks:
+  docker1: { external: true }
+  docker2: { external: true }
+
+
+services:
+
+# ---------- prod
+
+  filewatchdock: &baseline
+    extends: { file: ../docker-compose-common.yaml, service: x-prod }
+
+    container_name: filewatchdock
+    hostname: filewatchdock
+
+    environment:
+      - PUID=v2p:dpu:7d8d3304-32b0-ffe2-a5f3-04d4c455cf53:filewatchdock
+
+    volumes:
+      - /mnt/rsnap:/root/rsnap:ro
+      - /rw/log:/root/syslog:ro
+      - /rw/dv:/root/dv:ro
+      - /rw/dv/dnsdock/var_log_dnsmasq:/root/dnsmasq:ro
+      - /home/ken/share/rcam:/root/rcam:ro
+      - /rw/dv/eximdock/var/spool/exim/input:/root/exim:ro
+
+    ports:
+      - 8082:8080
+      - 8083:8080
+
+    image: ktools/filewatchdock:live
+
+
+# ---------- test
+
+  test_filewatchdock:
+    extends: { file: ../docker-compose-common.yaml, service: x-test }
+    <<: *baseline
+
+    container_name: test_filewatchdock
+
+    command: [ "pytest-3", "-p", "no:cacheprovider" ]
+
+    image: ktools/filewatchdock:latest

@@ -88,17 +88,18 @@ function get_autostart_wave() {
     if [[ "$wave" == *"host="* ]]; then
 	required_host=$(echo "$wave" | sed -e s'/^.*host=//' -e 's/,.*$//')
 	if [[ "$required_host" != $(hostname) ]]; then
-	    emitC yellow "skipping $sel autostart; not required host ($required_host)."
+	    emitC yellow "info: skipping $sel autostart; not required host ($required_host)."
 	    echo ""
 	    return
 	fi
     fi
     if [[ -f ${dir}/autostart ]]; then
+	wave=$(cat ${dir}/autostart)
 	if [[ "$wave" == "" ]]; then
-	    emitC yellow "found old-style autostart file; assuming wave 5; $dir"
+	    emitC yellow "warn: found empty autostart file; assuming wave 5; $dir"
 	    wave="5"
 	else
-	    emitC yellow "found both old-style autostart file and settings-based wave info.  Ignoring old-style file; $dir"
+	    emitC yellow "info: found both autostart file and settings.yaml wave.  Using autostart file contents; $dir"
 	fi
     fi
     echo "$wave"
@@ -229,12 +230,17 @@ function up() {
   echo -n "Starting: $sel ${extra_flags}    "
   cd_sel "$sel"
   if [[ -x ./Run ]]; then
-   echo "launching via legacy Run file"
-    ./Run ${extra_flags}
+      echo "launching via legacy Run file"
+      ./Run ${extra_flags}
+  elif [[ -f ./docker-compose.yaml ]]; then
+      ip=$(host ${sel} | cut -f4 -d' ')
+      echo "launching via docker compose to $ip"
+      if [[ "$ip" == "" ]]; then echo "unable to get IP"; exit -1; fi
+      IP=$ip docker compose up -d ${extra_flags}
   else
-    # This substitution only supports a single param to the right of the "--".
-    extra_flags=${extra_flags/-- /--extra_init=}
-    d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
+      # This substitution only supports a single param to the right of the "--".
+      extra_flags=${extra_flags/-- /--extra_init=}
+      d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
   fi
 }
 
@@ -252,6 +258,15 @@ function test() {
 
   outdir=$(dirname ${out})
   [[ -d ${outdir} ]] || mkdir -p ${outdir}
+
+  if [[ -f docker-compose.yaml ]]; then
+      target="test_${name}"
+      echo "testing via docker compose: $target"
+      IP=unused docker compose run --rm ${target} || { emitc red "failed"; echo "fail"; exit -1; }
+      echo "pass"
+      return
+  fi
+
 
   if [[ -f Makefile ]]; then
       make test &>> ${out} || { emitc red "failed"; echo "fail"; exit -1; }

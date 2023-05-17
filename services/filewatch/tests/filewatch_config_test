@@ -1,0 +1,7 @@
+
+CONFIG = {
+  '/tmp/dir1':                                   'DIR-EMPTY',
+  '/tmp/dir2/{NEWEST}':                          10,
+  '/tmp/file1':                                  10,
+  '/tmp/file2':                                  'NOT-FOUND:xx',
+}
