@@ -84,7 +84,11 @@ function find_dir() {
 function get_autostart_wave() {
     sel="$1"
     dir=$(find_dir $sel)
-    wave=$(fgrep "autostart:" ${dir}/settings.yaml | sed -e 's/^.*: *//')
+    if [[ -f ${dir}/autostart ]]; then
+	wave="$(cat ${dir}/autostart)"
+    else
+	wave=$(fgrep "autostart:" ${dir}/settings.yaml | sed -e 's/^.*: *//')
+    fi
     if [[ "$wave" == *"host="* ]]; then
 	required_host=$(echo "$wave" | sed -e s'/^.*host=//' -e 's/,.*$//')
 	if [[ "$required_host" != $(hostname) ]]; then
