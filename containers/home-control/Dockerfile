@@ -8,4 +8,4 @@ RUN /prep     # Hardening
 
 USER hc
 WORKDIR /home/hc
-ENTRYPOINT ["/etc/init"]
+CMD ["/etc/init"]

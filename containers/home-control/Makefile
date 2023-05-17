@@ -8,6 +8,8 @@ include ../../etc/Makefile-common  # for $PLIB
 HCH_DIR := files/home/hc
 HCH_FILES := home_control_service.py root.html
 HCH_TARGETS := $(addprefix $(HCH_DIR)/, $(HCH_FILES))
+HCH_TEST_FILES := test_home_control.py
+HCH_TEST_TARGETS := $(addprefix $(HCH_DIR)/, $(HCH_TEST_FILES))
 
 HCLIB_DIR := $(PLIB)/home_control
 PLIB_FILES := hc.py hcdata_devices.py hcdata_scenes.py hcdata_test_device.py plugin_delay.py plugin_test.py plugin_tplink.py plugin_web.py
@@ -20,12 +22,15 @@ DIRS := $(HCH_DIR) $(HCLIB_DIR)
 clean:
 	rm -rf $(HCH_DIR) $(HCLIB_DIR)
 
-copy: $(DIRS) $(HCH_DIR) $(HCH_TARGETS) $(HCLIB_DIR) $(PLIB_TARGETS)
+copy: $(DIRS) $(HCH_DIR) $(HCH_TARGETS) $(HCH_TEST_TARGETS) $(HCLIB_DIR) $(PLIB_TARGETS)
 
 $(DIRS):
 	mkdir -m 0755 -p $@
 
 $(HCH_TARGETS): $(HCH_DIR)/% : ../../services/home-control/%
+	install $^ $@
+
+$(HCH_TEST_TARGETS): $(HCH_DIR)/% : ../../services/home-control/tests/%
 	install $^ $@
 
 $(PLIB_TARGETS): $(HCLIB_DIR)/% : ../../pylib/home_control/%

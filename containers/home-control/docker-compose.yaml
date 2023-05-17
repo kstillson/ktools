@@ -1,0 +1,38 @@
+version: "3.9"
+
+networks:
+  docker1: { external: true }
+  docker2: { external: true }
+
+
+services:
+
+# ---------- prod
+
+  home-control: &baseline
+    extends: { file: ../docker-compose-common.yaml, service: x-prod }
+
+    container_name: home-control
+    hostname: home-control
+
+    volumes:
+      - /rw/dv/var_log_hc:/var/log/hc
+      - /dev/log:/dev/log
+
+    ports:
+      - 3333:8080
+
+    image: ktools/home-control:live
+
+
+# ---------- test
+
+  test_home-control:
+    extends: { file: ../docker-compose-common.yaml, service: x-test }
+    <<: *baseline
+
+    container_name: test_home-control
+
+    command: [ "pytest-3", "-p", "no:cacheprovider" ]
+
+    image: ktools/home-control:latest
