@@ -7,7 +7,7 @@ RUN umask 022 && \
     apk update && \
     apk cache -v sync && \
     apk upgrade && \
-    apk add bash python3 py3-cryptography py3-requests py3-yaml tzdata
+    apk add bash python3 py3-cryptography py3-requests py3-pytest py3-yaml tzdata
 
 # Enable auto varz -> Prometheus
 ##_prom ENV KTOOLS_VARZ_PROM 1
