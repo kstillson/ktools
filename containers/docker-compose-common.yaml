@@ -7,7 +7,9 @@ services:
 
   x-prod:
     dns: 192.168.2.2
-    environment: { TZ: America/New_York }
+    environment:
+      PUID: ${PUID?:must set $$PUID}
+      TZ: America/New_York
     logging: { driver: none }
     networks:
       docker1:
@@ -19,7 +21,9 @@ services:
 
   x-test:
     dns: 192.168.2.2
-    environment: { TZ: America/New_York }
+    environment:
+      PUID: ${PUID?:must set $$PUID}
+      TZ: America/New_York
     logging: { driver: none }
     profiles: [ test ]
     networks: [ docker2 ]

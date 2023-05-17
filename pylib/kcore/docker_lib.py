@@ -9,7 +9,7 @@ Some highlights:
 
 '''
 
-import atexit, os, random, socket, ssl, sys, threading, time, warnings
+import atexit, os, random, socket, subprocess, sys, threading, time, warnings
 import kcore.common as C
 import ktools.ktools_settings as KS
 
@@ -113,7 +113,33 @@ def socket_exchange(sock, send_list, add_eol=False, emit_transcript=False):
     return resp_list
 
 
+# ---------- find/launch system under test from within the container
+#
+# This is the newer testing approach where docker-compose has a test_{container_name} target.
+# Compose will launch a test container using those params, and then this logic (below) will
+# launch the logic under test from inside the container, and return the launched subprocess.
+# The caller will then run the tests from inside the container.
+
+def init_system_under_test(init_cmd=['/etc/init'], startup_wait_time=2):
+    if not os.path.isfile(init_cmd[0]): init_cmd[0] += '.py'  # in-case being run outside container
+    p = subprocess.Popen(init_cmd)
+    print(f'waiting for startup ({startup_wait_time} sec)', file=sys.stderr)
+    time.sleep(startup_wait_time)
+    poll = p.poll()
+    if poll is not None: sys.exit(f'init process died ({init_cmd} -> {poll})')
+    return p                        # caller is responsible for p.kill() when done.
+
+
+def pick_test_port() -> int:
+    port = os.environ.get('TESTPORT')
+    if port: return int(port)
+    return random.randint(20000, 29999)
+        
+
 # ---------- find/launch test containers
+#
+# This is Ken's older style of "settings.yaml" based testing, where pytest is run outside
+# the container, and as part of it's logic (below) launches a separate container for testing.
 
 @dataclass
 class ContainerData:
@@ -204,7 +230,7 @@ def stop_container_at_exit(name):
     return True
 
 
-# ---------- assertions
+# ---------- testing assertions
 
 # filename is in the regular host filesystem.
 def file_expect(expect, filename, invert=False, missing_ok=False):

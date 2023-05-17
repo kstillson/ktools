@@ -108,7 +108,7 @@ install-stamp-run: build-stamp
 	touch install-stamp
 
 
-test-stamp: $(wildcard Test* Buil* Dockerfile settings.yaml files/* files/*/* files/*/*/*)
+test-stamp: $(wildcard Test* Buil* Dockerfile *.yaml files/* files/*/* files/*/*/*)
 	if [[ "$(NEED_SUDO)" == "1" ]]; then $(MAKE) test-stamp-sudo; else $(MAKE) test-stamp-run; fi
 
 test-stamp-sudo:
@@ -116,7 +116,7 @@ test-stamp-sudo:
 	sudo -E $(MAKE) test-stamp-run
 
 test-stamp-run:
-	pytest-3
+	if [[ -f ./docker-compose.yaml ]]; then d test $(shell basename $(shell pwd)); else pytest-3; fi
 	touch test-stamp
 
 
