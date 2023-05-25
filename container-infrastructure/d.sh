@@ -84,7 +84,11 @@ function find_dir() {
 function get_autostart_wave() {
     sel="$1"
     dir=$(find_dir $sel)
-    wave=$(fgrep "autostart:" ${dir}/settings.yaml | sed -e 's/^.*: *//')
+    if [[ -f ${dir}/autostart ]]; then
+	wave="$(cat ${dir}/autostart)"
+    else
+	wave=$(fgrep "autostart:" ${dir}/settings.yaml | sed -e 's/^.*: *//')
+    fi
     if [[ "$wave" == *"host="* ]]; then
 	required_host=$(echo "$wave" | sed -e s'/^.*host=//' -e 's/,.*$//')
 	if [[ "$required_host" != $(hostname) ]]; then
@@ -236,9 +240,11 @@ function up() {
       ./Run ${extra_flags}
   elif [[ -f ./docker-compose.yaml ]]; then
       ip=$(host ${sel} | cut -f4 -d' ')
-      echo "launching via docker compose to $ip"
       if [[ "$ip" == "" ]]; then echo "unable to get IP"; exit -1; fi
-      IP=$ip docker compose up -d ${extra_flags}
+      puid="$(k_auth -e):$sel"
+      if [[ "$puid" == "" ]]; then echo "unable to get PUID"; exit -2; fi
+      echo "launching via docker compose to $ip"
+      IP="$ip" PUID="$puid" docker compose up -d ${extra_flags}
   else
       # This substitution only supports a single param to the right of the "--".
       extra_flags=${extra_flags/-- /--extra_init=}
@@ -264,7 +270,8 @@ function test() {
   if [[ -f docker-compose.yaml ]]; then
       target="test_${name}"
       echo "testing via docker compose: $target"
-      IP=unused docker compose run --rm ${target} || { emitc red "failed"; echo "fail"; exit -1; }
+      echo "@@ IP='unused' PUID='unused' docker compose run --rm ${target}"
+      IP="unused" PUID="unused" docker compose run --rm ${target} || { emitc red "failed"; echo "fail"; exit -1; }
       echo "pass"
       return
   fi

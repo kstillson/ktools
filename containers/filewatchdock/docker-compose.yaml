@@ -15,9 +15,6 @@ services:
     container_name: filewatchdock
     hostname: filewatchdock
 
-    environment:
-      - PUID=v2p:dpu:7d8d3304-32b0-ffe2-a5f3-04d4c455cf53:filewatchdock
-
     volumes:
       - /mnt/rsnap:/root/rsnap:ro
       - /rw/log:/root/syslog:ro

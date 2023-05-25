@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, pytest, random, shutil, subprocess, sys, time
+import os, pytest, shutil, subprocess, sys, time
 import kcore.docker_lib as D
 
 
@@ -14,21 +14,8 @@ FILE1_1 = DIR1 + '/file1-1'  # should not exist
 FILE2_1 = DIR2 + '/file2-1'  # newest in DIR2 must be max 10
 FILE2_2 = DIR2 + '/file2-2'
 
-def D_init(initcmd=None):
-    if not initcmd: initcmd = ['/etc/init']
-    if not os.path.isfile(initcmd[0]): initcmd[0] += '.py'
-    p = subprocess.Popen(initcmd)
-    print('waiting for startup', file=sys.stderr)
-    time.sleep(2)   # Allow for startup time.
-    poll = p.poll()
-    if poll is not None: sys.exit(f'init process died ({initcmd} -> {poll})')
-    print('startup seems ok', file=sys.stderr)
-    return p
-
-
 LOCALHOST = 'localhost'
-PORT = os.environ.get('TESTPORT') or random.randint(20000, 29999)
-if isinstance(PORT, str): PORT = int(PORT)
+PORT = D.pick_test_port()
 
 
 @pytest.fixture(scope='session')
@@ -42,7 +29,7 @@ def init():
     # launch object under test
     cfg = './filewatch_config_test'
     if not os.path.isfile(cfg): cfg = 'tests/filewatch_config_test'
-    p = D_init(['./filewatch', '--config', cfg, '--port', str(PORT)])
+    p = D.init_system_under_test(['./filewatch', '--config', cfg, '--port', str(PORT)])
     yield p
     print('returned from yield, killing init')
     p.kill()
