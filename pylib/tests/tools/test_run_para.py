@@ -36,7 +36,7 @@ def test_process_stdin_auto():
     assert run_para.process_stdin(['a,  , b ,c']) == ['a', 'b', 'c']
     assert run_para.process_stdin(['a  b   c']) == ['a', 'b', 'c']
 
-    
+
 def test_process_stdin_notauto():
     run_para.ARGS = run_para.parse_args(['--sep', ' '])
     assert run_para.process_stdin(['a b  c ']) == ['a', 'b', 'c']
@@ -60,7 +60,7 @@ def test_generate_commands():
     run_para.ARGS = run_para.parse_args(['--ssh', 'cmd', '--timeout', '10'])
     assert run_para.generate_commands(['a', 'b']) == ['ssh a -o ConnectTimeout=10 "cmd"', 'ssh b -o ConnectTimeout=10 "cmd"']
 
-    
+
 # ---------- integration level tests ----------
 # (i.e. actually launch parallel tasks by running run_para.main()
 
@@ -106,7 +106,7 @@ def test_stdin_and_cmd_substitutions(tmp_path):
     assert out[1] == 'ab: ab\n'
     assert out[2] == 'ac: ac\n'
     assert len(out) == 3
-    
+
 
 def test_timeouts(tmp_path):
     tempname = str(tmp_path / "out")

@@ -8,8 +8,9 @@ on stdin and run {cmd} on all the hosts simultaneously.
 
 Or, using the "--cmd {@cmd}" flag allows you to provide a list of values in
 stdin that will be substituted into provided {@cmd}, replacing the "@"
-character with each value.  (This is similar to "xargs -I@", but adds the
-real-time dashboard.)
+character with each value.  (This is similar to Gnu "parallel" or "xargs -I@",
+but adds the improved real-time dashboard, and tracks the output of each
+command separately for cleaner post-run reporting.)
 
 The dashboard continuously prints the most recent output line (from stdout
 or stderr) as each command runs.  Use the "--output" flag to save full
@@ -37,6 +38,7 @@ $ echo 'host1 host2 host3' | run_para --align --ssh "df -h | egrep ' /$'"
 
 Copy a file to a bunch of remote hosts:
 $ echo 'host1 host2 host3' | run_para --cmd 'scp file ^^@:/destdir'
+
 '''
 
 import argparse, os, multiprocessing, subprocess, sys, threading, time
@@ -201,8 +203,10 @@ def process_stdin(main_stdin):
 # by taking into account --ssh, --cmd, --subst, and --timeout.
 def generate_commands(main_stdin):
   commands = []
-  if ARGS.cmd:
+  if ARGS.cmd or ARGS.dry_run:
     for line in main_stdin:
+      if ARGS.extension_rm:
+        line = os.path.splitext(line)[0]
       commands.append(ARGS.cmd.replace(ARGS.subst, line))
   elif ARGS.ssh:
     for host in main_stdin:
@@ -270,7 +274,7 @@ def get_file_comment():
     for line in f:
       if started:
         if line.startswith("'''"): return out
-        out += line 
+        out += line
       elif line.startswith("'''"):
         out += line[3:]
         started = True
@@ -280,11 +284,13 @@ def get_file_comment():
 def parse_args(argv):
   parser = argparse.ArgumentParser(description='run commands (from stdin) in parallel', epilog=get_file_comment(), formatter_class=argparse.RawDescriptionHelpFormatter)
   parser.add_argument('--align', '-a', action='store_true', help='In addition to --plain, align the outupt into a nice table')
-  parser.add_argument('--cmd', '-C', default=None, help='Rather the reading complete commands from stdin, create commands to run from this param value, substituting each line in stdin for the "@" char specified in this command.')
-  parser.add_argument('--cycle_time', '-c', type=float, default=0.2, help='time between updates')
+  parser.add_argument('--cmd', '-c', default=None, help='Rather the reading complete commands from stdin, create commands to run from this param value, substituting each line in stdin for the "@" char specified in this command.')
+  parser.add_argument('--cycle_time', '-C', type=float, default=0.2, help='time between updates')
   parser.add_argument('--debug', '-d', action='store_true', help='print debugging internals during run')
+  parser.add_argument('--extension_rm', '-e', action='store_true', help='strip the filename extension from each input instance during substitution (--cmd mode only)')
   parser.add_argument('--last', action='store_true', help='when converting commands to job_ids, just take the last word in the command')
-  parser.add_argument('--localhost', '-l', action='store_false', help='(dont) detect localhost (and run command directly rather than via ssh) in list of hosts for -ssh.')
+  parser.add_argument('--dry_run', '-n', action='store_true', help='(list-processor) modifies --cmd: just output the substituted command list, rather than running them.')
+  parser.add_argument('--localhost', '-L', action='store_false', help='DONT detect localhost (which would normally run commands directly rather than via ssh) in list of hosts for --ssh.')
   parser.add_argument('--max_para', '-m', type=int, default=multiprocessing.cpu_count(), help='max number of things to do concurrently')
   parser.add_argument('--output', '-o', default=None, help='name of file to send full output log to (blank to disable, "-" for stdout, "@" to create separate logfile for each)')
   parser.add_argument('--plain', '-p', action='store_true', help='in log output, just include simple stdout, nothing else.')
@@ -302,7 +308,7 @@ def parse_args(argv):
 def main(argv=[], stdin_list=[]):
   args = parse_args(argv or sys.argv[1:])
   if not stdin_list: stdin_list = sys.stdin.readlines()
-    
+
   global ARGS, DONE_JOBS, DONE_WORKERS, UPDATES
   ARGS = args
   if ARGS.debug: print(f'DEBUG: commandline={sys.argv}', file=sys.stderr)
@@ -314,6 +320,10 @@ def main(argv=[], stdin_list=[]):
   # Generate list of commands to run.
   commands = generate_commands(main_stdin)
   if ARGS.debug: print(f'DEBUG: commands={commands}', file=sys.stderr)
+
+  if ARGS.dry_run:
+    print('\n'.join(commands))
+    return 0
 
   # Calculate the substrings to remove from commands when generating job id's.
   common_bits = common_prefix_and_suffix(commands) if ARGS.strip else []
