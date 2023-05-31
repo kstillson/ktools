@@ -114,6 +114,14 @@ function get_container_names() {
     done
 }
 
+# sort, skipping a single header row
+function sort_skip_header() {
+    t=$(mktemp)
+    cat > $t
+    head -n 1 $t && tail -n +2 $t | sort "$@"
+    rm $t
+}
+
 # re-group output of list-autostart-waves by wave
 function waves() {
     current_wave=""
@@ -467,7 +475,7 @@ case "$cmd" in
     name=$(pick_container_from_up $spec)
     dlib_run get_cow_dir "$name"
     ;;
-  images | i) $DOCKER_EXEC images ;;                                   ## List docker images
+  images | i) $DOCKER_EXEC images | sort_skip_header ;;          ## List docker images
   is-up | iu) is_up $spec ;;                                     ## Is container up (y/n)
   get-ip | getip | get_ip | ip)                                  ## Print the IP address for $1
     set -o pipefail
