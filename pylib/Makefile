@@ -1,5 +1,5 @@
 
-INSTALLED_TOOLS := hc k_auth kmc nag pcrypt ratelimiter run_para
+INSTALLED_TOOLS := hc k_auth kmc nag pcrypt ratelimiter run_browser run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
 
@@ -94,6 +94,7 @@ install-simple: tools/keymaster.crt
 	cp -puv tools/nag.py $(SIMPLE_BIN_DIR)/nag
 	cp -puv tools/pcrypt.py $(SIMPLE_BIN_DIR)/pcrypt
 	cp -puv tools/ratelimiter.py $(SIMPLE_BIN_DIR)/ratelimiter
+	cp -puv tools/run_browser.py $(SIMPLE_BIN_DIR)/run_browser
 	cp -puv tools/run_para.py $(SIMPLE_BIN_DIR)/run_para
 	cp -puv tools/substring_counter.py $(SIMPLE_BIN_DIR)/substring_counter
 	#

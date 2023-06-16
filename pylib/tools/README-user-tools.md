@@ -31,6 +31,11 @@ Note: needs to read+write a file to store desired limits and recent-usage
 data.
 
 
+### run_browser.py
+
+Launch Chrome or Firefox with a bunch of security-oriented options.
+
+
 ### run_para.py
 
 Runs command-line commands in parallel.  Keeps the stdout and stderr of each
