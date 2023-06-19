@@ -140,8 +140,12 @@ def init(selected_groups=None, files_to_load=[], argparse_instance=None,
     if selected_groups is None: selected_groups = [i.name for i in GROUPS]
     if test_mode is not None: TEST_MODE = test_mode
 
-    # Enable flags for each group (with no prefix).
-    for group in GROUPS: group.settings.flag_prefix = ''
+    # Enable flags (with no prefix) and environment variable sources (KT_ and KTO_ prefixes) for everything..
+    for group in GROUPS:
+        group.settings.reset_cached_values()   # (testing sometimes reuses the singleton)
+        group.settings.flag_prefix = ''
+        group.settings.tweak_all_settings('env_name', 'KT_{name}')
+        group.settings.tweak_all_settings('override_env_name', 'KTO_{name}')
 
     s = S.Settings(files_to_load, flag_prefix='', debug=debug)
     s.add_settings_groups(GROUPS, selected_groups)
