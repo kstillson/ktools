@@ -543,7 +543,7 @@ class SettingsGroup:
 
 def eval_bool(value):
     if isinstance(value, bool): return value
-    return value in ['1', 'y', 'Y', 'T', 'true', 'True', 'TRUE']
+    return value in [1, '1', 'y', 'Y', 'T', 'true', 'True', 'TRUE']
 
 
 # ---------- main

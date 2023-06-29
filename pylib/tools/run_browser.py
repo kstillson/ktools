@@ -283,7 +283,7 @@ def reset(cfg, post_sudo: bool):
     source = get_snapshot_dir(cfg)
     dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
     rslt = run(['rsync', '-a', '--delete', source, dest])
-    if rslt.startswith('ERR'): fatal(f'reset failed: {rslt.out}')
+    if rslt.startswith('ERR'): fatal(f'reset failed: {rslt}')
     else:
         if not ARGS.dryrun: quick_ok('reset ok', background=True)
 
