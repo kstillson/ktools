@@ -52,6 +52,4 @@ CONFIG = {
   '/root/dnsmasq/dnsmasq.leases':                'NOT-FOUND:.9.',
   '/root/rcam/homesec1/{NEWEST}':                CAM_AGE,
   '/root/rcam/homesec2/{NEWEST}':                CAM_AGE,
-  '/root/rcam/hs-front/{NEWEST}':                CAM_AGE,
-  '/root/rcam/upfront/{NEWEST}':                 CAM_AGE,
 }
