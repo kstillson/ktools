@@ -51,6 +51,10 @@ def run_trigger(request_dict, name, trigger_param=None):
   # Prep for statusz change detection
   statusz_before = get_statusz_state()
 
+  # last action tracking (do this before actually taking the action to enable a quick squelch on a slow action)
+  if tracking['action'] and tracking['action'].find('touch') < 0 and tracking['zone'] != 'control':
+    model.touch(tracking['trigger'])
+
   C.log(f'processing {tracking}')
 
   # Perform requested action.
@@ -63,10 +67,6 @@ def run_trigger(request_dict, name, trigger_param=None):
     status = ext.read_web('http://hs-mud:8080/update?' + statusz_after)
     if status != 'ok':
       C.log_error('error: unexpected status sending hs-mud update: %s' % status)
-
-  # last action tracking
-  if tracking['action'] and tracking['action'].find('touch') < 0 and tracking['zone'] != 'control':
-    model.touch(tracking['trigger'])
 
   V.set('last_action', tracking['action'])
   V.bump(f'action_{tracking["action"]}')
