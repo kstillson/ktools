@@ -18,6 +18,8 @@ also export varz (and optionally /healthz) as Prometheus /metrics.
 
 import os, re, sys, time
 
+CIRCUITPYTHON = 'boot_out.txt' in os.listdir('/')
+
 # varz is intended to be a very low level module, so don't included the
 # complicated Prometheus deps unless really necessary.  Also worth noting that
 # the inclusion of webserver_base is technically a leveling violation (varz is
@@ -26,7 +28,7 @@ import os, re, sys, time
 # refactoring the WB.Response class into an even lower-level file (as that's
 # all we need from WB), but the web-server is already spread amoungst too many
 # files, and splitting it further just for this doesn't seem justified.
-if os.environ.get('KTOOLS_VARZ_PROM') == '1':
+if not CIRCUITPYTHON and os.environ.get('KTOOLS_VARZ_PROM') == '1':
     USE_PROM = True
     import prometheus_client as PC
     import prometheus_client.exposition as PCE
@@ -37,7 +39,7 @@ else:
 
 # ---------- internal state
 
-PROGRAM_NAME = os.path.basename(sys.argv[0])
+PROGRAM_NAME = os.path.basename(sys.argv[0]) if not CIRCUITPYTHON else 'code.py'
 VARZ = {}
 
 # Prometheus related

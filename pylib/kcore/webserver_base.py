@@ -67,7 +67,7 @@ TODO: add support for basic auth (with db file compatible with htpasswd...?)
 '''
 
 import re, os, sys
-import kcore.common as C
+import kcore.common0 as C
 import kcore.html as H
 import kcore.varz as V
 
@@ -189,7 +189,7 @@ class WebServerBase:
 
         # If Prometheus support for varz is enabled, register our instance with varz,
         # so it can access our /healthz handler, and add a standard /metrics handlers.
-        if os.environ.get('KTOOLS_VARZ_PROM') == '1':
+        if not CIRCUITPYTHON and os.environ.get('KTOOLS_VARZ_PROM') == '1':
             V.WEBSERVER = self
             if use_standard_handlers: self.add_handler('/metrics', V.metrics_handler)
 
