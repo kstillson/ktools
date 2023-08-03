@@ -292,6 +292,7 @@ def timestr():
 # I wouldn't dare put in a 3rd even more subtle tracker, would I?  surely not.
 TRACKING_DONE = False
 def init_log_tracking(log_title):
+    if CIRCUITPYTHON: return
     if os.environ.get('NO_TRACKING'): return
     global TRACKING_DONE
     if TRACKING_DONE: return

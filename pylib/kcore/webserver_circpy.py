@@ -39,7 +39,7 @@ port webserverp.y:parse_port to Circuit Python.
 '''
 
 import io, os, re, sys
-import kcore.common as C
+import kcore.common0 as C
 from kcore.webserver_base import *
 
 PY_VER = sys.version_info[0]

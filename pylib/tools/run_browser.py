@@ -101,7 +101,7 @@ CURRENT_USER = os.environ.get('USER') or os.environ['USERNAME']
 BACKUP_SFX =      os.environ.get('B_BACKUP_SUFFIX', '.prev')  # set to None to disable backuping up the previous snapshot.
 SNAPSHOT_DIR    = os.environ.get('B_SNAPSHOT_DIR',  os.path.expanduser('~/ktools/Bsnaps'))
 DBUS =            os.environ.get('B_DBUS',         'auto')   # True/False/'auto'. 'auto' will launch a dbus session whenever a selected browser uid is different from the one that runs the launch command.
-FIREJAIL_PREFIX = os.environ.get('B_FIREJAIL',     ['/usr/bin/firejail', '--whitelist=~/.pulse', '--whitelist=/root/dev/private-containers/stable-diffusion-webui-docker/data'])
+FIREJAIL_PREFIX = os.environ.get('B_FIREJAIL',     ['/usr/bin/firejail', '--whitelist=~/.pulse', '--whitelist=/root/dev/private-containers/stable-diffusion-webui-docker/data', '--'])
 KASM_PERSIST =    os.environ.get('B_KASM_PERSIST', 'kasm:/home/persist/{kasm_workspace}/{kasm_login}/.config/{browser}/{kasm_browser_profile}')  # use ~/.ssh/config to change remote user/port
 KASM_URL =        os.environ.get('B_KASM_URL',     'https://home.point0.net:4445')
 
@@ -282,7 +282,7 @@ def reset(cfg, post_sudo: bool):
 
     source = get_snapshot_dir(cfg)
     dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
-    rslt = run(['rsync', '-a', '--delete', source, dest])
+    rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
     if rslt.startswith('ERR'): fatal(f'reset failed: {rslt}')
     else:
         if not ARGS.dryrun: quick_ok('reset ok', background=True)
@@ -319,10 +319,10 @@ def snap_config(cfg):
     if BACKUP_SFX:
         dest_backup = dest + BACKUP_SFX
         debug(f'backing up snapshot {dest} -> {dest_backup}')
-        rslt = run(['rsync', '-a', '--delete', dest + '/', dest_backup])
+        rslt = run(['rsync', '-a', '--delete', dest + '/', dest_backup + '/'])
         if rslt.startswith('ERR'): fatal(f'Backup "{dest}" -> "{dest_backup}" failed: {rslt}')
 
-    rslt = run(['rsync', '-a', '--delete', source + '/', dest])
+    rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
     if rslt.startswith('ERR'): fatal(f'Snapshot to "{dest}" failed: {rslt}')
     print(f'snapshot saved to {dest}')
     return True
@@ -347,7 +347,7 @@ def switch_user_if_needed(cfg, sudo_done):
         fatal(f'--sudo-done specified, but current user ({CURRENT_USER}) is wrong; should be {cfg.uid}..')
     debug(f'switching user {CURRENT_USER} -> {cfg.uid}')
     sys.argv[0] = os.path.abspath(sys.argv[0])  # needs to match pathspec in sudoers
-    cmd = ['/usr/bin/sudo', '-u', cfg.uid, '--'] + sys.argv
+    cmd = ['/usr/bin/sudo', '--preserve-env=path', '-u', cfg.uid, '--'] + sys.argv
     cmd.append('--sudo-done')
     debug(f'sudo command: {cmd}')
     os.execv(cmd[0], cmd)    # does not return.
