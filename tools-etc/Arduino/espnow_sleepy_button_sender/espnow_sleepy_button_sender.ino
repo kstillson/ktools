@@ -368,7 +368,7 @@ void setup() {
       // If the button is still pressed, wait for it to be released- we don't want to continuously
       // cycle through sleep/wake and keep rapidly sending the notification.
       sent = 0;
-      testbig = 0x01;
+      testbit = 0x01;
       for (int i = 0; i < 32; i++) {
         if (waked_by_mask & testbit) {
 	   int rslt = wait_for_button(i, 0, -1, -1, false, 0);
