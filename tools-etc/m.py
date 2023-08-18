@@ -12,15 +12,16 @@ moint-points for an encfs configuration are remote, the encfs config can
 
 '''
 
-import os, subprocess, sys
+import os, sys
 from collections import namedtuple
 
 import kcore.common as C
 
 # ---------- types
 
-Sshfs = namedtuple('sshfs_mounter',  'opts source')
 Encfs = namedtuple('encfs_mounter',  'kmc_name encfs_dir')
+Mount = namedtuple('mount_mounter',  'opts')
+Sshfs = namedtuple('sshfs_mounter',  'opts source')
 
 Mp = namedtuple('mountpoint_config', 'name aliases source mp_needs mp_provides')
 # mp.needs is a mountopint_config.name or None
@@ -28,7 +29,7 @@ Mp = namedtuple('mountpoint_config', 'name aliases source mp_needs mp_provides')
 
 # ---------- global config
 
-#       name            aliases         source                                             needs      provides
+#       name            aliases         source                                             mp_needs  mp_provides
 CONFIGS = [
     Mp('share',         ['s'],          Sshfs('-p 222',  'jack:/home/ken/share'),          None,     'mnt/share'),
     Mp('default',       ['d'],          Encfs('default', 'mnt/share/encfs/default'),       'share',  'mnt/default'),
@@ -47,6 +48,12 @@ CONFIGS = [
     # steamdeck
     Mp('sdd',           ['S'],          Sshfs('',        'sdd:/run/media/mmcblk0p1'),      None,     'mnt/sdd'),
     Mp('sdh',           [],             Sshfs('',        'sdd:/home/deck'),                None,     'mnt/tmp'),
+    # kasm
+    Mp('d-b',           [],             Sshfs('',        'kasm://home/persist/chrome-b/ken-b/Downloads'),      None,     'mnt/d-b'),
+    Mp('d-bbb',         [],             Sshfs('',        'kasm://home/persist/chrome-bbb/ken-bbb/Downloads'),  None,     'mnt/d-bbb'),
+    # ext
+    #Mp('ext',           ['e'],          Mount(None),                                       None,      '/mnt/ext'),
+    #Mp('ext-encfs',     ['ee'],         Encfs('ext',     '/mnt/ext/encfs'),                'ext',     '/mnt/ext/efs'),
 ]
 
 BASEDIR = os.environ.get('BASEDIR', os.environ.get('HOME'))
@@ -60,11 +67,12 @@ ARGS = {}   # set by parse_args()
 # All functions that return strings return a human-readable error message or "None" if all is well,
 # unless otherwise noted.
 
-def check(dir: str) -> str:
-    dir = d(dir)
-    if not os.path.isdir(dir): return 'Dir not found: ' + dir
-    if not os.listdir(dir): return 'No files in ' + dir
-    return None
+# replaced by is_mountpoint()
+#def check(dir: str) -> str:
+#    dir = d(dir)
+#    if not os.path.isdir(dir): return 'Dir not found: ' + dir
+#    if not os.listdir(dir): return 'No files in ' + dir
+#    return None
 
 def d(dirname):
     if not dirname: return dirname
@@ -81,32 +89,45 @@ def find_by_name(name) -> Mp:
             if a == name: return c
     return None
 
+def is_mountpoint(dir: str) -> bool:
+    rslt = run(['/usr/bin/mountpoint', '-q', dir])
+    return rslt.ok
+
 def needs_dir(config: Mp) -> str:  # Returns name of directory that config deps on.
     dep_config = find_by_name(config.mp_needs)
     return d(dep_config.mp_provides)
+
+def run(cmd):
+    if ARGS.verbose: print(f'[verbose] running: {cmd}', file=sys.stderr)
+    return C.popen(cmd)
 
 
 # ---------- business logic
 
 def mount(config: Mp) -> str:
-    if check(config.mp_provides) is None: return emit(config.name + ' already mounted', None)
-    if config.mp_needs and check(needs_dir(config)) is not None:
+    if is_mountpoint(config.mp_provides): return emit(config.name + ' already mounted', None)
+    if config.mp_needs and not is_mountpoint(needs_dir(config)):
         emit('%s needs %s' % (config.name, config.mp_needs))
         err = mount_by_name(config.mp_needs)
         if err: return err
         # Sometimes fulfilling a dep is sufficient.
-        if check(config.mp_provides) is None: return emit(config.name + ' already mounted', None)
+        if is_mountpoint(config.mp_provides): return emit(config.name + ' already mounted', None)
     if isinstance(config.source, Sshfs):
         cmd = ['/usr/bin/sshfs', config.source.opts, config.source.source, d(config.mp_provides)]
         if not cmd[1]: cmd.pop(1)
     elif isinstance(config.source, Encfs):
         cmd = ['/usr/bin/encfs', '--extpass', f'/usr/local/bin/kmc --km_cert "" encfs-{config.source.kmc_name}', d(config.source.encfs_dir), d(config.mp_provides)]
+    elif isinstance(config.source, Mount):
+        cmd = ['/usr/bin/mount']
+        if isinstance(config.opts, list): cmd.extend(config.opts)
+        elif isinstance(config.opts, str): cmd.append(config.opts)
+        cmd.append(d(config.mp_provides))
     else:
-        return 'Unknown config.source type'
+        return f'Unknown config.source type: {type(config.source)}'
     if ARGS.allow_root: cmd.extend(['-o', 'allow_root'])
-    subprocess.check_call(cmd)
-    err = check(config.mp_provides)
-    if err: return 'mount failed: ' + err
+    out = run(cmd)
+    is_mp = is_mountpoint(config.mp_provides)
+    if not out.ok or not is_mp: return f'mount failed for {config.name}: {out.out}'
     emit(f'{config.name}: ok')
     return None
 
@@ -124,33 +145,52 @@ def mount_by_name(name: str) -> str:
     return mount(cfg)
 
 
-def tester():
+def get_mounted():
     mounted = []
     unmounted = []
     for c in CONFIGS:
-        if check(c.mp_provides) is None:
+        if is_mountpoint(c.mp_provides):
             mounted.append(c.name)
         else:
             unmounted.append(c.name)
+    return mounted, unmounted
+
+
+def list_mounted():
+    mounted, unmounted = get_mounted()
     print(f'mounted: {mounted}\nnot mounted: {unmounted}')
     return len(mounted)
 
 
 def unmounter():
     for c in reversed(CONFIGS):
-        if check(c.mp_provides) is None:
-            subprocess.check_call(['/usr/bin/fusermount', '-u', d(c.mp_provides)])
-            if check(c.mp_provides) is None:
-                emit(f'unmount of {c.name}: {c.mp_provides} failed.')
+        if is_mountpoint(c.mp_provides):
+            if isinstance(c.source, Mount):
+                out = run(['/usr/bin/umount', d(c.mp_provides)])
+            else:
+                out = run(['/usr/bin/fusermount', '-u', d(c.mp_provides)])
+            is_mp = is_mountpoint(c.mp_provides)
+            if not out.ok or is_mp:
+                emit(f'unmount of {c.name}:{c.mp_provides} failed: {out.out}')
             else:
                 emit(f'unmounted {c.name}')
-    # Sometimes sshfs will auto-disconnect, leaving orphaned encfs mounts.
-    # They don't get fixed above, as the dead connection failes check().
-    for i in os.popen('/usr/bin/mount | /bin/grep encfs').read().split('\n'):
-        if not i: continue
-        mp = i.split(' ')[2]
-        subprocess.check_call(['/usr/bin/fusermount', '-u', mp])
-        emit(f'unmounted {mp}')
+
+
+# ---------- GUI
+
+def show_gui():
+    cmd = ['zenity', '--width', '400', '--height', '650', '--title', 'mounter', '--list', '--column', 'alias', '--column', 'name', '--column', 'on?', '--column', 'provides']
+    mounted, unmounted = get_mounted()
+    for cfg in CONFIGS:
+        cmd.extend([cfg.aliases[0] if cfg.aliases else '',
+                    cfg.name,
+                    'X' if cfg.name in mounted else '',
+                    cfg.mp_provides])
+    cmd.extend(['a', 'all', '', ''])
+    cmd.extend(['u', 'unmount', '', ''])
+    sel = C.popener(cmd)
+    if not sel or sel.startswith('ERR'): sys.exit(0)
+    return [sel]
 
 
 # ---------- main
@@ -159,6 +199,7 @@ def parse_args(argv):
     extra = 'Available targets:\n\n' + '\n'.join([f'   {c.name:<12}\t{c.aliases}\t{c.mp_provides}' for c in CONFIGS])
     ap = C.argparse_epilog(description='authN token generator', epilog_extra=extra)
     ap.add_argument('--allow-root', '-A', action='store_true', help='allow root to access mounted filesystems')
+    ap.add_argument('--verbose', '-v',    action='store_true', help='show executed commands')
     ap.add_argument('targets', nargs="*", help='list of mountpoint_config names (or aliases) to mount.  special targets: a=all, t=test, u=umount')
     return ap.parse_args(argv)
 
@@ -167,10 +208,10 @@ def main(argv=[]):
     global ARGS
     ARGS = parse_args(argv or sys.argv[1:])
     
-    if not ARGS.targets: return mount_by_name('default')
+    if not ARGS.targets: ARGS.targets = show_gui()
 
     for arg in ARGS.targets:
-        if arg in ['tester', 'test', 't']: tester()
+        if arg in ['list', 'L', 'tester', 'test', 't']: list_mounted()
         elif arg in ['umount', 'u', '0']: unmounter()
         elif arg in ['all', 'a', '1']: mount_all()
         else:
