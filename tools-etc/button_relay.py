@@ -20,7 +20,6 @@ import glob, serial, sys, time
 import kcore.auth as A
 import kcore.common as C
 import kcore.html as H
-import kcore.uncommon as UC
 import kcore.webserver as W
 import kcore.varz as V
 
@@ -181,7 +180,7 @@ def ping(s):
 # ---------- main
 
 def parse_args(argv):
-    ap = UC.argparse_epilog(argv)
+    ap = C.argparse_epilog(argv)
     ap.add_argument('--logfile',   '-l',  default='-')
     ap.add_argument('--ping_freq', '-P',  default=20,   type=int, help='ping every this many seconds')
     ap.add_argument('--port',      '-p',  default=8080, type=int, help='webserver port')
