@@ -595,19 +595,20 @@ function push_wheel() {
 
 # Run a series of checks on the status of my home network.
 function checks_real() {
-    nag |& expect "nagios checks" "all ok"
-    leases_list_orphans |& expect "dns orphans" "all ok"
-    cat $PROCQ |& expect_exact "procmon queue" ""
-    fgrep -v 'session opened' /rw/log/queue | expect_exact "syslog queue" ""
-    $0 dup-check |& expect "$(basename $0) dup cmds" "all ok"
-    dns_check |& expect "dns config check" "all ok"
-    /root/bin/d dup-check |& expect "docker dup cmds" "all ok"
-    /root/bin/d check-all-up |& expect "docker instances" "all ok"
-    /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect_exact "exim queue empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/paniclog |& expect_exact "exim panic log empty" "0"
-    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/rejectlog |& expect_exact "exim reject log empty" "0"
-    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect_exact "no unencrpted ktools secrets" "0"
-    git_check_all |& expect_exact "git dirs with local changes" ""
+    nag |& expect "nagios checks" "all ok" &
+    leases_list_orphans |& expect "dns orphans" "all ok" &
+    cat $PROCQ |& expect_exact "procmon queue" "" &
+    fgrep -v 'session opened' /rw/log/queue | expect_exact "syslog queue" "" &
+    $0 dup-check |& expect "$(basename $0) dup cmds" "all ok" &
+    dns_check |& expect "dns config check" "all ok" &
+    /root/bin/d dup-check |& expect "docker dup cmds" "all ok" &
+    /root/bin/d check-all-up |& expect "docker instances" "all ok" &
+    /root/bin/d run eximdock bash -c 'exim -bpr | grep "<" | wc -l' |& expect_exact "exim queue empty" "0" &
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/paniclog |& expect_exact "exim panic log empty" "0" &
+    /usr/bin/stat --format=%s /rw/dv/eximdock/var/log/exim/rejectlog |& expect_exact "exim reject log empty" "0" &
+    cat /root/dev/ktools/private.d/*.data 2>/dev/null | wc -l | expect_exact "no unencrpted ktools secrets" "0" &
+    git_check_all |& expect_exact "git dirs with local changes" "" &
+    wait
 }
 
 # Wrapper around checks_real that does formatting and checks for overall status.
