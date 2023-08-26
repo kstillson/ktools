@@ -147,6 +147,11 @@ class Scanner:
       if found: return self.problem(f'NOT EMPTY: {filename}')
       else: return self.ok('ok: empty')
 
+    if rule == 'FILE-EMPTY':
+      if not os.path.isfile(filename): return self.problem(f'FILE-EMPTY not an existing file: {filename}')
+      if os.path.getsize(filename) != 0: return self.problem(f'NOT EMPTY: {filename}')
+      else: return self.ok('ok: empty')
+
     if rule.startswith('NOT-FOUND'):
       _, target = rule.split(':', 1)
       grep_status = grep(filename, target)
