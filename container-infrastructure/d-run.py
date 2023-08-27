@@ -438,7 +438,7 @@ def fix_ownership(volspec):
 
 # ---------- primary business logic: construct the launch command
 
-def gen_command():
+def gen_command_via_settings_yaml():
     cmnd = [ get_setting('docker_exec'), 'run' ]
 
     name = add_simple_control(cmnd, 'name')
@@ -596,8 +596,15 @@ def parse_args(argv=sys.argv[1:]):
 def main():
     args = parse_args()
 
+    # check for conversion to compose-based launch
+    dcf = 'docker-compose.yaml'
+    if os.path.exists(dcf) and not os.path.exists(args.settings):
+        print(f'{dcf} exists and {args.settings} does not; perhaps you want to launch via:')
+        print('IP=... PUID=... docker-compose up -d {svc...}')
+        sys.exit(-2)
+
     # generate the launch command and output any requested debugging info.
-    cmnd = gen_command()
+    cmnd = gen_command_via_settings_yaml()
 
     if DEBUG or args.print_cmd or args.test:
         # err(f'@@ {cmnd}')  # Used to seek out param separation problems...
