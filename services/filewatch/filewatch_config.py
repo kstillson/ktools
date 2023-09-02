@@ -41,6 +41,7 @@ CONFIG = {
     '/root/dv/webdock/var_log_apache2/access.log': SYS_LOG_AGE,
     
     # cron exceptions
+    '/root/syslog/cron-blue.log':                  3 * DAY,
     '/root/syslog/cron-jack2.log':                 2 * DAY,
     '/root/syslog/cron-glowbox1.log':              None,  # Disable globbed file.
     
