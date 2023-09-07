@@ -52,7 +52,7 @@ def main():
     print('Content-Type: text/html\n')
     print('<html><body>\n')
 
-    qs = os.environ.get('QUERY_STRING')
+    qs = os.environ.get('QUERY_STRING').lower()
     hits = []
     for filename in glob.glob('/var/www/html/launchpad/index*.html'):
         for line in open(filename):
@@ -60,8 +60,7 @@ def main():
             item = parse_line(line, filename)
             if qs in item.search_blob(): hits.append(item)
 
-    if len(hits) == 0:
-        print('<p>not found.')
+    if len(hits) == 0: print('<p>not found.')
 
     elif len(hits) == 1:
         print(f'<meta http-equiv="refresh" content="0;URL={hits[0].url}">')
@@ -73,5 +72,4 @@ def main():
     print('</body></html>\n')
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__': main()
