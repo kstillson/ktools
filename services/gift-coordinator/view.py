@@ -3,7 +3,7 @@
 
 import dataclasses
 
-import os
+import os, time
 import model
 import kcore.common as C
 import kcore.html as H
@@ -199,11 +199,13 @@ def root_view(request):
    <button onclick="window.location.href='take?key={gi.key}';">take</button>
    <button onclick="window.location.href='hold?key={gi.key}';">hold</button>'''
 
+        t = time.gmtime(gi.entered_on)
+        entered = f'{gi.entered_by}<br/>{t.tm_mon}/{t.tm_mday}/{t.tm_year%100}'
         status = 'available'
         if gi.taken == 'taken': status = f'taken by {gi.taken_by}'
         elif gi.taken == 'hold': status = f'on hold by {gi.taken_by}'
         
-        tab.append([controls, gi.recip, gi.item, status, gi.entered_by, notes])
+        tab.append([controls, gi.recip, gi.item, status, entered, notes])
 
     tab.sort(key=lambda i: i[3] + i[1] + i[2])  # sort by: taken?, then recip, then item.
     out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"', 
