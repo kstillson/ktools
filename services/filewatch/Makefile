@@ -17,7 +17,7 @@ SHELL := /bin/bash
 # ---------- custom targets
 
 $(TEST_LOG): $(wildcard *.py tests/*.py)
-	set -o pipefail && ./tests/filewatch_test.sh |& tee $(TEST_LOG)
+	script -e -c "pytest-3 tests" $(TEST_LOG)
 
 
 # ---------- pass-throughs
