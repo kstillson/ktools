@@ -313,6 +313,9 @@ class ParallelQueue:
     def join(self, timeout=None):   # timeout is a float in seconds.
         '''Wait for all to finish.  timeout is a float in seconds.
            Returns a list of return values in order of additions.'''
+        # TODO(defer): timeout is applied for each thread sequentially as its
+        # joined.  i.e. if all threads are blocked, total timeout is timeout *
+        # number-of-threads, which is probably not what the caller expects.
         if not self.single_threaded:
             for t in self.threads:
                 t.join(timeout=timeout)
