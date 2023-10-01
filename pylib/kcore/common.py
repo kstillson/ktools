@@ -117,6 +117,11 @@ def get_initial_python_file_comment(filename=None):
 
 # ---------- Argparse helpers
 
+
+class RawFormatterWithDefaults(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
+    pass
+
+
 def argparse_epilog(*args, **kwargs):
     '''Return an argparse with populated epilog matching the caller's Python file comment.'''
     module = get_callers_module(levels=2)
@@ -124,7 +129,7 @@ def argparse_epilog(*args, **kwargs):
     extra = kwargs.pop('epilog_extra', None)
     if extra: epilog += extra
     return argparse.ArgumentParser(epilog=epilog,
-                                   formatter_class=argparse.RawDescriptionHelpFormatter,
+                                   formatter_class=RawFormatterWithDefaults,
                                    *args, **kwargs)
 
 
