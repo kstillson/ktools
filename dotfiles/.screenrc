@@ -1,0 +1,108 @@
+#3.3
+
+# disable use of title bar for message line, and enable mouse-wheel scrolling
+termcapinfo xterm* hs@:ti@:te@
+
+# my options
+#markkeys 'h=^B:j=^N:k=^P:l=^F:$=^E:@=['
+defscrollback 1200
+defflow auto
+autodetach on
+termcap xterm|xs 'WS=\E[8;%d;%dt'
+silencewait 10
+startup_message off
+msgwait 1
+vbell off
+zmodem catch auto
+
+# --------------------
+# command bindings
+
+bind % silence
+bind & screen -t root 7 su - 0
+bind E screen -t emacs 1 emacs -nw
+bind R screen -t root 9 su - 0
+bind T screen -t root 8 sudo bash
+bind g paste
+bind q quit
+bind x readreg
+
+# --------------------
+# key bindings 
+# see http://www.gnu.org/software/screen/manual/screen.html
+# termcap (-k ... names) http://www.freebsd.org/cgi/man.cgi?format=html&query=termcap(5)
+# sudo "showkey -a" for other scan codes
+
+# - basic nav
+bindkey ^[[3~ stuff \004		     # delete
+bindkey ^[[D stuff \002			     # left
+bindkey -k kl stuff \002		     # left (alt method)
+bindkey -k ku stuff \020		     # up
+bindkey -k kr stuff \006		     # right
+bindkey -k kd stuff \016		     # down
+bindkey -k kh stuff \001                     # home
+bindkey -k kH stuff \005                     # end
+bindkey "^[OF" stuff \005		     # end on terminal
+
+# - screen controls
+bindkey -a -k f* windows     		     # grey* lists windows (app mode)
+bindkey -a -k f+ next       		     # grey+ next window (app mode)
+bindkey -a -k f/ screen                      # grey/ opens new window (app mode)
+bindkey -a -k f- other       		     # grey- swaps windows (app mode)
+bindkey -k f* windows     		     # grey* lists windows
+bindkey -k f+ next       		     # grey+ next window
+bindkey -k f- other       		     # grey- swaps windows
+bindkey -k f/ screen                         # grey/ opens new window
+# bindkey -k k5 other			     # F5 swaps windows
+# bindkey -k k6 windows			     # F6 lists windows
+# bindkey -k k7 next			     # F7 next window
+# bindkey -k k8 screen			     # F8 opens new window
+bindkey -k k7 screen -t top 7 top	     # F7 launch top
+bindkey -k k; screen -t emacs 1 emacs -nw    # F10 launch emacs
+bindkey "^[[21;5~" screen -t emacs 1 emacs -nw   # ctrl-F10 launch emacs
+bindkey -k F2 select emacs    	      	     # F12 goto emacs
+bindkey "^[[1;3D" prev			     # alt-left: prev screen
+bindkey "^[[1;3C" next			     # alt-right: next sceen
+bindkey "^[[1;3A" other                      # alt-up: swap windows
+## bindkey "^[[1;3A" screen		     # alt-up: new screen
+bindkey "^[[1;3B" windows		     # alt-down: list screens
+bindkey "^[[1;3F" other			     # alt-end: swap windows
+bindkey "^[[1;2A" screen                     # shift-up: new window
+bindkey "^[0" select 0                       # alt-0: goto window 0
+bindkey "^[1" select 1                       # alt-0: goto window 1
+bindkey "^[2" select 2                       # alt-0: goto window 2
+bindkey "^[3" select 3                       # alt-0: goto window 3
+bindkey "^[4" select 4                       # alt-0: goto window 4
+bindkey "^[5" select 5                       # alt-0: goto window 5
+bindkey "^[6" select 6                       # alt-0: goto window 6
+bindkey "^[7" select 7                       # alt-0: goto window 7
+bindkey "^[8" select 8                       # alt-0: goto window 8
+bindkey "^[9" select 9                       # alt-0: goto window 9
+# - emacs controls
+bindkey -k k1 stuff \030o		     # F1 swap windows
+bindkey -k k2 stuff \030b\012		     # F2 swap buffers
+bindkey -k k3 stuff \0304\006		     # F3 open other window
+bindkey -k k4 stuff \0304b\012		     # F4 swap buffer other window
+bindkey -k k9 stuff \030\006		     # F9 open file
+bindkey -k F1 stuff \030k\012		     # F11 kill buffer
+bindkey -k kP stuff \033v		     # page up
+bindkey -k kN stuff \026		     # page down
+bindkey -k kI stuff \033xover\012	     # insert
+bindkey "^[[1;5D" stuff \033b		     # ctrl-left
+bindkey "^[[1;5C" stuff \033f		     # ctrl-right
+bindkey "^[[1;5A" stuff \033[		     # ctrl-up
+bindkey "^[[1;5B" stuff \033]		     # ctrl-down
+bindkey "^[[3;5~" stuff \033d		     # ctrl-del
+bindkey "^[[3;3~" stuff \033d		     # alt-del
+bindkey "^[[5;5~" stuff \033<                # ctrl-pg-up (bof)
+bindkey "^[[6;5~" stuff \033>                # ctrl-pg-down (e0f)
+bindkey "^[[5;3~" stuff \033<                # alt-pg-up (bof)
+bindkey "^[[6;3~" stuff \033>                # alt-pg-down (eof)
+bindkey "^[[1;5H" stuff \033<                # ctrl-home (bof)
+bindkey "^[[1;5F" stuff \033>                # ctrl-end (eof)
+
+# --------------------
+# registers
+
+register p "select * from "
+register u "/usr/local/bin"

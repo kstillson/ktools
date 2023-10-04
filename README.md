@@ -105,6 +105,7 @@ located in different parts of the directory tree:
 - **[smart-home control](pylib/home_control/README-home-control.md)**
 - **[tools for docker](container-infrastructure/README-docker-tools.md)**
 - **[tools for circuit python](pylib/circuitpy_sim/README-circuitpy.md)**
+- **[collection of useful dotfiles, e.g. .bashrc](dotfiles/README-dotfiles.md)**
 
 <!-- slimy way to force a break to beyond the image: -->
 <img src="etc/1x1.png" height=25>
