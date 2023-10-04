@@ -126,7 +126,7 @@ def mount(config: Mp) -> str:
         return f'Unknown config.source type: {type(config.source)}'
     if ARGS.allow_root: cmd.extend(['-o', 'allow_root'])
     out = run(cmd)
-    is_mp = is_mountpoint(config.mp_provides)
+    is_mp = is_mountpoint(d(config.mp_provides))
     if not out.ok or not is_mp: return f'mount failed for {config.name}: {out.out}'
     emit(f'{config.name}: ok')
     return None

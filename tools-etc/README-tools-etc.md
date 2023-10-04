@@ -56,11 +56,6 @@ app.  See [README-Tasker](Tasker/README-Tasker.md) for details.
 
 ## Arc/ (archived)
 
-- Hc: wrapper around hc (home-control) that provides device substring name
-  matching.  Deprecated in favor of feature now built-in to hc.
-
 - gpg_s: simple wrapper around gpg symmetric encrpytion
   deprecated in favor of pcrypt: pylib/kcore/uncommon.py:symmetric_crypt()
-
-- tplink: Deprecated tplink controller.
 
