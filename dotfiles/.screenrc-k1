@@ -1,0 +1,6 @@
+
+source ~/.screenrc
+
+screen -t bash bash
+screen -t emacs emacs -nw
+select 0

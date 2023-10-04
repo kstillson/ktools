@@ -1,0 +1,3 @@
+
+source ~/.screenrc
+screen -t emacs emacs -nw
