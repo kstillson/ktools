@@ -11,7 +11,7 @@ PORT = D.pick_test_port()
 
 @pytest.fixture(scope='session')
 def init():
-    p = D.init_system_under_test(['./home_control_service', '--debug', '--logfile=-', '--port', str(PORT)])
+    p = D.init_system_under_test(['./home_control_service.py', '--debug', '--logfile=-', '--port', str(PORT)])
     yield p
     p.kill()
 
