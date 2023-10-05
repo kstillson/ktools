@@ -12,10 +12,10 @@ your program with ~2 lines of code:
 
 And if you want to add your own custom handlers, it's just about as easy:
 
-  import webserver
+  import kcore.webserver as W
   def h_root(request): return "<p>Here is some html for the root page.</p>"
-  def h_default(request): return webserver.Response('dunno how to do that', 401)
-  webserver.WebServer(port=8080, handlers={'/': h_root, None: h_default }).start()
+  def h_default(request): return W.Response('dunno how to do that', 401)
+  W.WebServer(port=8080, handlers={'/': h_root, None: h_default }).start(background=False)
 
 (Note that handlers can return plain text, HTML, or a Response object.  Nice, huh?)
 
@@ -99,6 +99,7 @@ class Worker(BaseHTTPRequestHandler):
         if args[0] in ['GET', 'POST']: return    # Already handled by logging adapter.
         C.log_info(format % args)                # Probably redundant, but better not to miss something accidentally.
 
+
 class WebServer(WebServerBase):
     def __init__(self, *args, **kwargs):
         logging_adapter = kwargs.get('logging_adapter') or LoggingAdapter(
@@ -115,6 +116,7 @@ class WebServer(WebServerBase):
         if port: self.port = port         # .start() overrides the constructor.
         if not self.port: self.port = 80
 
+        if '/varz' in self.standard_handlers: self.add_handler('/varz', ws_varz_handler)
         self.httpd = server_class((listen, self.port), Worker)
 
         if tls_key_password: raise RuntimeError('TODO: support tls_key_password')
@@ -131,3 +133,22 @@ class WebServer(WebServerBase):
             return self.web_thread
         else:
             self.httpd.serve_forever()
+
+
+def ws_varz_handler(request):
+    extra_dict = {}
+    try:
+        import psutil
+        extra_dict['sys-boott'] = psutil.boot_time()
+        extra_dict['sys-cpu1s'] = psutil.cpu_percent(interval=1)
+        extra_dict['sys-cpu#'] =  psutil.cpu_count()
+        extra_dict['sys-cput'] =  psutil.cpu_times()
+        extra_dict['sys-disk/'] = psutil.disk_usage('/')
+        extra_dict['sys-fans'] =  psutil.sensors_fans()
+        extra_dict['sys-net/'] =  psutil.net_io_counters()
+        extra_dict['sys-swap'] =  psutil.swap_memory()
+        extra_dict['sys-vmem'] =  psutil.virtual_memory()
+    except Exception as e:
+        print(f'@@ E: {str(e)}', file=sys.stderr)
+        pass
+    return varz_handler(request, extra_dict)

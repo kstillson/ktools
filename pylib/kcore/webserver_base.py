@@ -180,10 +180,10 @@ class WebServerBase:
         if use_standard_handlers:
             self.standard_handlers = {
                 '/favicon.ico':  lambda _: '',
-                '/flagz':        lambda request: self._flagz_handler(request),
+                '/flagz':        self._flagz_handler,
                 '/healthz':      lambda _: 'ok',
                 '/logz':         lambda _: self.logger.get_logz_html(),
-                '/varz':         lambda request: varz_handler(request),
+                '/varz':         varz_handler,
             }
         else: self.standard_handlers = {}
 
