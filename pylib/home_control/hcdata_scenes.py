@@ -38,7 +38,7 @@ SCENES = {
   'fam'         : [ 'family-room-left', 'family-room-right', 'dining-chandelier' ],
   'inside'      : [ 'bedrm', 'fam', 'kit', 'main' ],
   'ofc'         : [ 'office' ],
-  'outside'     : [ 'door-entry', 'landscaping', 'lantern', 'patio', 'rear-flood' ],
+  'outside'     : [ 'door-entry', 'landscaping', 'out-all', 'lantern', 'patio', 'rear-flood' ],
   'kit'         : [ 'kitchen', 'kitchen-pendants', 'breakfast-nook' ],
   'lng'         : [ 'bendy', 'lounge', 'window-lights', 'lounge-chandelier' ],
   'main'        : [ 'fam', 'kit', 'lng', 'office' ],
@@ -50,7 +50,7 @@ SCENES = {
 
  # Activity-based
   'away'        : [ 'main:off', 'delay:2:office:dim:40' ],
-  'bedtime'     : [ 'inside:off', 'delay:2:bedroom-light:dim:10' ],
+  'bedtime'     : [ 'inside:off', 'pout2:off', 'delay:2:bedroom-light:dim:10' ],
   'comp'        : [ 'fam:off', 'kit:off', 'office:dim:55', 'lng:off' ],
   'cooking'     : [ 'kitchen:dim:60', 'kitchen-pendants:dim:60', 'breakfast-nook:off' ],
   'gh0'         : [ 'lantern:white', 'garage:bulb-off', 'mobile-bulb:bulb-off', 'garage-L:on', 'garage-R:on', 'out-sconce:on', 'out-front-moon:on' ],
@@ -73,7 +73,8 @@ SCENES = {
                      'family-room-right:dim:15', 'kitchen-pendants:dim:40', 'kitchen:dim:5', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:dim:30',
                      'accent-party', 'tree', 'twinkle', 'lightning' ],
-  'red:on'     : [ 'accents:red' ],
+  'red:on'     : [ 'accents:red', 'door-entry:red', 'lantern:blue' ],
+  'red:off'    : [ 'accents:bulb-off', 'door-entry:white', 'lantern:white' ],
 
  # Scene aliases
   'blue'        : [ 'accents:blue' ],

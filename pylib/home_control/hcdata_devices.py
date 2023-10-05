@@ -96,9 +96,9 @@ DEVICES = {
     'mon:off'            : 'WEB:blue:2222/L',
     'monitor:off'        : 'WEB:blue:2222/L',
 
-    # Outside lighting controller: pout*
-    ## 'out-all:off'        : 'WEB:pout:8080/a0', 'WEB:pout2:8080/a0',
-    ## 'out-all:on'         : 'WEB:pout:8080/a1', 'WEB:pout2:8080/a1',
+    # Outside front lighting controller:
+    'out-all:off'        : 'WEB:pout:8080/a0', # includes pout2 and thus all back units
+    'out-all:on'         : 'WEB:pout:8080/a1',
     'out-monument:off'   : 'WEB:pout:8080/10',
     'out-monument:on'    : 'WEB:pout:8080/11',
     'out-sconce:off'     : 'WEB:pout:8080/20',
@@ -111,6 +111,11 @@ DEVICES = {
     'out-front-up:on'    : 'WEB:pout:8080/51',
     'out-maple:off'      : 'WEB:pout:8080/70',
     'out-maple:on'       : 'WEB:pout:8080/71',
+    'pout2:off'          : 'WEB:pout:8080/80',  # back side controller & units
+    'pout2:on'           : 'WEB:pout:8080/81',
+    # Outside back lighting controller: pout2
+    'out-back:off'       : 'WEB:pout2:8080/a0', # all back relays via pout2 controller
+    'out-back:on'        : 'WEB:pout2:8080/a1',
     'out-magnolia:off'   : 'WEB:pout2:8080/10',
     'out-magnolia:on'    : 'WEB:pout2:8080/11',
     'out-holly:off'      : 'WEB:pout2:8080/20',
