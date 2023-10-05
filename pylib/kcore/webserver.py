@@ -146,9 +146,9 @@ def ws_varz_handler(request):
         extra_dict['sys-disk/'] = psutil.disk_usage('/')
         extra_dict['sys-fans'] =  psutil.sensors_fans()
         extra_dict['sys-net/'] =  psutil.net_io_counters()
+        extra_dict['sys-pid-rss'] =  psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
         extra_dict['sys-swap'] =  psutil.swap_memory()
         extra_dict['sys-vmem'] =  psutil.virtual_memory()
     except Exception as e:
-        print(f'@@ E: {str(e)}', file=sys.stderr)
-        pass
+        extra_dict['sys-stats-error'] = str(e)
     return varz_handler(request, extra_dict)
