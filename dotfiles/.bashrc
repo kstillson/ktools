@@ -217,7 +217,8 @@ function listP() { while IFS= read -r line; do echo "${@//@/${line}}"; done; }
 function C() {
     srch=''
     for i in "$@"; do srch="${srch}${i}*/"; done
-    readarray -t out < <(ls -1d $srch ~/$srch 2>/dev/null)
+    if [[ "$PWD" != "$HOME" ]]; then srch2="$HOME/$srch"; else srch2=""; fi
+    readarray -t out < <(ls -1d $srch $srch2 2>/dev/null)
     case ${#out[@]} in
 	0) echo "not found  ($srch)" ;;
 	1) cd "${out[0]}" ;;
