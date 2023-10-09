@@ -27,7 +27,7 @@ def init(settings):
 
 def control(plugin_name, plugin_params, device_name, command):
   if plugin_name in ['HTTP', 'WEB']: prefix = 'http://'
-  elif plugin_name in ['HTTPS, WEBS']: prefix = 'https://'
+  elif plugin_name in ['HTTPS', 'WEBS']: prefix = 'https://'
   else: return False, f'error: unknown plugin {plugin_name}'
 
   url = prefix + plugin_params

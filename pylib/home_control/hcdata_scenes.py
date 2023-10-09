@@ -60,21 +60,24 @@ SCENES = {
   'panic'       : [ 'all', 'sirens' ],
   'party'       : [  'bendy', 'breakfast-nook', 'dining-chandelier', 'family-room-left',
                      'family-room-right', 'kitchen-pendants', 'kitchen', 'lounge',
-                     'office', 'window-lights', 'accent-party', 'tree', 'twinkle', 'lightning' ],
+                     'office', 'window-lights', 'accents-party', 'tree', 'twinkle', 'lightning' ],
   'tv'          : [  'bendy:off', 'breakfast-nook:off', 'dining-chandelier:dim:25', 'family-room-left:dim:20',
                      'family-room-right:dim:20', 'kitchen-pendants:dim:30', 'kitchen:off', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:off' ],
   'warmer'      : [ 'space-heater:on', 'delay:900:space-heater:off' ],
 
  # Special command-specific overrides
+  'accents:party': [ 'accents-party:on' ],
   'blue:on'     : [ 'accents:blue' ],
   'panic:on'    : [ 'all:full', 'sirens:on' ],
   'party:on'    : [  'bendy:on', 'breakfast-nook:dim:25', 'dining-chandelier:dim:25', 'family-room-left:dim:15',
                      'family-room-right:dim:15', 'kitchen-pendants:dim:40', 'kitchen:dim:5', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:dim:30',
-                     'accent-party', 'tree', 'twinkle', 'lightning' ],
+                     'accents-party', 'tree', 'twinkle', 'lightning' ],
   'red:on'     : [ 'accents:red', 'door-entry:red', 'lantern:blue' ],
   'red:off'    : [ 'accents:bulb-off', 'door-entry:white', 'lantern:white' ],
+  'red:dim'    : [ 'main:dim', 'red:on' ],
+  'red:med'    : [ 'main:med', 'red:on' ],
 
  # Scene aliases
   'blue'        : [ 'accents:blue' ],

@@ -88,8 +88,8 @@ DEVICES = {
 
     # End-point names for web-based individual controls
     # Accent color lights (controlled by homesec)
-    'accent-party:off'   : 'WEBS:home.point0.net/p0',
-    'accent-party:on'    : 'WEBS:home.point0.net/p1',
+    'accents-party:off'  : 'WEBS:home.point0.net/p0',
+    'accents-party:on'   : 'WEBS:home.point0.net/p1',
     'neotree:off'        : 'WEB:neotree2/0',
     'neotree:on'         : 'WEB:neotree2/1',
 
