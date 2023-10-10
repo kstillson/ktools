@@ -183,12 +183,13 @@ function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
 
 # other general command shortcuts
-alias BLK='lsblk -e7 -mf'
-alias CLK="xclock -d -twelve -brief &"
-alias Df="df -h | egrep -v '/docker|/snap|tmpfs|udev|efi'"
+alias Blk='lsblk -e7 -mf'
+alias Clk="xclock -d -twelve -brief &"
+alias Dfs="df -hT | egrep -v '/docker|/snap|tmpfs|udev|efi'"
+alias Df="Dfs | sed -e '/btrfs/s: /.*$: {...}:' | Sort | uniq"
 alias LOCK="xscreensaver-command -lock"
 alias R="sudo -i bash"
-alias Sort="q sort-skip-header"
+alias Sort="( sed -u 1q; sort )"
 alias XF='/usr/bin/xhost +si:localuser:nobody'
 alias XR='/usr/bin/xhost +si:localuser:root'
 alias c2n='tr "," "\n"'
@@ -205,6 +206,8 @@ alias x="exec startx"
 alias RP='run_para --align --cmd'
 alias listp='run_para --dry_run --cmd'   # $1 is command to run (needs to be quoted)
 function listP() { while IFS= read -r line; do echo "${@//@/${line}}"; done; }
+function mnt() { q="${1:-.}"; findmnt --target ${q}; }
+function Mnt() { q="${1:-.}"; findmnt -n -o SOURCE --target ${q}; }
 
 # ---- fancy directory selectors
 
