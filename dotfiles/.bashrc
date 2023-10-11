@@ -182,9 +182,9 @@ alias R="sudo -i bash"
 # btrfs
 alias Btrfs='findmnt -t btrfs'
 # apt
-alias Au='sudo apt update'
 alias AR='sudo apt remove'
-alias AU='sudo apt upgrade'
+alias AU='sudo apt update'
+alias AUP='sudo apt upgrade'
 function AS() { _ apt-cache search "$@"; }
 function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
