@@ -142,6 +142,7 @@ function _() { eval "$@" | less; }
 # directory control
 alias ..='cd ..'
 alias ...='cd ../..'
+alias ..3='cd ../../..'
 alias md='mkdir'
 alias pd='pushd .'
 alias po='popd'
@@ -153,7 +154,7 @@ alias Ssh='ssh -fMN'
 
 # git
 alias g="git"
-alias UPDOT="cd ~/dev/ktools/dotfiles; make dots"
+alias UPDOT="cd ~ken/dev/ktools/dotfiles; make dots; cd; . .bashrc"
 
 # base 64 stuff
 alias b64e="perl -MMIME::Base64 -0777 -ne 'print encode_base64(\$_)'"
@@ -191,10 +192,12 @@ function AIN() { sudo apt-get install "$@"; }
 
 # disk level ops
 alias Blk='lsblk -e7 -mf'
+alias Df="Dfs | awk '/Mounted on/ { print; next; } { if (\$1 in a) { a[\$1]=sprintf(\"%s, %s\", a[\$1], \$7); } else { a[\$1]=\$0; } } END { for(i in a) print a[i]; }' | Sort"
 alias Dfs="df -hT | egrep -v '/docker|/snap|tmpfs|udev|efi'"
-alias Df="Dfs | sed -e '/btrfs/s: /.*$: {...}:' | Sort | uniq"
-alias ddd="dd status=progress"
 alias Mnts='findmnt --real | grep -v snap'
+alias ddd="dd status=progress"
+alias Space='baobab'
+alias SpaceR='sudo baobab'
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
 function Mnt() { q="${1:-.}"; findmnt -n -o SOURCE --target ${q}; }
 
@@ -254,6 +257,7 @@ function K() {
 	 Q) cd private.d ;;
 	 S) cd services ;;
 	 T) cd pylib/tools ;;
+	 -|\.) ;;  # pass to "C", below
 	 *) cd containers; cd $(ls -1d ${sel}* | head -1) ;;
     esac
     if [[ "$1" != "" ]]; then C "$@"; fi
