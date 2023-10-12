@@ -49,5 +49,5 @@ case "$got" in
     e|E)         exec /usr/bin/screen -c .screenrc-ke -d -R ke ;;
     n|N|x|X|q|Q) echo "no screen..." ;;
     -*|=*)       xdotool type ${got:1}$'\n'; exec /usr/bin/screen -D -R k0 ;;
-    *)           exec /usr/bin/screen -D -R ${got};;
+    *)           exec /usr/bin/screen -D -R -S "${got}" ;;
 esac

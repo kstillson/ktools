@@ -14,12 +14,6 @@ startup_message off
 vbell off
 zmodem catch auto
 
-# --------------------
-# message control
-
-msgwait 0.5                                # ~disable init msg about "new screen" et al
-screen -t post_init 39 sh -c 'sleep 1; screen -X msgwait 5' # then restore to 5 seconds
-
 
 # --------------------
 # command bindings
