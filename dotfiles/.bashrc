@@ -186,7 +186,7 @@ alias Btrfs='findmnt -t btrfs'
 alias AR='sudo apt remove'
 alias AU='sudo apt update'
 alias AUP='sudo apt upgrade'
-function AS() { _ apt-cache search "$@"; }
+function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
 function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
 
@@ -246,7 +246,7 @@ function C() {
 #
 function K() {
     cd ~/dev/ktools
-    sel="$1" ; shift
+    sel="$1"; sel2="$2"
     case "$sel" in
 	 '') ;;
          C) cd containers ;;
@@ -258,9 +258,9 @@ function K() {
 	 S) cd services ;;
 	 T) cd pylib/tools ;;
 	 -|\.) ;;  # pass to "C", below
-	 *) cd containers; cd $(ls -1d ${sel}* | head -1) ;;
+	 *) t=$(ls -1d containers/${sel}* | head -1 2>/dev/null); if [[ -d "$t" ]]; then cd "$t"; else sel2="$sel"; fi ;;
     esac
-    if [[ "$1" != "" ]]; then C "$@"; fi
+    if [[ "$sel2" != "" ]]; then C "$@"; fi
 }
 
 
