@@ -142,6 +142,7 @@ function _() { eval "$@" | less; }
 # directory control
 alias ..='cd ..'
 alias ...='cd ../..'
+alias ..3='cd ../../..'
 alias md='mkdir'
 alias pd='pushd .'
 alias po='popd'
@@ -153,7 +154,7 @@ alias Ssh='ssh -fMN'
 
 # git
 alias g="git"
-alias UPDOT="cd ~/dev/ktools/dotfiles; make dots"
+alias UPDOT="cd ~ken/dev/ktools/dotfiles; make dots; cd; . .bashrc"
 
 # base 64 stuff
 alias b64e="perl -MMIME::Base64 -0777 -ne 'print encode_base64(\$_)'"
@@ -177,24 +178,38 @@ alias MC="M clean"
 alias MI="sudo make install"
 alias MT="rm -f test.log; M test"
 
+# root-type stuff
+alias R="sudo -i bash"
+# btrfs
+alias Btrfs='findmnt -t btrfs'
 # apt
-function AS() { _ apt-cache search "$@"; }
+alias AR='sudo apt remove'
+alias AU='sudo apt update'
+alias AUP='sudo apt upgrade'
+function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
 function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
 
+# disk level ops
+alias Blk='lsblk -e7 -mf'
+alias Df="Dfs | awk '/Mounted on/ { print; next; } { if (\$1 in a) { a[\$1]=sprintf(\"%s, %s\", a[\$1], \$7); } else { a[\$1]=\$0; } } END { for(i in a) print a[i]; }' | Sort"
+alias Dfs="df -hT | egrep -v '/docker|/snap|tmpfs|udev|efi'"
+alias Mnts='findmnt --real | grep -v snap'
+alias ddd="dd status=progress"
+alias Space='baobab'
+alias SpaceR='sudo baobab'
+function mnt() { q="${1:-.}"; findmnt --target ${q}; }
+function Mnt() { q="${1:-.}"; findmnt -n -o SOURCE --target ${q}; }
+
 # other general command shortcuts
-alias BLK='lsblk -e7 -mf'
-alias CLK="xclock -d -twelve -brief &"
-alias Df="df -h | egrep -v '/docker|/snap|tmpfs|udev|efi'"
+alias Clk="xclock -d -twelve -brief &"
 alias LOCK="xscreensaver-command -lock"
-alias R="sudo -i bash"
-alias Sort="q sort-skip-header"
+alias Sort="( sed -u 1q; sort )"
 alias XF='/usr/bin/xhost +si:localuser:nobody'
 alias XR='/usr/bin/xhost +si:localuser:root'
 alias c2n='tr "," "\n"'
 alias clock='xclock -digital -twelve -brief -fg white -bg black -face "arial black-20:bold" &'
 alias copy='xclip -selection clipboard -in '
-alias ddd="dd status=progress"
 alias mine="ps aux --forest  | grep '$USER '"
 alias pag='ps auxwww --forest | grep '
 alias pam='ps aux --forest | less'
@@ -217,7 +232,8 @@ function listP() { while IFS= read -r line; do echo "${@//@/${line}}"; done; }
 function C() {
     srch=''
     for i in "$@"; do srch="${srch}${i}*/"; done
-    readarray -t out < <(ls -1d $srch 2>/dev/null)
+    if [[ "$PWD" != "$HOME" ]]; then srch2="$HOME/$srch"; else srch2=""; fi
+    readarray -t out < <(ls -1d $srch $srch2 2>/dev/null)
     case ${#out[@]} in
 	0) echo "not found  ($srch)" ;;
 	1) cd "${out[0]}" ;;
@@ -230,7 +246,7 @@ function C() {
 #
 function K() {
     cd ~/dev/ktools
-    sel="$1" ; shift
+    sel="$1"; sel2="$2"
     case "$sel" in
 	 '') ;;
          C) cd containers ;;
@@ -241,9 +257,10 @@ function K() {
 	 Q) cd private.d ;;
 	 S) cd services ;;
 	 T) cd pylib/tools ;;
-	 *) cd containers; cd $(ls -1d ${sel}* | head -1) ;;
+	 -|\.) ;;  # pass to "C", below
+	 *) t=$(ls -1d containers/${sel}* | head -1 2>/dev/null); if [[ -d "$t" ]]; then cd "$t"; else sel2="$sel"; fi ;;
     esac
-    if [[ "$1" != "" ]]; then C "$@"; fi
+    if [[ "$sel2" != "" ]]; then C "$@"; fi
 }
 
 

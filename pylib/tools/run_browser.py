@@ -235,6 +235,8 @@ def launch(cfg):
         dbus = ARGS.sudo_done
         debug(f'dbus auto resolved to: {dbus}')
 
+    os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
+
     cmd = []
     if dbus: cmd.append('dbus-run-session')
     if cfg.sandbox in [Sb.FIREJAIL, Sb.BOTH]:

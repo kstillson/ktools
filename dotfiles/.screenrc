@@ -11,9 +11,9 @@ autodetach on
 termcap xterm|xs 'WS=\E[8;%d;%dt'
 silencewait 10
 startup_message off
-msgwait 1
 vbell off
 zmodem catch auto
+
 
 # --------------------
 # command bindings

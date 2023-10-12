@@ -222,12 +222,7 @@ function RUN_PARA() {
 
 
 # Assume a 1 line header and output stdin sorted but preserving the header.
-function sort_skip_header() {
-    t=$(gettemp sortskipheader)
-    cat > $t
-    head -n 1 $t && tail -n +2 $t | sort "$@"
-    rmtemp $t
-}
+function sort_skip_header() { cat | ( sed -u 1q; sort ); }
 
 
 # ----------------------------------------
