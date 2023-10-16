@@ -135,9 +135,11 @@ alias e='$EDITOR'
 alias E='/usr/bin/emacs -nw'
 alias m='less'
 alias L='less'
+alias T='TAB'
+alias TAB='column -t'
 alias Less='less'
 alias V='gpg -d < '
-function _() { eval "$@" | less; }
+function _()  { eval "$@" | less; }
 
 # directory control
 alias ..='cd ..'
@@ -183,12 +185,14 @@ alias R="sudo -i bash"
 # btrfs
 alias Btrfs='findmnt -t btrfs'
 # apt
-alias AR='sudo apt remove'
-alias AU='sudo apt update'
-alias AUP='sudo apt upgrade'
-function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
 function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
+alias    AR='sudo apt remove'
+function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
+alias    AU='sudo apt update'
+alias    AUP='sudo apt upgrade'
+alias    KA='sudo /usr/bin/killall '
+alias    KU='sudo /usr/bin/killall -u '
 
 # disk level ops
 alias Blk='lsblk -e7 -mf'
