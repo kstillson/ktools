@@ -600,7 +600,7 @@ def main():
     dcf = 'docker-compose.yaml'
     if os.path.exists(dcf) and not os.path.exists(args.settings):
         print(f'{dcf} exists and {args.settings} does not; perhaps you want to launch via:')
-        print('IP=... PUID=... docker-compose up -d {svc...}')
+        print('IP=... PUID=... docker compose up -d {svc...}')
         sys.exit(-2)
 
     # generate the launch command and output any requested debugging info.
