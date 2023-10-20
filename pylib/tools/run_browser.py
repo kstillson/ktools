@@ -235,7 +235,8 @@ def launch(cfg):
         dbus = ARGS.sudo_done
         debug(f'dbus auto resolved to: {dbus}')
 
-    os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
+    # Useful for pipewire, but causes an error exit for pulseaudio.
+    # os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
 
     cmd = []
     if dbus: cmd.append('dbus-run-session')
@@ -255,8 +256,11 @@ def launch(cfg):
         if cfg.appmode != '-': url += '/#/cast/' + cfg.appmode
         cmd.append(url)
     rslt = run(cmd)
-    if rslt.startswith('ERR'): warn(f'Browser exited with error: {rslt}')
-    else: debug(f'Browser process returned: {rslt}')
+    if not rslt.ok:
+        tmpname = f'/tmp/run_browser-{os.geteuid()}-err.out'
+        with open(tmpname, 'w') as f: print(rslt.out, file=f)
+        warn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
+    else: debug(f'Browser process returned: {rslt.out}')
 
 def pick_code():
     if not ARGS.code:
@@ -285,7 +289,7 @@ def reset(cfg, post_sudo: bool):
     source = get_snapshot_dir(cfg)
     dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
-    if rslt.startswith('ERR'): fatal(f'reset failed: {rslt}')
+    if not rslt.ok: fatal(f'reset failed: {rslt.out}')
     else:
         if not ARGS.dryrun: quick_ok('reset ok', background=True)
 
@@ -299,7 +303,7 @@ def run(cmd_list, background=False, bypass_dryrun=False):
     if background: return subprocess.Popen(cmd_list)
     env = os.environ.copy()
     env['GTK_IM_MODULE'] = 'xim'
-    return C.popener(cmd_list, env=env)
+    return C.popen(cmd_list, env=env)
 
 
 def safedir(dir: str):  # Create this dir if needed, along with any missing parent dirs.
@@ -322,10 +326,10 @@ def snap_config(cfg):
         dest_backup = dest + BACKUP_SFX
         debug(f'backing up snapshot {dest} -> {dest_backup}')
         rslt = run(['rsync', '-a', '--delete', dest + '/', dest_backup + '/'])
-        if rslt.startswith('ERR'): fatal(f'Backup "{dest}" -> "{dest_backup}" failed: {rslt}')
+        if not rslt.ok: fatal(f'Backup "{dest}" -> "{dest_backup}" failed: {rslt.out}')
 
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
-    if rslt.startswith('ERR'): fatal(f'Snapshot to "{dest}" failed: {rslt}')
+    if not rslt.ok: fatal(f'Snapshot to "{dest}" failed: {rslt.out}')
     print(f'snapshot saved to {dest}')
     return True
 
