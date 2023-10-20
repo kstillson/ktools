@@ -23,8 +23,8 @@
 
 # ---------- control constants
 
-eval $(ktools_settings -cnq d_src_dir d_src_dir2 docker_exec vol_base build_params repo1 repo2)
-       
+eval $(ktools_settings -cnq d_src_dir d_src_dir2 docker_exec vol_base build_params buildx repo1 repo2)
+
 # TODO:
 DBUILD_PODMAN_SHARED_APK_CACHE="${DBUILD_PODMAN_SHARED_APK_CACHE:-1}"
 
@@ -60,14 +60,38 @@ function run_build() {
 	params="--tmpfs /var/cache/apk $params"
     fi
 
+    # ----- buildx adjustments
+
+    # buildx doesn't support depending on locally build images, at least
+    # with the non-default builder.  and the default builder doesn't support
+    # specifying the network for the container to use.
+    # https://github.com/moby/moby/issues/42893#issuecomment-1241274246
+    # they claim this is to support sandboxing, but that's silly, as its
+    # perfectly happy to pull images out of repos.  Only solution appears to
+    # be to upload the parent dep into a real repo (and manage that repo),
+    # or to use the now "deprecated" "legacy build system," which is what I'll do.
+    #
+    if [[ "$DOCKER_EXEC" == *"docker" ]] &&  [[ "$BUILDX" == "1" ]]; then
+	build="buildx build --load"
+	params="${params/--network /--builder=builder-net-}"
+    else
+	build="build"
+    fi
+
     # ----- standard docker/podman build
 
     # NB: using tar-based trick from https://superuser.com/questions/842642/how-to-make-a-symlinked-folder-appear-as-a-normal-folder
     # to translate symlinks to their contents, even if they are outside the "context."  Needed for private.d contents.
     echo ""
-    echo "tar -ch . | ${DOCKER_EXEC} build $params -t $target -"
-          tar -ch . | ${DOCKER_EXEC} build $params -t $target -
-    return $?
+    echo "tar -ch . | ${DOCKER_EXEC} $build $params -t $target -"
+          tar -ch . | ${DOCKER_EXEC} $build $params -t $target -
+    status=$?
+
+    if [[ "$BUILDX" == "1" ]]; then
+	docker buildx stop $(docker buildx ls | grep docker-container | cut -f1 -d' ')
+    fi
+
+    return $status
 }
 
 function run_push() {
