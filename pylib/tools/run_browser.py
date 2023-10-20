@@ -235,8 +235,8 @@ def launch(cfg):
         dbus = ARGS.sudo_done
         debug(f'dbus auto resolved to: {dbus}')
 
-    # Useful for pipewire, but causes an error exit for pulseaudio.
-    # os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
+    # os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'   ## Useful for pipewire, but causes an error exit for pulseaudio.
+    os.environ['PULSE_SERVER'] = 'unix:/tmp/pulse-server'
 
     cmd = []
     if dbus: cmd.append('dbus-run-session')
@@ -298,7 +298,8 @@ def run(cmd_list, background=False, bypass_dryrun=False):
     if ARGS.dryrun and not bypass_dryrun:
         msg = f'DRYRUN: would execute: {cmd_list}'
         print(msg, file=sys.stderr)
-        return msg
+        rslt = C.PopenOutput(ok=True, returncode=0, stdout=msg, stderr='(dryrun)', exception_str=None, pid=-1)
+        return rslt
     debug('running: ' + ('(in background) ' if background else '') + str(cmd_list))
     if background: return subprocess.Popen(cmd_list)
     env = os.environ.copy()
