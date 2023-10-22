@@ -190,7 +190,7 @@ function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
 alias    AR='sudo apt remove'
 function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
-alias    AQ='apt -qq list'
+function AQ() { /usr/bin/dpkg -l "$1" | /usr/bin/tail -1 | /bin/egrep --color=always -e '^..'; }
 alias    AU='sudo apt update'
 alias    AUP='sudo apt upgrade'
 alias    KA='sudo /usr/bin/killall '
