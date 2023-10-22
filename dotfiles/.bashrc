@@ -190,6 +190,7 @@ function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
 alias    AR='sudo apt remove'
 function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
+alias    AQ='apt -qq list'
 alias    AU='sudo apt update'
 alias    AUP='sudo apt upgrade'
 alias    KA='sudo /usr/bin/killall '
