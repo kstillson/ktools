@@ -38,7 +38,7 @@ SCENES = {
   'fam'         : [ 'family-room-left', 'family-room-right', 'dining-chandelier' ],
   'inside'      : [ 'bedrm', 'fam', 'kit', 'main' ],
   'ofc'         : [ 'office' ],
-  'outside'     : [ 'door-entry', 'landscaping', 'out-all', 'lantern', 'patio', 'rear-flood' ],
+  'outside'     : [ 'door-entry', 'landscaping', 'lantern', 'patio', 'rear-flood' ],
   'kit'         : [ 'kitchen', 'kitchen-pendants', 'breakfast-nook' ],
   'lng'         : [ 'bendy', 'lounge', 'window-lights', 'lounge-chandelier' ],
   'main'        : [ 'fam', 'kit', 'lng', 'office' ],
@@ -85,7 +85,7 @@ SCENES = {
   'leaving'     : [ 'away' ],
   'red'         : [ 'accents:red' ],
 
- # Shorthand aliases (for cli use)
+ # Shorthand aliases (intended for cli use)
   '00'          : [ 'all:off' ],
   '0'           : [ 'inside:off' ],
   '1'           : [ 'inside:dim' ],
@@ -95,7 +95,9 @@ SCENES = {
   'b'           : [ 'bedtime' ],
   'c'           : [ 'comp' ],
   'k'           : [ 'kitchen' ],
-  'o'           : [ 'outside' ],
+  'l'           : [ 'landscaping', 'out-all' ],
+  'la'          : [ 'out-all' ],
+  'o'           : [ 'outside', 'out-all' ],
   'O'           : [ 'office' ],
 
 # Special dynamically expanded
