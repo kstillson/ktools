@@ -90,7 +90,7 @@ def find_by_name(name) -> Mp:
     return None
 
 def is_mountpoint(dir: str) -> bool:
-    rslt = run(['/usr/bin/mountpoint', '-q', dir])
+    rslt = run(['/usr/bin/mountpoint', '-q', d(dir)])
     return rslt.ok
 
 def needs_dir(config: Mp) -> str:  # Returns name of directory that config deps on.
@@ -99,7 +99,9 @@ def needs_dir(config: Mp) -> str:  # Returns name of directory that config deps 
 
 def run(cmd):
     if ARGS.verbose: print(f'[verbose] running: {cmd}', file=sys.stderr)
-    return C.popen(cmd)
+    rslt = C.popen(cmd)
+    if ARGS.verbose: print(f'[verbose] command returned: {rslt}')
+    return rslt
 
 
 # ---------- business logic
@@ -162,13 +164,19 @@ def list_mounted():
     return len(mounted)
 
 
-def unmounter():
+def unmounter(force=False):
     for c in reversed(CONFIGS):
         if is_mountpoint(c.mp_provides):
             if isinstance(c.source, Mount):
-                out = run(['/usr/bin/umount', d(c.mp_provides)])
+                cmd = ['/usr/bin/umount']
+                if force: cmd.append('-l')
+                cmd.append(d(c.mp_provides))
+                out = run(cmd)
             else:
-                out = run(['/usr/bin/fusermount', '-u', d(c.mp_provides)])
+                cmd = ['/usr/bin/fusermount']
+                if force: cmd.append('-z')
+                cmd.extend(['-u', d(c.mp_provides)])
+                out = run(cmd)
             is_mp = is_mountpoint(c.mp_provides)
             if not out.ok or is_mp:
                 emit(f'unmount of {c.name}:{c.mp_provides} failed: {out.out}')
@@ -200,7 +208,7 @@ def parse_args(argv):
     ap = C.argparse_epilog(description='authN token generator', epilog_extra=extra)
     ap.add_argument('--allow-root', '-A', action='store_true', help='allow root to access mounted filesystems')
     ap.add_argument('--verbose', '-v',    action='store_true', help='show executed commands')
-    ap.add_argument('targets', nargs="*", help='list of mountpoint_config names (or aliases) to mount.  special targets: a=all, t=test, u=umount')
+    ap.add_argument('targets', nargs="*", help='list of mountpoint_config names (or aliases) to mount.  special targets: a=all, t=test, u=umount, fu=force-umount')
     return ap.parse_args(argv)
 
 
@@ -212,7 +220,7 @@ def main(argv=[]):
 
     for arg in ARGS.targets:
         if arg in ['list', 'L', 'tester', 'test', 't']: list_mounted()
-        elif arg in ['umount', 'u', '0']: unmounter()
+        elif arg in ['umount', 'u', 'fu', '0']: unmounter(arg=='fu')
         elif arg in ['all', 'a', '1']: mount_all()
         else:
             err = mount_by_name(arg)
