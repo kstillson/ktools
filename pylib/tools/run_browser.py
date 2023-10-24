@@ -121,7 +121,7 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
 
     # Standard Firefox browsing w/o kasm
-    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          None,       ARGS1,  None,   None,        None,            None,            'Firefox general browsing direct(fj)',           []),
+    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Firefox general browsing direct(fj)',           []),
     'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Bad boy Firefox(fj)',                           ['fb3']),
 
     # Browsing w/ kasm
@@ -211,11 +211,25 @@ def debug(msg):
 
 def find_chrome_profile_dir(name):
     if not name: return None
-    # Translate label to name
-    state = C.read_file(os.path.expanduser('~/.config/google-chrome/Local State'))
+    basedir = os.path.expanduser('~/.config/google-chrome')
+    state = C.read_file(os.path.join(basedir, 'Local State'))
     profile = C.popener(['jq', '-r', '.profile.info_cache | to_entries | .[] | select(.value.name == env.srch) | .key'], stdin_str=state, env={'srch': name})
     debug(f'profile label "{name}" successfully found;  its profile {profile}')
-    return profile.replace('"', '')
+    if not profile: return None
+    return os.path.join(basedir, profile.replace('"', ''))
+
+
+def find_firefox_profile_dir(name):
+    basedir = os.path.expanduser('~/.mozilla/firefox')
+    import configparser
+    c = configparser.ConfigParser()
+    c.read(os.path.join(basedir, 'profiles.ini'))
+    for i,v in c.items():
+        if name:
+            if v.get('Name') == name: return os.path.join(basedir, v['Path'])
+        else:
+            if v.get('Default') == '1': return os.path.join(basedir, v['Path'])
+    return None
 
 
 def get_kasm_profile_dir(cfg):
@@ -223,15 +237,19 @@ def get_kasm_profile_dir(cfg):
 
 
 def get_profile_dir(cfg):
-    return safedir(subst('~/.config/{browser}/{profile}', cfg))
+    if cfg.browser == B.CHROME: return find_chrome_profile_dir(cfg.profile)
+    elif cfg.browser == B.FIREFOX: return find_firefox_profile_dir(cfg.profile)
+    else: return None
 
 
 def get_snapshot_dir(cfg):
+    browser = 'chrome-' if cfg.browser == B.CHROME else 'firefox-' if cfg.browser == B.FIREFOX else 'qq-'
     prefix = 'kasm-' if cfg.sandbox in [Sb.KASM, Sb.BOTH] else ''
-    return safedir(subst(os.path.join(SNAPSHOT_DIR, prefix + cfg.uid, cfg.profile or 'Default'), cfg))
+    return safedir(subst(os.path.join(SNAPSHOT_DIR, browser + prefix + cfg.uid, cfg.profile or 'Default'), cfg))
 
 
 def launch(cfg):
+    os.chdir(os.path.expanduser('~'))
     dbus = DBUS
     if dbus == 'auto':
         dbus = ARGS.sudo_done
@@ -266,15 +284,15 @@ def launch(cfg):
         warn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
     else: debug(f'Browser process returned: {rslt.out}')
 
-def pick_code():
-    if not ARGS.code:
+def pick_code(in_code):
+    if not in_code:
         code = gui()
         sys.argv.append(code)  # Add to args so it'll be automatically passed to sudo (if needed)
         return code
-    if ARGS.code in CONFIGS: return ARGS.code
+    if in_code in CONFIGS: return in_code
     for code, cfg in CONFIGS.items():
-        if ARGS.code in cfg.aliases:
-            debug(f'alias "{ARGS.code}" mapped to code "{code}"')
+        if in_code in cfg.aliases:
+            debug(f'alias "{in_code}" mapped to code "{code}"')
             return code
     return None
 
@@ -406,7 +424,8 @@ def parse_args(argv):
     g1.add_argument('--purge',   '-P', default='yes',       help='[yes/no/ask] if sudo\'d to an alternate uid, kill all remaining processes of that uid after browser exits?')
 
     g2 = ap.add_argument_group('alternate run modes')
-    g2.add_argument('--search',        default=None,        help='skip normal launch, just search for a Chrome profile with this label and output its directory name')
+    g2.add_argument('--search-chrome', default=None,        help='skip normal launch, just search for a Chrome profile with this label and output its directory name')
+    g2.add_argument('--search-ff',     default=None,        help='skip normal launch, just search for a Firefox profile with this label and output its directory name')
     g1.add_argument('--reset',   '-R', action='store_true', help='skip normal launch, just reset its state to the last saved snapshot')
     g1.add_argument('--snap',    '-S', action='store_true', help='skip normal launch, just snapshot its current state for the next reset')
 
@@ -422,14 +441,18 @@ def main(argv=[]):
 
     # ---- alternate run modes that don't need a config.
 
-    if ARGS.search:
-        out = find_chrome_profile_dir(ARGS.search)
+    if ARGS.search_chrome:
+        out = find_chrome_profile_dir(ARGS.search_chrome)
+        print(out)
+        return 0 if out else 1
+    elif ARGS.search_ff:
+        out = find_firefox_profile_dir(ARGS.search_ff)
         print(out)
         return 0 if out else 1
 
     # ---- get config
 
-    code = pick_code()
+    code = pick_code(ARGS.code)
     cfg = CONFIGS.get(code)
     if not cfg: fatal(f'unknown code: {ARGS.code or code}')
     debug(f'{cfg=}')
