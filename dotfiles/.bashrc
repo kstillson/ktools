@@ -121,6 +121,7 @@ alias G='grep -i $COLOR_OPTION'
 alias grep='grep $COLOR_OPTION'
 alias fgrep='fgrep $COLOR_OPTION'
 alias egrep='egrep $COLOR_OPTION'
+function HL() { /bin/grep --color=always -E "^|$1"; }  # highlight $1
 
 # add a directory to the end of $PATH if it's valid and not in $PATH already.
 addpath() {
