@@ -135,9 +135,11 @@ alias e='$EDITOR'
 alias E='/usr/bin/emacs -nw'
 alias m='less'
 alias L='less'
+alias T='TAB'
+alias TAB='column -t'
 alias Less='less'
 alias V='gpg -d < '
-function _() { eval "$@" | less; }
+function _()  { eval "$@" | less; }
 
 # directory control
 alias ..='cd ..'
@@ -183,22 +185,32 @@ alias R="sudo -i bash"
 # btrfs
 alias Btrfs='findmnt -t btrfs'
 # apt
-alias AR='sudo apt remove'
-alias AU='sudo apt update'
-alias AUP='sudo apt upgrade'
-function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
+alias    AAR='sudo apt auto-remove'
 function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
+alias    AR='sudo apt remove'
+function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
+function AQ() { /usr/bin/dpkg -l "$1" | /usr/bin/tail -1 | /bin/egrep --color=always -e '^..'; }
+alias    AU='sudo apt update'
+alias    AUP='sudo apt upgrade'
+alias    KA='sudo /usr/bin/killall '
+alias    KU='sudo /usr/bin/killall -u '
 
 # disk level ops
+# human-friendly and filtered list of device blkid's
 alias Blk='lsblk -e7 -mf'
+# combine lines with the same device but different mountpoints (e.g. btrfs) into a single line:
 alias Df="Dfs | awk '/Mounted on/ { print; next; } { if (\$1 in a) { a[\$1]=sprintf(\"%s, %s\", a[\$1], \$7); } else { a[\$1]=\$0; } } END { for(i in a) print a[i]; }' | Sort"
+# human-friendly output and strip out generally uninteresting entries:
 alias Dfs="df -hT | egrep -v '/docker|/snap|tmpfs|udev|efi'"
+# show a nice map of all the current mountpoints
 alias Mnts='findmnt --real | grep -v snap'
 alias ddd="dd status=progress"
 alias Space='baobab'
 alias SpaceR='sudo baobab'
+# info about the mountpoint of the specified dir (or current) dir.
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
+# give just the mountpoint dir of the specified (or current) dir.
 function Mnt() { q="${1:-.}"; findmnt -n -o SOURCE --target ${q}; }
 
 # other general command shortcuts
@@ -219,7 +231,7 @@ alias x="exec startx"
 
 alias RP='run_para --align --cmd'
 alias listp='run_para --dry_run --cmd'   # $1 is command to run (needs to be quoted)
-function listP() { while IFS= read -r line; do echo "${@//@/${line}}"; done; }
+function listP() { while IFS= read -r line; do echo "${@//@/${line}}"; done; }  # perform "@" expansion from stdin to stdout (not auto-run)
 
 # ---- fancy directory selectors
 

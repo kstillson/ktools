@@ -115,24 +115,26 @@ KASM1 = 'kasm:chrome-b:ken-b:Default'
 KASM2 = 'kasm:chrome-bbb:ken-bbb:Default'
 
 CONFIGS = { #   uid        browser      sandbox      reset          profile     args    appmode dis-uids    sync_acct        pw_db             note                                             aliases
-    # Standard browsing w/o kasm
+    # Standard Chrome browsing w/o kasm
     'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'kstillson@g',   'lp:kstillson@g', '[AC-c] Google:* direct(fj)',                    ['g','google','kstillson']),
     'ctrl': Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,    'control accts',  ARGS1,  None,   None,       'ken@p0',        'lp:kstillson@g', 'Google control accounts',                       ['C']),
-    'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',            []),
-    'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
     'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
 
-    # Standard browsing w/ kasm
-    'b':    Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
-    'bbb':  Cfg('ken-bbb', B.CHROME,    Sb.BOTH,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
+    # Standard Firefox browsing w/o kasm
+    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Firefox general browsing direct(fj)',           []),
+    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Bad boy Firefox(fj)',                           ['fb3']),
 
-    # Specialized modes (mostly for debugging frozen kasms)
-    'b1':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  '-',    None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy w/o cast',     []),
-    'b2':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
+    # Browsing w/ kasm
+    'kb':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
+    'kbbb': Cfg('ken-bbb', B.CHROME,    Sb.BOTH,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
+     # Specialized modes (mostly for debugging frozen kasms)
+    'kb1':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  '-',    None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy w/o cast',     []),
+    'kb2':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
-    # Firefox
-    'fbbb': Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Bad boy Firefox(fj)',                           ['fb3']),
-
+    # Deprecated modes
+    'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',            []),
+    'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
+    
     # Raw browser access (no added security)
     'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,        'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
     'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,        None,            None,            'raw firefox',                                   ['f', 'ff']),
@@ -209,11 +211,25 @@ def debug(msg):
 
 def find_chrome_profile_dir(name):
     if not name: return None
-    # Translate label to name
-    state = C.read_file(os.path.expanduser('~/.config/google-chrome/Local State'))
+    basedir = os.path.expanduser('~/.config/google-chrome')
+    state = C.read_file(os.path.join(basedir, 'Local State'))
     profile = C.popener(['jq', '-r', '.profile.info_cache | to_entries | .[] | select(.value.name == env.srch) | .key'], stdin_str=state, env={'srch': name})
     debug(f'profile label "{name}" successfully found;  its profile {profile}')
-    return profile.replace('"', '')
+    if not profile: return None
+    return os.path.join(basedir, profile.replace('"', ''))
+
+
+def find_firefox_profile_dir(name):
+    basedir = os.path.expanduser('~/.mozilla/firefox')
+    import configparser
+    c = configparser.ConfigParser()
+    c.read(os.path.join(basedir, 'profiles.ini'))
+    for i,v in c.items():
+        if name:
+            if v.get('Name') == name: return os.path.join(basedir, v['Path'])
+        else:
+            if v.get('Default') == '1': return os.path.join(basedir, v['Path'])
+    return None
 
 
 def get_kasm_profile_dir(cfg):
@@ -221,22 +237,29 @@ def get_kasm_profile_dir(cfg):
 
 
 def get_profile_dir(cfg):
-    return safedir(subst('~/.config/{browser}/{profile}', cfg))
+    if cfg.browser == B.CHROME: return find_chrome_profile_dir(cfg.profile)
+    elif cfg.browser == B.FIREFOX: return find_firefox_profile_dir(cfg.profile)
+    else: return None
 
 
 def get_snapshot_dir(cfg):
+    browser = 'chrome-' if cfg.browser == B.CHROME else 'firefox-' if cfg.browser == B.FIREFOX else 'qq-'
     prefix = 'kasm-' if cfg.sandbox in [Sb.KASM, Sb.BOTH] else ''
-    return safedir(subst(os.path.join(SNAPSHOT_DIR, prefix + cfg.uid, cfg.profile or 'Default'), cfg))
+    return safedir(subst(os.path.join(SNAPSHOT_DIR, browser + prefix + cfg.uid, cfg.profile or 'Default'), cfg))
 
 
 def launch(cfg):
+    os.chdir(os.path.expanduser('~'))
     dbus = DBUS
     if dbus == 'auto':
         dbus = ARGS.sudo_done
         debug(f'dbus auto resolved to: {dbus}')
 
-    os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
-
+    if not ARGS.sudo_done:
+        os.environ['PULSE_SERVER'] = 'unix:/tmp/pulse-server'
+    else:
+        os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'   ## Useful for pipewire, but causes an error exit for pulseaudio.
+    
     cmd = []
     if dbus: cmd.append('dbus-run-session')
     if cfg.sandbox in [Sb.FIREJAIL, Sb.BOTH]:
@@ -255,18 +278,21 @@ def launch(cfg):
         if cfg.appmode != '-': url += '/#/cast/' + cfg.appmode
         cmd.append(url)
     rslt = run(cmd)
-    if rslt.startswith('ERR'): warn(f'Browser exited with error: {rslt}')
-    else: debug(f'Browser process returned: {rslt}')
+    if not rslt.ok:
+        tmpname = f'/tmp/run_browser-{os.geteuid()}-err.out'
+        with open(tmpname, 'w') as f: print(rslt.out, file=f)
+        warn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
+    else: debug(f'Browser process returned: {rslt.out}')
 
-def pick_code():
-    if not ARGS.code:
+def pick_code(in_code):
+    if not in_code:
         code = gui()
         sys.argv.append(code)  # Add to args so it'll be automatically passed to sudo (if needed)
         return code
-    if ARGS.code in CONFIGS: return ARGS.code
+    if in_code in CONFIGS: return in_code
     for code, cfg in CONFIGS.items():
-        if ARGS.code in cfg.aliases:
-            debug(f'alias "{ARGS.code}" mapped to code "{code}"')
+        if in_code in cfg.aliases:
+            debug(f'alias "{in_code}" mapped to code "{code}"')
             return code
     return None
 
@@ -285,7 +311,7 @@ def reset(cfg, post_sudo: bool):
     source = get_snapshot_dir(cfg)
     dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
-    if rslt.startswith('ERR'): fatal(f'reset failed: {rslt}')
+    if not rslt.ok: fatal(f'reset failed: {rslt.out}')
     else:
         if not ARGS.dryrun: quick_ok('reset ok', background=True)
 
@@ -294,12 +320,13 @@ def run(cmd_list, background=False, bypass_dryrun=False):
     if ARGS.dryrun and not bypass_dryrun:
         msg = f'DRYRUN: would execute: {cmd_list}'
         print(msg, file=sys.stderr)
-        return msg
+        rslt = C.PopenOutput(ok=True, returncode=0, stdout=msg, stderr='(dryrun)', exception_str=None, pid=-1)
+        return rslt
     debug('running: ' + ('(in background) ' if background else '') + str(cmd_list))
     if background: return subprocess.Popen(cmd_list)
     env = os.environ.copy()
     env['GTK_IM_MODULE'] = 'xim'
-    return C.popener(cmd_list, env=env)
+    return C.popen(cmd_list, env=env)
 
 
 def safedir(dir: str):  # Create this dir if needed, along with any missing parent dirs.
@@ -322,10 +349,10 @@ def snap_config(cfg):
         dest_backup = dest + BACKUP_SFX
         debug(f'backing up snapshot {dest} -> {dest_backup}')
         rslt = run(['rsync', '-a', '--delete', dest + '/', dest_backup + '/'])
-        if rslt.startswith('ERR'): fatal(f'Backup "{dest}" -> "{dest_backup}" failed: {rslt}')
+        if not rslt.ok: fatal(f'Backup "{dest}" -> "{dest_backup}" failed: {rslt.out}')
 
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
-    if rslt.startswith('ERR'): fatal(f'Snapshot to "{dest}" failed: {rslt}')
+    if not rslt.ok: fatal(f'Snapshot to "{dest}" failed: {rslt.out}')
     print(f'snapshot saved to {dest}')
     return True
 
@@ -397,7 +424,8 @@ def parse_args(argv):
     g1.add_argument('--purge',   '-P', default='yes',       help='[yes/no/ask] if sudo\'d to an alternate uid, kill all remaining processes of that uid after browser exits?')
 
     g2 = ap.add_argument_group('alternate run modes')
-    g2.add_argument('--search',        default=None,        help='skip normal launch, just search for a Chrome profile with this label and output its directory name')
+    g2.add_argument('--search-chrome', default=None,        help='skip normal launch, just search for a Chrome profile with this label and output its directory name')
+    g2.add_argument('--search-ff',     default=None,        help='skip normal launch, just search for a Firefox profile with this label and output its directory name')
     g1.add_argument('--reset',   '-R', action='store_true', help='skip normal launch, just reset its state to the last saved snapshot')
     g1.add_argument('--snap',    '-S', action='store_true', help='skip normal launch, just snapshot its current state for the next reset')
 
@@ -413,14 +441,18 @@ def main(argv=[]):
 
     # ---- alternate run modes that don't need a config.
 
-    if ARGS.search:
-        out = find_chrome_profile_dir(ARGS.search)
+    if ARGS.search_chrome:
+        out = find_chrome_profile_dir(ARGS.search_chrome)
+        print(out)
+        return 0 if out else 1
+    elif ARGS.search_ff:
+        out = find_firefox_profile_dir(ARGS.search_ff)
         print(out)
         return 0 if out else 1
 
     # ---- get config
 
-    code = pick_code()
+    code = pick_code(ARGS.code)
     cfg = CONFIGS.get(code)
     if not cfg: fatal(f'unknown code: {ARGS.code or code}')
     debug(f'{cfg=}')
