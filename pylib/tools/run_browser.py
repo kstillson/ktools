@@ -298,15 +298,15 @@ def pick_code(in_code):
 
 
 def reset(cfg, post_sudo: bool):
-    if not cfg.reset: return
+    if not cfg.reset: return debug('config does not request reset')
     if ARGS.noreset: return quick_ok('skipping normal reset  (--noreset)')
 
     if cfg.sandbox in [Sb.KASM, Sb.BOTH]:
         # kasm reset transports over ssh, so it must run (only) pre-sudo, for access to the base-user's ssh keys.
-        if ARGS.sudo_done or post_sudo: return
+        if ARGS.sudo_done or post_sudo: return debug('config uses kasm and sudo already done, so deferring to pre-sudo reset')
     else:
         # non-kasm reset is overwriting files owned by the post-sudo user, so must run (only) post-sudo
-        if not ARGS.sudo_done or not post_sudo: return
+        if cfg.uid and cfg.uid != CURRENT_USER: return debug('non-kasm config must wait until sudoed')
 
     source = get_snapshot_dir(cfg)
     dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
