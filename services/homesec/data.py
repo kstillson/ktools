@@ -92,7 +92,7 @@ STATE_RULES = [
     StateRule('*', 'disarmed',        'enter', 'announce',     '#i,@chime8,system disarmed by %u'),
     StateRule('*', 'disarmed',        'enter', 'control',      'sirens, off'),
     StateRule('*', 'panic',           'enter', 'announce',     '#a,@alarm3,panic mode activated by %u %f'),
-    StateRule('*', 'panic',           'enter', 'control',      'all, on'),
+    StateRule('*', 'panic',           'enter', 'control',      'all, full'),
     StateRule('*', 'panic',           'enter', 'control',      'sirens, on'),
     StateRule('*', 'panic',           'enter', 'httpget',      'http://jack:8080/panic'),
     StateRule('*', 'panic',           'leave', 'control',      'sirens, off'),
