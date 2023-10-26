@@ -48,6 +48,10 @@ SCENES = {
   'accents'     : [ 'color-sofa-left', 'color-sofa-right', 'color-moon', 'color-stairs' ],
   'specials'    : [ 'accents', 'tree', 'twinkle', 'lightning' ],
 
+   # (used in redblue animation by ulb/panic)
+  'rb1'         : [ 'color-sofa-left', 'color-stairs', 'lantern' ],
+  'rb2'         : [ 'color-sofa-right', 'color-moon', 'door-entry' ],
+
  # Activity-based
   'away'        : [ 'main:off', 'delay:2:office:dim:40' ],
   'bedtime'     : [ 'inside:off', 'pout2:off', 'delay:2:bedroom-light:dim:10' ],

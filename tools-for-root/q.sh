@@ -316,8 +316,7 @@ function git_update_pis() {
     RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
     echo "restarting services..."
-    RUN_PARA "$hosts" "systemctl daemon-reload"
-    RUN_PARA "$hosts" "/home/pi/dev/Restart"
+    RUN_PARA "$hosts" "systemctl daemon-reload; /home/pi/dev/Restart"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some restart failures"; return 1; fi
     emitc green "all done\n"
 }
@@ -924,7 +923,7 @@ function main() {
         exim-queue-run | eqr) runner "d run eximdock exim -qff" ;;        ## unfreeze and retry the queue
         enable-rsnap | enable_rsnap) enable_rsnap ;;                      ## set capabilities for rsnapshot (upgrades can remove the caps)
         git-add-repo | git-add | gar) git_add_repo "$1" ;;                ## add a new repo $1 to gitdock
-        git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homesec
+        git-update-pis | git-pis | git-up) git_update_pis ;;              ## pull git changes and restart services on pis/homectrl
         lease-orphans | lsmaco | lo | unknown-macs | um) leases_list_orphans ;;   ## list dhcp leases not known to dnsmasq config
         lease-query | lsmacs | lq) egrep --color=auto "$1" $LEASES ;;     ## search for $1 in dhcp leases file
         lease-query-red | lqr | 9) fgrep --color=auto -F ".9." $LEASES || echoc green "ok\n" ;;  ## list red network leases

@@ -63,8 +63,7 @@ CONSTANTS = {
   'ALARM_DURATION':        120,         # %Talarm
   'ALARM_TRIGGERED_DELAY': 25,          # %Ttrig
   'ARM_AWAY_DELAY':        60,          # %Tarm
-  'PANIC_DURATION':        1200,        # %Tpanic
-  'TOUCH_WINDOW_SECS':     20 * 60,     # %Ttouch
+  'PANIC_DURATION':        10 * 60,     # %Tpanic
 }
 
 
@@ -80,7 +79,7 @@ STATE_RULES = [
   #     partition  state          transition -> action          params
     StateRule('*', 'alarm',           'enter', 'announce',     '#a,alarm triggered,@alarm1'),
     StateRule('*', 'alarm',           'enter', 'control',      'all, on'),
-    StateRule('*', 'alarm',           'enter', 'httpget',      'http://jack:8080/panic'),
+    StateRule('*', 'alarm',           'enter', 'httpget',      'http://jack:8080/panic-quiet'),
     StateRule('*', 'alarm',           'leave', 'announce',     '#i,@alarm5,alarm reset'),
     StateRule('*', 'alarm',           'leave', 'control',      'all, off'),
     StateRule('*', 'alarm-triggered', 'enter', 'announce',     '#i,@chime3,%f alarm triggered. %Ttrig seconds to disarm'),
@@ -96,7 +95,7 @@ STATE_RULES = [
     StateRule('*', 'panic',           'enter', 'control',      'sirens, on'),
     StateRule('*', 'panic',           'enter', 'httpget',      'http://jack:8080/panic'),
     StateRule('*', 'panic',           'leave', 'control',      'sirens, off'),
-    StateRule('*', 'silent-panic',    'enter', 'announce',     '#i,@chime8,system deactivated'),
+    StateRule('*', 'silent-panic',    'enter', 'announce',     '@chime8,system disarmed'),  # no pb
     StateRule('*', 'silent-panic',    'enter', 'silent-panic', ''),
     StateRule('*', 'test-mode',       'enter', 'announce',     '#i,@chime1,entering test mode by %u %f'),
 ]
