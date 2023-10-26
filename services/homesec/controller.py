@@ -129,7 +129,6 @@ def subst(tracking, input_string):
   out = out.replace('%s', tracking.get('state') or '?')
   out = out.replace('%u', str(tracking.get('user') or '?'))
   out = out.replace('%z', tracking.get('zone') or '?')
-  out = out.replace('%Ttouch', str(model.CONSTANTS['TOUCH_WINDOW_SECS']))
   out = out.replace('%Tarm',   str(model.CONSTANTS['ARM_AWAY_DELAY']))
   out = out.replace('%Ttrig',  str(model.CONSTANTS['ALARM_TRIGGERED_DELAY']))
   out = out.replace('%Talarm', str(model.CONSTANTS['ALARM_DURATION']))

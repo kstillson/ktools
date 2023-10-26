@@ -14,7 +14,7 @@ PRIV_FILES := kcore_auth_db.data.pcrypt keymaster.crt
 PRIV_TARGETS := $(addprefix $(HSH_DIR)/, $(PRIV_FILES))
 
 HSH_PRIV_DIR := files/home/hs/private.d
-PRIV_HS_FILES := data.py
+PRIV_HS_FILES := data.py ext.py
 PRIV_HS_TARGETS := $(addprefix $(HSH_PRIV_DIR)/, $(PRIV_HS_FILES))
 
 KMH_TEST_FILES := kcore_auth_db-test.data.pcrypt km-test.data.pcrypt 
