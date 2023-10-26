@@ -116,25 +116,28 @@ KASM2 = 'kasm:chrome-bbb:ken-bbb:Default'
 
 CONFIGS = { #   uid        browser      sandbox      reset          profile     args    appmode dis-uids    sync_acct        pw_db             note                                             aliases
     # Standard Chrome browsing w/o kasm
-    'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'kstillson@g',   'lp:kstillson@g', '[AC-c] Google:* direct(fj)',                    ['g','google','kstillson']),
-    'ctrl': Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,    'control accts',  ARGS1,  None,   None,       'ken@p0',        'lp:kstillson@g', 'Google control accounts',                       ['C']),
+    'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', '[AC-c] Google:* direct(fj)',                    ['g','google','kstillson']),
     'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
+     #'ctrl': Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,    'control accts',  ARGS1,  None,   None,       'ken@p0',        'lp:kstillson@g', 'Google control accounts',                       ['C']),
 
     # Standard Firefox browsing w/o kasm
     'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Firefox general browsing direct(fj)',           []),
     'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Bad boy Firefox(fj)',                           ['fb3']),
 
     # Browsing w/ kasm
-    'kb':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
-    'kbbb': Cfg('ken-bbb', B.CHROME,    Sb.BOTH,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
-     # Specialized modes (mostly for debugging frozen kasms)
-    'kb1':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  '-',    None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy w/o cast',     []),
-    'kb2':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
+     #'kb':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
+     #'kbbb': Cfg('ken-bbb', B.CHROME,    Sb.BOTH,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
+     # # Specialized modes (mostly for debugging frozen kasms)
+     #'kb1':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  '-',    None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy w/o cast',     []),
+     #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
     # Deprecated modes
-    'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',            []),
-    'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
-    
+     #'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',            []),
+     #'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
+
+    # Reduced security modes; no FJ => better system access (e.g. obs)
+    'k0':   Cfg('ken',     B.CHROME,    None,        True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'Google:* direct(no fj)',                        []),
+
     # Raw browser access (no added security)
     'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,        'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
     'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,        None,            None,            'raw firefox',                                   ['f', 'ff']),
