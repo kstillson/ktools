@@ -202,6 +202,7 @@ alias    KU='sudo /usr/bin/killall -u '
 alias Blk='lsblk -e7 -mf'
 # combine lines with the same device but different mountpoints (e.g. btrfs) into a single line:
 alias Df="Dfs | awk '/Mounted on/ { print; next; } { if (\$1 in a) { a[\$1]=sprintf(\"%s, %s\", a[\$1], \$7); } else { a[\$1]=\$0; } } END { for(i in a) print a[i]; }' | Sort"
+alias Dedup="/usr/bin/rmlint --types=duplicates --size ${MINSIZE:-50M} --no-hardlinked --no-followlinks --no-crossdev --xattr --algorithm=sha256 --progress --config=progressbar:fancy --with-color --output=summary:dedup.txt --output=sh:dedup.sh --config=sh:handler=${HANDLER:-hardlink,symlink} "
 # human-friendly output and strip out generally uninteresting entries:
 alias Dfs="df -hT | egrep -v '/docker|/snap|tmpfs|udev|efi'"
 # show a nice map of all the current mountpoints
@@ -213,6 +214,7 @@ alias SpaceR='sudo baobab'
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
 # give just the mountpoint dir of the specified (or current) dir.
 function Mnt() { q="${1:-.}"; findmnt -n -o SOURCE --target ${q}; }
+
 
 # other general command shortcuts
 alias Clk="xclock -d -twelve -brief &"
