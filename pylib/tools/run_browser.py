@@ -124,6 +124,9 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Firefox general browsing direct(fj)',           []),
     'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Bad boy Firefox(fj)',                           ['fb3']),
 
+    # Temp / experimental
+    'e':    Cfg('ken',     B.FIREFOX,   None,        False,'add-on experiments', ARGS0, None,   None,        None,            None,            'Firefox for add-on dev/experiments',            ['a']),
+
     # Browsing w/ kasm
      #'kb':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
      #'kbbb': Cfg('ken-bbb', B.CHROME,    Sb.BOTH,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
