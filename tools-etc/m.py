@@ -2,17 +2,15 @@
 
 '''run-time filesystem mounter
 
-I generally use sshfs to mount remote filesystems, and encfs to provide
-transparent encryption.  This tool provides simple and terse commands to
-mount filesystems of both types.
+Simple and terse commands to mount filesystems of various types.
 
-It also supports dependency logic, i.e. if either the source or destination
+Supports dependency logic, i.e. if either the source or destination
 moint-points for an encfs configuration are remote, the encfs config can
 "need" the appropriate sshfs configs.
 
 '''
 
-import os, sys
+import os, time, sys
 from collections import namedtuple
 
 import kcore.common as C
@@ -21,6 +19,7 @@ import kcore.common as C
 
 Encfs = namedtuple('encfs_mounter',  'kmc_name encfs_dir')
 Mount = namedtuple('mount_mounter',  'opts')
+Rclon = namedtuple('rclone_mounter', 'opts source')
 Sshfs = namedtuple('sshfs_mounter',  'opts source')
 
 Mp = namedtuple('mountpoint_config', 'name aliases source mp_needs mp_provides')
@@ -51,6 +50,8 @@ CONFIGS = [
     # kasm
     Mp('d-b',           [],             Sshfs('',        'kasm://home/persist/chrome-b/ken-b/Downloads'),      None,     'mnt/d-b'),
     Mp('d-bbb',         [],             Sshfs('',        'kasm://home/persist/chrome-bbb/ken-bbb/Downloads'),  None,     'mnt/d-bbb'),
+    # gdrive
+    Mp('gdrive',        ['g'],          Rclon('--read-only', 'gdrive-ro:/'),               None,     'mnt/gdrive'),
     # ext
     #Mp('ext',           ['e'],          Mount(None),                                       None,      '/mnt/ext'),
     #Mp('ext-encfs',     ['ee'],         Encfs('ext',     '/mnt/ext/encfs'),                'ext',     '/mnt/ext/efs'),
@@ -103,6 +104,11 @@ def run(cmd):
     if ARGS.verbose: print(f'[verbose] command returned: {rslt}')
     return rslt
 
+def smartappend(target_list, item):
+    if not item: return target_list
+    target_list.extend(item if type(item) == list else [item])
+    return target_list
+
 
 # ---------- business logic
 
@@ -114,20 +120,29 @@ def mount(config: Mp) -> str:
         if err: return err
         # Sometimes fulfilling a dep is sufficient.
         if is_mountpoint(config.mp_provides): return emit(config.name + ' already mounted', None)
-    if isinstance(config.source, Sshfs):
-        cmd = ['/usr/bin/sshfs', config.source.opts, config.source.source, d(config.mp_provides)]
-        if not cmd[1]: cmd.pop(1)
-    elif isinstance(config.source, Encfs):
+    if isinstance(config.source, Encfs):
         cmd = ['/usr/bin/encfs', '--extpass', f'/usr/local/bin/kmc --km_cert "" encfs-{config.source.kmc_name}', d(config.source.encfs_dir), d(config.mp_provides)]
     elif isinstance(config.source, Mount):
         cmd = ['/usr/bin/mount']
-        if isinstance(config.opts, list): cmd.extend(config.opts)
-        elif isinstance(config.opts, str): cmd.append(config.opts)
+        smartappend(cmd, config.source.opts)
         cmd.append(d(config.mp_provides))
+    elif isinstance(config.source, Rclon):
+        if 'RCLONE_CONFIG_PASS' not in os.environ:
+            os.environ['RCLONE_CONFIG_PASS'] = C.popener(['/usr/local/bin/kmc', '--km_cert', '', 'rclone'])
+        cmd = ['/usr/bin/rclone', 'mount']
+        smartappend(cmd, config.source.opts)
+        cmd.extend(['--daemon', config.source.source, d(config.mp_provides)])
+    elif isinstance(config.source, Sshfs):
+        cmd = ['/usr/bin/sshfs']
+        smartappend(cmd, config.source.opts)
+        cmd.extend([config.source.source, d(config.mp_provides)])
+        if not cmd[1]: cmd.pop(1)
     else:
         return f'Unknown config.source type: {type(config.source)}'
+
     if ARGS.allow_root: cmd.extend(['-o', 'allow_root'])
     out = run(cmd)
+    time.sleep(0.5)
     is_mp = is_mountpoint(d(config.mp_provides))
     if not out.ok or not is_mp: return f'mount failed for {config.name}: {out.out}'
     emit(f'{config.name}: ok')
@@ -215,7 +230,7 @@ def parse_args(argv):
 def main(argv=[]):
     global ARGS
     ARGS = parse_args(argv or sys.argv[1:])
-    
+
     if not ARGS.targets: ARGS.targets = show_gui()
 
     for arg in ARGS.targets:
