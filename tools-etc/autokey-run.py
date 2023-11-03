@@ -41,14 +41,17 @@ class Scanner:
     def __init__(self, filter=None):      # filter is applied against the shortened names...
         self._db = {}                     # maps shortened names to full pathnames
         self._filter = filter
+        self._counter = 0
 
     def shorten(self, name):
         '''General a friendly short name (the ones that will display on the selection list) from a full pathname.'''
         parts = name.split('/')
         fullname = parts.pop()
-        last = (parts.pop()[:2]+'/') if parts else ''
         basename, ext = os.path.splitext(fullname)
-        return last + basename
+        lastdir = ('  (' + parts.pop() + '/)') if parts else ''
+        answer = f'{self._counter:02} {basename}{lastdir}'
+        self._counter += 1
+        return answer
 
     def scan(self, dirname):
         for i in glob.glob(os.path.join(dirname, '*')):
