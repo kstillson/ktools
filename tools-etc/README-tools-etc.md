@@ -12,6 +12,11 @@ look, and make use of anything that appeals to you.
 
 ## Contents
 
+- autokey-run: lists all, or a filtered selection, of available autokey
+  expansions, and "runs" the selected one.  But rather than pushing the
+  output to the keyboard, it's sent to the x-clip copy/paste buffer.
+  Side effects (such a launching programs) happen normally.
+
 - button_relay: listen on serial for messages from Arduino/espnow_button_recvr
   (below) and take actions in response to espnow network events.
 
