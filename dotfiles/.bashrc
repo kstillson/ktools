@@ -157,7 +157,7 @@ alias Ssh='ssh -fMN'
 
 # git
 alias g="git"
-alias UPDOT="cd ~ken/dev/ktools/dotfiles; make dots; cd; . .bashrc"
+alias UPDOT='cd ~/dev/ktools/dotfiles && if [[ -O . ]]; then git pull; else echo "cannot git pull; wrong user"; fi && make dots && cd && . .bashrc'
 
 # base 64 stuff
 alias b64e="perl -MMIME::Base64 -0777 -ne 'print encode_base64(\$_)'"
@@ -180,6 +180,14 @@ alias M="make -j ${THREADS} "
 alias MC="M clean"
 alias MI="sudo make install"
 alias MT="rm -f test.log; M test"
+
+# ktools container full update
+function CU() {
+    if [[ "$1" != "" ]]; then K "$1" || return; fi
+    name="$(basename $(pwd))"
+    printf "\n\n${MAGENTA}<*>${RESET} container update: ${YELLOW}${name}${RESET}\n\n"
+    make clean && make && make test && make install && d 01 $name
+}
 
 # root-type stuff
 alias R="sudo -i bash"

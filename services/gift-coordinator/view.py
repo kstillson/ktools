@@ -196,7 +196,7 @@ def root_view(request):
             notes += f'<p>[ <a href="{url}" target="_new">link</a> ]'
         controls = f'''
    <button onclick="window.location.href='edit?key={gi.key}';">edit</button>
-   <button onclick="window.location.href='take?key={gi.key}';">take</button>
+   <button onclick="window.location.href='take?key={gi.key}';"{" disabled " if gi.taken == "hold" else ""} >take</button>
    <button onclick="window.location.href='hold?key={gi.key}';">hold</button>'''
 
         t = time.gmtime(gi.entered_on)
