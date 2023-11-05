@@ -15,6 +15,7 @@ mount_ro:
 test_ports: ['8080:8080', '8443:8443']
 
 mount_rw:
+  - var_bookmarks: /var/bookmarks
   - var_log_apache2: /var/log/apache2
   - /rw/dv/nagdock/var_nagios/rw: /var/nagios/rw
 
