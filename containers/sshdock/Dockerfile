@@ -1,6 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk -U add openssh rssh rsync rsyslog
+RUN apk -U add musl-locales openssh rssh rsync rsyslog
 
 EXPOSE 22
 
