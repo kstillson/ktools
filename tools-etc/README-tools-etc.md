@@ -24,6 +24,8 @@ look, and make use of anything that appeals to you.
 
 - party-lights: Slow color animation sequence for TP-Link smart bulbs.
 
+- pulseaudio-null: adds a 'null' sink module to the current pulseaudio config.
+
 - pb-push: sends push-notifications via the Android Push Bullet app
 
 - speak-cgi: Trivial CGI wrapper for speak.py (below)
