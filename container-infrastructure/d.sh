@@ -87,7 +87,7 @@ function get_autostart_wave() {
     if [[ -f ${dir}/autostart ]]; then
 	wave="$(cat ${dir}/autostart)"
     else
-	wave=$(fgrep "autostart:" ${dir}/settings.yaml | sed -e 's/^.*: *//')
+	wave=$(fgrep "autostart:" ${dir}/settings.yaml 2>/dev/null | sed -e 's/^.*: *//')
     fi
     if [[ "$wave" == *"host="* ]]; then
 	required_host=$(echo "$wave" | sed -e s'/^.*host=//' -e 's/,.*$//')
@@ -184,7 +184,7 @@ function list-autostart-waves() {
 	name=$(basename $dir)
         src_dir=$(dirname $dir)
         if [[ "$src_dir" == "$D_SRC_DIR2" ]]; then
-            src="(src-dir 2)"
+	    src="${YELLOW}(src-dir 2)${RESET}"
         else
             src=""
         fi
@@ -386,7 +386,7 @@ case "$cmd" in
   up | start | 1)                                           ## Launch container $1
     sel=$(pick_container_from_all $spec)
     if [[ "$sel" == "" ]]; then
-      echo "error- cannot find container to launch: $sel"
+      echo "error- cannot find container to launch: $spec"
       exit 1
     fi
     if [[ "$(is_up $sel)" == "y" ]]; then
