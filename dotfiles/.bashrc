@@ -222,6 +222,19 @@ alias SpaceR='sudo baobab'
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
 # give just the mountpoint dir of the specified (or current) dir.
 function Mnt() { q="${1:-.}"; findmnt -n -o SOURCE --target ${q}; }
+# condensed list of IPs
+
+function Ips() {
+  cols="1,2"; filter='^(lo|veth)'
+  while [[ $# -gt 0 ]]; do case "${1//-/}" in
+      6) cols="${cols},3" ;;
+      a*) filter='qqq' ;;
+      e*|m*) cols="${cols},4" ;;
+      h*) echo 'Ips [-6] [-all] [-macs]'; return 1 ;;
+    esac; shift
+  done
+  /usr/sbin/ifconfig | awk '/^[a-z]/{sub(":",""); printf($1 " ");} /inet|ether/{printf($2 " ");} /^$/{print}' | egrep -v "$filter" | cut -d' ' -f $cols | sort | column -t
+}
 
 
 # other general command shortcuts
