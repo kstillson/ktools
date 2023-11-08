@@ -156,11 +156,11 @@ case $MODE in
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 
 	# Sanity check: copy jack's cron log back into a holding area.  filewatchdock also monitors the age of this file.
-	DEST="/root/echo-back/cron-jack"
+	DEST="/root/echo-back/ken-touch"
 	echo "$(date): starting echo back to ${DEST}"
 	rm -rf ${DEST}
-	${RCLONE} copy wasabi-s3:kstillson-s3/rw/rw/log/cron-jack.log ${DEST}
-	/usr/bin/diff -q /root/src/rw/rw/log/cron-jack.log $DEST || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
+	${RCLONE} copy wasabi-s3:kstillson-s3/home/home/ken/share/tmp/touch ${DEST}
+	/usr/bin/diff -q /root/src/home/home/ken/share/tmp/touch ${DEST}/touch || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
         ;;
 
     *)
