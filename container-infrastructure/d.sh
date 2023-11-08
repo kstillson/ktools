@@ -235,8 +235,9 @@ function builder() {
 
 function down() {
   name="$1"
-  if [[ "$name" == "" ]]; then emitc red "no such container"; return; fi
+  if [[ "$name" == "" ]]; then emitc red "no such container"; return 1; fi
   $DOCKER_EXEC stop -t 2 "${name}"
+  return $?
 }
 
 function up() {
@@ -244,18 +245,22 @@ function up() {
   echo -n "Starting: $sel ${extra_flags}    "
   cd_sel "$sel"
   if [[ -x ./Run ]]; then
-      echo "launching via legacy Run file"
+      emitc cyan "launching via legacy Run file"
+      echo "./Run ${extra_flags}" >&2
       ./Run ${extra_flags}
   elif [[ -f ./docker-compose.yaml ]]; then
       ip=$(host ${sel} | cut -f4 -d' ')
       if [[ "$ip" == "" ]]; then echo "unable to get IP"; exit -1; fi
       puid="$(k_auth -e):$sel"
       if [[ "$puid" == "" ]]; then echo "unable to get PUID"; exit -2; fi
-      echo "launching via docker compose to $ip"
+      emitc cyan "launching via docker compose to $ip"
+      echo "IP=\"$ip\" PUID=\"$PUID\" docker compose up -d ${extra_flags}" >&2
       IP="$ip" PUID="$puid" docker compose up -d ${extra_flags}
   else
       # This substitution only supports a single param to the right of the "--".
       extra_flags=${extra_flags/-- /--extra_init=}
+      emitc cyan "launching via d-run"
+      echo "d-run ${extra_flags}" >&2
       d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
   fi
 }
@@ -378,7 +383,7 @@ case "$cmd" in
   restart | 01 | R)                                         ## Restart container $1
     name=$(pick_container_from_up $spec)
     echo "Shutting down $name"
-    down $name
+    down $name || { emitc magenta "${spec} was not up, so not restarting"; exit -2; }
     sleep 1
     echo "Starting up $name"
     up $name
