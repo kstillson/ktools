@@ -108,7 +108,7 @@ KASM_URL =        os.environ.get('B_KASM_URL',     'https://home.point0.net:4445
 # ---- browser launch configs
 
 ARGS0 = []
-ARGS1 = ['--window-size=2000,1200', '--window-position=200,100"']
+ARGS1 = ['--window-size=2000,1200', '--window-position=200,100"']   # Note: Chrome supports these; ffx doesn't (but does a better job or remembering last window pos)
 
 # When sandbox=Sb.{KASM|BOTH}, reset should be a string "kasm:{kasm_workspace}:{kasm_login}:{kasm_browser_profile}"
 KASM1 = 'kasm:chrome-b:ken-b:Default'
@@ -116,16 +116,15 @@ KASM2 = 'kasm:chrome-bbb:ken-bbb:Default'
 
 CONFIGS = { #   uid        browser      sandbox      reset          profile     args    appmode dis-uids    sync_acct        pw_db             note                                             aliases
     # Standard Chrome browsing w/o kasm
-    'k0':   Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'deprecated? Chrome Google:* direct(fj)',        []),
     'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
 
     # Standard Firefox browsing w/o kasm
-    'k':    Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson', ARGS1, None,   None,       None,            'lp:kstillson@g', '[AC-c] ffox Google:* direct(fj)',               ['g','google','kstillson']),
-    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Firefox general browsing direct(fj)',           []),
-    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,        None,            None,            'Bad boy Firefox(fj)',                           ['fb3']),
+    'k':    Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson', ARGS0, None,   None,       None,            'lp:kstillson@g', '[AC-c] ffox Google:* direct(fj)',               ['g','google','kstillson']),
+    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,        None,           'lp:ken@kds',     'Firefox general browsing direct(fj)',           []),
+    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,        None,           'ff-internal',    'Bad boy Firefox(fj)',                           ['fb3']),
 
-    # Temp / experimental
-    'e':    Cfg('ken',     B.FIREFOX,   None,        False,'add-on experiments', ARGS0, None,   None,        None,            None,            'Firefox for add-on dev/experiments',            ['a']),
+    # Experimental / other
+    'e':    Cfg('ken',     B.FIREFOX,   None,        False,'add-on experiments', ARGS0, None,   None,        None,            None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
 
     # Browsing w/ kasm
      #'kb':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
@@ -135,6 +134,7 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
      #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
     # Deprecated modes
+    'ko':   Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'deprecated. Chrome Google:* direct(fj)',        []),
      #'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',            []),
      #'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
      #'ctrl': Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,    'control accts',  ARGS1,  None,   None,       'ken@p0',        'lp:kstillson@g', 'Google control accounts',                       ['C']),
@@ -316,6 +316,12 @@ def reset(cfg, post_sudo: bool):
         # non-kasm reset is overwriting files owned by the post-sudo user, so must run (only) post-sudo
         if cfg.uid and cfg.uid != CURRENT_USER: return debug('non-kasm config must wait until sudoed')
 
+    # Once in the correct user (sudo'd or not), reset will be called twice,
+    # post_sudo=False and then post_sudo=True.  We only need it to run once;
+    # we'll arbitrarily pick the post_sudo=True call.
+    if cfg.uid and cfg.uid == CURRENT_USER and not post_sudo:
+        return debug('deferring reset until post_sudo call')
+
     source = get_snapshot_dir(cfg)
     dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
@@ -405,16 +411,15 @@ def gui():
 
 
 def fatal(msg):
-    # No need to bypass_dryrun, as exit(str) will print the msg.
-    run(['zenity', '--timeout', '10', '--error', '--text', msg], background=True)
-    sys.exit(msg)
+    run(['zenity', '--timeout', '10', '--error', '--text', msg], background=True, bypass_dryrun=True)
+    sys.exit(msg)  # prints msg to stderr
 
 def quick_ok(msg, time_sec=1, background=False):
     debug(msg)
     run(['zenity', '--timeout', str(time_sec), '--info', '--text', msg], background=background, bypass_dryrun=True)
 
 def warn(msg, background=True):
-    debug(f'WARNING: {msg}')
+    print(f'WARNING: {msg}', file=sys.stderr)
     run(['zenity', '--timeout', '10', '--warning', '--text', msg], background=background, bypass_dryrun=True)
 
 
@@ -474,7 +479,11 @@ def main(argv=[]):
         # which runs the same logic, but won't run sudo again because of the --sudo_done flag.
         if not cfg.sandbox in [Sb.KASM, Sb.BOTH]: switch_user_if_needed(cfg, ARGS.sudo_done)
         ok = snap_config(cfg)
-        return 0 if ok else 1
+        if not ok:
+            warn('error reporting during snap operation')
+            return 1
+        quick_ok('snapped')
+        return 0
 
     # ---- main
 
