@@ -21,6 +21,10 @@ $(DIRS):
 $(H_TARGETS): $(H_DIR)/% : ../../tools-etc/%.py
 	cp $^ $@
 
+test:
+	@echo "no tests yet"
+
+
 # ---------- pass-throughs
 
 include ../../etc/Makefile-docker
@@ -28,6 +32,5 @@ include ../../etc/Makefile-docker
 comp:  # n/a
 clean: docker-clean
 install: docker-install
-test: docker-test
 uninstall: docker-uninstall
 update: docker-update
