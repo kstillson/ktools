@@ -22,6 +22,8 @@ look, and make use of anything that appeals to you.
 
 - m: run-time on-demand filesystem mounter
 
+- otp.py: generates totp time-based OTP codes (like Google Authenticator)
+
 - party-lights: Slow color animation sequence for TP-Link smart bulbs.
 
 - pulseaudio-null: adds a 'null' sink module to the current pulseaudio config.
