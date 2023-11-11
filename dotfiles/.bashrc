@@ -115,13 +115,34 @@ alias ls='ls $COLOR_OPTION'
 alias l='ls $COLOR_OPTION -l'
 alias ll='ls $COLOR_OPTION -la'
 
-# grep
-alias F="find . | grep -i "
+# finding files by name
+function F() {
+    srch="$1"  # If empty, do an interactive fuzzy find; else do a simple grep to stdout
+    if [[ "$srch" == "" ]]; then find . | fzf | Copy +
+    else find . | grep -i "$srch"; fi
+}
+
+# simple finding file contents
 alias G='grep -i $COLOR_OPTION'
 alias grep='grep $COLOR_OPTION'
 alias fgrep='fgrep $COLOR_OPTION'
 alias egrep='egrep $COLOR_OPTION'
+
+# simple finding file contents (only work when being piped to)
+alias FG='fzf | Copy +'
 function HL() { /bin/grep --color=always -E "^|$1"; }  # highlight $1
+
+# advanced finding file contents
+alias Rg='rg --color=always --column --follow --line-number --no-heading --smart-case '
+function RG() {
+  srch="$1"  # substring to recursively search for; results displayed via fzf for further filtering and selection.
+  RG_PREFIX="rg  --no-heading --color=always --smart-case "
+  out=$(FZF_DEFAULT_COMMAND="$RG_PREFIX '$srch'" \
+    fzf --ansi --query "$srch" \
+        -d: --preview 'cat {1}' --bind 'ctrl-/:change-preview-window(right,70%|down,40%,border-horizontal|hidden|right)' | \
+      cut -d: -f1)
+  echo ${out} | Copy +
+}
 
 # add a directory to the end of $PATH if it's valid and not in $PATH already.
 addpath() {
@@ -246,7 +267,8 @@ alias XF='/usr/bin/xhost +si:localuser:nobody'
 alias XR='/usr/bin/xhost +si:localuser:root'
 alias c2n='tr "," "\n"'
 alias clock='xclock -digital -twelve -brief -fg white -bg black -face "arial black-20:bold" &'
-alias copy='xclip -selection clipboard -in '
+alias copy='xclip -selection clipboard -rmlastnl -in '
+function Copy() { if [[ "$1" == "+" ]]; then clear; shift; fi; echo -n "copied to clipboard: " >&2; cat | tee -a /dev/stderr | copy; }
 alias mine="ps aux --forest  | grep '$USER '"
 alias pag='ps auxwww --forest | grep '
 alias pam='ps aux --forest | less'
