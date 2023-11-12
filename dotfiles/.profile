@@ -31,7 +31,7 @@ export PAGER="less"
 export FZF_DEFAULT_OPTS="\
  --bind 'ctrl-a:first'              --bind 'ctrl-e:last'  \
  --bind 'ctrl-v:page-down'          --bind 'alt-v:page-up'  \
- --bind '?:preview(cat {})'         --bind 'shift-down:preview-page-down'  \
+ --bind '?:preview(Cat {})'         --bind 'shift-down:preview-page-down'  \
  --bind 'alt-shift-up:preview-top'  --bind 'alt-shift-down:preview-bottom'  \
  --bind 'ctrl-/:change-preview-window(70%|down,border-top|hidden|)' \
  --cycle   --layout=reverse-list"

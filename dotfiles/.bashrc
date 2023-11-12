@@ -153,6 +153,7 @@ addpath() {
 }
 
 # viewers and editors
+function Cat() { if [[ -d "$1" ]]; then ls -l "$1"; else cat "$@"; fi; }
 alias e='$EDITOR'
 alias E='/usr/bin/emacs -nw'
 alias m='less'
@@ -298,6 +299,17 @@ function C() {
 	1) cd "${out[0]}" ;;
 	*) select i in ${out[@]}; do cd "$i"; break; done ;;
     esac
+}
+
+# interactively select dir to switch to via fuzzy matching
+# if $1 is a directory, use that as a starting point (/,~ ok)
+# remaining params are an initial search expression (regex ok),
+# unless $1 looks like a flag, in which case they're just passed to fzf.
+#
+function Cd() {
+    if [[ -d "$1" ]]; then cd "$1"; shift; fi
+    if [[ "$1" != "" && "$1" != "-"* ]]; then q='-q'; else q=''; fi
+    cd $(find . -type d 2>/dev/null | fzf --select-1 $q "$@")
 }
 
 # hop directly to ktools subdirectories by hard-coded key-letter, or to ktools
