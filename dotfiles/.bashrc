@@ -116,7 +116,7 @@ alias l='ls $COLOR_OPTION -l'
 alias ll='ls $COLOR_OPTION -la'
 
 # finding files by name
-function F() {
+function FF() {
     srch="$1"  # If empty, do an interactive fuzzy find; else do a simple grep to stdout
     if [[ "$srch" == "" ]]; then find . | fzf | Copy +
     else find . | grep -i "$srch"; fi
@@ -129,7 +129,7 @@ alias fgrep='fgrep $COLOR_OPTION'
 alias egrep='egrep $COLOR_OPTION'
 
 # simple finding file contents (only work when being piped to)
-alias FG='fzf | Copy +'
+function F() { if [[ "$1" == "" ]]; then fzf; else fzf -q "$@"; fi | Copy +; }
 function HL() { /bin/grep --color=always -E "^|$1"; }  # highlight $1
 
 # advanced finding file contents
@@ -160,7 +160,7 @@ alias L='less'
 alias T='TAB'
 alias TAB='column -t'
 alias Less='less'
-alias V='gpg -d < '
+alias V='xdg-open'
 function _()  { eval "$@" | less; }
 
 # directory control

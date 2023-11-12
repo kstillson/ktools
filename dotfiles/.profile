@@ -28,7 +28,13 @@ export THREADS=$(grep -c ^processor /proc/cpuinfo)
 [[ -f /usr/bin/emacs ]] && export EDITOR="/usr/bin/emacs -nw"
 export PAGER="less"
 
-export FZF_DEFAULT_OPTS='--bind "ctrl-v:page-down" --bind "alt-v:page-up" --cycle --reverse'
+export FZF_DEFAULT_OPTS="\
+ --bind 'ctrl-a:first'              --bind 'ctrl-e:last'  \
+ --bind 'ctrl-v:page-down'          --bind 'alt-v:page-up'  \
+ --bind '?:preview(cat {})'         --bind 'shift-down:preview-page-down'  \
+ --bind 'alt-shift-up:preview-top'  --bind 'alt-shift-down:preview-bottom'  \
+ --bind 'ctrl-/:change-preview-window(70%|down,border-top|hidden|)' \
+ --cycle   --layout=reverse-list"
 
 export LESS='--chop-long-lines --ignore-case --jump-target=4 --LINE-NUMBERS --LONG-PROMPT --quit-at-eof --quiet --RAW-CONTROL-CHARS --squeeze-blank-lines --HILITE-UNREAD'
 less --version | fgrep -q 'less 5' && export LESS="$LESS --line-num-width=4 --use-color"
