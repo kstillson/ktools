@@ -1,7 +1,7 @@
 
 '''tests for common.py'''
 
-import io, os, sys, threading, time
+import io, os, sys, time
 from dataclasses import dataclass
 
 import context_kcore     # fix path to includes work as expected in tests
@@ -28,7 +28,7 @@ def test_dict_to_list_of_pairs():
 
 # ----- popen
 
-def test_popen():
+def test_popen_fg():
     assert C.popen('echo 1+2 | bc', shell=True).out == '3'
 
     assert str(C.popen(['/usr/bin/cut', '-d:', '-f2'], 'abc:123:def')) == '123'
@@ -72,6 +72,15 @@ def test_popen():
         assert 'expected exception on attempt to kill timed out pid' == ''
     except:
         pass
+
+def test_popen_bg():
+    po = C.popen('sleep 1; echo "hi"', background=True, shell=True)
+    assert po.ok is None
+    assert po.stdout is None
+    time.sleep(1.5)
+    assert po.ok
+    assert po.stdout == 'hi'
+    assert po.stderr == ''
 
 
 def test_popener():
