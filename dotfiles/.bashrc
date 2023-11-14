@@ -168,10 +168,10 @@ function _()  { eval "$@" | less; }
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ..3='cd ../../..'
-alias md='mkdir'
 alias pd='pushd .'
 alias po='popd'
 alias rd='rmdir'
+function md() { mkdir -p "$1"; cd "$1"; }
 
 # ssh
 alias s='A; ssh'
