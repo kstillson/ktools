@@ -239,11 +239,12 @@ def zmsg(msg, level=INFO, timeout=1.0, background=True, send_log=True, other_zen
     if other_zenity_flags: cmd.extend(other_zenity_flags)
     popen(cmd, background=background)
 
-def zinfo(msg): return zmsg(msg)
+def zinfo(msg, background=True): return zmsg(msg, background)
 
-def zwarn(msg): return zmsg(msg, level=WARNING, timeout=4, background=False)
+def zwarn(msg, background=False): return zmsg(msg, level=WARNING, timeout=4, background=background)
 
 def zfatal(msg):
+    # background=True won't work; zenity window killed when main process exits.
     zmsg(msg, level=ERROR, timeout=4, background=False)
     sys.exit(msg)
 
