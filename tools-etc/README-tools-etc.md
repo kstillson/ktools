@@ -30,6 +30,9 @@ look, and make use of anything that appeals to you.
 
 - pb-push: sends push-notifications via the Android Push Bullet app
 
+- run-qemu.sh: attempt to create a sensible qemu launch command-line, offer
+  it to the user for editing, then run it.
+
 - speak-cgi: Trivial CGI wrapper for speak.py (below)
 
 - speak: Convert the text on the command-line into speech, and say it.
