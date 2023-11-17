@@ -197,8 +197,8 @@ def cleanup():
     still_there = procs_as_uid(uid_to_purge)
     debug(f'processes that survived the purge: {still_there}')
     if still_there:
-        return warn(f'{len(still_there)} of {len(pids)} resisted the purge')
-    quick_ok(f'{len(pids)} processes purged')
+        return C.zwarn(f'{len(still_there)} of {len(pids)} resisted the purge')
+    C.zinfo(f'{len(pids)} processes purged')
 
 
 def procs_as_uid(uid, skip_names=['zenity'], skip_self=True):
@@ -289,7 +289,7 @@ def launch(cfg):
     if not rslt.ok:
         tmpname = f'/tmp/run_browser-{os.geteuid()}-err.out'
         with open(tmpname, 'w') as f: print(rslt.out, file=f)
-        warn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
+        C.zwarn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
     else: debug(f'Browser process returned: {rslt.out}')
 
 def pick_code(in_code):
@@ -307,7 +307,7 @@ def pick_code(in_code):
 
 def reset(cfg, post_sudo: bool):
     if not cfg.reset: return debug('config does not request reset')
-    if ARGS.noreset: return quick_ok('skipping normal reset  (--noreset)')
+    if ARGS.noreset: return C.zinfo('skipping normal reset  (--noreset)')
 
     if cfg.sandbox in [Sb.KASM, Sb.BOTH]:
         # kasm reset transports over ssh, so it must run (only) pre-sudo, for access to the base-user's ssh keys.
@@ -327,7 +327,7 @@ def reset(cfg, post_sudo: bool):
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
     if not rslt.ok: fatal(f'reset failed: {rslt.out}')
     else:
-        if not ARGS.dryrun: quick_ok('reset ok', background=True)
+        if not ARGS.dryrun: C.zinfo('reset ok', background=True)
 
 
 def run(cmd_list, background=False, bypass_dryrun=False):
@@ -414,14 +414,6 @@ def fatal(msg):
     run(['zenity', '--timeout', '10', '--error', '--text', msg], background=True, bypass_dryrun=True)
     sys.exit(msg)  # prints msg to stderr
 
-def quick_ok(msg, time_sec=1, background=False):
-    debug(msg)
-    run(['zenity', '--timeout', str(time_sec), '--info', '--text', msg], background=background, bypass_dryrun=True)
-
-def warn(msg, background=True):
-    print(f'WARNING: {msg}', file=sys.stderr)
-    run(['zenity', '--timeout', '10', '--warning', '--text', msg], background=background, bypass_dryrun=True)
-
 
 # ---------- main
 
@@ -480,7 +472,7 @@ def main(argv=[]):
         if not cfg.sandbox in [Sb.KASM, Sb.BOTH]: switch_user_if_needed(cfg, ARGS.sudo_done)
         ok = snap_config(cfg)
         if not ok:
-            warn('error reporting during snap operation')
+            C.zwarn('error reporting during snap operation')
             return 1
         quick_ok('snapped')
         return 0

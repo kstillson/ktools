@@ -15,20 +15,6 @@ DEBUG = False
 
 # ---------- msgs
 
-def zmsg(msg, type='info', timeout=1, background=True):
-    print(msg, file=sys.stderr)
-    cmd = ['/usr/bin/zenity', '--timeout', str(timeout), f'--{type}', '--text', msg]
-    return subprocess.Popen(cmd) if background else C.popen(cmd)
-
-def info(msg): return zmsg(msg)
-
-def warn(msg): return zmsg(msg, type='warn', timeout=4, background=False)
-
-def fatal(msg):
-    zmsg(msg, type='error', timeout=4, background=True)
-    sys.exit(-1)
-
-
 def debug(msg):
     if DEBUG: print(msg)
 
@@ -76,16 +62,16 @@ def select_autokey(args):
     for dirname in dirs: db = scanner.scan(dirname)
 
     size = len(db)
-    if size == 0: fatal('found no matching autokeys')
+    if size == 0: C.zfatal('found no matching autokeys')
     if size == 1:
         sel = next(iter(db.keys()))
         debug(f'autoselected {sel}')
     else:
         sel = C.popener(['/usr/bin/zenity', '--list', '--column', 'autokey to put into run/copy', '--width', '450', '--height', str(80 + 40 * size)] + sorted(db.keys()))
-    if 'ERROR' in sel: fatal('aborted')
+    if 'ERROR' in sel: C.zfatal('aborted')
 
     fullpath = db.get(sel)
-    if not fullpath: fatal(f'unable to find entry {sel}')
+    if not fullpath: C.zfatal(f'unable to find entry {sel}')
     debug(f'selected autokey file {fullpath}')
 
     return fullpath
@@ -108,12 +94,12 @@ def main(argv=[]):
 
     fullpath = select_autokey(args)
     content = C.read_file(fullpath)
-    if not content: fatal(f'unable to read content of {fullpath}')
+    if not content: C.zfatal(f'unable to read content of {fullpath}')
 
     basename, ext = os.path.splitext(fullpath)
     if ext == '.txt':
         to_clip(content)
-        info(f'copied contents of {basename}')
+        C.zinfo(f'copied contents of {basename}')
 
     elif ext == '.py':
         content = content.replace('keyboard.send_keys', 'print')
@@ -121,11 +107,11 @@ def main(argv=[]):
             debug(f'executing: {content}')
             exec(content)
             to_clip(cap.out)
-            if cap.err: warn(f'command error: {cap.err}')
+            if cap.err: C.zwarn(f'command error: {cap.err}')
             else:
-                if cap.out: info(f'copied output: {cap.out[:10]}...')
+                if cap.out: C.zinfo(f'copied output: {cap.out[:10]}...')
 
-    else: fatal(f'unknown expansion type: "{ext}" in {fullpath}')
+    else: C.zfatal(f'unknown expansion type: "{ext}" in {fullpath}')
 
 
 if __name__ == '__main__': sys.exit(main())

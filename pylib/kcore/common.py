@@ -14,7 +14,7 @@
 
 from kcore.common0 import *
 
-import argparse, subprocess
+import argparse, subprocess, threading
 from dataclasses import dataclass
 
 
@@ -23,29 +23,29 @@ from dataclasses import dataclass
 @dataclass
 class PopenOutput:
     ok: bool
-    # out: str   (set by __post_init__)
     returncode: int
     stdout: str
     stderr: str
     exception_str: str
     pid: int
-    def __post_init__(self):
-        if self.exception_str:
-            self.out = 'ERROR: exception: ' + self.exception_str
-        elif self.ok:
-            self.out = self.stdout or ''
-        else:
-            self.out = f'ERROR: [{self.returncode}] {self.stderr}'
+
+    @property
+    def out(self):
+        if self.ok is None:    return None
+        if self.exception_str: return 'ERROR: exception: ' + self.exception_str
+        elif self.ok:          return self.stdout or ''
+        else:                  return f'ERROR: [{self.returncode}] {self.stderr}'
+
     def __str__(self): return self.out
 
 
-def popen(args, stdin_str=None, timeout=None, strip=True, passthrough=False, **kwargs_to_popen):
+def popen(args, stdin_str=None, timeout=None, strip=True,
+          passthrough=False, background=False, **kwargs_to_Popen):
     '''Slightly improved API for subprocess.Popen().
 
        args can be a simple string or a list of string args (which is safer).
        timeout is in seconds, and strip causes stdout and stderr to have any
-       trailing newlines removed.  Any other flags usually sent to
-       subprocess.Popen will be carried over by kwargs_to_popen.
+       trailing newlines removed.
 
        Returns a populated PopenOutput dataclass instance.  This has all the
        various outputs in separate fields, but the idea is that all you should
@@ -55,41 +55,69 @@ def popen(args, stdin_str=None, timeout=None, strip=True, passthrough=False, **k
 
        If you indeed don't need anything other than .out, you might use
        popener() instead, which just returns the .out field directly.
+
+       If passthrough=True, stdin and stdout are passed through to the caller,
+       rather than being captured and returned in PopenOutput.
+
+       If background=True, an PopenOutput populated with None's is returned,
+       and the command is launched.  Once the command completes, it will
+       populate the originally returned instance, i.e. you can detect the
+       background command finished by .ok transitioning from None to True/False.
     '''
-    text_mode = kwargs_to_popen.pop('text', True)
+    output_instance = PopenOutput(None, None, None, None, None, None)
+    if background:
+        threading.Thread(target=_popen_synchronous, daemon=True,
+                         args=(output_instance, args, stdin_str, timeout, strip, passthrough, kwargs_to_Popen)
+                         ).start()
+    else:
+        _popen_synchronous(output_instance, args, stdin_str, timeout, strip, passthrough, kwargs_to_Popen)
+    return output_instance
+
+
+def _popen_synchronous(output_instance, args, stdin_str=None, timeout=None, strip=True,
+                       passthrough=False, kwargs_to_Popen={}):
+    text_mode = kwargs_to_Popen.pop('text', True)
     if not text_mode: strip = False
-    stdin = kwargs_to_popen.pop('stdin', subprocess.PIPE)
-    stdout = None if passthrough else kwargs_to_popen.pop('stdout', subprocess.PIPE)
-    stderr = None if passthrough else kwargs_to_popen.pop('stderr', subprocess.PIPE)
+    stdin = kwargs_to_Popen.pop('stdin', subprocess.PIPE)
+    stdout = None if passthrough else kwargs_to_Popen.pop('stdout', subprocess.PIPE)
+    stderr = None if passthrough else kwargs_to_Popen.pop('stderr', subprocess.PIPE)
     try:
         proc = subprocess.Popen(
             args, text=text_mode, stdin=stdin, stdout=stdout, stderr=stderr,
-            **kwargs_to_popen)
+            **kwargs_to_Popen)
         stdout, stderr = proc.communicate(stdin_str, timeout=timeout)
-        return PopenOutput(ok=(proc.returncode == 0),
-                           returncode=proc.returncode,
-                           stdout=stdout.strip() if strip and stdout else stdout,
-                           stderr=stderr.strip() if strip and stderr else stderr,
-                           exception_str=None, pid=proc.pid)
+        output_instance.ok = proc.returncode == 0
+        output_instance.returncode = proc.returncode
+        output_instance.stdout=stdout.strip() if strip and stdout else stdout
+        output_instance.stderr=stderr.strip() if strip and stderr else stderr
+        output_instance.exception_str=None
+        output_instance.pid=proc.pid
+        return output_instance
     except Exception as e:
         try: proc.kill()
         except Exception as e2: pass
         if passthrough: print(str(e), file=sys.stderr)
-        return PopenOutput(ok=False, returncode=-255,
-                           stdout=None, stderr=None, exception_str=str(e), pid=-1)
+        output_instance.ok = False
+        output_instance.returncode = 255
+        output_instance.exception_str = str(e)
+        return output_instance
 
 
 def popener(args, stdin_str=None, timeout=None, strip=True, **kwargs_to_popen):
     '''A very simple interface to subprocess.Popen.
 
-       See uncommon.popen for fuller explaination of the arguments, but basically
+       See popen (above) for fuller explaination of the arguments, but basically
        you pass the command to run in args (either a simple string or a list of
        strings).  By default you get back a non-binary stripped string with the
        output of the command, or a string that starts with 'ERROR:' if something
        went wrong.
 
        If you need more precise visibility into output (e.g. separating stdout
-       from stderr), use uncommon.popen() instead.
+       from stderr), use popen() instead.
+
+       Note: passing background=True will work, in that the command will run
+       in the background, but because the return value is a string, it's value
+       cannot be changed to the real output value once the command completes.
     '''
     return popen(args, stdin_str, timeout, strip, **kwargs_to_popen).out
 
@@ -199,6 +227,26 @@ def special_arg_resolver(input_val, argname='argument', env_value_default=None):
         return read_file(filename, wrap_exceptions=False)
 
     return input_val   # Return original (which might be un-converted non-string)
+
+
+# ---------- zenity-based gui helpers
+
+def zmsg(msg, level=INFO, timeout=1.0, background=True, send_log=True, other_zenity_flags=[]):
+    if send_log: log(msg, level)
+    msg_type = 'error' if level == ERROR else 'warning' if level == WARNING else 'info'
+    # external timeout (rather than zenity flag) to support float values.
+    cmd = ['/usr/bin/timeout', str(timeout), '/usr/bin/zenity', f'--{msg_type}', '--text', msg]
+    if other_zenity_flags: cmd.extend(other_zenity_flags)
+    popen(cmd, background=background)
+
+def zinfo(msg, background=True): return zmsg(msg, background)
+
+def zwarn(msg, background=False): return zmsg(msg, level=WARNING, timeout=4, background=background)
+
+def zfatal(msg):
+    # background=True won't work; zenity window killed when main process exits.
+    zmsg(msg, level=ERROR, timeout=4, background=False)
+    sys.exit(msg)
 
 
 # ---------- ad-hoc

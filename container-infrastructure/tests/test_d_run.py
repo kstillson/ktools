@@ -58,7 +58,7 @@ def test_generated_command():
                    '--host_settings', 'testdata/host-settings.yaml',
                    '--settings', 'testdata/settings.yaml'])
 
-    cmnd = DRUN.gen_command()
+    cmnd = DRUN.gen_command_via_settings_yaml()
     assert cmnd[0] == '/bin/echo'
     assert cmnd[1] == 'run'
     assert_pair(cmnd, '--name', 'test123')
