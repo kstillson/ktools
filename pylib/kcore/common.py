@@ -239,7 +239,7 @@ def zmsg(msg, level=INFO, timeout=1.0, background=True, send_log=True, other_zen
     if other_zenity_flags: cmd.extend(other_zenity_flags)
     popen(cmd, background=background)
 
-def zinfo(msg, timeout=1, background=True): return zmsg(msg, timeout=timeoue, background=background)
+def zinfo(msg, timeout=1, background=True): return zmsg(msg, timeout=timeout, background=background)
 
 def zwarn(msg, timeout=4, background=False): return zmsg(msg, level=WARNING, timeout=timeout, background=background)
 
