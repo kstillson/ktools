@@ -16,7 +16,7 @@ services:
     hostname: home-control
 
     volumes:
-      - /rw/dv/var_log_hc:/var/log/hc
+      - /rw/dv/home-control/var_log_hc:/var/log/hc
       - /dev/log:/dev/log
 
     ports:
