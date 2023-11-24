@@ -78,7 +78,7 @@ for users to make site-specific changes w/o affecting git controlled file.
 
 '''
 
-import fnmatch, os, psutil, signal, subprocess, sys, time
+import fnmatch, os, psutil, signal, sys, time
 from collections import namedtuple
 from enum import Enum
 
@@ -148,6 +148,15 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
 }
 
 
+# ---------- helpers
+
+def debug(msg):
+    if ARGS.debug: print(f'DEBUG: {msg}', file=sys.stderr)
+
+
+def quick_ok(msg): C.zinfo(msg, timeout=0.7)
+
+
 # ---------- business logic
 
 def check_disallowed_uids(cfg, bypass):
@@ -210,10 +219,6 @@ def procs_as_uid(uid, skip_names=['zenity'], skip_self=True):
         if proc.name() in skip_names: continue
         procs.append(proc)
     return procs
-
-
-def debug(msg):
-    if ARGS.debug: print(f'DEBUG: {msg}', file=sys.stderr)
 
 
 def find_chrome_profile_dir(name):
@@ -327,7 +332,7 @@ def reset(cfg, post_sudo: bool):
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
     if not rslt.ok: fatal(f'reset failed: {rslt.out}')
     else:
-        if not ARGS.dryrun: C.zinfo('reset ok', background=True)
+        if not ARGS.dryrun: quick_ok('reset ok')
 
 
 def run(cmd_list, background=False, bypass_dryrun=False):
@@ -337,10 +342,9 @@ def run(cmd_list, background=False, bypass_dryrun=False):
         rslt = C.PopenOutput(ok=True, returncode=0, stdout=msg, stderr='(dryrun)', exception_str=None, pid=-1)
         return rslt
     debug('running: ' + ('(in background) ' if background else '') + str(cmd_list))
-    if background: return subprocess.Popen(cmd_list)
     env = os.environ.copy()
     env['GTK_IM_MODULE'] = 'xim'
-    return C.popen(cmd_list, env=env)
+    return C.popen(cmd_list, background=background, env=env)
 
 
 def safedir(dir: str):  # Create this dir if needed, along with any missing parent dirs.
@@ -472,7 +476,7 @@ def main(argv=[]):
         if not cfg.sandbox in [Sb.KASM, Sb.BOTH]: switch_user_if_needed(cfg, ARGS.sudo_done)
         ok = snap_config(cfg)
         if not ok:
-            C.zwarn('error reporting during snap operation')
+            C.zwarn('error reported during snap operation')
             return 1
         quick_ok('snapped')
         return 0
