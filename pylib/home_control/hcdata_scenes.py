@@ -46,7 +46,7 @@ SCENES = {
  # Groupings by similar purpose
   'sirens'      : [ 'siren1', 'siren2', 'siren3' ],
   'accents'     : [ 'color-sofa-left', 'color-sofa-right', 'color-moon', 'color-stairs' ],
-  'specials'    : [ 'accents', 'tree', 'twinkle', 'lightning' ],
+  'specials'    : [ 'accents', 'neotree', 'twinkle', 'lightning' ],
 
    # (used in redblue animation by ulb/panic)
   'rb1'         : [ 'color-sofa-left', 'color-stairs', 'lantern' ],
@@ -64,7 +64,7 @@ SCENES = {
   'panic'       : [ 'all', 'sirens' ],
   'party'       : [  'bendy', 'breakfast-nook', 'dining-chandelier', 'family-room-left',
                      'family-room-right', 'kitchen-pendants', 'kitchen', 'lounge',
-                     'office', 'window-lights', 'accents-party', 'tree', 'twinkle', 'lightning' ],
+                     'office', 'window-lights', 'accents-party', 'neotree', 'twinkle', 'lightning' ],
   'tv'          : [  'bendy:off', 'breakfast-nook:off', 'dining-chandelier:dim:25', 'family-room-left:dim:20',
                      'family-room-right:dim:20', 'kitchen-pendants:dim:30', 'kitchen:off', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:off' ],
@@ -77,7 +77,7 @@ SCENES = {
   'party:on'    : [  'bendy:on', 'breakfast-nook:dim:25', 'dining-chandelier:dim:25', 'family-room-left:dim:15',
                      'family-room-right:dim:15', 'kitchen-pendants:dim:40', 'kitchen:dim:5', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:dim:30',
-                     'accents-party', 'tree', 'twinkle', 'lightning' ],
+                     'accents-party', 'neotree', 'twinkle', 'lightning' ],
   'red:on'     : [ 'accents:red', 'door-entry:red', 'lantern:blue' ],
   'red:off'    : [ 'accents:bulb-off', 'door-entry:white', 'lantern:bright-warm' ],
   'red:dim'    : [ 'main:dim', 'red:on' ],
