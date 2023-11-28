@@ -5,10 +5,11 @@
 $1 can be any of:
   a full pathname of an img to mount
   a filename in $DEFAULT_DIR (defined below or passed in)
-  a partial filename in $DEFAULT_DIR, matches interactively selected
+  a partial filename in $DEFAULT_DIR, multiple matches resolved interactively
   a directory name, where *.img will be interactively selected
   "-" to skip auto-creating params wrt image to launch
   "+" to create a new image in $DEFAULT_DIR
+  not provided, which will interactively select from *.img in $DEFAULT_DIR
 
 $2 can be "-" to skip the editing phase (see below).
 
@@ -37,8 +38,7 @@ shift
 
 if [[ "$1" == "-" ]]; then skipedit="1"; shift; else skipedit="0"; fi
 
-
-if [[ -f "$img" ]]; then        echo "using image: $img"
+if   [[ -f "$img" ]]; then      echo "using image: $img"
 elif [[ "$img" == "-" ]]; then  echo "skipping image."
 elif [[ -f "${DEFAULT_DIR}/$img" ]]; then
     img="${DEFAULT_DIR}/$img";  echo "using image: $img"
@@ -143,13 +143,16 @@ echo ""
 if [[ "$sel" == "e" ]]; then
     LOOP=1
     echo "trying again..."
+
 elif [[ "$sel" == "x" ]]; then
     echo "rm $tmpfile"
     rm $tmpfile
+
 elif [[ "$sel" == "" ]]; then
     echo "leaving launch script in place: $tmpfile"
+
 else
-    dest="${SCRIPT_DIR}/run-${sel}"
+    dest="${SCRIPT_DIR}/${sel}"
     mv "$tmpfile" "$dest"
     chmod +x "$dest"
     echo "created: $dest"
@@ -157,5 +160,7 @@ fi
 
 done   # see LOOP
 
-if [[ "$status" == "0" ]]; then echo "ok bye"; else echo "exiting with qemu exit status..."; fi
+if [[ "$status" == "0" ]]; then echo "ok bye"
+else echo "exiting with qemu exit status (${status})..."
+fi
 exit $status
