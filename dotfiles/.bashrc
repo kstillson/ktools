@@ -220,7 +220,7 @@ alias    AAR='sudo apt auto-remove'
 function AI() { _ apt-cache show "$@"; }
 function AIN() { sudo apt-get install "$@"; }
 alias    AR='sudo apt remove'
-function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; } | less; }
+function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; printf "\n<> Flathub\n"; flatpak search "$@"; printf "\n<> appimage\n"; appimage-cli-tool search "$@"; } | less; }
 function AQ() { /usr/bin/dpkg -l "$1" | /usr/bin/tail -1 | /bin/egrep --color=always -e '^..'; }
 alias    AU='sudo apt update'
 alias    AUP='sudo apt upgrade'
