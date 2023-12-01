@@ -128,8 +128,12 @@ alias grep='grep $COLOR_OPTION'
 alias fgrep='fgrep $COLOR_OPTION'
 alias egrep='egrep $COLOR_OPTION'
 
-# simple finding file contents (only work when being piped to)
-function F() { if [[ "$1" == "" ]]; then fzf; else fzf -q "$@"; fi | Copy +; }
+# simple finding file contents
+function F() {
+    if [[ -f "$1" ]]; then src="$1"; shift; else src="-"; fi
+    if [[ "$1" != "" ]]; then qry="-q '$1'"; else qrt=""; fi
+    cat "$src" | fzf "$qry" | Copy +
+}
 function HL() { /bin/grep --color=always -E "^|$1"; }  # highlight $1
 
 # advanced finding file contents
@@ -268,8 +272,12 @@ alias XF='/usr/bin/xhost +si:localuser:nobody'
 alias XR='/usr/bin/xhost +si:localuser:root'
 alias c2n='tr "," "\n"'
 alias clock='xclock -digital -twelve -brief -fg white -bg black -face "arial black-20:bold" &'
-alias copy='xclip -selection clipboard -rmlastnl -in '
-function Copy() { if [[ "$1" == "+" ]]; then clear; shift; fi; echo -n "copied to clipboard: " >&2; cat | tee -a /dev/stderr | copy; }
+function copy() {
+    if [[ "$1" == "+" ]]; then printer='echo -n "copied to clipboard: " >&2; tee -a /dev/stderr'; shift; else printer='cat'; fi
+    if [[ "$1" == "" ]]; then src="cat -"; else src="echo $@"; fi
+    bash -c "$src | { $printer; } | xclip -selection clipboard -rmlastnl -in"
+}
+function Copy() { if [[ "$1" == "+" ]]; then clear; shift; fi; copy + "$@"; }
 alias mine="ps aux --forest  | grep '$USER '"
 alias pag='ps auxwww --forest | grep '
 alias pam='ps aux --forest | less'
