@@ -10,11 +10,19 @@ fi
 # If not running interactively, stop now.
 [ -z "$PS1" ] && return
 
+
 # ======================================================================
-# general global settings
+# includes
 
 # Include any global config if provided.
 [[ -f /etc/bashrc ]] && . /etc/bashrc
+
+# Include useful functions from b(ash) lib.
+[[ -f ${HOME}/bin/blib ]] && source ${HOME}/bin/blib
+
+
+# ======================================================================
+# general global settings
 
 umask 027      # rwx r-x ---
 
