@@ -174,7 +174,7 @@ alias T='TAB'
 alias TAB='column -t'
 alias Less='less'
 alias V='xdg-open'
-function _()  { eval "$@" | less; }
+function _() { HLE "$@" |& less; }  # HLE is in bin/blib
 
 # directory control
 alias ..='cd ..'
