@@ -98,10 +98,10 @@ def needs_dir(config: Mp) -> str:  # Returns name of directory that config deps 
     dep_config = find_by_name(config.mp_needs)
     return d(dep_config.mp_provides)
 
-def run(cmd):
+def run(cmd, env=None):
     if ARGS.verbose: print(f'[verbose] running: {cmd}', file=sys.stderr)
-    rslt = C.popen(cmd)
-    if ARGS.verbose: print(f'[verbose] command returned: {rslt}')
+    rslt = C.popen(cmd, env=env)
+    if ARGS.verbose: print(f'[verbose] command returned: {rslt}', file=sys.stderr)
     return rslt
 
 def smartappend(target_list, item):
@@ -113,6 +113,7 @@ def smartappend(target_list, item):
 # ---------- business logic
 
 def mount(config: Mp) -> str:
+    env = None
     if is_mountpoint(config.mp_provides): return emit(config.name + ' already mounted', None)
     if config.mp_needs and not is_mountpoint(needs_dir(config)):
         emit('%s needs %s' % (config.name, config.mp_needs))
@@ -128,7 +129,8 @@ def mount(config: Mp) -> str:
         cmd.append(d(config.mp_provides))
     elif isinstance(config.source, Rclon):
         if 'RCLONE_CONFIG_PASS' not in os.environ:
-            os.environ['RCLONE_CONFIG_PASS'] = C.popener(['/usr/local/bin/kmc', '--km_cert', '', 'rclone'])
+            env = dict(os.environ)
+            env['RCLONE_CONFIG_PASS'] = C.popener(['/usr/local/bin/kmc', '--km_cert', '', 'rclone'])
         cmd = ['/usr/bin/rclone', 'mount']
         smartappend(cmd, config.source.opts)
         cmd.extend(['--daemon', config.source.source, d(config.mp_provides)])
@@ -141,7 +143,7 @@ def mount(config: Mp) -> str:
         return f'Unknown config.source type: {type(config.source)}'
 
     if ARGS.allow_root: cmd.extend(['-o', 'allow_root'])
-    out = run(cmd)
+    out = run(cmd, env)
     time.sleep(0.5)
     is_mp = is_mountpoint(d(config.mp_provides))
     if not out.ok or not is_mp: return f'mount failed for {config.name}: {out.out}'
