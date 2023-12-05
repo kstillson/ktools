@@ -1,7 +1,7 @@
 #3.3
 
 # disable use of title bar for message line, and enable mouse-wheel scrolling
-termcapinfo xterm* hs@:ti@:te@
+termcapinfo xterm* hs@:ti@:te@:XT
 
 # my options
 #markkeys 'h=^B:j=^N:k=^P:l=^F:$=^E:@=['
