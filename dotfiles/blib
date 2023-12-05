@@ -1,0 +1,46 @@
+
+: 'bash library of handy functions.
+
+   These are placed here (rather than in ~/.bashrc) so they can be manually
+   sourced into non-interactive scripts (which ignore most of bashrc).
+
+   Note that Kens standard .bashrc also sources this file, so everything
+   here will be included in interactive shells too.'
+
+
+# ---------- colorizers
+
+function emit() { echo ">> $@" >&2 ; }
+
+function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
+
+function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi ; }
+
+function ColorLines() {
+    colr="$1"
+    prefix="$2"
+    prefix_color="${3:-yellow}"
+    while IFS= read -r line; do
+	if [[ "$prefix" != "" ]]; then emitC - $prefix_color "$prefix " >&2; fi
+	emitC "$colr" "$line" >&2
+    done
+}
+
+
+# ==================== thigns that depend on colorizers...
+
+
+# ---- hilight stderr
+
+# (must run this as a command prefix; can't pipe to it because the difference
+#  between stdout and stderr would be lost.)
+#
+function HLE() { eval $(printf '%q ' "$@") < /dev/tty 2> >(ColorLines RED ' >stderr>') ; }
+
+
+# ---- echo and run
+
+function erun() {
+    emitC cyan ' $>' "$*"
+    eval $(printf '%q ' "$@") < /dev/tty
+}
