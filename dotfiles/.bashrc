@@ -104,7 +104,7 @@ function A0() {
 }
 # activate ssh agent (attach to old or start new)
 function A() {
-  if A0; then echo "attached to existing agent" 2>&1; return 0; fi
+  if A0; then AA; echo "attached to existing agent" 2>&1; return 0; fi
   /usr/bin/ssh-agent -s -t 4h > ${SSH_AGENT_DAT}
   source ${SSH_AGENT_DAT}
   if ! test_ssh_agent; then echo "ouch; unable to start agent" 2>&1; return -1; fi
