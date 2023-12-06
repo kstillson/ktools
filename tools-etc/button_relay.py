@@ -75,8 +75,9 @@ def handler_default(request):
         return 'sent'
     button_test = request.get_params.get('b')
     if button_test:
-        rslt = handle_button_real(stoi(button_test), -1, 'na')
-        C.log(f'button test {button_test} -> {rslt}')
+        mac = request.get_params.get('m', 'na')
+        rslt = handle_button_real(stoi(button_test), -1, 'test' + mac)
+        C.log(f'button test mac {mac} button {button_test} -> {rslt}')
         return rslt
     return H.html_page_wrap('<li><a href="varz">varz</a><br/><li><a href="healthz">healthz</a>')
 
@@ -92,9 +93,12 @@ def control(target, command='on'):
     url = f'http://web/control/{target}/{command}'
     return C.read_web(url, timeout=5)
 
+def play_sound(basename='ding'):  # see pi1:~pi/sounds for list of available sounds
+    return speak('@' + basename)
+
 def speak(msg):
     url = 'http://pi1/speak/' + C.quote_plus(msg)
-    return C.read_web_e(url, timeout=5)
+    return C.read_web_e(url, timeout=4)
 
 def stoi(s):
     s = s.replace(',', '').strip()
@@ -119,10 +123,9 @@ def parse_button_msg(msg):  # format:    button: xx, voltage: yy, mac: aabbccdde
     return button, battery, mac
 
 
-def handle_button_real(button, battery, mac):
-    V.bump(f'button_{button}')
-    V.bump(f'mac_{mac}')
-    V.set(f'mac_{mac}_batt', battery)
+def handle_button_real(button:int, battery:int, mac:str):
+    V.bump(f'press_{mac}_{button}')
+    V.set(f'batt_{mac}_batt', battery)
 
     if battery > 0 and battery < LOW_BATTERY_THRESHOLD:
         C.log_warning(f'low battery level on {mac}: {battery} < {LOW_BATTERY_THRESHOLD}')
@@ -137,6 +140,7 @@ def handle_button_real(button, battery, mac):
        if button == 17: return control('tv')
 
     # If we get to here, unknown sender or unknown button
+    play_sound()
     C.log_error(f'unknown button {button} from {mac}')
     V.bump('unknown_button')
     return False

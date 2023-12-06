@@ -11,5 +11,4 @@ RUN /prep
 USER relay
 
 WORKDIR /home/relay
-ENTRYPOINT ["/home/relay/button_relay"]
-CMD ["--logfile", "/var/log/button_relay.log"]
+CMD ["/home/relay/button_relay", "--logfile", "/var/log/button_relay.log"]

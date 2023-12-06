@@ -30,3 +30,15 @@ services:
 
     image: ktools/button-relay:live
 
+
+# ---------- test
+
+  test_button-relay:
+    extends: { file: ../docker-compose-common.yaml, service: x-test }
+    <<: *baseline
+
+    container_name: test_button-relay
+
+    command: [ "pytest-3" ]
+
+    image: ktools/button-relay:latest

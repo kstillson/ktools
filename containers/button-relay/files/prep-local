@@ -4,3 +4,8 @@ GROUP_DONT_DELETE_REGEX="^(relay)"
 
 # Fix permissions from copying.
 chmod -R go+rX /home
+chmod -R 01777 /tmp
+
+# pytest needs /tmp dir, and ownership is messed up because of
+# build process using shifted uid-ns, but run-time using host-ns.
+WORLD_WRITABLE_DIRS_RM=0
