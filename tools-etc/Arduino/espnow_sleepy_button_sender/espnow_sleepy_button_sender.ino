@@ -9,7 +9,7 @@
  * button number (and possibly the current battery voltage), waits for an espnow ACK, and goes back to sleep.
  * 
  * For battery voltage to work, A2 should be connected to the battery via a voltage divider (as it is by the
- * qt-py BFF), and USE_A2 should be set to false.
+ * qt-py BFF), and USE_A2 should be set to *false* (i.e. not used as a general gpio pin).
  * 
  * PROD_MODE disables waiting for the serial port to stabalize and turns off most use of the neopixel once
  * the start-up process is complete.  This makes things faster and lowers battery consumption.
@@ -22,9 +22,10 @@
  * 
  * You must trigger HIGH to activate a button (due to esp32 sleep implementation restrictions).
  * 
- * Note that in some cases, the Arduino compiler seems to pull up the wrong pin number constants for some of 
- * the A{x} pins.  No idea why.  To fix this, they are overriden locally with #define's.  The current numbers
- * are set for the QT Py ESP32sX. * 
+ * Note that in some cases, the Arduino compiler seems to pull up the wrong pin number constants
+ * for some of the A{x} pins.  This might have been a local config problem...  But anyway, if
+ * OVERRIDE_FIX_PINS is set, the pin numbers are locally overridden with #def's.
+ * The current numbers are set for the QT Py ESP32sX. *
  * 
  */
 
@@ -63,6 +64,11 @@ const char* WIFI_SSID = "kds2";  // Used to find channel number of WiFi network,
 
 // ----- buttons
 
+#define OVERRIDE_FIX_PINS 1
+
+
+#ifdef OVERRIDE_FIX_PINS
+
 #define D0 0   // qt-py-esp32-sX: D0 / gpio0 is the built in button near the usb-C port.
 
 // Locally override any previous definitions of the GPIO BCM pin numbers, as experience has
@@ -74,6 +80,8 @@ const char* WIFI_SSID = "kds2";  // Used to find channel number of WiFi network,
 #define A3 8
 #define A4 7
 #define A5 6
+
+#endif
 
 const bool USE_A0 = false;
 const bool USE_A1 = true;
@@ -389,7 +397,7 @@ void setup() {
     
     default:
       // Wake is not from sleep, so must be actual board initialization.
-      if (AUTO_DEBUG) { return; }
+      if (AUTO_DEBUG) { return; }  // passes control to loop() without sleeping...
       
       // Give user a chance to abort sleep sequence.  If they push D0, then enter debug mode.
       int saw_button = wait_for_button(D0, PWR_ON_DELAY_BEFORE_SLEEP_SECS, WHITE, BLACK, true);
