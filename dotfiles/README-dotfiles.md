@@ -15,6 +15,12 @@ customization, but are not really intended to be installed as-is.
   etc), but primarily sets a bunch of aliases and bash functions (where an
   alias wouldn't work, for example the need to process arguments).
 
+- blib: ok, so yeah, it's not a dot file.  It's intended to be copied into
+  ~/bin, and is then available for non-interactive bash scripts to "source."
+  This is because the very start of .bashrc drops out for non-interactive
+  sessions, so stuff you want to be available in both interactive and
+  non-interactive scripts can go in ~/bin/blib.
+
 - .emacs: sets a number of editing defaults, but primarily loads the "emacs
   extension system" (ees.el, which gets installed into ~/bin), which is a
   rather complicated set of additions and customizations accumulated over
