@@ -1,1 +1,0 @@
-../../../../private.d/docker-containers/registry/files/etc
