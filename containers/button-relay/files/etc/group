@@ -1,4 +1,0 @@
-root:x:0:root
-dialout:x:20:relay
-relay:x:901:
-nobody:x:65534:
