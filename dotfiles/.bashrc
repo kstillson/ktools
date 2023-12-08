@@ -139,7 +139,7 @@ alias egrep='egrep $COLOR_OPTION'
 # simple finding file contents
 function F() {
     if [[ -f "$1" ]]; then src="$1"; shift; else src="-"; fi
-    if [[ "$1" != "" ]]; then qry="-q '$1'"; else qrt=""; fi
+    if [[ "$1" != "" ]]; then qry="-q '$1"; else qrt=""; fi
     cat "$src" | fzf "$qry" | Copy +
 }
 function HL() { /bin/grep --color=always -E "^|$1"; }  # highlight $1
