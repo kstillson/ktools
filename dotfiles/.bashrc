@@ -173,6 +173,7 @@ alias m='less'
 alias L='less'
 alias T='TAB'
 alias TAB='column -t'
+alias Launch='xdg-open'   # opens with default viewer
 alias Less='less'
 alias V='xdg-open'
 function _() { HLE "$@" |& less; }  # HLE is in bin/blib
