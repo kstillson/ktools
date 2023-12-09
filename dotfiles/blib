@@ -10,6 +10,17 @@
 
 # ---------- colorizers
 
+# these exports possibly redundant to .profile, but needed here for sudo...
+export BLACK='\u001b[30m'
+export BLUE='\033[01;34m'
+export CYAN='\033[01;36m'
+export GREEN='\033[01;32m'
+export MAGENTA='\033[01;35m'
+export RED='\033[0;31m'
+export YELLOW='\033[0;33m'
+export WHITE='\033[01;37m'
+export RESET='\033[00m'
+
 function emit() { echo ">> $@" >&2 ; }
 
 function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" 2>&1 ; }
