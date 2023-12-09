@@ -139,8 +139,9 @@ alias egrep='egrep $COLOR_OPTION'
 # simple finding file contents
 function F() {
     if [[ -f "$1" ]]; then src="$1"; shift; else src="-"; fi
-    if [[ "$1" != "" ]]; then qry="-q '$1"; else qrt=""; fi
-    cat "$src" | fzf "$qry" | Copy +
+    if [[ "$1" != "" ]]; then cat "$src" | fzf -q "$1" | Copy +
+                         else cat "$src" | fzf         | Copy +
+    fi
 }
 function HL() { /bin/grep --color=always -E "^|$1"; }  # highlight $1
 
@@ -284,7 +285,8 @@ alias clock='xclock -digital -twelve -brief -fg white -bg black -face "arial bla
 function copy() {
     if [[ "$1" == "+" ]]; then printer='echo -n "copied to clipboard: " >&2; tee -a /dev/stderr'; shift; else printer='cat'; fi
     if [[ "$1" == "" ]]; then src="cat -"; else src="echo $@"; fi
-    bash -c "$src | { $printer; } | xclip -selection clipboard -rmlastnl -in"
+    if [[ ! -x "/usr/bin/xclip" ]]; then bash -c "$src"; return; fi
+    bash -c "$src | { $printer; } | /usr/bin/xclip -selection clipboard -rmlastnl -in"
 }
 function Copy() { if [[ "$1" == "+" ]]; then clear; shift; fi; copy + "$@"; }
 alias mine="ps aux --forest  | grep '$USER '"
