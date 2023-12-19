@@ -46,7 +46,7 @@ function ColorLines() {
 # (must run this as a command prefix; can't pipe to it because the difference
 #  between stdout and stderr would be lost.)
 #
-function HLE() { eval $(printf '%q ' "$@") < /dev/tty 2> >(ColorLines RED ' >stderr>') ; }
+function HLE() { eval $(printf '%q ' "${@:-cat}") 2> >(ColorLines RED ' >stderr>') ; }
 
 
 # ---- echo and run
