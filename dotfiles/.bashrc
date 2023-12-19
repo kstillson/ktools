@@ -131,15 +131,17 @@ function FF() {
 }
 
 # simple finding file contents
-alias G='grep -i $COLOR_OPTION'
+alias G='grep -i --color=always'
 alias grep='grep $COLOR_OPTION'
 alias fgrep='fgrep $COLOR_OPTION'
 alias egrep='egrep $COLOR_OPTION'
 
 # simple finding file contents
 function F() {
-    if [[ -f "$1" ]]; then src="$1"; shift; else src="-"; fi
-    if [[ "$1" != "" ]]; then cat "$src" | fzf -q "$1" | Copy +
+    if [[ -f "$1" ]]; then src="$1"; shift
+    elif [ -t 0 ]; then echo "usage: F [file] [search spec]" >&2; return 1
+    else src="-"; fi
+    if [[ "$1" != "" ]]; then cat "$src" | fzf -q "$@" | Copy +
                          else cat "$src" | fzf         | Copy +
     fi
 }
