@@ -141,7 +141,7 @@ case $MODE in
 	echo "copying cookie back"
 	rm -rf /root/echo-back/test-in
 	${RCLONE} -v copy wasabi-s3:kstillson-s3/test-out ${DEST}
-	/usr/bin/diff -q ${SRC} ${DEST_FILE} || { echo "ERROR- test cookie copy-back doesnt match."; cat ${SRC}; cat ${DEST_FILE}; exit -1; }
+	/usr/bin/diff ${SRC} ${DEST_FILE} || { echo "ERROR- test cookie copy-back doesnt match."; cat ${SRC}; cat ${DEST_FILE}; exit -1; }
 	echo "init: ${SRC} == ${DEST_FILE} : $(cat ${DEST_FILE})"
 	echo "init: pass"
 	sleep 3  # hang around long enough for the test to find the container metadata.
@@ -160,7 +160,7 @@ case $MODE in
 	echo "$(date): starting echo back to ${DEST}"
 	rm -rf ${DEST}
 	${RCLONE} copy wasabi-s3:kstillson-s3/home/home/ken/share/tmp/touch ${DEST}
-	/usr/bin/diff -q /root/src/home/home/ken/share/tmp/touch ${DEST}/touch || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
+	/usr/bin/diff /root/src/home/home/ken/share/tmp/touch ${DEST}/touch || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
         ;;
 
     *)
