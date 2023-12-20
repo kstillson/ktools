@@ -4,7 +4,10 @@
 # ----- input params & defaults
 
 # If $1 is defined, use that as our output file; else use a random temp file.
-OUT=${1:-$(/bin/tempfile)}
+
+##@@ OUT=${1:-$(/bin/tempfile)}
+OUT=/root/tmp/rsnap-diff.tmp
+
 # If $2 is defined, use that as our OLD directory (relative to $BASE, below)
 OLD=${2:-daily.1}
 # If $3 is defined, use that as our NEW directory (relative to $BASE, below)
@@ -15,12 +18,12 @@ NEW=${3:-daily.0}
 MYDIR=$(realpath $(dirname $0))
 BASE=${BASE:-/mnt/rsnap}
 EXC=${EXC:-${MYDIR}/rsnap-diff.exclude}
-CONSOL_FILE=${CONSOL_FILE:-${MYDIR}/rsnap-consolidate-substrings}
-CONSOL=${CONSOL:-substring_counter -r -s file:${CONSOL_FILE}}
+CONSOLIDATE_FILE=${CONSOLIDATE_FILE:-${MYDIR}/rsnap-diff.consol}
+CONSOLIDATE=${CONSOLIDATE:-/root/bin/substring_counter -r -s file:${CONSOLIDATE_FILE}}
 
 # ----- compute the diff
 
-if [[ ! -f ${OUT} ]]; then
+if [[ "$REUSE_OUT" != "1" ]]; then
   cd ${BASE}
   { /usr/bin/diff -rq ${NEW} ${OLD} | \
     /bin/sed -e 's@: @/@' | \
@@ -37,15 +40,15 @@ echo "rsnapshot diff report ${NEW} vs ${OLD}"
 
 echo ""
 echo "Changes (see ~/bin/D)"
-/bin/grep differ ${OUT} | /usr/bin/cut -d" " -f2 | /bin/sed -e "s:${NEW}/::" | ${CONSOL}
+/bin/grep differ ${OUT} | /usr/bin/cut -d" " -f2 | /bin/sed -e "s:${NEW}/::" | ${CONSOLIDATE}
 
 echo ""
 echo "Deletions"
-/bin/grep Only ${OUT} | /bin/grep ${OLD} | /usr/bin/cut -d" " -f3,4 | ${CONSOL}
+/bin/grep Only ${OUT} | /bin/grep ${OLD} | /usr/bin/cut -d" " -f3,4 | ${CONSOLIDATE}
 
 echo ""
 echo "Additions"
-/bin/grep Only ${OUT} | /bin/grep ${NEW} | /usr/bin/cut -d" " -f3,4 | ${CONSOL}
+/bin/grep Only ${OUT} | /bin/grep ${NEW} | /usr/bin/cut -d" " -f3,4 | ${CONSOLIDATE}
 
 # ----- cleanup
 
