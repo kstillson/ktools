@@ -221,6 +221,7 @@ def take_view(request):
     if not session_data: return W.Response('invalid session', 500)
     key = request.get_params.get('key')
     gi = model.get_gift_idea(key)
+    if gi.taken == 'taken': return done('take; gift already taken (try edit if you want to override)', f'take failed by {session_data.get("user")} for key={key}, gi={gi}', success=False)
 
     gi.taken = 'taken'
     gi.taken_by = session_data.get("user")
