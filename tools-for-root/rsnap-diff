@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# This script compares two directories (intended to be two rsnap directories,
+# for example, today's and yesterday's backups), and outputs a consolidated
+# report of the differences.  This can be used as a sanity check the previous
+# day's changes on all backed up systems.
+
+# Filename changes matching regular expressions in ./rsnap-diff.exclude are
+# omitted, and all filename substrings found in ./rsnap-consolidate-substrings
+# are consolidated into a single line per-entry, giving the count of items
+# that were combined.  For example, if a line "tmp/" appears in
+# ./rsnap-consolidate-substrings, then all changed files in temp directories
+# will appear as a single line in the ouptut, along with the number of
+# changes.
+
+# The contents of ./rsnap-diff.exclude and ./rsnap-consolidate-substrings will
+# likely need to be adjusted for your system - the values given here are right
+# for the original author's system, but are published more as examples.
+
+# $1 gives the desired location for the expensive-to-produce temp file.
+#    currently it's left in-place to facilitate debugging.
+# $2 gives the older directory to compare.
+# $3 gives the newer directory.
+
+# So, for example, in the cron-script that runs backups, right after rsnapshot
+# completes, one can run:
+#    rsnap-diff "" daily.1 daily.0
+#
+# This will sent a report on the changes from the previous day to stdout
+# (which in a cron-script generally gets emailed to root).
+
+# If you set $REUSE_OUT=1, then rather than regenerating the expensive temp file,
+# the script will re-use the existing one.  This is useful when you're refining
+# exclude or consolidation rules, and need to run them a few times for testing.
+
+
+# ----- input params & defaults
+
+# If $1 is defined, use that as our output file; else use a random temp file.
+OUT=${1:-/root/tmp/rsnap-diff.tmp}
+
+# If $2 is defined, use that as our OLD directory (relative to $BASE, below)
+OLD=${2:-daily.1}
+# If $3 is defined, use that as our NEW directory (relative to $BASE, below)
+NEW=${3:-daily.0}
+
+# ----- control constants
+
+MYDIR=$(realpath $(dirname $0))
+BASE=${BASE:-/mnt/rsnap}
+EXC=${EXC:-${MYDIR}/rsnap-diff.exclude}
+CONSOLIDATE_FILE=${CONSOLIDATE_FILE:-${MYDIR}/rsnap-diff.consol}
+CONSOLIDATE=${CONSOLIDATE:-/root/bin/substring_counter -r -s file:${CONSOLIDATE_FILE}}
+
+# ----- compute the diff
+
+if [[ "$REUSE_OUT" != "1" ]]; then
+  cd ${BASE}
+  { /usr/bin/diff -rq ${NEW} ${OLD} | \
+    /bin/sed -e 's@: @/@' | \
+    /bin/egrep -v -f ${EXC} > ${OUT}; \
+  } 2>&1 | fgrep -v "No such file" | \
+           fgrep -v "Too many levels" | \
+           fgrep -v "recursive directory loop"
+fi
+
+# ----- output phase: separate into changes, deletions and additions
+
+echo ""
+echo "rsnapshot diff report ${NEW} vs ${OLD}"
+
+echo ""
+echo "Changes (see ~/bin/D)"
+/bin/grep differ ${OUT} | /usr/bin/cut -d" " -f2 | /bin/sed -e "s:${NEW}/::" | ${CONSOLIDATE}
+
+echo ""
+echo "Deletions"
+/bin/grep Only ${OUT} | /bin/grep ${OLD} | /usr/bin/cut -d" " -f3,4 | ${CONSOLIDATE}
+
+echo ""
+echo "Additions"
+/bin/grep Only ${OUT} | /bin/grep ${NEW} | /usr/bin/cut -d" " -f3,4 | ${CONSOLIDATE}
