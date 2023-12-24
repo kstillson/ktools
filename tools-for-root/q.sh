@@ -931,7 +931,7 @@ function main() {
         keypad-commands | kc) keypad_commands "$1" ;;                     ## list homesec keypad common commands ($1 to search)
         keymaster-reload | kmr) keymaster_reload ;;                       ## load/reload keymaster state (requires password)
         keymaster-logs | kml | kmq) keymaster_logs ;;                     ## analyze km logs
-        keymaster-status | kms) keymaster_status ;;                       ## edit keymaster encrypted data and restart
+        keymaster-status | kms) keymaster_status ;;                       ## print keymaster healthz status
         keymaster-update | kmu) keymaster_update ;;                       ## edit keymaster encrypted data and restart
         keymaster-zap | kmz) keymaster_zap ;;                             ## clear keymaster state (and raise alerts)
         panic-reset | PR)                                                 ## recover from a homesec panic
