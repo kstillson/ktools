@@ -178,7 +178,8 @@ alias TAB='column -t'
 alias Launch='xdg-open'   # opens with default viewer
 alias Less='less'
 alias V='xdg-open'
-function _() { HLE "$@" |& less; }  # HLE is in bin/blib
+function _() { HLE "$@" |& /usr/bin/less; }  # HLE is in bin/blib
+function =() { HLE "$@" |& COLORTERM= /usr/games/lolcat -f | /usr/bin/less -RX; }
 
 # directory control
 alias ..='cd ..'
