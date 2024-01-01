@@ -49,6 +49,12 @@ function ColorLines() {
 function HLE() { eval $(printf '%q ' "${@:-cat}") 2> >(ColorLines RED ' >stderr>') ; }
 
 
+# ---- echo command, highlite stderr, and pass through pager
+
+function _() { emitC cyan "$@" >&2; HLE "$@" |& /usr/bin/less; }  # HLE is in bin/blib
+function =() { emitC cyan "$@" >&2; HLE "$@" |& COLORTERM= /usr/games/lolcat -f | /usr/bin/less -RX; }
+
+
 # ---- echo and run
 
 function erun() {

@@ -17,7 +17,7 @@ fi
 # Include any global config if provided.
 [[ -f /etc/bashrc ]] && . /etc/bashrc
 
-# Include useful functions from b(ash) lib.
+# Include useful functions from b(ash)lib (things like emitc, HLE, erun)
 [[ -f ${HOME}/bin/blib ]] && source ${HOME}/bin/blib
 
 
@@ -178,8 +178,6 @@ alias TAB='column -t'
 alias Launch='xdg-open'   # opens with default viewer
 alias Less='less'
 alias V='xdg-open'
-function _() { HLE "$@" |& /usr/bin/less; }  # HLE is in bin/blib
-function =() { HLE "$@" |& COLORTERM= /usr/games/lolcat -f | /usr/bin/less -RX; }
 
 # directory control
 alias ..='cd ..'
