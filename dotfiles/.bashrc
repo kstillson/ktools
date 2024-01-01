@@ -17,7 +17,7 @@ fi
 # Include any global config if provided.
 [[ -f /etc/bashrc ]] && . /etc/bashrc
 
-# Include useful functions from b(ash)lib (things like emitc, HLE, erun)
+# Include useful functions from b(ash)lib (e.g.: emitc, _, =, HLE, erun)
 [[ -f ${HOME}/bin/blib ]] && source ${HOME}/bin/blib
 
 
