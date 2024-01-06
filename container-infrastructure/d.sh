@@ -9,6 +9,8 @@
 
 set -e   # Stop on first error...
 
+source blib  # for erun, emit*
+
 cmd="$1"
 shift || true
 spec="$1"
@@ -31,24 +33,6 @@ if [[ "$TESTER" == "" ]]; then
     fi
 fi
 
-
-# ----------------------------------------
-# colorizer
-
-BLUE='\x1b[01;34m'
-CYAN='\x1b[36m'
-GREEN='\x1b[01;32m'
-MAGENTA='\x1b[35m'
-RED='\x1b[0;31m'
-YELLOW='\x1b[0;33m'
-WHITE='\x1b[37m'
-RESET='\x1b[00m'
-
-function emit() { echo ">> $@" >&2; }
-# stderr $2+ in color named by $1. insert "-" as $1 to skip ending newline.
-function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; color=${1^^}; shift; q="$@"; printf "${!color}${q}${RESET}${nl}" >&2 ; }
-# stderr $2+ in color named by $1, but only if stdin is an interactive terminal.
-function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
 
 # ----------------------------------------
 # general support
@@ -246,22 +230,19 @@ function up() {
   cd_sel "$sel"
   if [[ -x ./Run ]]; then
       emitc cyan "launching via legacy Run file"
-      echo "./Run ${extra_flags}" >&2
-      ./Run ${extra_flags}
+      erun ./Run ${extra_flags}
   elif [[ -f ./docker-compose.yaml ]]; then
       ip=$(host ${sel} | cut -f4 -d' ')
       if [[ "$ip" == "" ]]; then echo "unable to get IP"; exit -1; fi
       puid="$(k_auth -e):$sel"
       if [[ "$puid" == "" ]]; then echo "unable to get PUID"; exit -2; fi
-      emitc cyan "launching via docker compose to $ip"
-      echo "IP=\"$ip\" PUID=\"$PUID\" docker compose up -d ${extra_flags}" >&2
-      IP="$ip" PUID="$puid" docker compose up -d ${extra_flags}
+      emitc cyan "launching via $DOCKER_EXEC compose to $ip"
+      erun IP="$ip" PUID="$puid" $DOCKER_EXEC compose up -d ${extra_flags}
   else
       # This substitution only supports a single param to the right of the "--".
       extra_flags=${extra_flags/-- /--extra_init=}
       emitc cyan "launching via d-run"
-      echo "d-run ${extra_flags}" >&2
-      d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
+      erun d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
   fi
 }
 
@@ -282,9 +263,9 @@ function test() {
 
   if [[ -f docker-compose.yaml ]]; then
       target="test_${name}"
-      echo "testing via docker compose: $target"
-      echo "@@ IP='unused' PUID='unused' docker compose run --rm ${target}"
-      IP="unused" PUID="unused" docker compose run --rm ${target} || { emitc red "failed"; echo "fail"; exit -1; }
+      if [[ "$DOCKER_EXEC" == "docker" ]]; then rm="--rm"; else rm=""; fi
+      echo "testing via $DOCKER_EXEC compose: $target"
+      erun IP="unused" PUID="unused" $DOCKER_EXEC compose run $rm ${target} || { emitc red "failed"; echo "fail"; exit -1; }
       echo "pass"
       return
   fi
