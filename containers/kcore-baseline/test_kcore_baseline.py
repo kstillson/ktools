@@ -2,11 +2,13 @@
 
 import os, pytest, subprocess, sys
 import kcore.docker_lib as D
+import ktools.ktools_settings as KS
 
 
 # ---------- control constants
 
-DOCKER_BIN = os.environ.get('DOCKER_EXEC', 'docker')
+s = KS.init(test_mode=True)
+DOCKER_BIN = s.get('docker_exec', os.environ.get('DOCKER_EXEC', 'docker'))
 
 
 # ---------- fixture for container under test
