@@ -302,6 +302,9 @@ class PersisterDictOfDC(Persister):
         return out + '\n'
 
 
+# Multiple inheritance merges together dict and PersisterDictOfDC to create a dict
+# with Persister's automatic loading and saving semantics.
+#
 class DictOfDataclasses(PersisterDictOfDC, dict):
     def __init__(self, filename, rhs_type, **kwargs):
         super().__init__(filename=filename, rhs_type=rhs_type, default_value=self, **kwargs)
@@ -331,6 +334,9 @@ class PersisterListOfDC(Persister):
         return out + '\n'
 
 
+# Multiple inheritance merges together list and PersisterListOfDC to create a list
+# with Persister's automatic loading and saving semantics.
+#
 class ListOfDataclasses(PersisterListOfDC, list):
     def __init__(self, filename, dc_type, **kwargs):
         super().__init__(filename=filename, dc_type=dc_type, default_value=self, **kwargs)
