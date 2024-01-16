@@ -119,12 +119,14 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
 
     # Standard Firefox browsing w/o kasm
-    'k':    Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson', ARGS0, None,   None,       None,            'lp:kstillson@g', '[AC-c] ffox Google:* direct(fj)',               ['g','google','kstillson']),
-    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,        None,           'lp:ken@kds',     'Firefox general browsing direct(fj)',           []),
-    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,        None,           'ff-internal',    'Bad boy Firefox(fj)',                           ['fb3']),
+    'k':    Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson', ARGS0, None,   None,       None,            'lp:kstillson@g', '[AC-c] ffox Google:* direct(fj)',              ['g','google','kstillson']),
+    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,       None,           'lp:ken@kds',     'Firefox general browsing direct(fj)',           []),
+    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,       None,           'ff-internal',    'Bad boy Firefox(fj)',                           ['fb3']),
+
+    'kk':   Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kenp0',    ARGS0,  None,   None,       None,           None,             'ffox Google:ken@p0 direct(fj)',                 []),
 
     # Experimental / other
-    'e':    Cfg('ken',     B.FIREFOX,   None,        False,'add-on experiments', ARGS0, None,   None,        None,            None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
+    'e':    Cfg('ken',     B.FIREFOX,   None,        False,'add-on experiments', ARGS0, None,   None,       None,            None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
 
     # Browsing w/ kasm
      #'kb':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
@@ -134,17 +136,17 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
      #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
     # Deprecated modes
-    'ko':   Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'deprecated. Chrome Google:* direct(fj)',        []),
-     #'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',            []),
+    'ko':   Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'deprecated. Chrome Google:* direct(fj)',       []),
+    'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',           []),
      #'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
      #'ctrl': Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,    'control accts',  ARGS1,  None,   None,       'ken@p0',        'lp:kstillson@g', 'Google control accounts',                       ['C']),
 
     # Reduced security modes; no FJ => better system access (e.g. obs)
-    'k0':   Cfg('ken',     B.CHROME,    None,        True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'Google:* direct(no fj)',                        []),
+    'k0':   Cfg('ken',     B.CHROME,    None,        True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'Google:* direct(no fj)',                       []),
 
     # Raw browser access (no added security)
-    'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,        'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
-    'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,        None,            None,            'raw firefox',                                   ['f', 'ff']),
+    'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,       'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
+    'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,       None,            None,            'raw firefox',                                   ['f', 'ff']),
 }
 
 
@@ -225,8 +227,9 @@ def find_chrome_profile_dir(name):
     if not name: return None
     basedir = os.path.expanduser('~/.config/google-chrome')
     state = C.read_file(os.path.join(basedir, 'Local State'))
-    profile = C.popener(['jq', '-r', '.profile.info_cache | to_entries | .[] | select(.value.name == env.srch) | .key'], stdin_str=state, env={'srch': name})
-    debug(f'profile label "{name}" successfully found;  its profile {profile}')
+    #old fmt: profile = C.popener(['jq', '-r', '.profile.info_cache | to_entries | .[] | select(.value.name == env.srch) | .key'], stdin_str=state, env={'srch': name})
+    profile = C.popener(['jq', '-r', '.profile.info_cache | to_entries | .[] | select(.key == env.srch) | .value.name'], stdin_str=state, env={'srch': name})
+    debug(f'profile label "{name}" returned profile dir: {profile}')
     if not profile: return None
     return os.path.join(basedir, profile.replace('"', ''))
 
@@ -403,12 +406,12 @@ def switch_user_if_needed(cfg, sudo_done):
 # ---------- gui
 
 def gui():
-    cols = ['uid', 'sandbox', 'reset', 'profile', 'appmode', 'sync_acct', 'pw_db', 'note']
+    cols = ['uid', 'browser', 'sandbox', 'reset', 'profile', 'appmode', 'sync_acct', 'pw_db', 'note']
     cmd = ['zenity', '--width', '1400', '--height', '500', '--title', 'browser selection', '--list', '--column', 'code']
     for c in cols: cmd.extend(['--column', c])
     for code, cfg in CONFIGS.items():
         cmd.append(code)
-        cmd.extend([str(getattr(cfg, c)) for c in cols])
+        cmd.extend([str(getattr(cfg, c)).replace('Browsers.','') for c in cols])
     sel = C.popener(cmd)
     if not sel or sel.startswith('ERR'): sys.exit(f'no config selected [{sel}]')
     return sel
