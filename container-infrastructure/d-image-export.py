@@ -30,6 +30,7 @@ class ImageMetadata:
     def dated_linkname(self):
         now = datetime.datetime.now()
         return os.path.join(ARGS.dir, self.linkname() + now.strftime('-%Y%m%d.tgz'))
+    def spec(self): return f'{self.name}:{self.label}:[{self.image_hash}]'
 
 
 # ---------- helpers
@@ -54,22 +55,29 @@ def main():
     ap = argparse.ArgumentParser(description='container image exporter')
     ap.add_argument('--debug',  '-D',  action='store_true', help='print details')
     ap.add_argument('--dir',    '-d',  default='.',         help='output directory')
+    ap.add_argument('--filter', '-f',  default='',          help='only snapshot images with regexp')
+    ap.add_argument('--label',  '-l',  default='live',      help='only snapshot images with this label')
     ap.add_argument('--dryrun', '-n',  action='store_true', help='output what would be done')
-    ap.add_argument('--filter', '-f',  default='live',      help='only snapshot images with this label')
     global ARGS
     ARGS = ap.parse_args()
 
     need = []
+    filter = re.compile(ARGS.filter) if ARGS.filter else None
     for line in C.popener([DOCKER_EXEC, 'images']).split('\n'):
         if line.startswith('REPO'): continue  # header
         name, label, image_hash, _ = re.split(' +', line, maxsplit=3)
+        imd = ImageMetadata(name, label, image_hash)
         if name.startswith('<none'):
-            Debug(f'filtered by unnamed status: {name}.{label} [{image_hash}]')
+            Debug(f'filtered by unnamed status: {imd.spec()}')
             continue
-        if ARGS.filter and not label == ARGS.filter:
+        if filter and not filter.search(imd.spec()):
+            Debug(f'filtered by --filter mismatch: {imd.spec()}')
+            continue
+        if ARGS.label and not label == ARGS.label:
             Debug(f'filtered by label: {name}.{label}')
             continue
-        need.append(ImageMetadata(name, label, image_hash))
+        Debug(f'Added: {imd.spec()}')
+        need.append(imd)
 
     have = set()
     for filename in glob.glob(ARGS.dir + '/img-*.tgz'):
@@ -91,7 +99,7 @@ def main():
         sys.exit(0)
 
     cmds = ''
-    for i in todo: cmds += f'{DOCKER_EXEC} save "{i.name}:{i.label}" | gzip > {i.filename().replace("img-", "^^img-")}\n'
+    for i in todo: cmds += f'{DOCKER_EXEC} save ^^"{i.name}:{i.label}" | gzip > {i.filename()}\n'
 
     if ARGS.dryrun:
         print('\nrun_para --sep="\\n" <<EOF\n' + cmds + '\nEOF\n')
@@ -101,10 +109,11 @@ def main():
     out = C.popen(['run_para', '--sep', '\n'], stdin_str=cmds, passthrough=True)
     if not out.ok: Error(f'run_para returned error: {out.out}')
 
+    os.chdir(ARGS.dir)  # for relative link creation
     status = 0
     for i in todo:
-        image_name = i.filename()
-        link_name = os.path.basename(i.dated_linkname())
+        image_name = os.path.basename(i.filename())
+        link_name = i.dated_linkname()
         if not file_ok(image_name):
             status = 2
             Error(f'{image_name} failed to export')
