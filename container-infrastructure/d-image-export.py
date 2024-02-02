@@ -86,17 +86,17 @@ def main():
             continue
         todo.append(i)
 
-    if ARGS.dryrun:
-        for i in todo:
-            print(f'DRYRUN: would export {i} as {i.filename()} and link as {i.dated_linkname()}')
-        sys.exit(0)
-
     if not todo:
         Error('Nothing to do', prefix='')
         sys.exit(0)
 
     cmds = ''
-    for i in todo: cmds += f'{DOCKER_EXEC} save "{i.name}:{i.label}" | gzip > ^^{i.filename()}\n'
+    for i in todo: cmds += f'{DOCKER_EXEC} save "{i.name}:{i.label}" | gzip > {i.filename().replace("img-", "^^img-")}\n'
+
+    if ARGS.dryrun:
+        print('\nrun_para --sep="\\n" <<EOF\n' + cmds + '\nEOF\n')
+        sys.exit(0)
+
     Debug(f'Running in parallel:\n{cmds}\n')
     out = C.popen(['run_para', '--sep', '\n'], stdin_str=cmds, passthrough=True)
     if not out.ok: Error(f'run_para returned error: {out.out}')
