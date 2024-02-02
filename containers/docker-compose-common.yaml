@@ -27,4 +27,5 @@ services:
     logging: { driver: none }
     profiles: [ test ]
     networks: [ docker2 ]
-    restart: no
+   # kds:doesnt work with podman-compose;    restart: no
+

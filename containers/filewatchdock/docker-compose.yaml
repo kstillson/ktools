@@ -9,7 +9,7 @@ services:
 
 # ---------- prod
 
-  filewatchdock: &baseline
+  filewatchdock:
     extends: { file: ../docker-compose-common.yaml, service: x-prod }
 
     container_name: filewatchdock
@@ -34,9 +34,9 @@ services:
 
   test_filewatchdock:
     extends: { file: ../docker-compose-common.yaml, service: x-test }
-    <<: *baseline
 
     container_name: test_filewatchdock
+    hostname: test_filewatchdock
 
     command: [ "pytest-3", "-p", "no:cacheprovider" ]
 

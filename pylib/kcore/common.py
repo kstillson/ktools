@@ -252,7 +252,7 @@ def zfatal(msg, timeout=4):
 # ---------- ad-hoc
 
 # other ideas for charset: strings.printable, stings.ascii_letters, strings.digits
-def random_printable(len=16, charset='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&()*+,-./:;<=>?@[]_{}'):
+def random_printable(len=16, charset='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#%+,-./:=@_'):
     import random
     return ''.join(random.choice(charset) for i in range(len))
 
