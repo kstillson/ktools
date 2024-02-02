@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 '''
-TODO(doc)
+Scan copy-on-write directories of up containers for unexpected changed files.
 
+TODO: real doc
 TODO: move the IGNORE_LIST to a config file.
 '''
 
