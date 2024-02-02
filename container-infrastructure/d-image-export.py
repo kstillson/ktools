@@ -104,7 +104,7 @@ def main():
     status = 0
     for i in todo:
         image_name = i.filename()
-        link_name = i.dated_linkname()
+        link_name = os.path.basename(i.dated_linkname())
         if not file_ok(image_name):
             status = 2
             Error(f'{image_name} failed to export')
