@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import pytest, subprocess, time
+import pytest, subprocess, sys, time
+import kcore.common as C
 import kcore.docker_lib as D
 
 
@@ -17,8 +18,9 @@ def test_syslogdock(container_to_test):
     port = 1514 + container_to_test.port_shift
     cookie = D.gen_random_cookie()
 
-    subprocess.check_call(['/usr/bin/logger', '-T', '-n', server, '-p', 'local1.info', '-P', str(port), cookie])
-    time.sleep(1)  # Give syslog a chance to process.
+    cmd = ['/usr/bin/logger', '-T', '-n', server, '-p', 'local1.info', '-P', str(port), cookie]
+    rslt = C.popen(cmd)
+    if not rslt.ok: print(f'ERROR test cmd failed: {cmd=} -> {rslt=}', file=sys.stderr)
+    time.sleep(2)  # Give syslog a chance to process.
 
     D.container_file_expect(cookie, container_to_test.name, '/var/log/queue')
-

@@ -5,7 +5,7 @@
 This scripts constructs the command-line parameters for Docker to launch a
 container. '''
 
-import glob, grp, os, pprint, pwd, shutil, socket, subprocess, sys
+import glob, grp, os, pprint, pwd, socket, subprocess, sys
 from dataclasses import dataclass
 
 import kcore.auth as A
@@ -14,9 +14,10 @@ import kcore.settings as S
 import ktools.ktools_settings as KS
 
 
-# ---------- global controls
+# ---------- global controls (set by parse_args())
 
 DEBUG = False
+DOCKER_EXEC = None
 TEST_MODE = False
 
 
@@ -67,7 +68,7 @@ def expand_log_shorthand(log, name):
     elif ctrl in ['j', 'journal', 'journald']:
         return ['--log-driver=journald']
     elif ctrl in ['j', 'json']:
-        if 'podman' in get_setting('docker_exec'): return ['--log-driver=json-file']
+        if 'podman' in DOCKER_EXEC: return ['--log-driver=json-file']
         return ['--log-driver=json-file',
                 '--log-opt', 'max-size=5m',
                 '--log-opt', 'max-file=3']
@@ -83,7 +84,7 @@ def add_devices(cmnd, dev_list):
     for i in dev_list:
         if '*' in i:
             globs = glob.glob(i)
-            if not globs: err(f'WARNING: glob returned no items: {i}')
+            if not globs: return err(f'WARNING: glob returned no items: {i}')
             for g in globs:
                 cmnd.extend(['--device', g])
             continue
@@ -153,7 +154,7 @@ def add_simple_control(cmnd, control_name, param=None):
 def does_image_exist(repo_name, image_name, tag_name):
     if not repo_name: return False
     if ':' in repo_name: return True  # TODO(defer): any way to really test this?
-    out = subprocess.check_output([get_setting('docker_exec'), 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
+    out = subprocess.check_output([DOCKER_EXEC, 'images', '-q', f'{repo_name}/{image_name}:{tag_name}'])
     return out != b''
 
 
@@ -277,7 +278,7 @@ def _resolve_inside_container_owner(owner):
             if line.startswith(f'{user}:'):
                 parts = line.split(':')
                 uid = int(parts[2])
-                if 'podman' in get_setting('docker_exec'):
+                if 'podman' in DOCKER_EXEC:
                     owner = str(uid)
                 else:
                     shift = int(get_setting('shift_uids') or '0')
@@ -292,6 +293,18 @@ def _resolve_inside_container_owner(owner):
     return owner
 
 
+def _priv(cmd_as_list):
+    '''If using podman, we might not be root, so we must utilize the "unshare"
+       feature to perform file operations inside the userns mapping. '''
+    need_unshare = 'podman' in DOCKER_EXEC and os.getuid() != 0
+    if need_unshare:
+        cmd_as_list = ['podman', 'unshare', 'bash', '-c', ' '.join(cmd_as_list)]
+    out = C.popen(cmd_as_list)
+    if not out.ok: err(f'ERROR: _priv failed: "{cmd_as_list}" -> {out.out}')
+    else: Debug(f'OK: _priv: {cmd_as_list}')
+    return out
+
+
 def _resolve_inside_container_group(group):
     if not group: return group
     if not group.startswith('group/'): return group
@@ -302,7 +315,7 @@ def _resolve_inside_container_group(group):
             if line.startswith(f'{group_name}:'):
                 parts = line.split(':')
                 gid = int(parts[2])
-                if 'podman' in get_setting('docker_exec'):
+                if 'podman' in DOCKER_EXEC:
                     group = str(gid)
                 else:
                     shift = int(get_setting('shift_gids') or '0')
@@ -338,8 +351,6 @@ def create_vol_dirs(mount_src_dirs, base_name, test_mode):
 
 
 def create_vol_item(volspec):
-    mode = int(volspec.perm, 8) if volspec.perm else None
-
     # Note: we don't check the ownership or perms of existing directories or
     # files; this script could easily get very complicated or not-as-smart-as-
     # it-thinks-it-is.  If something's already there, assume it's right.
@@ -354,12 +365,14 @@ def create_vol_item(volspec):
 
     # Create the requested item.
     if volspec.item_type == 'file':
-        with open(volspec.path, 'w') as f: f.write(_vol_eval_contents(volspec))
-        if mode: os.chmod(volspec.path, mode)
+        # need to construct a command compatible with being run under "podman unshare"
+        ## _priv(['/bin/sh', '-c', f"echo '{_vol_eval_contents(volspec)}' > {volspec.path}"])
+        _priv([f"echo '{_vol_eval_contents(volspec)}' > {volspec.path}"])
+        if volspec.perm: _priv(['chmod', volspec.perm, volspec.path])
 
     elif volspec.item_type == 'dir':
-        os.mkdir(volspec.path)
-        if mode: os.chmod(volspec.path, mode)
+        _priv(['mkdir', volspec.path])
+        if volspec.perm: _priv(['chmod', volspec.perm, volspec.path])
 
     else: raise(f'internal error; unknown vtype "{volspec.item_type}" for {volspec.path}')
 
@@ -368,22 +381,29 @@ def create_vol_item(volspec):
 
 
 def _vol_eval_contents(volspec):
-    val = volspec.contents
+    val = val_orig = volspec.contents
     if not val: return ''
     val = val.replace('%target%',    volspec.path)
     val = val.replace('%targetdir%', os.path.dirname(volspec.path))
-    val = val.replace('%owner%',     volspec.owner)
-    val = val.replace('%group%',     volspec.group)
+    val = val.replace('%owner%',     volspec.owner or '??OWNER??')
+    val = val.replace('%group%',     volspec.group or '??GROUP??')
+    if '??' in val: err(f'WARNING: FAILED CONTENTS SUBSTITION: {val}')
 
     if   val.startswith('file:'):    val = C.read_file(val.replace('file:', ''))
     elif val.startswith('cmd:'):     val = _vol_popen_contents(val, volspec.path)
     elif val.startswith('command:'): val = _vol_popen_contents(val, volspec.path)
     elif val.startswith('popen:'):   val = _vol_popen_contents(val, volspec.path)
+
+    if val != val_orig: Debug(f'subst "{val_orig} -> {val}')
     return val
 
 
 def _vol_popen_contents(val, target_path):
     _, cmd = val.split(':', 1)
+    if 'podman' in DOCKER_EXEC and 'unshare' not in cmd:
+        # cmd = ['podman', 'unshare', 'bash', '-c', cmd]
+        cmd0 = cmd.replace('"', '\\"')
+        cmd = f'podman unshare bash -c "{cmd0}"'
     newval = C.popener(cmd, shell=True)
     if DEBUG: Debug(f'Generated volume contents for file "{target_path}" via command "{cmd}" -> "{newval}"')
     return newval
@@ -395,51 +415,28 @@ def delete_vol_item(volspec):
     if not 'TEST' in path: raise ValueError(f'attempt to delete non TEST volspec item: {path=}')
     if volspec.item_type == 'dir' and os.path.isdir(path):
         err('!! Removing previous test dir: %s' % path)
-        shutil.rmtree(path)
+        _priv(['/bin/rm', '-rf', path])
     elif volspec.item_type == 'file' and os.path.isfile(path):
         err('!! Removing previous test file: %s' % path)
-        os.unlink(path)
+        _priv(['/bin/rm', path])
 
 
 def fix_ownership(volspec):
-    '''If using podman, we might not be root, so utilize the "unshare" option to
-       perform the chown inside the userns mapping.  This means we do not want
-       to shift the uid's: the userns will do that for us.  For Docker, there
-       is no unshare option, so we've got to be root and use traditional
-       chown.  But for this case, we do need to manually shift the target uid.'''
     if not volspec.path: return
 
     path = volspec.path   # local copies to allow modification
     owner = str(volspec.owner or '')
     group = str(volspec.group or '')
-    docker_exec = get_setting('docker_exec')
 
-    if 'podman' in docker_exec:
-        Debug(f'  podman chown {path} -> {owner}')
-        if owner:
-            rslt = C.popen([docker_exec, 'unshare', 'chown', owner, path])
-            if not rslt.ok: return err(f'error: attempt to podman/unshare chown {path} to {owner} failed: {rslt.out}')
-        if group:
-            rslt = C.popen([docker_exec, 'unshare', 'chgrp', group, path])
-            if not rslt.ok: return err(f'error: attempt to podman/unshare chgrp {path} to {group} failed: {rslt.out}')
-
-    elif os.getuid() == 0:
-        Debug(f'  root chown {path} -> {owner}.{group}')
-        if owner:
-            rslt = C.popen(['chown', owner, path])
-            if not rslt.ok: return err(f'error: attempt to chown {path} to {owner} failed: {rslt.out}')
-        if group:
-            rslt = C.popen(['chgrp', group, path])
-            if not rslt.ok: return err(f'error: attempt to chgrp {path} to {group} failed: {rslt.out}')
-
-    else:
-        return Debug(f'Skipping chown to {owner} for {path} because not root and not using podman.')
+    Debug(f'  chown {path} -> {owner}.{group}')
+    if owner: _priv(['chown', owner, path])
+    if group: _priv(['chgrp', group, path])
 
 
 # ---------- primary business logic: construct the launch command
 
 def gen_command_via_settings_yaml():
-    cmnd = [ get_setting('docker_exec'), 'run' ]
+    cmnd = [ DOCKER_EXEC, 'run' ]
 
     name = add_simple_control(cmnd, 'name')
     basename = name.replace('test-', '')
@@ -584,9 +581,10 @@ def parse_args(argv=sys.argv[1:]):
         s.tweak_setting('tag', 'cached_value', 'latest')
 
     # Handle simple global toggles
-    global DEBUG, TEST_MODE
+    global DEBUG, DOCKER_EXEC, TEST_MODE
     DEBUG = args.debug
     TEST_MODE = args.test_mode
+    DOCKER_EXEC = get_setting('docker_exec')  # must set TEST_MODE before calling get_setting().
 
     return args    # No need to return s, that's available via the module ktools_settings singleton "s"
 
@@ -616,7 +614,7 @@ def main():
     # clear out any terminated-but-still-laying-around remanents of previous runs.
     if not KS.s['no_rm']:
         with open('/dev/null', 'w') as z:
-            subprocess.call([get_setting('docker_exec'), 'rm', get_setting('name')], stdout=z, stderr=z)
+            subprocess.call([DOCKER_EXEC, 'rm', get_setting('name')], stdout=z, stderr=z)
 
     # actually run the launch command
     return subprocess.call(cmnd)

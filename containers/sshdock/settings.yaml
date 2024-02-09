@@ -44,5 +44,7 @@ test_vols:
     contents: "file:testdata/passwd"
 
   - hostkeys/host_keygen.out:
+    owner: "user/root"
+    group: "group/root"
     contents: "command: mkdir -p /tmp/_sshkeygen/etc/ssh/; ssh-keygen -A -f /tmp/_sshkeygen; install -o %owner% -g %group% -m 0600 /tmp/_sshkeygen/etc/ssh/* %targetdir%; rm -rf /tmp/_sshkeygen"
 

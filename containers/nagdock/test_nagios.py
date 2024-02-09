@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import pytest, re, time, warnings
+import pytest, re, sys, time, warnings
+import kcore.common as C
 import kcore.docker_lib as D
 
 
@@ -12,21 +13,33 @@ def container_to_test(): return D.find_or_start_container_env()
 
 # ---------- helpers
 
+DOCKER_EXEC = D.DOCKER_BIN
+
 CMD_FILE = '/rw/dv/TEST/nagdock/var_nagios/rw/nagios.cmd'
 LOG_FILE = '/rw/dv/TEST/nagdock/var_log_nagios/nagios.log'
 STATUS_FILE = '/rw/dv/TEST/nagdock/var_nagios/status.dat'
-MAX_UPDATE_DELAY = 20
+MAX_UPDATE_DELAY = 10
 
 
-def send_cmd(cmd, alt=True):
-  now = str(int(time.time()))
-  msg = '[%s] %s\n' % (now, cmd.replace('$NOW', now))
-  D.emit(f'sending: {msg.strip()}')
-  with open(CMD_FILE, 'a') as f: f.write(msg)
-  time.sleep(1)
+def append_to_file(filename: str, contents: str):
+    print(f'@@ {filename=} {contents=}', file=sys.stderr)
+    with open(filename, 'a') as f: f.write(contents)
 
 
-def parse_nagios(nagfile):
+def send_cmd(cmd: str):
+    now = str(int(time.time()))
+    msg = '[%s] %s\n' % (now, cmd.replace('$NOW', now))
+    D.emit(f'sending to {CMD_FILE}: {msg.strip()}')
+    if not 'podman' in DOCKER_EXEC:
+        append_to_file(CMD_FILE, msg)
+    else:
+        cmd = ['podman', 'unshare', 'python3', __file__, 'append', CMD_FILE, msg]
+        rslt = C.popen(cmd)
+        if not rslt.ok: print(f'write to cmdfile failed: {cmd} -> {rslt.out}', file=sys.stderr)
+    time.sleep(1)
+
+
+def parse_nagios(nagfile: str):
   conf = []
   with open(nagfile) as f: source = f.read()
   for line in source.splitlines():
@@ -97,5 +110,13 @@ def test_nagios(container_to_test):
     status_expect('current_state', '2', conf)
 
 
+def main(args=[]):
+    if args[0] == 'append':
+      append_to_file(args[1], ' '.join(args[2:]))
+      return 0
+    else:
+      sys.exit('This script should be run via pytest3.')
+    
+
 if __name__ == "__main__":
-  main()
+  sys.exit(main(sys.argv[1:]))
