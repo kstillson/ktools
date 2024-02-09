@@ -297,11 +297,11 @@ def _priv(cmd_as_list):
     '''If using podman, we might not be root, so we must utilize the "unshare"
        feature to perform file operations inside the userns mapping. '''
     need_unshare = 'podman' in DOCKER_EXEC and os.getuid() != 0
-    if need_unshare:
-        cmd_as_list = ['podman', 'unshare', 'bash', '-c', ' '.join(cmd_as_list)]
-    out = C.popen(cmd_as_list)
-    if not out.ok: err(f'ERROR: _priv failed: "{cmd_as_list}" -> {out.out}')
-    else: Debug(f'OK: _priv: {cmd_as_list}')
+    cmd = ['podman', 'unshare'] if need_unshare else []
+    cmd.extend(['sh', '-c', ' '.join(cmd_as_list)])
+    out = C.popen(cmd)
+    if not out.ok: err(f'ERROR: _priv failed: "{cmd}" -> {out.out}')
+    else: Debug(f'OK: _priv: {cmd}')
     return out
 
 

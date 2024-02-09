@@ -235,7 +235,7 @@ def stop_container_at_exit(name):
 # filename is in the regular host filesystem.
 def file_expect(expect, filename, invert=False, missing_ok=False):
     ok = os.path.isfile(filename)
-    assert ok or missing_ok
+    assert ok or missing_ok, f'file missing: {filename}'
     if missing_ok and not ok: return
 
     with open(filename) as f: contents = f.read()

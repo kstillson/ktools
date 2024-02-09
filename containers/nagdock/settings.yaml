@@ -12,13 +12,17 @@ vols:
   - var_log_nagios:
     owner: user/nagios
     group: group/www
+
   - var_nagios:
     owner: user/nagios
     group: group/www
+    perm: "02755"
+
   - var_nagios/rw:
     owner: user/nagios
     group: group/www
+    perm: "02775"
+
   - var_nagios/spool/checkresults:
     owner: user/nagios
     group: group/www
-  

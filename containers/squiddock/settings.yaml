@@ -9,6 +9,10 @@ mount_rw:
   - var_cache_squid: /var/cache/squid
 
 vols:
+  - var_log_squid:
+    owner: user/squid
+    perm: "0755"
+    
   - var_log_squid/access.log:
     owner: user/squid
     perm: "0644"
