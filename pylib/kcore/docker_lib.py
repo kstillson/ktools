@@ -257,22 +257,23 @@ def file_expect_within(within_seconds, expect, filename, invert=False, missing_o
         except AssertionError:
             pass
         time.sleep(1)
+        print(f'file_expect_within waiting for {expect} in {filename}. {time.time()} < {stop_time}.')
         assert time.time() < stop_time, f'file expectation not made within timeout: expected "{expect}" in "{filename}" within {within_seconds} secs.  Invert={invert}, missing_ok={missing_ok}'
 
 
 # filename is inside the conainter.
 def container_file_expect(expect, container_name, filename):
     data = C.popener([DOCKER_BIN, 'cp', '%s:%s' % (container_name, filename), '-'])
-    assert not data.startswith('ERROR'), f'error getting file {container_name}:{filename}'
+    assert not data.startswith('ERROR'), f'error getting file {container_name}:{filename} -> {data}'
     assert expect in data
 
 
 # expect commnd run on host (not container) to return certain output and/or error text.
 def popen_expect(cmd, expect_out, expect_err=None, expect_returncode=None, send_in=None):
     rslt = C.popen(cmd, send_in)
-    assert (not expect_returncode) or (rslt.returncode == expect_returncode), 'wrong returncode'
-    assert (not expect_out) or (expect_out in rslt.stdout)
-    assert (not expect_err) or (expect_err in rslt.stderr)
+    assert (not expect_returncode) or (rslt.returncode == expect_returncode), f'wrong returncode; expected {expect_returncode} saw {rslt.returncode}'
+    assert (not expect_out) or (expect_out in rslt.stdout), f'did not see "{expect_out}" in stdout "{rslt.stdout}"'
+    assert (not expect_err) or (expect_err in rslt.stderr), f'did not see "{expect_err}" in stderr "{rslt.stderr}"'
 
 
 # expect commnd run inside the container to return certain output and/or error text.

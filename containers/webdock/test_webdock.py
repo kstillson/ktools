@@ -31,7 +31,6 @@ def test_webdock(container_to_test):
     # Using popen_expect rather than web_expect because it doesn't follow redirects,
     # and we want to check the content of the redirects.
     D.popen_expect(['/usr/bin/curl', f'http://{server}:{port_http}/'], 'moved')
-    D.popen_expect(['/usr/bin/curl', '-k', f'https://{server}:{port_https}/'], 'launchpad')
 
     # Check that plain html is redirected to https (even for invalid links).
     # Note: This actually redirects to home.point0.net by name, which means the
@@ -40,13 +39,8 @@ def test_webdock(container_to_test):
     D.popen_expect(['/usr/bin/curl', f'http://{server}:{port_http}/q'],
                       'document has moved <a href="https://home.point0.net/q">here')
 
-    # Check name-based vhost redirects.
-    D.popen_expect(['/usr/bin/curl', '--header', 'Host: a', f'http://{server}:{port_http}/123'],
-                      'document has moved <a href="http://adafru.it/123">here')
-
     # Check cgi script basics
     D.web_expect('ok', server, '/cgi-bin/test', port_https, https=True, verify_ssl=False)
-
 
 
 def skip_if_not_ken_and_prod():
@@ -62,6 +56,13 @@ def test_ken_prod_cgis(container_to_test):
     D.web_expect('wget', server, '/rc/i/', port_https, https=True, verify_ssl=False)
     D.web_expect('pax_global_header', server, '/rc', port_https, https=True, verify_ssl=False)
 
+    # launchpad as default root dir
+    D.popen_expect(['/usr/bin/curl', '-k', f'https://{server}:{port_https}/'], 'launchpad')
+
+    # Check name-based vhost redirects.
+    D.popen_expect(['/usr/bin/curl', '--header', 'Host: a', f'https://{server}:{port_https}/123'],
+                      'document has moved <a href="http://adafru.it/123">here')
+    
     # homesec static and status pages (no login required)
     D.web_expect('color:', server, '/homesec/static/style.css', port_https, https=True, verify_ssl=False)
     D.web_expect(['ok','tardy'], server, '/homesec/healthz', port_https, https=True, verify_ssl=False)

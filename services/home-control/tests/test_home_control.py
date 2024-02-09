@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, pytest, sys
+import os, pytest, sys, time
 import kcore.docker_lib as D
 
 
@@ -19,5 +19,7 @@ def init():
 # ---------- tests
 
 def test_home_control(init):
+    print('waiting for startup...', file=sys.stderr)
+    time.sleep(4)
     D.web_expect('ok', LOCALHOST, '/control/test-device/test-command', port=PORT)
     D.web_expect('test-command', LOCALHOST, '/varz?TEST-test-device', port=PORT)

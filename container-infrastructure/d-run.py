@@ -297,10 +297,11 @@ def _priv(cmd_as_list):
     '''If using podman, we might not be root, so we must utilize the "unshare"
        feature to perform file operations inside the userns mapping. '''
     need_unshare = 'podman' in DOCKER_EXEC and os.getuid() != 0
-    cmd = ['podman', 'unshare'] if need_unshare else []
-    cmd.extend(cmd_as_list)
-    out = C.popen(cmd)
-    if not out.ok: err(f'_priv command failed: "{cmd}" -> {out.out}')
+    if need_unshare:
+        cmd_as_list = ['podman', 'unshare', 'bash', '-c', ' '.join(cmd_as_list)]
+    out = C.popen(cmd_as_list)
+    if not out.ok: err(f'ERROR: _priv failed: "{cmd_as_list}" -> {out.out}')
+    else: Debug(f'OK: _priv: {cmd_as_list}')
     return out
 
 
@@ -350,8 +351,6 @@ def create_vol_dirs(mount_src_dirs, base_name, test_mode):
 
 
 def create_vol_item(volspec):
-    mode = int(volspec.perm, 8) if volspec.perm else None
-
     # Note: we don't check the ownership or perms of existing directories or
     # files; this script could easily get very complicated or not-as-smart-as-
     # it-thinks-it-is.  If something's already there, assume it's right.
@@ -367,12 +366,13 @@ def create_vol_item(volspec):
     # Create the requested item.
     if volspec.item_type == 'file':
         # need to construct a command compatible with being run under "podman unshare"
-        _priv(['/bin/sh', '-c', f"echo '{_vol_eval_contents(volspec)}' > {volspec.path}"])
-        if mode: _priv(['chmod', volspec.path, mode])
+        ## _priv(['/bin/sh', '-c', f"echo '{_vol_eval_contents(volspec)}' > {volspec.path}"])
+        _priv([f"echo '{_vol_eval_contents(volspec)}' > {volspec.path}"])
+        if volspec.perm: _priv(['chmod', volspec.perm, volspec.path])
 
     elif volspec.item_type == 'dir':
         _priv(['mkdir', volspec.path])
-        if mode: _priv(['chmod', volspec.path, mode])
+        if volspec.perm: _priv(['chmod', volspec.perm, volspec.path])
 
     else: raise(f'internal error; unknown vtype "{volspec.item_type}" for {volspec.path}')
 
@@ -400,6 +400,10 @@ def _vol_eval_contents(volspec):
 
 def _vol_popen_contents(val, target_path):
     _, cmd = val.split(':', 1)
+    if 'podman' in DOCKER_EXEC and 'unshare' not in cmd:
+        # cmd = ['podman', 'unshare', 'bash', '-c', cmd]
+        cmd0 = cmd.replace('"', '\\"')
+        cmd = f'podman unshare bash -c "{cmd0}"'
     newval = C.popener(cmd, shell=True)
     if DEBUG: Debug(f'Generated volume contents for file "{target_path}" via command "{cmd}" -> "{newval}"')
     return newval

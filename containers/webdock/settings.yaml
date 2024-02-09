@@ -24,31 +24,39 @@ test_vols:
     owner: user/apache
     group: group/apache
     perm: "02750"
+    
   - var_www:
     owner: user/root
     group: group/apache
     perm: "02750"
+    
   - var_www/html:
     owner: user/root
     group: group/apache
     perm: "02750"
+    
   - var_www/.ssh:
     owner: user/root
     group: group/apache
     perm: "02750"
+    
   - var_www/.ssh/id_rsa.out:
     contents: "command:cd %targetdir%; ssh-keygen -N '' -f ./id_rsa"
+    
   - var_www/make_links.out:
     contents: "command:cd %targetdir%; ln -s /usr/lib/cgi-bin; ln -s /var/log/apache2 logs; ln -s /run/apache2 run; ln -s /usr/lib/apache2 modules"
+    
   - etc_apache2_keys:
     owner: user/root
     group: group/apache
     perm: "02750"
+    
   - etc_apache2_keys/server-test-cert.out:
     owner: user/apache
     group: group/apache
     contents: "command:cd %targetdir%; openssl req -x509 -newkey rsa:4096 -days 5 -keyout server.key -out server.crt -nodes -subj '/C=US/ST=Virginia/L=NoTown/O=test.net/CN=test-cert'; cat server.crt server.key > server.pem; cp server.pem server-chain.pem; chown %owner%.%group% server*; chmod go-r server*; chmod go+r server.crt; "
   # TODO(defer): This is Ken specific (config from private.d); need to think about how to generalize this...
+  
   - etc_apache2_keys/server-test-cert2.out:
     owner: user/apache
     group: group/apache

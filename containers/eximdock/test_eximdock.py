@@ -52,9 +52,16 @@ def test_sending_email(container_to_test):
 
     else:
         # Otherwise, try to send the mail, and expect it to fail
-        D.file_expect('SMTP error from remote mail server', prefix + 'var/log/exim/mainlog')
-        D.file_expect('Authentication Required', prefix + 'var/log/exim/mainlog')
-        D.file_expect('Frozen', prefix + 'var/log/exim/mainlog')
-        D.file_expect(cookie, prefix + 'var/mail/outbound-archive')
-        warnings.warn('exim test passed, but in crippled mode; could not send real mail due to no credentials.')
+        # Two known failure modes, either relay-rejected or auth-required...
+        with open(prefix + 'var/log/exim/mainlog') as f: logdata = f.read()
+        if 'relay not permitted' in logdata:
+            D.file_expect('rejected', prefix + 'var/log/exim/mainlog')
+            D.file_expect(cookie, prefix + 'var/log/exim/rejectlog')  # subject listed in reject msg.
+            warnings.warn('exim test passed, but in crippled mode; could not send real mail due relay rejection.')
+        else:
+            D.file_expect('SMTP error from remote mail server', prefix + 'var/log/exim/mainlog')
+            D.file_expect('Authentication Required', prefix + 'var/log/exim/mainlog')
+            D.file_expect('Frozen', prefix + 'var/log/exim/mainlog')
+            D.file_expect(cookie, prefix + 'var/mail/outbound-archive')
+            warnings.warn('exim test passed, but in crippled mode; could not send real mail due to no credentials.')
         print('pass')

@@ -1,4 +1,4 @@
-FROM docker.io/alpine:3.17
+FROM docker.io/alpine:3.19
 
 ##_prom MIGHT WANT TO ADD THIS TO THE APK LIST...:  py3-prometheus-client
 

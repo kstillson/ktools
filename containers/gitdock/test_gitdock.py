@@ -3,8 +3,8 @@
 # TODO: copy over test key creation from ../sshdock/test_sshdock.py
 
 import atexit, os, pytest, shutil, subprocess, tempfile
+import kcore.common as C
 import kcore.docker_lib as D
-
 
 # ---------- fixture for container under test
 
@@ -27,10 +27,13 @@ def test_gitdock(container_to_test):
     tmpdir = tempfile.mkdtemp()
     atexit.register(cleanup, tmpdir, orig_dir)
 
+    port = 2223 + container_to_test.port_shift
     os.chdir(tmpdir)
-    subprocess.check_call(
-        ['git', 'clone', 'git-ro@%s:git' % container_to_test.ip],
-        env={ 'GIT_SSH_COMMAND': f'/usr/bin/ssh -i {container_to_test.settings_dir}/testdata/git-ro-test-key -o StrictHostKeyChecking=no' })
+    cmd = ['git', 'clone', 'git-ro@localhost:git']
+    env = { 'GIT_SSH_COMMAND': f'/usr/bin/ssh -i {container_to_test.settings_dir}/testdata/git-ro-test-key -p {port} -v -o StrictHostKeyChecking=no' }
+    rslt = C.popen(cmd, env=env, timeout=5)
+    print(f'{cmd=} {env=} -> {rslt.out=}')
+
     D.file_expect('hithere', 'git/file.txt')
 
     print('pass')
