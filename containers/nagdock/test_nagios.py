@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import pytest, re, sys, time, warnings
+import os, pytest, re, sys, time, warnings
 import kcore.common as C
 import kcore.docker_lib as D
 
@@ -30,12 +30,12 @@ def send_cmd(cmd: str):
     now = str(int(time.time()))
     msg = '[%s] %s\n' % (now, cmd.replace('$NOW', now))
     D.emit(f'sending to {CMD_FILE}: {msg.strip()}')
-    if not 'podman' in DOCKER_EXEC:
-        append_to_file(CMD_FILE, msg)
-    else:
+    if 'podman' in DOCKER_EXEC and os.getuid() != 0:
         cmd = ['podman', 'unshare', 'python3', __file__, 'append', CMD_FILE, msg]
         rslt = C.popen(cmd)
         if not rslt.ok: print(f'write to cmdfile failed: {cmd} -> {rslt.out}', file=sys.stderr)
+    else:
+        append_to_file(CMD_FILE, msg)
     time.sleep(1)
 
 

@@ -400,8 +400,7 @@ def _vol_eval_contents(volspec):
 
 def _vol_popen_contents(val, target_path):
     _, cmd = val.split(':', 1)
-    if 'podman' in DOCKER_EXEC and 'unshare' not in cmd:
-        # cmd = ['podman', 'unshare', 'bash', '-c', cmd]
+    if 'podman' in DOCKER_EXEC and os.getuid() != 0:
         cmd0 = cmd.replace('"', '\\"')
         cmd = f'podman unshare bash -c "{cmd0}"'
     newval = C.popener(cmd, shell=True)
