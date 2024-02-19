@@ -7,17 +7,20 @@ autostart: 5
 #  - 443:8443
 #  - 8443:8443
 
+test_ports: ['8080:8080', '8443:8443']
+
 mount_ro:
   - etc_apache2_keys: /etc/apache2/keys
   - var_www: /var/www
   - /rw/dv/nagdock/var_nagios: /var/nagios
 
-test_ports: ['8080:8080', '8443:8443']
-
 mount_rw:
   - var_bookmarks: /var/bookmarks
   - var_log_apache2: /var/log/apache2
   - /rw/dv/nagdock/var_nagios/rw: /var/nagios/rw
+
+extra_docker:
+  - "--add-host=host:192.168.2.1"
 
 test_vols:
   - var_log_apache2:
@@ -54,10 +57,15 @@ test_vols:
   - etc_apache2_keys/server-test-cert.out:
     owner: user/apache
     group: group/apache
-    contents: "command:cd %targetdir%; openssl req -x509 -newkey rsa:4096 -days 5 -keyout server.key -out server.crt -nodes -subj '/C=US/ST=Virginia/L=NoTown/O=test.net/CN=test-cert'; cat server.crt server.key > server.pem; cp server.pem server-chain.pem; chown %owner%.%group% server*; chmod go-r server*; chmod go+r server.crt; "
+    contents: "command:cd %targetdir%; openssl req -x509 -newkey rsa:4096 -days 5 -keyout server.key -out server.crt -nodes -subj '/C=US/ST=Virginia/L=NoTown/O=test.net/CN=test-cert'; cat server.crt server.key > server.pem; cp server.pem server-chain.pem; chown %owner%.%group% server*; chmod go+r *; chmod go-r *.key; "
   # TODO(defer): This is Ken specific (config from private.d); need to think about how to generalize this...
   
   - etc_apache2_keys/server-test-cert2.out:
     owner: user/apache
     group: group/apache
-    contents: "command:cd %targetdir%; openssl req -x509 -newkey rsa:4096 -days 5 -keyout server-k3n.key -out server-k3n.crt -nodes -subj '/C=US/ST=Virginia/L=NoTown/O=test.net/CN=test-cert'; cat server-k3n.crt server-k3n.key > server-k3n.pem; cp server-k3n.pem server-chain-k3n.pem; chown %owner%.%group% server*; chmod go-r server*; chmod go+r server-k3n.crt; "
+    contents: "command:cd %targetdir%; openssl req -x509 -newkey rsa:4096 -days 5 -keyout server-k3n.key -out server-k3n.crt -nodes -subj '/C=US/ST=Virginia/L=NoTown/O=test.net/CN=test-cert'; cat server-k3n.crt server-k3n.key > server-k3n.pem; cp server-k3n.pem server-chain-k3n.pem; chown %owner%.%group% server*; chmod go+r *; chmod go-r *.key; "
+
+  - etc_apache2_keys/server-test-cert3.out:
+    owner: user/apache
+    group: group/apache
+    contents: "command:cd %targetdir%; openssl req -x509 -newkey rsa:4096 -days 5 -keyout nc.key -out nc.crt -nodes -subj '/C=US/ST=Virginia/L=NoTown/O=test.net/CN=test-cert'; cp nc.crt nc-chain.crt; chown %owner%.%group% nc*; chmod go+r *; chmod go-r *.key; "
