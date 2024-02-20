@@ -216,6 +216,10 @@ class Scanner(object):
       if not pd.username in c_uids: c_uids[pd.username] = set()
       c_uids[pd.username].add(pd.container_name)
     for username in c_uids:
+      skip = False
+      for i in c_uids[username]:
+        if 'nextcloud' in i: skip = True
+      if skip: continue
       if len(c_uids[username]) > 1: self.other_errors.append(f'{username} appears in multiple containers: {c_uids[username]}')
 
   def scan_ro(self):
