@@ -261,7 +261,7 @@ def generate_output(job_ids):
           if ARGS.plain:
             out = f'{job_id}: {line}'
           else:
-            out = line if not 'STDERR' in line else colorize('red', 'STDERR: ') + line[9:]
+            out = line if not 'STDERR' in line else colorize('red', 'STDERR: ') + line[8:]
           if include_in_log(line): print(out, file=f)
     if ARGS.output != '-' and not ARGS.quiet: print(f'\noutput transcript saved to: {ARGS.output}', file=sys.stderr)
 
