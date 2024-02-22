@@ -1,2 +1,3 @@
 root:x:0:root
+adm:x:4:syslog
 daemon:x:2:root,bin,daemon
