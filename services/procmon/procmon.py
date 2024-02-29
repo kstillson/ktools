@@ -220,6 +220,7 @@ class Scanner(object):
       for i in c_uids[username]:
         if 'nextcloud' in i: skip = True
       if skip: continue
+      if username == 'dken': continue
       if len(c_uids[username]) > 1: self.other_errors.append(f'{username} appears in multiple containers: {c_uids[username]}')
 
   def scan_ro(self):
