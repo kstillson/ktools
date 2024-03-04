@@ -6,6 +6,12 @@ SBIN_DONT_DELETE_REGEX="nologin|syslog-ng|supervisord|ssmtp|sendmail"
 WORLD_WRITABLE_DIRS_RM=0
 
 
+# Some files stored in private.d subdirs to keep them out of git;
+# move them into their real positions.
+mv -f /etc/syslog-ng/private.d/* /etc/syslog-ng || true
+
+
 # Fix syslog-specific permissions
 chgrp -R syslog /etc/ssmtp /etc/supervisord.conf /etc/syslog-ng /run /usr/local/sbin/log-mailer
+chmod -R g+r,g-w /etc/ssmtp /etc/supervisord.conf /etc/syslog-ng /run /usr/local/sbin/log-mailer
 chmod g+w /run

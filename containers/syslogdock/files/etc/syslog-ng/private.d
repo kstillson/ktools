@@ -1,0 +1,1 @@
+../../../../../private.d/docker-containers/syslogdock/files/etc/syslog-ng
