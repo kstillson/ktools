@@ -41,7 +41,7 @@ function ColorLines() {
 # ==================== thigns that depend on colorizers...
 
 
-# ---- hilight stderr
+# ---- HiLight stdErr
 
 # (must run this as a command prefix; can't pipe to it because the difference
 #  between stdout and stderr would be lost.)
@@ -61,3 +61,31 @@ function erun() {
     emitC cyan ' $>' "$*"
     eval $(printf '%q ' "$@")
 }
+
+
+# ---- send message to stdout/stderr if terminal, otherwise via zenity
+
+function Msg() {
+    timeout="${timeout:-5}"
+    type="${type:-info}"
+    type="${type,,}"  # lowercase
+    msg="$@"
+
+    if [ -t 1 ]; then
+	if [[ "$type" == "warn"* ]]; then  printf "${YELLOW}WARNING:${RESET} ${msg}\n" >&2
+	elif [[ "$type" == "err"* ]]; then printf "${RED}ERROR:${RESET} ${msg}\n" >&2
+	else                                   echo "$msg"
+	fi
+    else
+	if [[ "$type" == "warn"* ]]; then  /usr/bin/zenity --warning --timeout $timeout --text "$msg" &
+	elif [[ "$type" == "err"* ]]; then /usr/bin/zenity --error --timeout $timeout --text "$msg" &
+	else                               /usr/bin/zenity --info --timeout $timeout --text "$msg" &
+	fi
+    fi
+}
+
+function MsgInfo()     {                          Msg "$@"; }
+function MsgWarn()     { type="warn"              Msg "$@"; }
+function MsgWarning()  { type="warn"              Msg "$@"; }
+function MsgErr()      { type="error" timeout="0" Msg "$@"; }
+function MsgError()    { type="error" timeout="0" Msg "$@"; }

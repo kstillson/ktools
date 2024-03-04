@@ -203,7 +203,7 @@ def init_log(log_title='log', logfile='logfile',
     global FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG, FILTER_LEVEL_MIN
     FILTER_LEVEL_LOGFILE = filter_level_logfile or INFO
     FILTER_LEVEL_STDOUT = filter_level_stdout or NEVER
-    FILTER_LEVEL_STDERR = filter_level_stderr or ERROR
+    FILTER_LEVEL_STDERR = filter_level_stderr or (ERROR if logfile != '-' else NEVER)
     FILTER_LEVEL_SYSLOG = filter_level_syslog or CRITICAL
     FILTER_LEVEL_MIN = min(FILTER_LEVEL_LOGFILE, FILTER_LEVEL_STDOUT, FILTER_LEVEL_STDERR, FILTER_LEVEL_SYSLOG)
 
