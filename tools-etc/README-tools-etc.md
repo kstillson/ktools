@@ -20,6 +20,9 @@ look, and make use of anything that appeals to you.
 - button_relay: listen on serial for messages from Arduino/espnow_button_recvr
   (below) and take actions in response to espnow network events.
 
+- dir-levels.py: run a command in a directory and all its parents
+  (up to a specified stopping point).
+
 - mounter: run-time on-demand FUSE filesystem mounter
 
 - otp.py: generates totp time-based OTP codes (like Google Authenticator)
