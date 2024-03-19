@@ -207,13 +207,14 @@ function builder() {
   emit ""
   emitc blue "<> Building container ${name}"
   if [[ -r Build ]]; then
-    emitc yellow "deferring to ./Build"
-    ./Build
+      emitc yellow "deferring to ./Build"
+      ./Build
   elif [[ -r Makefile ]]; then
-    make
+      make clean
+      make
   else
-    echo "no Makefile, falling back to direct d-build"
-    d-build
+      echo "no Makefile, falling back to direct d-build"
+      d-build
   fi
 }
 
@@ -298,7 +299,7 @@ function upgrade() {
   name=$1
   builder $name
 
-  rslt=$(test $name)
+  rslt=$(test $name | tail -1)
   if [[ "$rslt" != "pass" ]]; then
     emitc red "test failed.  result: $rslt (expected 'pass')"
     return 1
