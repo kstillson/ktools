@@ -48,7 +48,10 @@ if [ -x /usr/bin/dircolors ]; then export COLOR_OPTION='--color=auto'; else expo
 [ -z "$PS1" ] && return
 
 echo ""
-/usr/bin/screen -ls | grep --color=never '('
+/usr/bin/screen -ls | grep --color=never '(' || true
+
+# too dangerous to auto-start screen as root; tends to interfere with stuff like sulogin, cloud-provider auto-logins, etc
+if [[ "$UID" == "0" ]]; then return; fi
 
 echo ""
 read -e -p 'Enter screen session: ' -t 5 got

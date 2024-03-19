@@ -1,11 +1,15 @@
 
+# CAUTION- the master copy of this file is in the services/filrwatch directory.
+# If you change the copy in the containers/filewatch/files/... tree, it will
+# be overwritten during the next container build.
+
 DAY = 24 * 60 * 60
 
 CAM_AGE = 2 * DAY
-RSNAP_LOG_AGE = 2 * DAY                     # Should propogate to rsnapshot within 2 days.
-SYS_LOG_AGE = 2 * 60 * 60                   # Normal logs updated within a few hours
-SYS_LOG_AGE_SLOW = 24 * 60 * 60
-
+RSNAP_LOG_AGE = 2 * DAY                     # Constantly changing logs should propogate to rsnapshot within 2 days.
+SYS_LOG_AGE = 2 * 60 * 60                   # Normal logs updated within a few hours.
+SYS_LOG_AGE_SLOW = 1 * DAY
+TBIRD_MAX_AGE = 14 * DAY
 
 # Maps filename globs to checking rules.
 #
@@ -26,7 +30,7 @@ SYS_LOG_AGE_SLOW = 24 * 60 * 60
 
 CONFIG = {
     # rsnapshot based
-    '/root/rsnap/daily.0/a1/var/log/syslog':                       RSNAP_LOG_AGE,
+    '/root/rsnap/daily.0/a3/var/log/syslog':                       RSNAP_LOG_AGE,
     '/root/rsnap/daily.0/home/home/ken/share/tmp/touch':           RSNAP_LOG_AGE,
     '/root/rsnap/daily.0/home/home/blue-backup/backup/var/log/auth.log': 4 * DAY,
     '/root/rsnap/echo-back/vault-touch':                           32 * DAY,
@@ -35,7 +39,7 @@ CONFIG = {
     '/root/syslog/daemon.log':                     SYS_LOG_AGE,
     '/root/dv/eximdock/var/log/exim/mainlog':      3 * DAY,
     
-    ## '/root/dv/mysqldock/var_log_mysql/mysql.log':  SYS_LOG_AGE_SLOW,
+    # other general services
     '/root/dv/nagdock/var_log_nagios/nagios.log':  SYS_LOG_AGE,
     '/root/dv/rsnapdock/var_log/rsnapshot.log':    RSNAP_LOG_AGE,
     '/root/dv/webdock/var_log_apache2/access.log': SYS_LOG_AGE,
@@ -47,7 +51,13 @@ CONFIG = {
     
     # globs
     '/root/syslog/cron*':                          SYS_LOG_AGE,
-    
+
+    # make sure local encrypted Thunderbird email archive doesn't get too old
+    # (this is the encrypted name for .../Mail/ImapMail/imap.gmail.com/INBOX )
+    ## (disabled: this is a good idea, but getting the permissions to work
+    ##  is turning out to be too painful...)
+    ## '/root/rsnap/daily.0/home/home/ken/share/encfs/home/DaSx,O-MgeM1SwsqEQld8TLI/ScKW5ztumsgoFcssXsphPZJg/e8DhAJvxoDFgiypC5I9FgyDOSFVdqEx7xRwF8nAgCgbMa0/tDHHQLumRIf,RIptwOKwO13v/Bra6UJlLxuFAmvFyoU8TxV96/gZQ2ANy3YMgZk-C5zzgtz5t8':  TBIRD_MAX_AGE,
+
     # specials
     '/root/dnsmasq/dnsmasq.leases':                'NOT-FOUND:.9.',
     '/root/exim':                                  'DIR-EMPTY',

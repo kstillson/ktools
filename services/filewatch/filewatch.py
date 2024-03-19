@@ -65,6 +65,8 @@ import kcore.varz as V
 
 CONFIG = {}     # Loaded by main() from config file.
 
+MAX_LEN_IN_OUTPUT = 80
+
 WEB_HANDLERS = {
   '/healthz':   lambda request: healthz_handler(request),
   None:         lambda request: default_handler(request),
@@ -181,7 +183,8 @@ def healthz_handler(request):
 def default_handler(request):
   summary, details = Scanner().run_scan()
   out = H.wrap(summary, 'p')
-  out += H.list_to_table(details)
+  shortened_details = { (k[:(MAX_LEN_IN_OUTPUT-3)]+'...' if len(k) > MAX_LEN_IN_OUTPUT else k): v for k, v in details.items() }
+  out += H.list_to_table(shortened_details)
   return H.html_page_wrap(out, 'filewatch')
 
 
