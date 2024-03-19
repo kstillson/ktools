@@ -119,11 +119,12 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
 
     # Standard Firefox browsing w/o kasm
-    'k':    Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson', ARGS0, None,   None,       None,            'lp:kstillson@g', '[AC-c] ffox Google:* direct(fj)',              ['g','google','kstillson']),
+    'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
+    'kff':  Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson', ARGS0, None,   None,       None,            'lp:kstillson@g', 'ffox Google:* direct(fj); issues w/ drive',    []),
     'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,       None,           'lp:ken@kds',     'Firefox general browsing direct(fj)',           []),
     'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,       None,           'ff-internal',    'Bad boy Firefox(fj)',                           ['fb3']),
 
-    'kk':   Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kenp0',    ARGS0,  None,   None,       None,           None,             'ffox Google:ken@p0 direct(fj)',                 []),
+    'm':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'media-control', ARGS0, None, None,     None,           None,             'Firefox media control',                         []),
 
     # Experimental / other
     'e':    Cfg('ken',     B.FIREFOX,   None,        False,'add-on experiments', ARGS0, None,   None,       None,            None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
@@ -136,8 +137,8 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
      #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
     # Deprecated modes
-    'ko':   Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'deprecated. Chrome Google:* direct(fj)',       []),
     'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',           []),
+    'kk':   Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kenp0',    ARGS0,  None,   None,       None,           None,             '(unused alt profile) ffox Google:ken@p0 direct(fj)',                 []),
      #'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
      #'ctrl': Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,    'control accts',  ARGS1,  None,   None,       'ken@p0',        'lp:kstillson@g', 'Google control accounts',                       ['C']),
 
