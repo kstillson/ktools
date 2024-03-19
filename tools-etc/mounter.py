@@ -8,6 +8,8 @@ Supports dependency logic, i.e. if either the source or destination
 moint-points for an encfs configuration are remote, the encfs config can
 "need" the appropriate sshfs configs.
 
+TODO: move config into private.d file.
+
 '''
 
 import os, time, sys
@@ -31,6 +33,7 @@ Mp = namedtuple('mountpoint_config', 'name aliases source mp_needs mp_provides')
 #       name            aliases         source                                             mp_needs  mp_provides
 CONFIGS = [
     Mp('share',         ['s'],          Sshfs('-p 222',  'jack:/home/ken/share'),          None,     'mnt/share'),
+    Mp('arc',           ['a'],          Encfs('arc',     'mnt/share/encfs/arc'),           'share',  'mnt/arc'),
     Mp('default',       ['d'],          Encfs('default', 'mnt/share/encfs/default'),       'share',  'mnt/default'),
     Mp('home',          ['h'],          Encfs('home',    'mnt/share/encfs/home'),          'share',  'mnt/home'),
     Mp('private',       ['p'],          Encfs('private', 'mnt/share/encfs/private'),       'share',  'mnt/private'),
@@ -122,7 +125,7 @@ def mount(config: Mp) -> str:
         # Sometimes fulfilling a dep is sufficient.
         if is_mountpoint(config.mp_provides): return emit(config.name + ' already mounted', None)
     if isinstance(config.source, Encfs):
-        cmd = ['/usr/bin/encfs', '--extpass', f'/usr/local/bin/kmc --km_cert "" encfs-{config.source.kmc_name}', d(config.source.encfs_dir), d(config.mp_provides)]
+        cmd = ['/usr/bin/encfs', '--extpass', f'/usr/local/bin/kmc --km_cert /home/ken/.local/bin/keymaster.crt encfs-{config.source.kmc_name}', d(config.source.encfs_dir), d(config.mp_provides)]
     elif isinstance(config.source, Mount):
         cmd = ['/usr/bin/mount']
         smartappend(cmd, config.source.opts)
@@ -211,7 +214,7 @@ def show_gui():
                     cfg.name,
                     'X' if cfg.name in mounted else '',
                     cfg.mp_provides])
-    cmd.extend(['a', 'all', '', ''])
+    cmd.extend(['+', 'all', '', ''])
     cmd.extend(['u', 'unmount', '', ''])
     sel = C.popener(cmd)
     if not sel or sel.startswith('ERR'): sys.exit(0)
@@ -238,7 +241,7 @@ def main(argv=[]):
     for arg in ARGS.targets:
         if arg in ['list', 'L', 'tester', 'test', 't']: list_mounted()
         elif arg in ['umount', 'u', 'fu', '0']: unmounter(arg=='fu')
-        elif arg in ['all', 'a', '1']: mount_all()
+        elif arg in ['all', '+', '1']: mount_all()
         else:
             err = mount_by_name(arg)
             if err: return emit(err, -1)
