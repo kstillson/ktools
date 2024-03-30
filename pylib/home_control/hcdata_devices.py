@@ -43,6 +43,7 @@ DEVICES = {
     'bedroom-light'		: 'TPLINK-SWITCH:tp-%d:%c',
     'bendy'			: 'TPLINK-PLUG:tp-%d:%c',
     'breakfast-nook'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'bla1'                      : 'TPLINK-PLUG:tp-%d:%c',
     'color-moon'		: 'TPLINK-BULB:tp-%d:%c',
     'color-sofa-left'		: 'TPLINK-BULB:tp-%d:%c',
     'color-sofa-right'		: 'TPLINK-BULB:tp-%d:%c',
