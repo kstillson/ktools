@@ -120,11 +120,14 @@ alias AX='{ pkill -u $USER ssh-agent && echo "ssh-agent stopped"; }; rm -f ${SSH
 
 # ls
 alias ls='ls $COLOR_OPTION'
-#
-#alias l='ls $COLOR_OPTION -l'
-#alias ll='ls $COLOR_OPTION -la'
-alias l="_ eza --long --almost-all --group --smart-group --color=always --color-scale=size --color-scale-mode=gradient --links   --git --extended --group-directories-first --mounts"
-alias ll="l --total-size --sort=size --reverse"
+
+if [[ -x /usr/bin/eza ]] || [[ -x /usr/local/bin/eza ]]; then
+    alias l="_ eza --long --almost-all --group --smart-group --color=always --color-scale=size --color-scale-mode=gradient --links   --git --extended --group-directories-first --mounts"
+    alias ll="l --total-size --sort=size --reverse"
+else
+    alias l='ls $COLOR_OPTION -l'
+    alias ll='ls $COLOR_OPTION -la'
+fi
 
 # finding files by name
 function FF() {
