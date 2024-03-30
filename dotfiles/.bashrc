@@ -120,8 +120,14 @@ alias AX='{ pkill -u $USER ssh-agent && echo "ssh-agent stopped"; }; rm -f ${SSH
 
 # ls
 alias ls='ls $COLOR_OPTION'
-alias l='ls $COLOR_OPTION -l'
-alias ll='ls $COLOR_OPTION -la'
+
+if [[ -x /usr/bin/eza ]] || [[ -x /usr/local/bin/eza ]]; then
+    alias l="_ eza --long --almost-all --group --smart-group --color=always --color-scale=size --color-scale-mode=gradient --links   --git --extended --group-directories-first --mounts"
+    alias ll="l --total-size --sort=size --reverse"
+else
+    alias l='ls $COLOR_OPTION -l'
+    alias ll='ls $COLOR_OPTION -la'
+fi
 
 # finding files by name
 function FF() {
@@ -173,6 +179,7 @@ alias e='$EDITOR'
 alias E='/usr/bin/emacs -nw'
 alias m='less'
 alias L='less'
+alias BC='batcat'
 alias T='TAB'
 alias TAB='column -t'
 alias Launch='xdg-open'   # opens with default viewer
@@ -232,14 +239,16 @@ alias R="sudo -i bash"
 # btrfs
 alias Btrfs='findmnt -t btrfs'
 # apt
-alias    AAR='sudo apt auto-remove'
-function AI() { _ apt-cache show "$@"; }
-function AIN() { sudo apt-get install "$@"; }
-alias    AR='sudo apt remove'
-function AS() { { apt-cache search "$@"; printf "\n<> Snaps\n"; snap search "$@"; printf "\n<> Flathub\n"; flatpak search "$@"; printf "\n<> appimage\n"; appimage-cli-tool search "$@"; } | less; }
+if [[ -x /usr/bin/nala ]]; then APT=nala; else APT=apt; fi
+alias    AAR='sudo $APT autoremove'
+alias    AI="_ $APT show"
+alias    AIN="sudo $APT install"
+alias    AR='sudo $APT remove'
+function AS() { { $APT search "$@"; printf "\n<> Snaps\n"; snap search "$@"; printf "\n<> Flathub\n"; flatpak search "$@"; printf "\n<> appimage\n"; appimage-cli-tool search "$@"; } | less; }
 function AQ() { /usr/bin/dpkg -l "$1" | /usr/bin/tail -1 | /bin/egrep --color=always -e '^..'; }
-alias    AU='sudo apt update'
-alias    AUP='sudo apt upgrade'
+alias    AU='sudo $APT update'
+alias    AUP='sudo $APT upgrade'
+# process mgmt
 alias    KA='sudo /usr/bin/killall '
 alias    KU='sudo /usr/bin/killall -u '
 

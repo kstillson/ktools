@@ -28,6 +28,7 @@ clean:
 	rm -rf $(TEST_LOG) __pycache__ */__pycache__ */*/__pycache__ .pytest_cache */.pytest_cache */*/.pytest_cache dist *.egg-info tools/keymaster.crt
 	@printf "\n NOT cleaning the $(YELLOW)venv directory$(RESET).  use make target 'vclean' or remove manually if needed.\n\n"
 
+# TODO:bug: in "comp" below, -L is meant to transform directory name, but it'll also catch filenames, e.g. ktools_settings.py -> kktools_settings.py.
 comp:
 	$(COMP) -b "$(INSTALL_BASE)" -L 'tools/ktools' circuitpy_sim/*.py home_control/*.py kcore/*.py tools/*.py
 
