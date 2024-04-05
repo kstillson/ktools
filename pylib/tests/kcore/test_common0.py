@@ -181,7 +181,7 @@ def test_web_get():
 
     # Test actual ssl verification failure.
     resp = C.web_get_e('https://a2.point0.net/test.html')
-    assert "doesn't match" in str(resp.exception)
+    assert "match" in str(resp.exception)  # searching for "doesn't match", but generalized for version differences.
     assert not resp.ok
     assert not resp.status_code
     assert resp.text == ''
