@@ -108,7 +108,7 @@ WEB_HANDLERS = {
 # ---------- Global state & types
 
 ARGS = None
-DOCKER_MAP = {}          # Maps container id (str) to container name (str).
+DOCKER_MAP = {}          # Maps container id (str) to container name (str).  popualted by get_docker_map()
 SCANNER = None           # Singleton of current scanner instance.
 UNEXPECTED_PREV = set()  # set of pids from the previous scan, used for change detection.
 WL = None                # List[WL] (see procmon_whitelist.py)
@@ -144,6 +144,7 @@ def get_docker_map():
       continue
     cid, name = i.split(' ', 1)
     cid_map[cid] = name
+  C.log_debug(f'procmap: {cid_map}')
   return cid_map
 
 
@@ -260,19 +261,19 @@ class Scanner(object):
       wl.hit_last = now()
       wl.hit_count += 1
       wl.hit_count_last_scan += 1
-    if ARGS.debug: C.log_debug('proc: %s; wl: %s' % (pd.desc, wl))
+    C.log_debug('proc: %s; wl: %s' % (pd.desc, wl))
 
     if not wl:  # first check if its on the greylist.
       gl = self.find_whitelist_entry(WL.GREYLIST, pd)
       if gl:
-        if ARGS.debug: C.log_debug('proc: %s; gl: %s' % (pd.desc, gl))
+        C.log_debug('proc: %s; gl: %s' % (pd.desc, gl))
         gl.hit_last = now()
         gl.hit_count += 1
         gl.hit_count_last_scan += 1
         return self.add_to_pset(self.greylisted, pd)
 
       else:  # Neither whitelist nor greylist; this is an unexpected process.
-        if ARGS.debug: C.log_debug('UNEXPECTED: %s' % pd.desc)
+        C.log_debug('UNEXPECTED: %s' % pd.desc)
         return self.add_to_pset(self.unexpected, pd)
 
     if wl.allow_children:
@@ -281,6 +282,7 @@ class Scanner(object):
     # Not auto-accepting-children, so add the children for inspection.
     self.add_to_pset(self.expected, pd)
     if 'containerd-shim' in pd.name: return self.add_docker_tree(pd)
+    if '/usr/bin/conmon' in pd.name: return self.add_docker_tree(pd)
     self.add_pid_list(pd.child_pids, container_name)
 
 
@@ -297,16 +299,20 @@ class Scanner(object):
       for i, part in enumerate(parts):
         if part == b'-id':
           cid = parts[i + 1].decode()[:12]
+          C.log_debug(f'pid {init_pid}: got cid from -id (docker style): {cid}')
+          break
+        elif part.startswith(b'/usr/bin/conmon'):
+          cid = parts[i + 4].decode()[:12]
+          C.log_debug('pid {init_pid}: got cid from conmon (podman style): {cid}')
           break
       else:
         return self.add_error_process(pd, f'unable to get container id for pid {init_pid}')
-      cname = DOCKER_MAP[cid]
+      cname = DOCKER_MAP.get(cid, f'cid:{cid}')
     except Exception as e:
-      if cid: cname = 'cid:' + cid    # Cant get name, but we have cid; use that.
-      else: return self.add_error_process(pd, f'Unable to parse docker shim; {cpuset=}, {cid=}, {match=}, {cname=}, {err=}')
+      return self.add_error_process(pd, f'Unable to parse docker shim; {cpuset=}, {cid=}, {match=}, {cname=}, {e=}')
 
     # We have a container name, so add the subtree.
-    if ARGS.debug: C.log_debug('adding docker subtree. parent pid=%d, cname=%s, cid=%s, children=%s' % (pd.pid, cname, cid, shim_children_pids))
+    C.log_debug('adding container subtree. parent pid=%d, cname=%s, cid=%s, children=%s' % (pd.pid, cname, cid, shim_children_pids))
     self.add_pid_list(shim_children_pids, cname)
 
 
@@ -323,7 +329,7 @@ class Scanner(object):
 
   def add_to_pset(self, pset, pd, note=''):
     if pd.cmdline == '':
-      if ARGS.debug: C.log_debug(f'skipping add of process with empty cmdline: {pd.desc}')
+      C.log_debug(f'skipping add of process with empty cmdline: {pd.desc}')
       return
     if note: pd.note = note
     pset.add(pd.pid)

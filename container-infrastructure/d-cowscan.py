@@ -3,11 +3,11 @@
 Scan copy-on-write directories of up containers for unexpected changed files.
 
 TODO: real doc
-TODO: move the IGNORE_LIST to a config file.
 '''
 
 import argparse, datetime, glob, os, socket
 import kcore.common as C
+import kcore.docker_lib as DL             # get_cow_dir
 import kcore.uncommon as UC
 import ktools.ktools_settings as KS
 
@@ -15,36 +15,14 @@ import ktools.ktools_settings as KS
 
 DOCKER_EXEC = KS.get('docker_exec')
 
-SHIFT_UIDS = KS.get('shift_uids')
-SHIFT_GIDS = KS.get('shift_gids')
-DLIB = f'/var/lib/docker/{SHIFT_UIDS}.{SHIFT_GIDS}' if SHIFT_UIDS else '/var/lib/docker'
-
 # ---------- global state
 
-ARGS = {}
+ARGS = {}                           # populated by main()
 HOSTNAME = socket.gethostname()
+IGNORE_LIST = []                    # populated by load_ignore_list()
 PROBLEMS = 0
 SAW_TOKEN = False
 TOKEN = str(datetime.datetime.now())
-
-# This list will be appended with the contents of
-# private.d/d-cowscan.ignore:IGNORE_LIST .  See the --private flag.
-
-IGNORE_LIST = [
-    'dbg-',
-    '.pid',
-    '.pyc',
-    'nagdock:/tmp/x',
-    'rclonedock-dbg:/',
-    'rclonedock:/root/.cache/rclone',
-    'rclonedock:/root/.config/rclone/rclone.conf',
-    'rsnapdock:/etc/rsnapshot',
-    'rsnapdock:/root/.bashrc',
-    'rsnapdock:/root/.ssh',
-    'syslogdock:/run/syslog-ng.ctl',
-    'syslogdock:/run/syslog-ng.persist',
-    'webdock:/tmp/pb.rl',
-]
 
 
 # ----------
@@ -103,12 +81,9 @@ def problem(filespec, msg):
 def load_ignore_list(privfile):
     if not privfile: return
     privfile_orig = privfile
-    if not os.path.isfile(privfile):
-        privfile = os.path.join(os.path.dirname(__file__), privfile_orig)
-    if not os.path.isfile(privfile):
-        privfile = os.path.join('private.d', privfile_orig)
-    if not os.path.isfile(privfile):
-        return problem(privfile, 'unable to load --private ignore list')
+    if not os.path.isfile(privfile): privfile = os.path.join(os.path.dirname(__file__), privfile_orig)
+    if not os.path.isfile(privfile): privfile = os.path.join('private.d', privfile_orig)
+    if not os.path.isfile(privfile): return problem(privfile, 'unable to load --ignore list')
     global IGNORE_LIST
     addl = UC.load_file_as_module(privfile)
     IGNORE_LIST.extend(addl.IGNORE_LIST)
@@ -125,21 +100,20 @@ def write_token():
 def main():
     ap = argparse.ArgumentParser(description='docker container launcher')
     ap.add_argument('--debug', '-d',     default=0, type=int, help='debug level, 0-3')
-    ap.add_argument('--private', '-p',   default='d-cowscan.ignore', help='file with additional IGNORE_LIST contents')
+    ap.add_argument('--ignore', '-i',    default='d-cowscan.ignore', help='file with additional IGNORE_LIST contents')
     ap.add_argument('--rm', '-R',        action='store_true', help='remove offending files rather than just printing them.')
     ap.add_argument('--token_container', default='eximdock', help='name of container into which to induce a change to make sure we detect it')
     ap.add_argument('--token_file',      default='/tmp/.stamp', help='name of file for induced change')
     global ARGS
     ARGS = ap.parse_args()
 
-    load_ignore_list(ARGS.private)
+    load_ignore_list(ARGS.ignore)
     write_token()
 
     for temp in C.popener([DOCKER_EXEC, 'ps', '--format', '{{.Names}} {{.ID}}']).split('\n'):
         if not temp: continue
         container, id_prefix = temp.split(' ')
-        mount_id = read_file(resolve_glob(DLIB + '/image/overlay2/layerdb/mounts/%s*/mount-id' % id_prefix))
-        cow_dir = DLIB + '/overlay2/%s/diff' % mount_id
+        cow_dir = DL.get_cow_dir(container)
         if ARGS.debug: print('DEBUG: working on %s -> %s' % (container, cow_dir))
         for real_root, dirs, files in os.walk(cow_dir):
             root = real_root[len(cow_dir):]
