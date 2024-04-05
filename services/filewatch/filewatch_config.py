@@ -9,6 +9,7 @@ CAM_AGE = 2 * DAY
 RSNAP_LOG_AGE = 2 * DAY                     # Constantly changing logs should propogate to rsnapshot within 2 days.
 SYS_LOG_AGE = 2 * 60 * 60                   # Normal logs updated within a few hours.
 SYS_LOG_AGE_SLOW = 1 * DAY
+RUBUNTU_LOG_MAX_AGE = 7 * DAY
 TBIRD_MAX_AGE = 14 * DAY
 
 # Maps filename globs to checking rules.
@@ -43,6 +44,8 @@ CONFIG = {
     '/root/dv/nagdock/var_log_nagios/nagios.log':  SYS_LOG_AGE,
     '/root/dv/rsnapdock/var_log/rsnapshot.log':    RSNAP_LOG_AGE,
     '/root/dv/webdock/var_log_apache2/access.log': SYS_LOG_AGE,
+
+    '/root/rsnap/daily.0/a4/rw/home/rubuntu/backup/var/log/syslog': RUBUNTU_LOG_MAX_AGE,
     
     # cron exceptions
     '/root/syslog/cron-blue.log':                  3 * DAY,
