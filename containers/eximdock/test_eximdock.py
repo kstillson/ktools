@@ -35,7 +35,7 @@ def test_sending_email(container_to_test):
     cookie = D.gen_random_cookie()
     send_email(cookie, 'localhost', 25 + container_to_test.port_shift)
 
-    time.sleep(5)
+    time.sleep(10)
     ## prefix = container_to_test.vol_dir + ('/' if prod_mode else '/_rw_dv_eximdock_')
     prefix = container_to_test.vol_dir + '/'
 
