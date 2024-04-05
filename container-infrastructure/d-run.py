@@ -267,6 +267,31 @@ def assemble_vol_specs(mount_src_dirs, base_name):
 
     return specs
 
+# podman related helpers
+
+def _need_uid_gid_shift() -> bool:
+    if not get_setting('shift_uids'): return False
+    if 'docker' in get_setting('docker_exec'): return True
+    # not docker, so we must be using podman
+    if os.getuid() != 0: return False  # will use unshare, so it'll do the shift for us
+    return True  # we're root, so we do the shift manually.
+
+def _maybe_shift_uid(base_uid_str: str) -> str:
+    if not _need_uid_gid_shift(): return base_uid_str
+    uid = int(base_uid_str) if base_uid_str.isdigit() else pwd.getpwnam(base_uid_str).pw_uid
+    shift = int(get_setting('shift_uids'))
+    if uid >= shift: return base_uid_str
+    return str(uid + shift)
+
+def _maybe_shift_gid(base_gid_str: str) -> str:
+    if not _need_uid_gid_shift(): return base_gid_str
+    gid = int(base_gid_str) if base_gid_str.isdigit() else grp.getgrnam(base_gid_str).gr_gid
+    shift = int(get_setting('shift_gids'))
+    if gid >= shift: return base_gid_str
+    return str(gid + shift)
+
+def _need_unshare():
+    return 'podman' in get_setting('docker_exec') and os.getuid() != 0
 
 def _resolve_inside_container_owner(owner):
     if not owner: return owner
@@ -277,12 +302,8 @@ def _resolve_inside_container_owner(owner):
         for line in f:
             if line.startswith(f'{user}:'):
                 parts = line.split(':')
-                uid = int(parts[2])
-                if 'podman' in DOCKER_EXEC:
-                    owner = str(uid)
-                else:
-                    shift = int(get_setting('shift_uids') or '0')
-                    owner = str(uid + shift)
+                uid = parts[2]
+                owner = _maybe_shift_uid(uid)
                 break
     if uid is None:
         try:
@@ -421,15 +442,41 @@ def delete_vol_item(volspec):
 
 
 def fix_ownership(volspec):
+    '''If using rootless podman, utilize the "unshare" option to perform the chown
+       inside the userns mapping.  This means we do not want to shift the
+       uid's: the userns will do that for us.  For Docker, there is no unshare
+       option, so we've got to be root and use traditional chown.  But for
+       this case, we do need to manually shift the target uid.    '''
     if not volspec.path: return
 
     path = volspec.path   # local copies to allow modification
     owner = str(volspec.owner or '')
     group = str(volspec.group or '')
+    docker_exec = get_setting('docker_exec')
 
-    Debug(f'  chown {path} -> {owner}.{group}')
-    if owner: _priv(['chown', owner, path])
-    if group: _priv(['chgrp', group, path])
+    if _need_unshare():
+        Debug(f'  podman chown {path} -> {owner}')
+        if owner:
+            rslt = C.popen([docker_exec, 'unshare', 'chown', owner, path])
+            if not rslt.ok: return err(f'error: attempt to podman/unshare chown {path} to {owner} failed: {rslt.out}')
+        if group:
+            rslt = C.popen([docker_exec, 'unshare', 'chgrp', group, path])
+            if not rslt.ok: return err(f'error: attempt to podman/unshare chgrp {path} to {group} failed: {rslt.out}')
+
+    elif os.getuid() == 0:
+        owner = _maybe_shift_uid(owner)
+        group = _maybe_shift_gid(group)
+
+        Debug(f'  root chown {path} -> {owner}.{group}')
+        if owner:
+            rslt = C.popen(['chown', owner, path])
+            if not rslt.ok: return err(f'error: attempt to chown {path} to {owner} failed: {rslt.out}')
+        if group:
+            rslt = C.popen(['chgrp', group, path])
+            if not rslt.ok: return err(f'error: attempt to chgrp {path} to {group} failed: {rslt.out}')
+
+    else:
+        return Debug(f'Skipping chown to {owner} for {path} because not root and not using podman.')
 
 
 # ---------- primary business logic: construct the launch command
@@ -443,6 +490,7 @@ def gen_command_via_settings_yaml():
     add_simple_control(cmnd, 'dns')
     add_simple_control(cmnd, 'env')
     add_simple_control(cmnd, 'extra_docker', '')
+    add_simple_control(cmnd, 'extra_docker0', '')
     add_simple_control(cmnd, 'hostname')
     add_simple_control(cmnd, 'network')
 
