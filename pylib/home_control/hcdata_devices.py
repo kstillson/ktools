@@ -87,6 +87,11 @@ DEVICES = {
 
     # ---------- web-based
 
+    # A general device for sending commands to any web server, so we don't
+    # _need_ a device for every possible server/path combination
+    'web'                : 'WEB:%c',
+    'webs'               : 'WEBS:%c',
+
     # End-point names for web-based individual controls
     # Accent color lights (controlled by homesec)
     'accents-party:off'  : 'WEBS:home.point0.net/p0',

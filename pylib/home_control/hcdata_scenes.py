@@ -44,8 +44,8 @@ SCENES = {
   'main'        : [ 'fam', 'kit', 'lng', 'office' ],
 
  # Groupings by similar purpose
-  'sirens'      : [ 'siren1', 'siren2', 'siren3' ],
   'accents'     : [ 'color-sofa-left', 'color-sofa-right', 'color-moon', 'color-stairs' ],
+  'sirens'      : [ 'siren1', 'siren2', 'siren3' ],
   'specials'    : [ 'accents', 'neotree', 'twinkle', 'lightning' ],
 
    # (used in redblue animation by ulb/panic)
@@ -78,16 +78,22 @@ SCENES = {
                      'family-room-right:dim:15', 'kitchen-pendants:dim:40', 'kitchen:dim:5', 'lounge:dim:15',
                      'office:dim:20', 'window-lights:dim:30',
                      'accents-party', 'neotree', 'twinkle', 'lightning' ],
-  'red:on'     : [ 'accents:red', 'door-entry:red', 'lantern:blue' ],
-  'red:off'    : [ 'accents:bulb-off', 'door-entry:white', 'lantern:bright-warm' ],
-  'red:dim'    : [ 'main:dim', 'red:on' ],
-  'red:med'    : [ 'main:med', 'red:on' ],
+  ##
+  'red:go'      : [ 'main:off', 'red:on' ],
+  'red:dim'     : [ 'main:dim', 'red:on' ],
+  'red:med'     : [ 'main:med', 'red:on' ],
+  'red:stop'    : [ 'main:med', 'red:off' ],
+  #
+  'redweb:red'  : [ 'web:lightning/red', 'web:trellis2/red', 'web:twinkle/red' ],
+  'redweb:off'  : [ 'web:lightning/off', 'web:trellis2/off', 'web:twinkle/off' ],
+  #
+  'red:on'      : [ 'accents:red', 'door-entry:red', 'lantern:blue', 'redweb:red' ],
+  'red:off'     : [ 'accents:bulb-off', 'door-entry:white', 'lantern:bright-warm', 'redweb:off' ],
 
  # Scene aliases
   'blue'        : [ 'accents:blue' ],
   'down-dim'    : [ 'main:dim' ],
   'leaving'     : [ 'away' ],
-  'red'         : [ 'accents:red' ],
 
  # Shorthand aliases (intended for cli use)
   '00'          : [ 'all:off' ],
