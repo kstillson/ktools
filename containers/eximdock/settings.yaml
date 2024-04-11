@@ -2,7 +2,7 @@
 autostart: 5
 
 ports:
-  - 127.0.0.1:25:2525
+  - 25:2525
 
 # console output is redundant to exim logs.
 log: none
