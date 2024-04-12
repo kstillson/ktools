@@ -4,42 +4,7 @@
 #  logic is included for gnome-terminal, edit the launch profile, under the
 #  'command' tab, and check the box to use a login shell.)
 
-[[ -r ~/.bashrc ]] && . ~/.bashrc
 [[ -r ~/.profile.local ]] && . ~/.profile.local
-
-
-# ---- exported internal use varz
-
-export BLACK='\u001b[30m'
-export BLUE='\033[01;34m'
-export CYAN='\033[01;36m'
-export GREEN='\033[01;32m'
-export MAGENTA='\033[01;35m'
-export RED='\033[0;31m'
-export YELLOW='\033[0;33m'
-export WHITE='\033[01;37m'
-export RESET='\033[00m'
-
-export THREADS=$(grep -c ^processor /proc/cpuinfo)
-
-
-# ---- export app settings
-
-[[ -f /usr/bin/emacs ]] && export EDITOR="/usr/bin/emacs -nw"
-export PAGER="less"
-
-export FZF_DEFAULT_OPTS="\
- --bind 'ctrl-a:first'              --bind 'ctrl-e:last'  \
- --bind 'ctrl-v:page-down'          --bind 'alt-v:page-up'  \
- --bind '?:preview(Cat {})'         --bind 'shift-down:preview-page-down'  \
- --bind 'alt-shift-up:preview-top'  --bind 'alt-shift-down:preview-bottom'  \
- --bind 'ctrl-/:change-preview-window(70%|down,border-top|hidden|)' \
- --cycle   --layout=reverse-list"
-
-export LESS='--chop-long-lines --ignore-case --jump-target=4 --LINE-NUMBERS --LONG-PROMPT --mouse --quit-at-eof --quit-if-one-screen --quiet --RAW-CONTROL-CHARS --save-marks --squeeze-blank-lines --status-column --HILITE-UNREAD'
-less --version | fgrep -q 'less 5' && export LESS="$LESS --line-num-width=4 --use-color"
-
-if [ -x /usr/bin/dircolors ]; then export COLOR_OPTION='--color=auto'; else export COLOR_OPTION=''; fi
 
 
 # ---- screen startup logic

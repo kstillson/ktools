@@ -7,8 +7,44 @@ else
   PATH=~/bin:/usr/local/bin:/usr/bin:/bin
 fi
 
-# If not running interactively, stop now.
+# ** If not running interactively, stop here. **
 [ -z "$PS1" ] && return
+
+
+# ======================================================================
+# general use variables
+
+export BLACK='\u001b[30m'
+export BLUE='\033[01;34m'
+export CYAN='\033[01;36m'
+export GREEN='\033[01;32m'
+export MAGENTA='\033[01;35m'
+export RED='\033[0;31m'
+export YELLOW='\033[0;33m'
+export WHITE='\033[01;37m'
+export RESET='\033[00m'
+
+export THREADS=$(grep -c ^processor /proc/cpuinfo)
+
+
+# ======================================================================
+# common app settings
+
+[[ -f /usr/bin/emacs ]] && export EDITOR="/usr/bin/emacs -nw"
+export PAGER="less"
+
+export FZF_DEFAULT_OPTS="\
+ --bind 'ctrl-a:first'              --bind 'ctrl-e:last'  \
+ --bind 'ctrl-v:page-down'          --bind 'alt-v:page-up'  \
+ --bind '?:preview(Cat {})'         --bind 'shift-down:preview-page-down'  \
+ --bind 'alt-shift-up:preview-top'  --bind 'alt-shift-down:preview-bottom'  \
+ --bind 'ctrl-/:change-preview-window(70%|down,border-top|hidden|)' \
+ --cycle   --layout=reverse-list"
+
+export LESS='--chop-long-lines --ignore-case --jump-target=4 --LINE-NUMBERS --LONG-PROMPT --mouse --quit-at-eof --quit-if-one-screen --quiet --RAW-CONTROL-CHARS --save-marks --squeeze-blank-lines --status-column --HILITE-UNREAD'
+less --version | fgrep -q 'less 5' && export LESS="$LESS --line-num-width=4 --use-color"
+
+if [ -x /usr/bin/dircolors ]; then export COLOR_OPTION='--color=auto'; else export COLOR_OPTION=''; fi
 
 
 # ======================================================================
@@ -122,7 +158,7 @@ alias AX='{ pkill -u $USER ssh-agent && echo "ssh-agent stopped"; }; rm -f ${SSH
 alias ls='ls $COLOR_OPTION'
 
 if [[ -x /usr/bin/eza ]] || [[ -x /usr/local/bin/eza ]]; then
-    alias l="_ eza --long --almost-all --group --smart-group --color=always --color-scale=size --color-scale-mode=gradient --links   --git --extended --group-directories-first --mounts"
+    alias l="_ eza --long --all --all --group --smart-group --color=always --color-scale=size --color-scale-mode=gradient --links   --git --extended --group-directories-first --mounts"
     alias ll="l --total-size --sort=size --reverse"
 else
     alias l='ls $COLOR_OPTION -l'
