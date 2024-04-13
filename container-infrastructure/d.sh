@@ -262,6 +262,15 @@ function test() {
   outdir=$(dirname ${out})
   [[ -d ${outdir} ]] || mkdir -p ${outdir}
 
+  if [[ -x $TESTER ]]; then
+      rslt=$($TESTER -r -o "${out}" "$@")
+      if [[ "$rslt" == *"pass"* ]]; then
+	  emitc green "test passed.    ( $out )"
+	  echo "pass"
+	  return
+      fi
+  fi
+
   if [[ -f docker-compose.yaml ]]; then
       target="test_${name}"
       if [[ "$DOCKER_EXEC" == "docker" ]]; then rm="--rm"; else rm=""; fi
@@ -278,20 +287,7 @@ function test() {
       return
   fi
 
-  if [[ ! -x $TESTER ]]; then
-      emitc yellow "test not available ($TESTER not found);  assuming pass."
-      echo "pass"
-      return
-  fi
-
-  rslt=$($TESTER -r -o "${out}" "$@")
-  if [[ "$rslt" == *"pass"* ]]; then
-    emitc green "test passed.    ( $out )"
-    echo "pass"
-    return
-  fi
-
-  emitc red "test failed.    ( $out )"
+  emitc red "no testing methods available or all available methods failed."
   echo "fail"
 }
 
