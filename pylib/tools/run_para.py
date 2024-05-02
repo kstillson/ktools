@@ -163,16 +163,15 @@ def gen_id_real(cmd, rm_substrings):
   return cmd
 
 
+JOB_COUNT = 0
+
 # Wrapper around gen_id_real that handles duplicate outputs.
 def gen_id(cmd, job_ids, rm_substrings):
+  global JOB_COUNT
+  JOB_COUNT += 1
   new_id = gen_id_real(cmd, rm_substrings)
-  if not new_id in job_ids: return new_id
-  x = 2
-  while x < 100:
-    id = f'{new_id}.{x}'
-    if not id in job_ids: return id
-    x += 1
-  raise ValueError('too many identical commands')
+  if not new_id in job_ids: return new_id  # It's unique, so go with it.
+  return f'{new_id}.{JOB_COUNT}'
 
 
 def include_in_log(line):
