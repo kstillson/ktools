@@ -37,11 +37,14 @@ SCENES = {
   'bedrm'       : [ 'bedroom-entrance', 'bedroom-light' ],
   'fam'         : [ 'family-room-left', 'family-room-right', 'dining-chandelier' ],
   'inside'      : [ 'bedrm', 'fam', 'kit', 'main' ],
-  'ofc'         : [ 'office' ],
-  'outside'     : [ 'door-entry', 'landscaping', 'lantern', 'patio', 'rear-flood' ],
+  'landscaping' : [ 'out-front', 'out-back' ],
+  'outside'     : [ 'door-entry', 'lantern', 'patio', 'landscaping', 'rear-flood' ],
   'kit'         : [ 'kitchen', 'kitchen-pendants', 'breakfast-nook' ],
   'lng'         : [ 'bendy', 'lounge', 'window-lights', 'lounge-chandelier' ],
   'main'        : [ 'fam', 'kit', 'lng', 'office' ],
+  # aliases
+  'ofc'         : [ 'office' ],
+  'out-back'    : [ 'pout2' ],
 
  # Groupings by similar purpose
   'accents'     : [ 'color-sofa-left', 'color-sofa-right', 'color-moon', 'color-stairs' ],
@@ -105,10 +108,10 @@ SCENES = {
   'b'           : [ 'bedtime' ],
   'c'           : [ 'comp' ],
   'k'           : [ 'kitchen' ],
-  'l'           : [ 'landscaping', 'out-all' ],
-  'la'          : [ 'out-all' ],
-  'o'           : [ 'outside', 'out-all' ],
+  'l'           : [ 'landscaping' ],
   'O'           : [ 'office' ],
+  'o'           : [ 'outside' ],
+  'out'         : [ 'outside' ],
 
 # Special dynamically expanded
   'TP'          : [ '$PLUGIN_NAME:TPLINK*' ],

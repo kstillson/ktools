@@ -103,8 +103,8 @@ DEVICES = {
     'monitor:off'        : 'WEB:blue:2222/L',
 
     # Outside front lighting controller:
-    'out-all:off'        : 'WEB:pout:8080/a0', # includes pout2 and thus all back units
-    'out-all:on'         : 'WEB:pout:8080/a1',
+    'out-front:off'      : 'WEB:pout:8080/a0', # EXCLUDES pout2 and thus all back units
+    'out-front:on'       : 'WEB:pout:8080/a1',
     'out-monument:off'   : 'WEB:pout:8080/10',
     'out-monument:on'    : 'WEB:pout:8080/11',
     'out-sconce:off'     : 'WEB:pout:8080/20',
@@ -129,6 +129,14 @@ DEVICES = {
     'out-arch:off'       : 'WEB:pout2:8080/30',
     'out-arch:on'        : 'WEB:pout2:8080/31',
     'out-back-moon:off'  : 'WEB:pout2:8080/40',
+
+    # command alaises (scenes echo down these non-binary commands)
+    'out-front:dim'      : 'WEB:pout:8080/a1',
+    'out-front:full'     : 'WEB:pout:8080/a1',
+    'out-front:med'      : 'WEB:pout:8080/a1',
+    'pout2:dim'          : 'WEB:pout:8080/81',
+    'pout2:full'         : 'WEB:pout:8080/81',
+    'pout2:med'          : 'WEB:pout:8080/81',
 
     # Effects: twinkle (firefly animations)
     'twinkle:off'        : 'WEB:twinkle/0',
