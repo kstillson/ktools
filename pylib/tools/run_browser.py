@@ -78,7 +78,7 @@ for users to make site-specific changes w/o affecting git controlled file.
 
 '''
 
-import fnmatch, os, psutil, signal, sys, time
+import fnmatch, os, psutil, signal, sys, tempfile, time
 from collections import namedtuple
 from enum import Enum
 
@@ -91,7 +91,7 @@ ARGS = None  # populated by main()
 Cfg = namedtuple('browser_config', 'uid browser sandbox reset profile args appmode dis_uids sync_acct pw_db note aliases')
 
 B =  Enum('Browsers', 'CHROME FIREFOX')
-Sb = Enum('Sandbox',  'FIREJAIL KASM BOTH')  # BOTH => fj on local browser, and remote kasm browser
+Sb = Enum('Sandbox',  'FIREJAIL KASM FIREKASM SNAP')  # FIREKASM => fj on local browser, and remote kasm browser
 
 CURRENT_USER = os.environ.get('USER') or os.environ['USERNAME']
 
@@ -110,7 +110,7 @@ KASM_URL =        os.environ.get('B_KASM_URL',     'https://home.point0.net:4445
 ARGS0 = []
 ARGS1 = ['--window-size=2000,1200', '--window-position=200,100"']   # Note: Chrome supports these; ffx doesn't (but does a better job or remembering last window pos)
 
-# When sandbox=Sb.{KASM|BOTH}, reset should be a string "kasm:{kasm_workspace}:{kasm_login}:{kasm_browser_profile}"
+# When sandbox=Sb.{KASM|FIREKASM}, reset should be a string "kasm:{kasm_workspace}:{kasm_login}:{kasm_browser_profile}"
 KASM1 = 'kasm:chrome-b:ken-b:Default'
 KASM2 = 'kasm:chrome-bbb:ken-bbb:Default'
 
@@ -119,22 +119,22 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
 
     # Standard Firefox browsing w/o kasm
-    'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
-    'kff':  Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson', ARGS0, None,   None,       None,            'lp:kstillson@g', 'ffox Google:* direct(fj); issues w/ drive',    []),
-    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,       None,           'lp:ken@kds',     'Firefox general browsing direct(fj)',           []),
-    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',  ARGS0,  None,   None,       None,           'ff-internal',    'Bad boy Firefox(fj)',                           ['fb3']),
+    'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',    ARGS1,  None,   None,       None,            'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
+#    'kff':  Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson',  ARGS0, None,   None,       None,            'lp:kstillson@g', 'ffox Google:* direct(fj); issues w/ drive',    []),
+    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.SNAP,     True,          'Default',    ARGS0,  None,   None,       None,           'lp:ken@kds',     'Firefox general browsing direct(fj)',           []),
+    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.SNAP,     True,          'Default',    ARGS0,  None,   None,       None,           'ff-internal',    'Bad boy Firefox(fj)',                           ['fb3']),
 
-    'm':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'media-control', ARGS0, None, None,     None,           None,             'Firefox media control',                         []),
+    'm':    Cfg('ken-b',   B.FIREFOX,   Sb.SNAP,     True,       'media-control', ARGS0, None, None,     None,           None,             'Firefox media control',                         []),
 
     # Experimental / other
-    'e':    Cfg('ken',     B.FIREFOX,   None,        False,'add-on experiments', ARGS0, None,   None,       None,            None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
+    'e':    Cfg('ken',     B.FIREFOX,   None,        False, 'add-on experiments', ARGS0, None,   None,       None,            None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
 
     # Browsing w/ kasm
-     #'kb':   Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
-     #'kbbb': Cfg('ken-bbb', B.CHROME,    Sb.BOTH,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
+     #'kb':   Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
+     #'kbbb': Cfg('ken-bbb', B.CHROME,    Sb.FIREKASM,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
      # # Specialized modes (mostly for debugging frozen kasms)
-     #'kb1':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  '-',    None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy w/o cast',     []),
-     #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.BOTH,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
+     #'kb1':  Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  '-',    None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy w/o cast',     []),
+     #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
     # Deprecated modes
     'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',           []),
@@ -210,7 +210,7 @@ def cleanup():
     debug(f'processes that survived the purge: {still_there}')
     if still_there:
         return C.zwarn(f'{len(still_there)} of {len(pids)} resisted the purge')
-    C.zinfo(f'{len(pids)} processes purged')
+    debug(f'{len(pids)} processes purged')
 
 
 def procs_as_uid(uid, skip_names=['zenity'], skip_self=True):
@@ -236,7 +236,8 @@ def find_chrome_profile_dir(name):
 
 
 def find_firefox_profile_dir(name):
-    basedir = os.path.expanduser('~/.mozilla/firefox')
+    basedir = os.path.expanduser('~/snap/firefox/common/.mozilla/firefox')
+    if not os.path.isdir(basedir): basedir = os.path.expanduser('~/.mozilla/firefox')
     import configparser
     c = configparser.ConfigParser()
     c.read(os.path.join(basedir, 'profiles.ini'))
@@ -260,15 +261,19 @@ def get_profile_dir(cfg):
 
 def get_snapshot_dir(cfg):
     browser = 'chrome-' if cfg.browser == B.CHROME else 'firefox-' if cfg.browser == B.FIREFOX else 'qq-'
-    prefix = 'kasm-' if cfg.sandbox in [Sb.KASM, Sb.BOTH] else ''
+    prefix = 'kasm-' if cfg.sandbox in [Sb.KASM, Sb.FIREKASM] else ''
     return safedir(subst(os.path.join(SNAPSHOT_DIR, browser + prefix + cfg.uid, cfg.profile or 'Default'), cfg))
 
 
 def launch(cfg):
     os.chdir(os.path.expanduser('~'))
+
+    # ---- prep & setup environ
+
     dbus = DBUS
     if dbus == 'auto':
-        dbus = ARGS.sudo_done
+        if cfg.sandbox == Sb.SNAP: dbus = False
+        else:                      dbus = ARGS.sudo_done
         debug(f'dbus auto resolved to: {dbus}')
 
     if cfg.uid and cfg.uid != CURRENT_USER:
@@ -277,23 +282,29 @@ def launch(cfg):
         os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
     debug(f'$PULSE_SERVER set to {os.environ["PULSE_SERVER"]}')
 
+    # ---- construct command to run
+
     cmd = []
     if dbus: cmd.append('dbus-run-session')
-    if cfg.sandbox in [Sb.FIREJAIL, Sb.BOTH]:
+    if cfg.sandbox in [Sb.FIREJAIL, Sb.FIREKASM]:
         cmd.extend(FIREJAIL_PREFIX)
-    if cfg.browser == B.CHROME:
-        cmd.append('google-chrome')
-        if cfg.profile: cmd.append(f'--profile-directory={os.path.basename(get_profile_dir(cfg))}')
-    elif cfg.browser == B.FIREFOX:
-        cmd.append('firefox')
-        if cfg.profile: cmd.extend(['--profile', get_profile_dir(cfg)])
-    else:
-        fatal(f'unknown browser specified: {cfg.browser}')
+
+    if   cfg.browser == B.CHROME:  cmd.append('google-chrome')
+    elif cfg.browser == B.FIREFOX: cmd.append('firefox')
+    else: fatal(f'unknown browser specified: {cfg.browser}')
+
+    if cfg.profile:
+        if cfg.browser == B.CHROME: cmd.append(f'--profile-directory={os.path.basename(get_profile_dir(cfg))}')
+        else:                       cmd.extend(['--profile', get_profile_dir(cfg)])
+
     if cfg.args: cmd.extend(cfg.args)
     if cfg.appmode:
         url = '--app=' + KASM_URL
         if cfg.appmode != '-': url += '/#/cast/' + cfg.appmode
         cmd.append(url)
+
+    # ---- and run it.
+
     rslt = run(cmd)
     if not rslt.ok:
         tmpname = f'/tmp/run_browser-{os.geteuid()}-err.out'
@@ -318,7 +329,7 @@ def reset(cfg, post_sudo: bool):
     if not cfg.reset: return debug('config does not request reset')
     if ARGS.noreset: return C.zinfo('skipping normal reset  (--noreset)')
 
-    if cfg.sandbox in [Sb.KASM, Sb.BOTH]:
+    if cfg.sandbox in [Sb.KASM, Sb.FIREKASM]:
         # kasm reset transports over ssh, so it must run (only) pre-sudo, for access to the base-user's ssh keys.
         if ARGS.sudo_done or post_sudo: return debug('config uses kasm and sudo already done, so deferring to pre-sudo reset')
     else:
@@ -332,7 +343,7 @@ def reset(cfg, post_sudo: bool):
         return debug('deferring reset until post_sudo call')
 
     source = get_snapshot_dir(cfg)
-    dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
+    dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.FIREKASM] else get_profile_dir(cfg)
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
     if not rslt.ok: fatal(f'reset failed: {rslt.out}')
     else:
@@ -364,7 +375,7 @@ def safedir(dir: str):  # Create this dir if needed, along with any missing pare
 
 
 def snap_config(cfg):
-    source = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.BOTH] else get_profile_dir(cfg)
+    source = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.FIREKASM] else get_profile_dir(cfg)
     dest = get_snapshot_dir(cfg)
 
     if BACKUP_SFX:
@@ -381,7 +392,7 @@ def snap_config(cfg):
 
 def subst(src, cfg):
     kasm_browser_profile = kasm_login = kasm_workspace = '???'
-    if cfg.sandbox in [Sb.KASM, Sb.BOTH]: _, kasm_workspace, kasm_login, kasm_browser_profile = cfg.reset.split(':')
+    if cfg.sandbox in [Sb.KASM, Sb.FIREKASM]: _, kasm_workspace, kasm_login, kasm_browser_profile = cfg.reset.split(':')
     b = 'google-chrome' if cfg.browser == B.CHROME else 'firefox'
     out = os.path.expanduser(src.replace('{browser}', b).                                 \
                              replace('{profile}',              cfg.profile or 'Default'). \
@@ -397,11 +408,36 @@ def switch_user_if_needed(cfg, sudo_done):
     if sudo_done:
         fatal(f'--sudo-done specified, but current user ({CURRENT_USER}) is wrong; should be {cfg.uid}..')
     debug(f'switching user {CURRENT_USER} -> {cfg.uid}')
-    sys.argv[0] = os.path.abspath(sys.argv[0])  # needs to match pathspec in sudoers
-    cmd = ['/usr/bin/sudo', '--preserve-env=path', '-u', cfg.uid, '--'] + sys.argv
-    cmd.append('--sudo-done')
-    debug(f'sudo command: {cmd}')
-    os.execv(cmd[0], cmd)    # does not return.
+
+    if cfg.sandbox == Sb.SNAP:
+        # ---- ssh based user swap
+        # SNAP => launch via ssh (snaps appear very picky about their environment,
+        # and I haven't yet figured out how to get it set up "manually" in a way
+        # that snaps will work yet.  But ssh seems to know the secret, so we'll
+        # just launch via ssh.
+        cmd0 = ('#!/bin/bash\n' +
+                'DISPLAY=' + os.environ.get("DISPLAY") + ' ' +
+                sys.argv[0] + ' --sudo-done ' + ' '.join(sys.argv[1:]) + '\n')
+        fd, cmdfile = tempfile.mkstemp()
+        with os.fdopen(fd, 'w') as f:
+            print(cmd0, file=f)
+        os.chmod(cmdfile, 0o755)
+
+        cmd = ['ssh', f'{cfg.uid}@localhost', cmdfile]
+        debug(f'running loopback ssh via command file {cmdfile}: {cmd}: \n{cmd0}\n')
+        out = C.popen(cmd)
+        os.unlink(cmdfile)
+        # browsers seem to often exit with status, which ssh passes back; ignore it.
+        debug(f'browser outout: {out.out}')
+        sys.exit(0)
+
+    else:
+        # ---- sudo based user swap
+        sys.argv[0] = os.path.abspath(sys.argv[0])  # needs to match pathspec in sudoers
+        cmd = ['/usr/bin/sudo', '--preserve-env=path', '-u', cfg.uid, '--'] + sys.argv
+        cmd.append('--sudo-done')
+        debug(f'sudo command: {cmd}')
+        os.execv(cmd[0], cmd)    # does not return.
 
 
 # ---------- gui
@@ -477,7 +513,7 @@ def main(argv=[]):
         # For normal snapshots, we must change user to have perms to save the snapshot where the reset function will expect it.
         # If we end up calling switch_user_if_needed(), the call doesn't return; it restarts the script as the new uid,
         # which runs the same logic, but won't run sudo again because of the --sudo_done flag.
-        if not cfg.sandbox in [Sb.KASM, Sb.BOTH]: switch_user_if_needed(cfg, ARGS.sudo_done)
+        if not cfg.sandbox in [Sb.KASM, Sb.FIREKASM]: switch_user_if_needed(cfg, ARGS.sudo_done)
         ok = snap_config(cfg)
         if not ok:
             C.zwarn('error reported during snap operation')
