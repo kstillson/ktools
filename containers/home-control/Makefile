@@ -20,7 +20,7 @@ DIRS := $(HCH_DIR) $(HCLIB_DIR)
 # ---------- local custom logic
 
 clean:
-	rm -rf $(HCH_DIR) $(HCLIB_DIR)
+	rm -rf $(HCH_DIR) files/usr/lib/python*
 
 copy: $(DIRS) $(HCH_DIR) $(HCH_TARGETS) $(HCH_TEST_TARGETS) $(HCLIB_DIR) $(PLIB_TARGETS)
 
