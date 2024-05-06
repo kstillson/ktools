@@ -206,16 +206,13 @@
 	<td><button class="bb" onclick='send("lantern")'>lantern</button></td>
 	<td><button class="bb" onclick='send("door-entry")'>entry</button></td>
 	<td><button class="bb" onclick='send("patio")'>patio</button></td>
-      </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("rear-flood", "-")'>flood</button></td>
-	<td><button class="bb" onclick='send("garage")'>garage</button></td>
-	<td><button class="bb" onclick='send("landscaping")'>landscaping</button></td>
-      </tr><tr class="col-out">
-	<td><button class="bb" onclick='send("garage-L")'>gd-L</button></td>
-	<td><button class="bb" onclick='send("garage-R")'>gd-R</button></td>
-	<td><button class="bb" onclick='send("mobile-bulb")'>mobile</button></td>
       </tr><tr class="col-out">
         <td colspan='9' class="l">Landscaping</td>
+      </tr><tr class="col-out">
+	<td><button class="bb" onclick='send("landscaping", "-")'>all</button></td>
+	<td><button class="bb" onclick='send("out-front", "-")'>all front</button></td>
+	<td><button class="bb" onclick='send("out-back", "-")'>all back</button></td>
       </tr><tr class="col-out">
 	<td><button class="bb" onclick='send("out-monument", "-")'>Monument</button></td>
 	<td><button class="bb" onclick='send("out-sconce", "-")'>Sconce</button></td>
@@ -245,7 +242,11 @@
       </tr><tr class="col-spcl">
 	<td><button class="bb" onclick='send("gh1", "on")'>gh1</button></td>
 	<td><button class="bb" onclick='send("gh0", "on")'>gh0</button></td>
-      </tr><tr>
+	<td><button class="bb" onclick='send("garage")'>garage</button></td>
+      </tr><tr class="col-spcl">
+	<td><button class="bb" onclick='send("garage-L")'>gd-L</button></td>
+	<td><button class="bb" onclick='send("garage-R")'>gd-R</button></td>
+	<td><button class="bb" onclick='send("mobile-bulb")'>mobile</button></td>
       </tr><tr>
       </tr>
     </table>
