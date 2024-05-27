@@ -5,6 +5,6 @@ screen -t post_init 39 sh -c 'sleep 1; screen -X msgwait 5' # then restore to 5 
 source ~/.screenrc
 
 screen bash
-screen emacs -nw
+## screen emacs -nw
 
 select bash

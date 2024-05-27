@@ -158,7 +158,7 @@ alias AX='{ pkill -u $USER ssh-agent && echo "ssh-agent stopped"; }; rm -f ${SSH
 alias ls='ls $COLOR_OPTION'
 
 if [[ -x /usr/bin/eza ]] || [[ -x /usr/local/bin/eza ]]; then
-    alias l="_ eza --long --all --all --group --smart-group --color=always --color-scale=size --color-scale-mode=gradient --links   --git --extended --group-directories-first --mounts"
+    alias l="_ eza --long --almost-all --group --smart-group --color=always --color-scale=size --color-scale-mode=gradient --links   --git --extended --group-directories-first --mounts"
     alias ll="l --total-size --sort=size --reverse"
 else
     alias l='ls $COLOR_OPTION -l'
@@ -211,7 +211,7 @@ addpath() {
 
 # viewers and editors
 function Cat() { if [[ -d "$1" ]]; then ls -l "$1"; else cat "$@"; fi; }
-alias e='$EDITOR'
+alias e="$EDITOR --geometry 132x40+100-100 &"
 alias E='/usr/bin/emacs -nw'
 alias m='less'
 alias L='less'
@@ -357,7 +357,8 @@ function listP() { while IFS= read -r line; do echo "${@//@/${line}}"; done; }  
 #
 function C() {
     srch=''
-    for i in "$@"; do srch="${srch}${i}*/"; done
+    if [[ $# == 1 ]]; then srch="${1//?/&*/}"
+    else for i in "$@"; do srch="${srch}${i}*/"; done; fi
     if [[ "$PWD" != "$HOME" ]]; then srch2="$HOME/$srch"; else srch2=""; fi
     readarray -t out < <(ls -1d $srch $srch2 2>/dev/null)
     case ${#out[@]} in
