@@ -309,7 +309,7 @@ def launch(cfg):
     if not rslt.ok:
         tmpname = f'/tmp/run_browser-{os.geteuid()}-err.out'
         with open(tmpname, 'w') as f: print(rslt.out, file=f)
-        C.zwarn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
+        C.zwarn(f'Browser exited with status {rslt.returncode}.  See {tmpname}')
     else: debug(f'Browser process returned: {rslt.out}')
 
 def pick_code(in_code):

@@ -82,6 +82,13 @@ class TimeQueue:
         self.queue.extend(list_of_events)
         self.queue.sort(key=lambda x: x.fire_at_ms)
 
+    def add(self, fire_in_ms, func, args=[], kwargs={}):
+        return self.add_event(Event(fire_in_ms, func, args, kwargs))
+
+    def at(self, epoch_seconds, func, args=[], kwargs={}):
+        fire_in_ms = (epoch_seconds - time.time()) * 1000
+        return self.add(fire_in_ms, func, args, kwargs)
+
     def add_event(self, event):
         self.queue.append(event)
         self.queue.sort(key=lambda x: x.fire_at_ms)
