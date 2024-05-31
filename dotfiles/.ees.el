@@ -617,5 +617,6 @@ if necessary to attain exactly the specified column."
   (local-unset-key "\C-c")
   (local-set-key "\C-c" 'ken-emacs-extension)
 )
-(ken)
 
+; (ken)
+(add-hook 'find-file-hook (lambda () (ken)))

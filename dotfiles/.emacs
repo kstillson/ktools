@@ -10,8 +10,6 @@
 ; ================================================================= 
 ; SET UP PREFERENCES:
 
-;(server-start)
-
 (put 'downcase-region 'disabled nil)
 (put 'eval-expression 'disabled nil)
 (put 'narrow-to-region 'disabled nil)
@@ -35,6 +33,11 @@
 (setq trim-versions-without-asking nil)
 (setq-default fill-column 78)
 
+; ---- dired
+; use ^u-s to change dired "switches" at runtime
+(setq dired-listing-switches "-Bhl1v  --group-directories-first")
+(setq image-dired-thumb-size 200)
+
 ; --- calc prefs
 (setq calc-display-trail nil)
 (global-set-key "\C-x#" 'calc-dispatch)
@@ -42,6 +45,9 @@
 
 ; ================================================================= 
 ; MODE HOOKS
+
+(add-hook 'dired-mode-hook
+          (lambda () (local-set-key (kbd "M-<up>") #'dired-up-directory)))
 
 (add-hook 'html-mode-hook
       (lambda ()
@@ -72,19 +78,36 @@
 ; ASSIGN NEW KEYBINDINGS
 
 ; == define function keys for built-in commands:
-(global-set-key "\eOP" 'other-window)   ;F1
-(global-set-key "\eOR" 'find-file-other-window) ;F3
-(global-set-key "\eOT" 'isearch-forward) ;F5
-(global-set-key "\eOU" 'isearch-forward-regexp) ;F6
-(global-set-key "\eOV" 'isearch-backward) ;F7
-(global-set-key "\eOW" 'isearch-backward-regexp) ;F8
-(global-set-key "\eOX" 'find-file) ;F9
-(global-set-key "\eOY" 'save-buffer) ;F10
+(global-set-key [f1] 'other-window)   ;F1
+(global-set-key [f3] 'find-file-other-window) ;F3
+(global-set-key [f5] 'isearch-forward) ;F5
+(global-set-key [f6] 'isearch-forward-regexp) ;F6
+(global-set-key [f7] 'isearch-backward) ;F7
+(global-set-key [f8] 'isearch-backward-regexp) ;F8
+(global-set-key [f9] 'find-file) ;F9
+(global-set-key [f10] 'save-buffer) ;F10
 
 ; == define function keys for new functions:
-(global-set-key "\eOQ" 'ken-switch-to-buffer) ;F2
-(global-set-key "\eOS" 'ken-switch-to-buffer-other-window) ;F4
-(global-set-key "\eOZ" 'ken-kill-this-buffer) ;F11
+(global-set-key [f2] 'ken-switch-to-buffer) ;F2
+(global-set-key [f4] 'ken-switch-to-buffer-other-window) ;F4
+(global-set-key [f11] 'ken-kill-this-buffer) ;F11
+
+;;;; old control-key based function key assignments - DEPRECATED
+;;;; == define function keys for built-in commands:
+;;;;(global-set-key "\eOP" 'other-window)   ;F1
+;;;;(global-set-key "\eOR" 'find-file-other-window) ;F3
+;;;;(global-set-key "\eOT" 'isearch-forward) ;F5
+;;;;(global-set-key "\eOU" 'isearch-forward-regexp) ;F6
+;;;;(global-set-key "\eOV" 'isearch-backward) ;F7
+;;;;(global-set-key "\eOW" 'isearch-backward-regexp) ;F8
+;;;;(global-set-key "\eOX" 'find-file) ;F9
+;;;;(global-set-key "\eOY" 'save-buffer) ;F10
+
+;;;; == define function keys for new functions:
+;;;;(global-set-key "\eOQ" 'ken-switch-to-buffer) ;F2
+;;;;(global-set-key "\eOS" 'ken-switch-to-buffer-other-window) ;F4
+;;;;(global-set-key "\eOZ" 'ken-kill-this-buffer) ;F11
+
 
 ; == define short-cut keys for built-in commands:
 (global-set-key "\e "      'lisp-complete-symbol) ;built-in's
@@ -167,6 +190,38 @@
 (setq epa-pinentry-mode 'loopback)
 
 ; ================================================================= 
+; Themes
+
+;; (add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+
+;; (load-theme 'zenburn t)
+(load-theme 'modus-vivendi t)
+
+
+; ================================================================= 
+; emacs maintained options (x gui version)
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("b9e9ba5aeedcc5ba8be99f1cc9301f6679912910ff92fdf7980929c2fc83ab4d" "84d2f9eeb3f82d619ca4bfffe5f157282f4779732f48a5ac1484d94d5ff5b279" default))
+ '(tool-bar-mode nil))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+; ================================================================= 
+
+(load "server")
+(unless (server-running-p) (server-start))
+
+; ----------
 
 (find-file "~")
 (message "ready...")

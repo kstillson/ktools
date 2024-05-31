@@ -118,7 +118,7 @@ class Persister:
         if not self.thread_lock: self.thread_lock = threading.thread_lock()
         with self.thread_lock:
             C.log_debug(f'start filename={self.filename} thread lock')
-            local_data = self.get_ro()
+            local_data = self.get_data()
             yield local_data
             self.save_to_file()
             self.cache = local_data
@@ -126,11 +126,11 @@ class Persister:
 
     @contextmanager
     def get_rw_locked_file(self):
-        import uncommon as UC
-        if not self.file_lock: self.file_lock = UC.FileLock()
+        import kcore.uncommon as UC
+        if not self.file_lock: self.file_lock = UC.FileLock(self.filename)
         with self.file_lock:
             C.log_debug(f'start filename={self.filename}.lock file lock')
-            local_data = self.get_ro()
+            local_data = self.get_data()
             yield local_data
             self.save_to_file()
             C.log_debug(f'end filename={self.filename}.lock file lock')
