@@ -35,10 +35,8 @@ DEBUG_SILENT_PANIC_TO = []
 DEBUG_SILENT_PANIC_SUBJ = 'THIS IS A TEST - PLEASE IGNORE'
 DEBUG_SILENT_PANIC_MSG = SILENT_PANIC_MSG
 
+
 # ----------
-
-# see ../../tools/etc/speak* for the scripts this service on "pi1" talks to...
-
 
 def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
   global RL_SPEAK, RL_SYSLOG
@@ -48,8 +46,8 @@ def announce(msg, push_level=None, syslog_level=None, details=None, speak=True):
   C.log(log_msg)
   if speak:
     if RL_SPEAK.check():
-      rslt = C.read_web('http://pi1/speak/' + C.quote_plus(msg))
-      if not '<p>ok' in rslt: C.log_error(f'unexpected result from speak command: {rslt}')
+      rslt = C.read_web('http://jack:8181/' + C.quote_plus(msg))
+      if not 'ok' in rslt: C.log_error(f'unexpected result from speak command: {rslt}')
     else:
       C.log_warning(f'speak request rate limited: {msg}')
   if details: msg += ': %s' % details

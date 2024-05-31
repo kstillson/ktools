@@ -9,6 +9,8 @@ COPY files /
 
 RUN /prep
 
+HEALTHCHECK --interval=60s --timeout=3s --retries=3 CMD nc -nzv -w 3 127.0.0.1 1514 || exit 1
+
 USER syslog
 ENTRYPOINT ["/usr/bin/supervisord"]
 CMD ["-n", "-c", "/etc/supervisord.conf"]

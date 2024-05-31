@@ -7,9 +7,11 @@ KMC_RM=0
 chgrp -R hs /home/hs
 
 # fix perms
-chmod -R go+rX /etc/passwd /etc/group /etc/init /usr/lib/python*/site-packages/kcore /usr/lib/python*/site-packages/ktools
+chmod -R go+rX /etc/passwd /etc/group /etc/init /usr/lib/python*/site-packages/kcore /usr/lib/python*/site-packages/ktools /usr/local
 
 # lib visibility
 LIBDIR=$(python3 -c 'import site; print(site.getsitepackages()[0])')
 ln -s $LIBDIR/ktools/ratelimiter.py /usr/local/bin/ratelimiter
-ln -s $LIBDIR/ktools/pb-push.sh /usr/local/bin/pb-push
+
+# bin naming
+ln -s /usr/local/bin/pb-push.sh /usr/local/bin/pb-push

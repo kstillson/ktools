@@ -492,7 +492,7 @@ case "$cmd" in
   list-up | lu | ls | l | ps | p)                                ## List all up containers
     $DOCKER_EXEC ps --format '{{.Names}}@{{.ID}}@{{.Status}}@{{.Image}}@{{.Command}}@{{.Ports}}' | \
       sed -e 's/0.0.0.0/*/g' -e 's:/tcp::g' | \
-      column -s @ -t | cut -c-${COLUMNS:-200} | sort -k6
+      column -s @ -t | cut -c-${COLUMNS:-200} | sort
     ;;
   list-up-names | lun)                                           ## List all up containers (just the names)
     $DOCKER_EXEC ps --format '{{.Names}}' ;;

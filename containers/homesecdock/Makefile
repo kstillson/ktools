@@ -24,9 +24,9 @@ KTOOLS_FILES := kmc.py ratelimiter.py
 KTOOLS_TARGETS := $(addprefix $(KTOOLS_DIR)/, $(KTOOLS_FILES))
 
 KTOOLS_ETC_FILES := pb-push.sh
-KTOOLS_ETC_TARGETS := $(addprefix $(KTOOLS_DIR)/, $(KTOOLS_ETC_FILES))
+KTOOLS_ETC_TARGETS := $(addprefix files/usr/local/bin/, $(KTOOLS_ETC_FILES))
 
-DIRS := $(HSH_DIR) $(HSH_PRIV_DIR) $(KTOOLS_DIR)
+DIRS := $(HSH_DIR) $(HSH_PRIV_DIR) $(KTOOLS_DIR) files/usr/local/bin
 
 # ---------- local custom logic
 
@@ -54,7 +54,7 @@ $(KMH_TEST_TARGETS): $(HSH_DIR)/% : ../../services/keymaster/tests/%
 $(KTOOLS_TARGETS): $(KTOOLS_DIR)/% : ../../pylib/tools/%
 	install $^ $@
 
-$(KTOOLS_ETC_TARGETS): $(KTOOLS_DIR)/% : ../../tools-etc/%
+$(KTOOLS_ETC_TARGETS): files/usr/local/bin/% : ../../tools-etc/%
 	install $^ $@
 
 # ---------- pass-throughs
