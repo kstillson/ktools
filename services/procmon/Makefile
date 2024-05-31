@@ -30,7 +30,7 @@ $(INSTALL_DIR)/procmon_whitelist: $(WHITELIST_SOURCE)
 $(TEST_LOG): $(wildcard *.py tests/*.py)
 	set -o pipefail && python3 procmon_whitelist.py |& tee $(TEST_LOG)
 	set -o pipefail && if [[ -f private.d/procmon_whitelist.py ]]; then PYTHONPATH=. python3 private.d/procmon_whitelist.py |& tee $(TEST_LOG); fi
-	./procmon.py --logfile - --nocow --nodmap --nodupchk --noro --output '' --queue '' --test --whitelist tests/procmon_whitelist_allow_any.py |& fgrep -v Skipping |& tee $(TEST_LOG)
+	./procmon.py --logfile - --nocontainers --nocow --nodmap --nodupchk --noro --output '' --queue '' --test --whitelist tests/procmon_whitelist_allow_any.py |& fgrep -v Skipping |& tee $(TEST_LOG)
 	@fgrep "all ok" $(TEST_LOG)
 
 

@@ -182,9 +182,10 @@ class Scanner(object):
     DOCKER_MAP = get_docker_map() if not ARGS.nodmap else {}
 
     self.add_process(1, '/')
-    if not ARGS.nocow:    self.scan_cow()
-    if not ARGS.noro:     self.scan_ro()
-    if not ARGS.nodupchk: self.scan_dup_uids()
+    if not ARGS.nocontainers:  self.scan_containers()
+    if not ARGS.nocow:         self.scan_cow()
+    if not ARGS.noro:          self.scan_ro()
+    if not ARGS.nodupchk:      self.scan_dup_uids()
 
     # Check for missing processes.
     for entry in WL.WHITELIST:
@@ -203,6 +204,11 @@ class Scanner(object):
       with open(ARGS.queue, 'a') as f: f.write('\n'.join(new_problems) + '\n')
     if ARGS.output:
       with open(ARGS.output, 'w') as f: f.write(str(WL.WHITELIST).replace(' WL', '\n WL'))
+
+  def scan_containers(self):
+    for i in C.popener(['/usr/bin/sudo', '/root/bin/d-status', 'unhealthy']).strip().split('\n'):
+      if not i: continue
+      self.other_errors.append(f'unhealthy container: {i}')
 
   def scan_cow(self):
     for i in C.popener(['/usr/bin/sudo', '/root/bin/d-cowscan']).strip().split('\n'):
@@ -335,7 +341,11 @@ class Scanner(object):
     pset.add(pd.pid)
 
   def is_all_ok(self):
-    return len(self.missing) == 0 and len(self.expected) > 10 and len(self.unexpected) == 0 and len(self.cow_errors) == 0 and len(self.other_errors) == 0
+    return (len(self.missing) == 0 and
+            len(self.expected) > 10 and
+            len(self.unexpected) == 0 and
+            len(self.cow_errors) == 0 and
+            len(self.other_errors) == 0)
 
   # -----
 
@@ -351,7 +361,7 @@ class Scanner(object):
       pd = self.pd_db[pid]
       out.append('unexpected: %s' % self.proctree_to_string(pd) if expand_trees else pd.desc)
     for ce in self.cow_errors: out.append('COW: %s' % ce)
-    for ce in self.other_errors: out.append('FS: %s' % ce)
+    for ce in self.other_errors: out.append('OTHER: %s' % ce)
     for m in self.missing: out.append('missing: %s' % m)
     return sorted(out)
 
@@ -469,10 +479,11 @@ def parse_args(argv):
   parser.add_argument('--debug',   '-D',   action='store_true', help='output debugging data to stdout (works best with -t)')
   parser.add_argument('--delay',   '-d',   type=int, default=120, help='delay between automatic rescans (seconds)')
   parser.add_argument('--logfile', '-l',   default='/var/log/procmon.log', help='where to write deviation log; contains timestamp and proc tree context for unexpected items.  Blank to disable.')
-  parser.add_argument('--nocow',           action='store_true', help='skip COW scan (used for testing)')
+  parser.add_argument('--nocontainers',    action='store_true', help='skip container status scan')
+  parser.add_argument('--nocow',           action='store_true', help='skip COW scan')
   parser.add_argument('--nodmap',          action='store_true', help='skip getting the map from container ids to names.  Mainly for testing (avoids a sudo call), as makes whitelist entries based on container names useless.')
   parser.add_argument('--nodupchk',        action='store_true', help='skip checking if the same uid (other than root) is used in multiple containers.')
-  parser.add_argument('--noro',            action='store_true', help='skip root-read-only check (used for testing)')
+  parser.add_argument('--noro',            action='store_true', help='skip root-read-only check')
   parser.add_argument('--no-scan-handler', action='store_true', help='do not allow use of demand /scan')
   parser.add_argument('--no-syslog',       action='store_true', help='do not send critical level logs to syslog')
   parser.add_argument('--no-zap-handler',  action='store_true', help='do not allow clearing the alert queue via /zap')
