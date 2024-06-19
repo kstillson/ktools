@@ -14,7 +14,7 @@ services:
     networks:
       docker1:
         ipv4_address: ${IP?:must set $$IP}
-    restart: on-failure
+   ## restart: on-failure
 
 
 # ---------- tests

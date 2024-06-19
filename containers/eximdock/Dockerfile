@@ -10,7 +10,7 @@ RUN /prep
 
 VOLUME ["/var/log", "/var/mail", "/var/spool"]
 
-## HEALTHCHECK --interval=60s --timeout=3s --retries=3 CMD nc -nzv -w 3 127.0.0.1 2525 || exit 1
+HEALTHCHECK --interval=60s --timeout=5s --retries=3 CMD nc -nzv -w 3 127.0.0.1 2525 || exit 1
 
 USER exim
 ENTRYPOINT ["/usr/sbin/exim"]
