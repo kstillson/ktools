@@ -229,6 +229,7 @@ function up() {
   sel="$1"
   echo -n "Starting: $sel ${extra_flags}    "
   cd_sel "$sel"
+  $DOCKER_EXEC rm "$sel" >&/dev/null && emitc yellow "removed dead container instance: $sel"
   if [[ -x ./Run ]]; then
       emitc cyan "launching via legacy Run file"
       erun ./Run ${extra_flags}
