@@ -9,7 +9,7 @@
 
 set -e   # Stop on first error...
 
-source /root/bin/blib  # for erun, emit*.  needs full path for when run via logrotate.
+source blib  # for erun, emit*.  needs full path for when run via logrotate.
 
 cmd="$1"
 shift || true
