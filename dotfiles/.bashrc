@@ -305,6 +305,10 @@ alias SpaceR='sudo baobab'
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
 # give just the mountpoint dir of the specified (or current) dir.
 function Mnt() { q="${1:-.}"; findmnt -n -o SOURCE --target ${q}; }
+
+# networky stuff
+# watch tcp flows (improved tcpdump)..  Follow with filters, e.g.:  -i docker1 port 8080
+alias TCP='tcpflow -acg -X /dev/null'
 # condensed list of IPs
 function Ips() {
   cols="1,2"; filter='^(lo|veth)'
