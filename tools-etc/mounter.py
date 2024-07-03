@@ -45,6 +45,7 @@ CONFIGS = [
     Mp('jroot',         ['r'],          Sshfs('',        'j:/rw/root'),                    None,     'mnt/jroot'),
     Mp('jrootdir',      ['R'],          Sshfs('-r',      'j:/'),                           None,     'mnt/jrootdir'),
     Mp('html',          ['H'],          Sshfs('',        'j:/rw/dv/webdock/var_www/html'), None,     'mnt/html'),
+    Mp('rw',            [],             Sshfs('',        'j:/rw'),                         None,     'mnt/rw'),
     # a1
     Mp('aroot',         ['A'],          Sshfs('',        'a1:/'),                          None,     'mnt/aroot'),
     # steamdeck
