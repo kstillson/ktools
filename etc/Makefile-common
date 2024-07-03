@@ -39,7 +39,7 @@ SHELL := /bin/bash
 # ---------- directory constants for convenience of callers
 #            (need to be updated with new Python versions)
 
-PLIB := files/usr/lib/python3.11/site-packages
+PLIB := files/usr/lib/python3.12/site-packages
 
 
 # ----------------------------------------
