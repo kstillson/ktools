@@ -55,7 +55,7 @@ else:
 
 class Worker(BaseHTTPRequestHandler):
     def send(self, response):
-        if PY_VER == 3: response.body = response.body.encode('utf-8')
+        if PY_VER == 3 and not response.binary: response.body = response.body.encode('utf-8')
         self.send_response(response.status_code, response.status_msg)
         self.send_header("Server", 'k_webserver')
         self.send_header("Connection", 'close')
