@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 '''Real-time current measurement via ina219 via ft232h.'''
 
