@@ -327,6 +327,7 @@ function Ip() { Ips | grep "$1" | awk '{print $2}'; }
 
 # other general command shortcuts
 alias Clk="xclock -d -twelve -brief &"
+function Curl() { curl -sS $(echo "$@" | perl -p -e 's/([^A-Za-z0-9\:\/])/sprintf("%%%02X", ord($1))/seg' | sed -e 's/%0A//'); }
 alias LOCK="xscreensaver-command -lock"
 alias Sort="( sed -u 1q; sort )"
 alias XF='/usr/bin/xhost +si:localuser:nobody'
@@ -346,6 +347,7 @@ alias pam='ps aux --forest | less'
 alias rlcp='cp --reflink=always '
 alias s2n='tr " " "\n"'
 alias x="exec startx"
+alias Z="xz -T0 -v "
 
 alias RP='run_para --align --cmd'
 alias listp='run_para --dry_run --cmd'   # $1 is command to run (needs to be quoted)
