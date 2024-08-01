@@ -9,6 +9,10 @@ log: journald
 mount_rw:
   - /rw/log: /var/log
 
+# pull the pb-push api key from keymaster.
+env:
+  - PB_TOKEN: "*pb-push"
+
 test_mount_rw:
   - var_log: /var/log
 

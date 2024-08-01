@@ -1,6 +1,6 @@
 FROM ktools/kcore-baseline:live
 
-RUN apk -U add ssmtp supervisor syslog-ng
+RUN apk -U add curl ssmtp supervisor syslog-ng
 
 EXPOSE 1514 
 EXPOSE 1514/udp

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#
+# This is run via a "program()" destination from syslog.
+# That means it's a long-running process that is fed events to process line-by-line from stdin.
+#
+
+LIMIT="3,180"   # allow up to 3 messages per 3-minute window.
+
+MAIL_DEST="root"
+MAIL_FROM="syslog@syslogdock.h.point0.net"
+MAIL_SUBJ="syslog-ng critical log"
+
+# ---------- init
+
+if [[ "$PB_TOKEN" == "" ]]; then
+    PB_TOKEN="$(/usr/local/bin/kmc pb-push)"
+    if [[ "$PB_TOKEN" == *Error* ]]; then PB_TOKEN=""; fi
+fi
+
+
+# ---------- message loop
+
+while read event; do
+
+    # respect rate limits.
+    /usr/local/sbin/ratelimiter.py --limit "$LIMIT" /var/log/shout.rl || { echo "ratelimited"; continue; }
+
+    # send email
+    timeout 5s /usr/sbin/ssmtp ${MAIL_DEST} <<EOF
+To: ${MAIL_DEST}
+From: ${MAIL_FROM}
+Subject: ${MAIL_SUBJ}
+
+${event}
+EOF
+
+    # send pushbullet
+    if [[ -z "$PB_TOKEN" ]]; then { echo "no pb token"; continue; }; fi
+    safer="$(echo $event | tr -dc '[:alnum:][:blank:]')"
+    timeout 7s curl -sS -m 5 --request POST \
+        --header "Access-Token: ${PB_TOKEN}" \
+	--header 'Content-Type: application/json' \
+	--data "{\"body\":\"#i,${safer}\",\"type\":\"note\"}" \
+	"https://api.pushbullet.com/v2/pushes"
+
+done
