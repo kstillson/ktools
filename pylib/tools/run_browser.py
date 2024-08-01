@@ -116,18 +116,27 @@ KASM2 = 'kasm:chrome-bbb:ken-bbb:Default'
 
 CONFIGS = { #   uid        browser      sandbox      reset          profile     args    appmode dis-uids    sync_acct        pw_db             note                                             aliases
     # Standard Chrome browsing w/o kasm
-    'bf':   Cfg('ken-bf',  B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',           []),
+    'bf':   Cfg('ken-bf',  B.CHROME,    None,        True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',          []),
 
     # Standard Firefox browsing w/o kasm
-    'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',    ARGS1,  None,   None,       None,            'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
-#    'kff':  Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kstillson',  ARGS0, None,   None,       None,            'lp:kstillson@g', 'ffox Google:* direct(fj); issues w/ drive',    []),
-    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.SNAP,     True,          'Default',    ARGS0,  None,   None,       None,           'lp:ken@kds',     'Firefox general browsing direct(fj)',           []),
-    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.SNAP,     True,          'Default',    ARGS0,  None,   None,       None,           'ff-internal',    'Bad boy Firefox(fj)',                           ['fb3']),
+    'k':     Cfg('ken',    B.CHROME,    Sb.FIREJAIL, True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
+    'knj':   Cfg('ken',    B.CHROME,    None,        True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(no fj)',         []),
 
-    'm':    Cfg('ken-b',   B.FIREFOX,   Sb.SNAP,     True,       'media-control', ARGS0, None, None,     None,           None,             'Firefox media control',                         []),
+    'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',    ARGS0,  None,   None,       None,          'lp:ken@kds',     'Firefox general browsing direct(fj)',          []),
+    'bnj':  Cfg('ken-b',   B.FIREFOX,   None,        True,          'Default',    ARGS0,  None,   None,       None,          'lp:ken@kds',     'Firefox general browsing direct(no fj)',       []),
+
+    'bbb':  Cfg('ken-bbb', B.FIREFOX,   Sb.FIREJAIL, True,          'Default',    ARGS0,  None,   None,       None,          'ff-internal',    'Bad boy Firefox(fj)',                          []),
+    'bbbnj':Cfg('ken-bbb', B.FIREFOX,   None,        True,          'Default',    ARGS0,  None,   None,       None,          'ff-internal',    'Bad boy Firefox(no fj)',                       []),
+
+    # firefox separate space for proton extension integration
+    'p':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'proton',     ARGS0,  None,   None,       None,          'protonpass',     'Firefox general browsing direct(fj)',          []),
 
     # Experimental / other
-    'e':    Cfg('ken',     B.FIREFOX,   None,        False, 'add-on experiments', ARGS0, None,   None,       None,            None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
+    'e':    Cfg('ken',     B.FIREFOX,   None,        False, 'add-on experiments', ARGS0, None,   None,       None,           None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
+
+    # Raw browser access (no added security)
+    'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,       'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
+    'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,       None,            None,            'raw firefox',                                   ['f', 'ff']),
 
     # Browsing w/ kasm
      #'kb':   Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
@@ -137,17 +146,13 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
      #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
     # Deprecated modes
-    'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',           []),
-    'kk':   Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kenp0',    ARGS0,  None,   None,       None,           None,             '(unused alt profile) ffox Google:ken@p0 direct(fj)',                 []),
+     #'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',           []),
+     #'kk':   Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,          'kenp0',    ARGS0,  None,   None,       None,           None,             '(unused alt profile) ffox Google:ken@p0 direct(fj)',                 []),
      #'bbb0': Cfg('ken-bbb', B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-9] Bad boy direct(fj)',                     ['b30']),
      #'ctrl': Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,    'control accts',  ARGS1,  None,   None,       'ken@p0',        'lp:kstillson@g', 'Google control accounts',                       ['C']),
+     #'kff':  Cfg('ken',     B.FIREFOX,   Sb.FIREJAIL, True,        'kstillson',  ARGS0,  None,   None,       None,          'lp:kstillson@g', 'ffox Google:* direct(fj); issues w/ drive',    []),
+     #'m':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,       'media-control', ARGS0,  None,   None,       None,          None,             'Firefox media control',                        []),
 
-    # Reduced security modes; no FJ => better system access (e.g. obs)
-    'k0':   Cfg('ken',     B.CHROME,    None,        True,          'Default',  ARGS1,  None,   None,       None,            'lp:kstillson@g', 'Google:* direct(no fj)',                       []),
-
-    # Raw browser access (no added security)
-    'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,       'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
-    'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,       None,            None,            'raw firefox',                                   ['f', 'ff']),
 }
 
 
@@ -309,7 +314,7 @@ def launch(cfg):
     if not rslt.ok:
         tmpname = f'/tmp/run_browser-{os.geteuid()}-err.out'
         with open(tmpname, 'w') as f: print(rslt.out, file=f)
-        C.zwarn(f'Browser exited with status {rslt.returncode}.  See {tmpname}')
+        C.zwarn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
     else: debug(f'Browser process returned: {rslt.out}')
 
 def pick_code(in_code):
