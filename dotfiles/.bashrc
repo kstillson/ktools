@@ -221,6 +221,7 @@ alias TAB='column -t'
 alias Launch='xdg-open'   # opens with default viewer
 alias Less='less'
 alias V='xdg-open'
+alias man='LESS="${LESS/--LINE-NUMBERS /}" /usr/bin/man'
 
 # directory control
 alias ..='cd ..'
