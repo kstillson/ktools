@@ -215,9 +215,9 @@ def special_arg_resolver(input_val, argname='argument', env_value_default=None):
     elif val.startswith('*'):
         parts = val[1:].split('/')
         keyname = parts[0]
-        username = parts[1] if len(parts) >= 2 else None
-        password = parts[2] if len(parts) >= 3 else None
-        import kmc
+        username = parts[1] if len(parts) >= 2 else ''
+        password = parts[2] if len(parts) >= 3 else ''
+        import ktools.kmc as kmc
         output_value = kmc.query_km(keyname, username, password, timeout=3, retry_limit=2, retry_delay=2)
         if output_value.startswith('ERROR:'): raise ValueError(f'failed to retrieve {keyname} from keymaster: {output_value}.')
         return output_value
