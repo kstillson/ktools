@@ -488,11 +488,15 @@ def gen_command_via_settings_yaml():
     basename = name.replace('test-', '')
 
     add_simple_control(cmnd, 'dns')
-    add_simple_control(cmnd, 'env')
     add_simple_control(cmnd, 'extra_docker', '')
     add_simple_control(cmnd, 'extra_docker0', '')
     add_simple_control(cmnd, 'hostname')
     add_simple_control(cmnd, 'network')
+
+    env = get_setting('env') or []
+    for i in env:
+        for k, v in i.items():
+            cmnd.extend(['--env', f'{k}={v}'])
 
     if get_setting('network') != 'none':
         ip = get_ip_to_use()
