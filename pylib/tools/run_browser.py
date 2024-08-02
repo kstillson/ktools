@@ -28,10 +28,6 @@ filters that make it harder for an infected browser to interact with
 components outside the browser or to persist the malware beyond the current
 session.
 
-In addition, the script can launch a browser that talks to another browser
-running inside KASM- a container hosting service generally run on a (possibly
-remote) VM.
-
 Thirdly, the script has a concept of restting-to-last-saved-snapshot.  This
 basically wipes out the profile-specific portion of a browser's configuration
 upon each launch, and sets it back to a known-good snapshot.  You can update a
@@ -39,22 +35,7 @@ browser configuration's snapshot either when it's running or after it's exited
 (but before re-starting it!).  In this way, you can persist only the changes
 you want and specifically make a snapshot, and otherwise, you keep returning
 to the previously known state.  i.e., if malware manages to infiltrate your
-browser, it should get wiped out on the next browser restart.  This 'reset'
-works for both local and KASM-based instances (using rsync to talk to KASM
-server, which requires you to set up appropriate ~/.ssh/authorized_keys
-file(s)).
-
-When using a KASM-based configuration, the "appmode" setting controls the
-local browser's launch mode.  In "normal mode", (appmode=None), it just runs
-the browser as usual.  You'll have to manually login to KASM and select the
-remote browser to execute.  You'll also have to be careful when typing things
-like control-w, as that will close the local browser window, not the remote.
-With appmode="-", a local Chrome browser is launched in application-mode,
-which gets rid of local hotkeys, bookmarks, etc, meaning that those keystrokes
-will be interpreted by the fully-featured remote browser (probably what you
-want).  If appmode is set to the name of a KASM "cast" configuration, then the
-local browser will automatically start that configuration, which essentially
-selects the KASM-app to launch (e.g. selecting the remote browser for you).
+browser, it should get wiped out on the next browser restart.
 
 The script also supports a simple user-id mutual exclusion mode.
 Specifically, a configuration can list a set of usernames (or glob-style
@@ -91,7 +72,7 @@ ARGS = None  # populated by main()
 Cfg = namedtuple('browser_config', 'uid browser sandbox reset profile args appmode dis_uids sync_acct pw_db note aliases')
 
 B =  Enum('Browsers', 'CHROME FIREFOX')
-Sb = Enum('Sandbox',  'FIREJAIL KASM FIREKASM SNAP')  # FIREKASM => fj on local browser, and remote kasm browser
+Sb = Enum('Sandbox',  'FIREJAIL')    # or None...
 
 CURRENT_USER = os.environ.get('USER') or os.environ['USERNAME']
 
@@ -102,23 +83,16 @@ BACKUP_SFX =      os.environ.get('B_BACKUP_SUFFIX', '.prev')  # set to None to d
 SNAPSHOT_DIR    = os.environ.get('B_SNAPSHOT_DIR',  os.path.expanduser('~/ktools/Bsnaps'))
 DBUS =            os.environ.get('B_DBUS',         'auto')   # True/False/'auto'. 'auto' will launch a dbus session whenever a selected browser uid is different from the one that runs the launch command.
 FIREJAIL_PREFIX = os.environ.get('B_FIREJAIL',     ['/usr/bin/firejail', '--whitelist=~/.pulse', '--whitelist=/root/dev/private-containers/stable-diffusion-webui-docker/data', '--'])
-KASM_PERSIST =    os.environ.get('B_KASM_PERSIST', 'kasm:/home/persist/{kasm_workspace}/{kasm_login}/.config/{browser}/{kasm_browser_profile}')  # use ~/.ssh/config to change remote user/port
-KASM_URL =        os.environ.get('B_KASM_URL',     'https://home.point0.net:4445')
 
 # ---- browser launch configs
 
 ARGS0 = []
 ARGS1 = ['--window-size=2000,1200', '--window-position=200,100"']   # Note: Chrome supports these; ffx doesn't (but does a better job or remembering last window pos)
 
-# When sandbox=Sb.{KASM|FIREKASM}, reset should be a string "kasm:{kasm_workspace}:{kasm_login}:{kasm_browser_profile}"
-KASM1 = 'kasm:chrome-b:ken-b:Default'
-KASM2 = 'kasm:chrome-bbb:ken-bbb:Default'
 
 CONFIGS = { #   uid        browser      sandbox      reset          profile     args    appmode dis-uids    sync_acct        pw_db             note                                             aliases
-    # Standard Chrome browsing w/o kasm
     'bf':   Cfg('ken-bf',  B.CHROME,    None,        True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',          []),
 
-    # Standard Firefox browsing w/o kasm
     'k':     Cfg('ken',    B.CHROME,    Sb.FIREJAIL, True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
     'knj':   Cfg('ken',    B.CHROME,    None,        True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(no fj)',         []),
 
@@ -138,12 +112,6 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,       'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
     'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,       None,            None,            'raw firefox',                                   ['f', 'ff']),
 
-    # Browsing w/ kasm
-     #'kb':   Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  'b',    None,       'chrome-b@p0',   'lp:ken@kds',     '[SC-c] General browsing (kasm/foxyproxy)',      []),
-     #'kbbb': Cfg('ken-bbb', B.CHROME,    Sb.FIREKASM,     KASM2,         'kasm-bbb', ARGS1,  'bbb',  None,       'chrome-bbb@p0', 'pm:chrome-bbb',  '[AC-b] Bad boy (kasm/foxyproxy, app mode)',     ['b3']),
-     # # Specialized modes (mostly for debugging frozen kasms)
-     #'kb1':  Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  '-',    None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy w/o cast',     []),
-     #'kb2':  Cfg('ken-b',   B.CHROME,    Sb.FIREKASM,     KASM1,         'kasm-b',   ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     'General browsing (kasm/foxyproxy, no app mode)',[]),
 
     # Deprecated modes
      #'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',           []),
@@ -254,10 +222,6 @@ def find_firefox_profile_dir(name):
     return None
 
 
-def get_kasm_profile_dir(cfg):
-    return subst(KASM_PERSIST, cfg)
-
-
 def get_profile_dir(cfg):
     if cfg.browser == B.CHROME: return find_chrome_profile_dir(cfg.profile)
     elif cfg.browser == B.FIREFOX: return find_firefox_profile_dir(cfg.profile)
@@ -266,8 +230,7 @@ def get_profile_dir(cfg):
 
 def get_snapshot_dir(cfg):
     browser = 'chrome-' if cfg.browser == B.CHROME else 'firefox-' if cfg.browser == B.FIREFOX else 'qq-'
-    prefix = 'kasm-' if cfg.sandbox in [Sb.KASM, Sb.FIREKASM] else ''
-    return safedir(subst(os.path.join(SNAPSHOT_DIR, browser + prefix + cfg.uid, cfg.profile or 'Default'), cfg))
+    return safedir(subst(os.path.join(SNAPSHOT_DIR, browser + cfg.uid, cfg.profile or 'Default'), cfg))
 
 
 def launch(cfg):
@@ -277,21 +240,27 @@ def launch(cfg):
 
     dbus = DBUS
     if dbus == 'auto':
-        if cfg.sandbox == Sb.SNAP: dbus = False
-        else:                      dbus = ARGS.sudo_done
+        dbus = ARGS.sudo_done
         debug(f'dbus auto resolved to: {dbus}')
 
     if cfg.uid and cfg.uid != CURRENT_USER:
         os.environ['PULSE_SERVER'] = 'unix:/tmp/pulse-server'
     else:
         os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
-    debug(f'$PULSE_SERVER set to {os.environ["PULSE_SERVER"]}')
+        os.environ['XDG_CONFIG_DIRS'] = '/etc/xdg/xdg-ubuntu:/etc/xdg'
+        os.environ['XDG_MENU_PREFIX@'] = 'gnome-'
+        os.environ['XDG_SESSION_DESKTOP'] = 'ubuntu'
+        os.environ['XDG_SESSION_TYPE'] = 'x11'
+        os.environ['XDG_CURRENT_DESKTOP'] = 'ubuntu:GNOME'
+        os.environ['XDG_SESSION_CLASS'] = 'user'
+        os.environ['XDG_DATA_DIRS'] = '/usr/share/ubuntu:/usr/share/gnome:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'
+    debug(f'{os.environ=}')
 
     # ---- construct command to run
 
     cmd = []
     if dbus: cmd.append('dbus-run-session')
-    if cfg.sandbox in [Sb.FIREJAIL, Sb.FIREKASM]:
+    if cfg.sandbox in [Sb.FIREJAIL]:
         cmd.extend(FIREJAIL_PREFIX)
 
     if   cfg.browser == B.CHROME:  cmd.append('google-chrome')
@@ -304,16 +273,19 @@ def launch(cfg):
 
     if cfg.args: cmd.extend(cfg.args)
     if cfg.appmode:
-        url = '--app=' + KASM_URL
+        url = '--app='
         if cfg.appmode != '-': url += '/#/cast/' + cfg.appmode
         cmd.append(url)
 
     # ---- and run it.
 
     rslt = run(cmd)
+    tmpname = f'/tmp/run_browser-{os.geteuid()}.out'
+    with open(tmpname, 'w') as f:
+        print("\nEXCEPTIONS:\n\n" + str(rslt.exception_str), file=f)
+        print("\nSTDERR:\n\n" + str(rslt.stderr), file=f)
+        print("\nSTDOUT:\n\n" + str(rslt.stdout), file=f)
     if not rslt.ok:
-        tmpname = f'/tmp/run_browser-{os.geteuid()}-err.out'
-        with open(tmpname, 'w') as f: print(rslt.out, file=f)
         C.zwarn(f'Browser exited with statuc {rslt.returncode}.  See {tmpname}')
     else: debug(f'Browser process returned: {rslt.out}')
 
@@ -334,12 +306,8 @@ def reset(cfg, post_sudo: bool):
     if not cfg.reset: return debug('config does not request reset')
     if ARGS.noreset: return C.zinfo('skipping normal reset  (--noreset)')
 
-    if cfg.sandbox in [Sb.KASM, Sb.FIREKASM]:
-        # kasm reset transports over ssh, so it must run (only) pre-sudo, for access to the base-user's ssh keys.
-        if ARGS.sudo_done or post_sudo: return debug('config uses kasm and sudo already done, so deferring to pre-sudo reset')
-    else:
-        # non-kasm reset is overwriting files owned by the post-sudo user, so must run (only) post-sudo
-        if cfg.uid and cfg.uid != CURRENT_USER: return debug('non-kasm config must wait until sudoed')
+    # reset is overwriting files owned by the post-sudo user, so must run (only) post-sudo
+    if cfg.uid and cfg.uid != CURRENT_USER: return debug('config reset must wait until sudoed')
 
     # Once in the correct user (sudo'd or not), reset will be called twice,
     # post_sudo=False and then post_sudo=True.  We only need it to run once;
@@ -348,7 +316,7 @@ def reset(cfg, post_sudo: bool):
         return debug('deferring reset until post_sudo call')
 
     source = get_snapshot_dir(cfg)
-    dest = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.FIREKASM] else get_profile_dir(cfg)
+    dest = get_profile_dir(cfg)
     rslt = run(['rsync', '-a', '--delete', source + '/', dest + '/'])
     if not rslt.ok: fatal(f'reset failed: {rslt.out}')
     else:
@@ -380,7 +348,7 @@ def safedir(dir: str):  # Create this dir if needed, along with any missing pare
 
 
 def snap_config(cfg):
-    source = get_kasm_profile_dir(cfg) if cfg.sandbox in [Sb.KASM, Sb.FIREKASM] else get_profile_dir(cfg)
+    source = get_profile_dir(cfg)
     dest = get_snapshot_dir(cfg)
 
     if BACKUP_SFX:
@@ -396,14 +364,9 @@ def snap_config(cfg):
 
 
 def subst(src, cfg):
-    kasm_browser_profile = kasm_login = kasm_workspace = '???'
-    if cfg.sandbox in [Sb.KASM, Sb.FIREKASM]: _, kasm_workspace, kasm_login, kasm_browser_profile = cfg.reset.split(':')
     b = 'google-chrome' if cfg.browser == B.CHROME else 'firefox'
     out = os.path.expanduser(src.replace('{browser}', b).                                 \
-                             replace('{profile}',              cfg.profile or 'Default'). \
-                             replace('{kasm_browser_profile}', kasm_browser_profile).     \
-                             replace('{kasm_login}',           kasm_login).               \
-                             replace('{kasm_workspace}',       kasm_workspace))
+                             replace('{profile}',              cfg.profile or 'Default'))
     ## if src != out: debug(f'subst "{src}" -> "{out}"')
     return out
 
@@ -414,35 +377,12 @@ def switch_user_if_needed(cfg, sudo_done):
         fatal(f'--sudo-done specified, but current user ({CURRENT_USER}) is wrong; should be {cfg.uid}..')
     debug(f'switching user {CURRENT_USER} -> {cfg.uid}')
 
-    if cfg.sandbox == Sb.SNAP:
-        # ---- ssh based user swap
-        # SNAP => launch via ssh (snaps appear very picky about their environment,
-        # and I haven't yet figured out how to get it set up "manually" in a way
-        # that snaps will work yet.  But ssh seems to know the secret, so we'll
-        # just launch via ssh.
-        cmd0 = ('#!/bin/bash\n' +
-                'DISPLAY=' + os.environ.get("DISPLAY") + ' ' +
-                sys.argv[0] + ' --sudo-done ' + ' '.join(sys.argv[1:]) + '\n')
-        fd, cmdfile = tempfile.mkstemp()
-        with os.fdopen(fd, 'w') as f:
-            print(cmd0, file=f)
-        os.chmod(cmdfile, 0o755)
-
-        cmd = ['ssh', f'{cfg.uid}@localhost', cmdfile]
-        debug(f'running loopback ssh via command file {cmdfile}: {cmd}: \n{cmd0}\n')
-        out = C.popen(cmd)
-        os.unlink(cmdfile)
-        # browsers seem to often exit with status, which ssh passes back; ignore it.
-        debug(f'browser outout: {out.out}')
-        sys.exit(0)
-
-    else:
-        # ---- sudo based user swap
-        sys.argv[0] = os.path.abspath(sys.argv[0])  # needs to match pathspec in sudoers
-        cmd = ['/usr/bin/sudo', '--preserve-env=path', '-u', cfg.uid, '--'] + sys.argv
-        cmd.append('--sudo-done')
-        debug(f'sudo command: {cmd}')
-        os.execv(cmd[0], cmd)    # does not return.
+    # ---- sudo based user swap
+    sys.argv[0] = os.path.abspath(sys.argv[0])  # needs to match pathspec in sudoers
+    cmd = ['/usr/bin/sudo', '--preserve-env=path,XDG_CURRENT_DESKTOP', '-u', cfg.uid, '--'] + sys.argv
+    cmd.append('--sudo-done')
+    debug(f'sudo command: {cmd}')
+    os.execv(cmd[0], cmd)    # does not return.
 
 
 # ---------- gui
@@ -514,11 +454,9 @@ def main(argv=[]):
     # ---- alternate run modes that need a selected config.
 
     if ARGS.snap:
-        # For kasm-based snapshots, we must *not* change user, because we need the original user's ssh keys.
-        # For normal snapshots, we must change user to have perms to save the snapshot where the reset function will expect it.
+        # We must change user to have perms to save the snapshot where the reset function will expect it.
         # If we end up calling switch_user_if_needed(), the call doesn't return; it restarts the script as the new uid,
         # which runs the same logic, but won't run sudo again because of the --sudo_done flag.
-        if not cfg.sandbox in [Sb.KASM, Sb.FIREKASM]: switch_user_if_needed(cfg, ARGS.sudo_done)
         ok = snap_config(cfg)
         if not ok:
             C.zwarn('error reported during snap operation')
