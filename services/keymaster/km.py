@@ -100,6 +100,7 @@ class Secret:
     secret: str
     acl: List[str]
     comment: str = None
+    critical: bool = False  # raise critical log msg on any reference to this key.
 
 
 class Secrets(P.DictOfDataclasses):
@@ -124,8 +125,13 @@ SECRETS_PASSWORD = None
 
 # ---------- helpers
 
-def ouch(user_msg, log_msg, varz_name):
+def ouch(user_msg, log_msg, varz_name, critical=False):
     if varz_name: V.bump(varz_name)
+
+    if critical:
+        V.bump('critical-key-touched-ouch')
+        C.log_crit(log_msg)
+
     if 'Time difference' in log_msg:
         # Time delta errors seem common; not sure why. Make them non-panic'ing for now.
         V.bump('keyfail-timedelta')
@@ -140,7 +146,7 @@ def ouch(user_msg, log_msg, varz_name):
     else:
         V.bump('panic')
         SECRETS.reset()
-        C.log_alert(log_msg)
+        if not critical: C.log_crit(log_msg)   # already unconditionally logged above.
     return W.Response(f'ERROR: {user_msg}', 403)
 
 
@@ -152,13 +158,13 @@ def km_healthz_handler(request):
 
 def km_load_handler(request):
     SECRETS.reset()
-    
+
     global SECRETS_PASSWORD
     SECRETS_PASSWORD = request.post_params.get('password')
 
     SECRETS.password = SECRETS_PASSWORD
     SECRETS.filename = ARGS.datafile
-    
+
     s = SECRETS.get_data()
     if not SECRETS.ready():
         C.log_alert(f'unable to load secrets from {ARGS.datafile}')
@@ -217,17 +223,19 @@ def km_default_handler(request):
                           must_be_later_than_last_check=not ARGS.noratchet, max_time_delta=ARGS.window)
     if not rslt.ok:
         return ouch(rslt.status, f'unsuccessful key retrieval attempt keyname={keyname}, reg_hostname={rslt.registered_hostname}, client_addr={client_addr}, username={rslt.username}, status={rslt.status}',
-                    'keyfail-hostname' if 'hostname' in rslt.status else 'keyfail-kauth')
+                    'keyfail-hostname' if 'hostname' in rslt.status else 'keyfail-kauth', critical=secret.critical)
 
     # Try to find a matching ACL.
     for acl in secret.acl:
         if check_acl(acl, rslt):
-            C.log(f'successful key retrieval: keyname={keyname}, client_addr={client_addr}, username={rslt.username}')
+            C.log(f'successful key retrieval: keyname={keyname}, client_addr={client_addr}, username={rslt.username}',
+                  level=C.CRITICAL if secret.critical else C.INFO)
+            if secret.critical: V.bump('critical-key-touched-ok')
             V.bump('key-success')
             return secret.secret
 
     # No ACL matched.
-    return ouch('not authorized', f'unsuccessful key retreival attempt; no matching ACL. keyname={keyname}, reg_hostname={rslt.registered_hostname}, client={client_addr}, username={rslt.username}', 'keyfail-acl')
+    return ouch('not authorized', f'unsuccessful key retreival attempt; no matching ACL. keyname={keyname}, reg_hostname={rslt.registered_hostname}, client={client_addr}, username={rslt.username}', 'keyfail-acl', critical=secret.critical)
 
 
 # ---------- main
