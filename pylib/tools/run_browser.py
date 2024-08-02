@@ -244,9 +244,13 @@ def launch(cfg):
         debug(f'dbus auto resolved to: {dbus}')
 
     if cfg.uid and cfg.uid != CURRENT_USER:
+        # Expected and actual user aren't different, so use efficeint same-user socket access for sound.
         os.environ['PULSE_SERVER'] = 'unix:/tmp/pulse-server'
     else:
+        # Different users, so need to use net-socket for sound.
         os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
+        # XDG_* vars appear to be necessary for Chrome to open file-save dialogs and similar.
+        # TODO(defer): copy these over from original user environment...? (tweaks to some values needed...)
         os.environ['XDG_CONFIG_DIRS'] = '/etc/xdg/xdg-ubuntu:/etc/xdg'
         os.environ['XDG_MENU_PREFIX@'] = 'gnome-'
         os.environ['XDG_SESSION_DESKTOP'] = 'ubuntu'
