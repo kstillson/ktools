@@ -238,7 +238,7 @@ class WebServerBase:
         if self.varz:
             V.bump('web-method-%s' % request.method)
             if self.varz_path_trim:
-                trimmed_path = request.full_path[1:(self.varz_path_trim + 1)]
+                trimmed_path = request.path[1:(self.varz_path_trim + 1)]
                 V.bump('web-path-%s' % trimmed_path)
 
         # Find a matching handler.
