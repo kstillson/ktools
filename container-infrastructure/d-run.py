@@ -494,9 +494,17 @@ def gen_command_via_settings_yaml():
     add_simple_control(cmnd, 'network')
 
     env = get_setting('env') or []
-    for i in env:
-        for k, v in i.items():
-            cmnd.extend(['--env', f'{k}={v}'])
+    if isinstance(env, str):
+        cmnd.extend(['--env', env])
+    elif isinstance(env, list):
+        for i in env:
+            if isinstance(i, str):
+                cmnd.extend(['--env', i])
+            elif isinstance(i, dict):
+                for k, v in i.items():
+                    cmnd.extend(['--env', f'{k}={v}'])
+    else:
+        err(f'warning: env setting returned unknown type ({type(env)}); ignored.')
 
     if get_setting('network') != 'none':
         ip = get_ip_to_use()
