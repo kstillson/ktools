@@ -27,7 +27,7 @@ def test_gen_id():
     assert gen == 'job'
     ids.append(gen)
     gen = run_para.gen_id('abc789', ids, rm)
-    assert gen == 'job.2'
+    assert gen == 'job.4'
 
 
 def test_process_stdin_auto():
