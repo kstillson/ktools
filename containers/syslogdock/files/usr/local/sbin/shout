@@ -5,7 +5,7 @@
 # That means it's a long-running process that is fed events to process line-by-line from stdin.
 #
 
-LIMIT="3,180"   # allow up to 3 messages per 3-minute window.
+LIMIT="3,10800"   # allow up to 3 messages per 3-hour window.
 
 MAIL_DEST="root"
 MAIL_FROM="syslog@syslogdock.h.point0.net"

@@ -57,7 +57,7 @@ def do_check(rl, statefile):
     with UC.FileLock(statefile):
         if VERBOSE: print(f'before: {str(rl)}')
         check = rl.check()
-        if VERBOSE: print(f'after: {str(rl)}\nresult: {"ALLOW" if ok else "REJECT"}')
+        if VERBOSE: print(f'after: {str(rl)}\nresult: {"ALLOW" if check else "REJECT"}')
         save_state(rl, statefile)
         return check
 
