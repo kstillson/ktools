@@ -7,10 +7,21 @@
 [[ -r ~/.profile.local ]] && . ~/.profile.local
 
 
-# ---- screen startup logic
+# this is redundant to the logic in .bashrc, but for "sudo -i", only .profile
+# is run, and some sudo'd commands rely on the path being set.
+
+if [ "$UID" == "0" ]; then
+    PATH=/root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+else
+    PATH=~/bin:/usr/local/bin:/usr/bin:/bin
+fi
+
+# ---------- interactive only
 
 # If not running interactively, stop now.
 [ -z "$PS1" ] && return
+
+# ---- screen startup logic
 
 echo ""
 /usr/bin/screen -ls | grep --color=never '(' || true
