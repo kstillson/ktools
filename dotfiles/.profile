@@ -5,16 +5,8 @@
 #  'command' tab, and check the box to use a login shell.)
 
 [[ -r ~/.profile.local ]] && . ~/.profile.local
+[[ -r ~/.bashrc ]] && . ~/.bashrc
 
-
-# this is redundant to the logic in .bashrc, but for "sudo -i", only .profile
-# is run, and some sudo'd commands rely on the path being set.
-
-if [ "$UID" == "0" ]; then
-    PATH=/root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-else
-    PATH=~/bin:/usr/local/bin:/usr/bin:/bin
-fi
 
 # ---------- interactive only
 
