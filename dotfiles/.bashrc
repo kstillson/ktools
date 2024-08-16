@@ -84,20 +84,11 @@ esac
 # prompt
 
 # this function is run before each command, so it should be as efficient as possible.
-# it's main purpose is to set the prompt to include the current working directory,
-# and to incidiate in red if the previous command exited with non-zero status.
-# it also supports sending a command transcript to syslog if $BASHLOG is set,
-# and various alternate colors to highlight certain virtualization environments.
-#
 function set_prompt() {
   local last=$?
-  if [[ -n "$BASHLOG" ]]; then
-    /usr/bin/logger -p local1.info -t bash "bash $USER[$$] $SSH_CONNECTION: $(fc -ln -0)"
-  fi
   PS1=""
   if [[ "${last}" != 0 ]]; then PS1+="\[${RED}\][exit ${last}] "; fi
-  # if [[ -s $HOME/.status ]]; then PS1+="\[${RED}\]{ Status file alert } "; fi
-  # if [[ -n "$debian_chroot" ]]; then PS1+="\[${YELLOW}\]${debian_chroot}> "; fi
+  if [[ -f "/tmp/olr" ]]; then PS1+="\[${YELLOW}\]{O/}"; fi
   PS1+="\[${GREEN}\]\u@"
   if [[ -z "${container}" ]]; then PS1+="\h"; else PS1+="\[${YELLOW}\]\h"; fi
   if [[ -n "${VIRTUAL_ENV}" ]]; then PS1+="\[${MAGENTA}\]{$(basename ${VIRTUAL_ENV})}"; fi
@@ -366,12 +357,13 @@ function C() {
     srch=''
     if [[ $# == 1 ]]; then srch="${1//?/&*/}"
     else for i in "$@"; do srch="${srch}${i}*/"; done; fi
-    if [[ "$PWD" != "$HOME" ]]; then srch2="$HOME/$srch"; else srch2=""; fi
-    readarray -t out < <(ls -1d $srch $srch2 2>/dev/null)
+    readarray -t out < <(ls -1d $srch 2>/dev/null)
+    if [[ ${#out[@]} == 0 ]]; then readarray -t out < <(ls -1d ~/$srch 2>/dev/null); fi
+    if [[ ${#out[@]} == 0 ]]; then readarray -t out < <(ls -1d  /$srch 2>/dev/null); fi
     case ${#out[@]} in
 	0) echo "not found  ($srch)" ;;
 	1) cd "${out[0]}" ;;
-	*) select i in ${out[@]}; do cd "$i"; break; done ;;
+	*) COLUMNS=20; select i in ${out[@]}; do cd "$i"; break; done ;;
     esac
 }
 
