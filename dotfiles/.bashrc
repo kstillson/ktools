@@ -88,6 +88,7 @@ function set_prompt() {
   local last=$?
   PS1=""
   if [[ "${last}" != 0 ]]; then PS1+="\[${RED}\][exit ${last}] "; fi
+  if [[ -n "${prompt_prefix}" ]]; then PS1+="\[${YELLOW}\]${prompt_prefix}"; fi
   if [[ -f "/tmp/olr" ]]; then PS1+="\[${YELLOW}\]{O/}"; fi
   PS1+="\[${GREEN}\]\u@"
   if [[ -z "${container}" ]]; then PS1+="\h"; else PS1+="\[${YELLOW}\]\h"; fi
