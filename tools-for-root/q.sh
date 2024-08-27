@@ -49,12 +49,14 @@ eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linu
 # formulae are wrong for you).
 
 DD="${KTOOLS_Q_DD:-${D_SRC_DIR}/dnsdock/files/etc/dnsmasq/private.d}"                 # Where dnsmasq config files are stored.
+IPT_FILE="${IPT_FILE:-/root/iptables.rules}"                                          # Location of saved iptables rules
+IPT_FILE_BACKUP="${IPT_FILE_BACKUP:-/root/iptables.rules.mbk}"                        # Location of iptables rules backup
 KMD_P="${KTOOLS_Q_KMD_P:-${D_SRC_DIR}/private.d/km.data.pcrypt}"                      # Location of encrypted keymaster secrets file
 LEASES="${KTOOLS_Q_LEASES:-${VOL_BASE}/dnsdock/var_log_dnsmasq/dnsmasq.leases}"       # Location of dnsmasq leases (output/generated) file.
 PROCMON="${PROCMON:-localhost:8080}"                                                  # host:port of the procmon instance to work with.
 PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                                         # Location of ../services/procmon output file
 RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
-
+RW="${RW:-/root/bin/rw}"                                                              # Prefix command to put host into read+write mode
 
 # ---------- colorizers
 
@@ -281,19 +283,6 @@ function git_sync_all() {
     emitc green "all done\n"
 }
 
-# copy root pubkey to root@ arg1's a_k via pi std login.
-function pi_root() {
-    host=${1:-rp}
-    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
-    need_ssh_agent
-    P=$(/usr/local/bin/kmc pi-login)
-    sshpass -p $P scp ~/.ssh/id_rsa.pub pi@${host}:/tmp
-    sshpass -p $P ssh pi@$host 'sudo bash -c "mkdir -p /root/.ssh
-    cat /tmp/id_rsa.pub >>/root/.ssh/authorized_keys
-    rm /tmp/id_rsa.pub" '
-    echo "done"
-}
-
 # Runs a pull in all known local git dirs.
 function git_pull_all() {
     need_ssh_agent
@@ -313,7 +302,7 @@ function git_update_pis() {
     # TODO(defer): add lightning
     hosts="hs-family hs-lounge hs-mud pibr pout trellis1 twinkle"
     echo "pulling git updates..."
-    RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/dev; git pull'"
+    RUN_PARA "$hosts" "$RW /bin/su pi -c 'cd /home/pi/dev; git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
     echo "restarting services..."
     RUN_PARA "$hosts" "systemctl daemon-reload; /home/pi/dev/Restart"
@@ -370,13 +359,60 @@ function iptables_query() {
     fi
 }
 
+# Reload iptables rules from source file, preserving fail2ban rules
+function iptables_reload() {
+    f2b=0
+    pgrep fail2ban && { f2b=1; }
+
+    if [[ "$f2b" == 1 ]]; then runner "systemctl stop fail2ban"; fi
+    runner "iptables-restore $IPT_FILE"
+    if [[ "$f2b" == 1 ]]; then runner "systemctl start fail2ban"; fi
+
+    if [[ -s /root/j/Iptables.log ]]; then
+	emitc yellow "iptables showing alerts"
+	read -p "clear them [y|N] ? " ok
+	if [[ "$ok" == "y" ]]; then reset_ipt_alerts; fi
+    fi
+
+    emitc green "ok"
+}
+
 # Save current iptables rules to disk for auto-restore upon boot.
-  # TODO: move to standard location (with autodetect for ro root)
-  # TODO: check if fail2ban is running, and if so, turn it off before saving and then back on again afterwards.
 function iptables_save() {
-    runner "/bin/mv -f ~/iptables.rules ~/iptables.rules.mbk"
-    runner "/usr/sbin/iptables-save > ~/iptables.rules"
-    emitc green "saved"
+    emitc red "CAUTION- $IPT_FILE is manually maintained now"
+    read -p "really want to continue [y|N] ? " ok
+    if [[ "$ok" != "y" ]]; then emitc yellow "aborted"; return 1; fi
+
+    f2b=0
+    pgrep fail2ban && { f2b=1; }
+
+    runner "/bin/mv -f ${IPT_FILE} ${IPT_FILE_BACKUP}"
+    if [[ "$f2b" == 1 ]]; then runner "systemctl stop fail2ban"; fi
+    runner "/usr/sbin/iptables-save > ${IPT_FILE}"
+    if [[ "$f2b" == 1 ]]; then runner "systemctl start fail2ban"; fi
+
+    emitc green "ok"
+}
+
+# list each parent dir of specified dir or current dir.
+function parent_dirs() {
+    d=${1:-$(pwd)}
+    d=$(dirname $d)
+    while [[ "$d" != "/" ]]; do
+	echo "$d"
+	d=$(dirname $d)
+    done
+}
+
+# copy root pubkey to root@ arg1's a_k via pi std login.
+function pi_root() {
+    host=${1:-rp}
+    if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
+    need_ssh_agent
+    P=$(/usr/local/bin/kmc pi-login)
+    sshpass -p $P scp ~/.ssh/id_rsa.pub pi@${host}:/tmp
+    sshpass -p $P ssh pi@$host sudo -i $RW bash -c "mkdir -p /root/.ssh; cat /tmp/id_rsa.pub >>/root/.ssh/authorized_keys; rm /tmp/id_rsa.pub"
+    echo "done"
 }
 
 # (in parallel) ping the list of hosts in $@.  Try up to 3 times.
@@ -419,9 +455,9 @@ function updater() {
     OUT2="all-upgrade.out"
     need_ssh_agent
     RP_FLAGS="--output $OUT1 --timeout 240"
-    RUN_PARA "$hosts" "apt-get update"
+    RUN_PARA "$hosts" "$RW apt-get update"
     RP_FLAGS="--output $OUT2 --timeout 999"
-    RUN_PARA "$hosts" "apt-get upgrade --yes"
+    RUN_PARA "$hosts" "$RW apt-get upgrade --yes"
     emit "output sent to $OUT1 and $OUT2 (consider rm $OUT1 $OUT2 )"
 }
 
@@ -431,12 +467,8 @@ function updater() {
 
 # My rsnapshot config relies on capabilities to provide unlimited read access to an otherwise
 # unprivlidged account.  Sometimes upgrades remove those capabilities, so this puts them back.
-# I keep the root dir read-only on my primary server, so need to temp-enable writes...
 function enable_rsnap() {
-    RUN_PARA "$(list_rsnap_hosts | without jack)" "/sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
-    runner "mount -o remount,rw /"
-    runner "/sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
-    runner "mount -o remount,ro /"
+    RUN_PARA "$(list_rsnap_hosts)" "$RW /sbin/setcap cap_dac_read_search+ei /usr/bin/rsync"
 }
 
 # Output the list of DHCP leases which are not known to the local dnsmasq server's DNS list.
@@ -538,6 +570,24 @@ function dns_update_rmmac() {
     emit "done."
 }
 
+# Clear iptables violations logfile that triggers alerts.
+function reset_ipt_alerts() {
+    SRC="/root/j/Iptables.log"
+    DEST="/root/j/logs/Iptables-arc.log"
+
+    if [[ ! -s "$SRC" ]]; then emitc yellow "$SRC already empty; nothing to do."; return 1; fi
+
+    # Append log to archive before clearing, so data not lost.
+    cat "$SRC" >> "$DEST"
+    :> "$SRC"
+
+    echo -n "updated filewatch status: "
+    curl http://z:8082/healthz
+    echo ""
+
+    nag -r
+}
+
 # Remove all docker copy-on-write files that have changed unexpectedly.
 function procmon_clear_cow() {
     for f in $(curl -sS ${PROCMON}/healthz | grep COW | sed -e 's/COW: unexpected file: //'); do
@@ -583,7 +633,7 @@ function push_wheel() {
     echoc cyan "copy phase"
     RUN_PARA LOCAL "$DESTS" "scp $SRC @:/tmp" || true
     echoc cyan "install phase"
-    RUN_PARA "$DESTS" "umask 022; pip3 install --system --upgrade /tmp/$SRC_BASE; rm /tmp/$SRC_BASE"
+    RUN_PARA "$DESTS" "$RW bash -c 'umask 022; pip3 install --system --upgrade /tmp/$SRC_BASE; rm /tmp/$SRC_BASE'"
 }
 
 
@@ -672,7 +722,7 @@ function keymaster_update() {
     s1=$(stat -t $tmp)
     emacs $tmp
     s2=$(stat -t $tmp)
-    if [[ "$s1" == "$s2" ]]; then emitc yellow "no changes; abandoning."; rm $tmp; return; fi
+    if [[ "$s1" == "$s2" ]]; then emitc yellow "no changes; aborting."; rm $tmp; return; fi
     read -p "ok to proceed? " ok
     if [[ "$ok" != "y" ]]; then emitc yellow "aborted."; rm $tmp; return; fi
     mv -f $KMD_P ${KMD_P}.prev
@@ -861,6 +911,7 @@ function main() {
         git-sync-all | git-all | ga) git_sync_all ;;               ## check all git dirs for unsubmitted changes and submit them
 	man-packages)                                              ## list manually installed packages  ;-)
 	    comm -23 <(apt-mark showmanual | sort -u) <(gzip -dc /var/log/installer/initial-status.gz | sed -n 's/^Package: //p' | sort -u) ;;
+	parent-dirs | parents | pds | pd) parent_dirs "$1" ;;      ## list each parent dir of given (or current) dir
         pi-root | pir) pi_root ${1:-rp} ;;                         ## copy root pubkey to root@ arg1's a_k via pi std login.
         ports | listening | l)                                     ## list listening TCP ports
             ss -tupln | tail -n +2 | awk '{$3=$4=$6=""; print; }' | sed -e 's/users:((//' -e 's/))//' -e 's/,/ /g' -e 's/"//g' | column -t | sort -n ;;
@@ -934,6 +985,7 @@ function main() {
         keymaster-status | kms) keymaster_status ;;                       ## print keymaster healthz status
         keymaster-update | kmu) keymaster_update ;;                       ## edit keymaster encrypted data and restart
         keymaster-zap | kmz) keymaster_zap ;;                             ## clear keymaster state (and raise alerts)
+	iptables-reload | ir) iptables_reload ;;                          ## safely reload iptables from source file
         panic-reset | PR)                                                 ## recover from a homesec panic
             keymaster_reload; /usr/local/bin/panic reset ;;
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
@@ -945,6 +997,7 @@ function main() {
             runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
         push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
+	reset-iptables-alerts | rip) reset_ipt_alerts ;;                  ## clear noisy alerts
         syslog-queue-archive | queue-archive | sqa | qa)                  ## show full queue history
             zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;
         syslog-queue-filter-ssh | queue-filter | sqf | qf)                ## remove sshs from log queue
