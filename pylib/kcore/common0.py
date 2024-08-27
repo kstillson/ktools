@@ -311,6 +311,7 @@ def log_error(msg):    return log(msg, level=ERROR)
 def log_warning(msg):  return log(msg, level=WARNING)
 def log_info(msg):     return log(msg, level=INFO)
 def log_debug(msg):    return log(msg, level=DEBUG)
+def debug(msg):        return log(msg, level=DEBUG)
 
 
 # ----------
