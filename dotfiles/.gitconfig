@@ -7,13 +7,15 @@
 	aa = add -A .
 	b = branch
 	ba = branch -a
+	bc = difftool -t bc -d --symlinks
 	C = !"git commit -v -a && { git remote | xargs -L1 git push; }"
 	ci = commit
 	cia = commit -v -a
 	co = checkout
-	clean = push --delete origin 
+	clean = push --delete origin
 	d = diff
 	dc = diff --cached
+	dt = difftool
 	extract = "!f() { git archive --remote ken@git:git $1 | tar -xvpf -; }; f"
 	fp = format-patch
 	g = !git gui &
@@ -43,8 +45,17 @@
 	editor = nano
 	excludesfile = ~/.gitignore
 
+[init]
+	defaultBranch = main
+
 [push]
 	default = simple
 
-[init]
-	defaultBranch = main
+[difftool "bc"]
+	trustExitCode = true
+
+[merge]
+	tool = bc
+[mergetool "bc"]
+	trustExitCode = true
+
