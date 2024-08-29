@@ -113,7 +113,6 @@ SCENES = {
   'l'           : [ 'landscaping' ],
   'O'           : [ 'office' ],
   'o'           : [ 'outside' ],
-  'out'         : [ 'outside' ],
 
 # Special dynamically expanded
   'TP'          : [ '$PLUGIN_NAME:TPLINK*' ],
