@@ -52,7 +52,7 @@ class NeoPixel:
             if LOG_LEVEL_SETUP: C.log(f'NeoPixel: graphics disabled as $DISPLAY not set', LOG_LEVEL_SETUP)
         self.n = num_pixels
         self.kwargs = kwargs
-        self.brightness = 1.0
+        self.brightness = kwargs.get('brightness') or 1.0
         self.data = []
         for i in range(num_pixels): self.data.append((0, 0, 0))
         if not GRAPHICS: return

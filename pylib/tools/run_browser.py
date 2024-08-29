@@ -59,7 +59,7 @@ for users to make site-specific changes w/o affecting git controlled file.
 
 '''
 
-import fnmatch, os, psutil, signal, sys, tempfile, time
+import fnmatch, os, psutil, shutil, signal, sys, tempfile, time
 from collections import namedtuple
 from enum import Enum
 
@@ -234,7 +234,8 @@ def get_snapshot_dir(cfg):
 
 
 def launch(cfg):
-    os.chdir(os.path.expanduser('~'))
+    home = os.path.expanduser('~')
+    os.chdir(home)
 
     # ---- prep & setup environ
 
@@ -244,13 +245,14 @@ def launch(cfg):
         debug(f'dbus auto resolved to: {dbus}')
 
     if cfg.uid and cfg.uid != CURRENT_USER:
-        # Expected and actual user aren't different, so use efficeint same-user socket access for sound.
+        # We're going to need to changer user; i.e. we're in the "initial" user, rather than the final one.
         os.environ['PULSE_SERVER'] = 'unix:/tmp/pulse-server'
     else:
-        # Different users, so need to use net-socket for sound.
+        # cfg.uid is already correct, so setup environment for the current uid.
+        shutil.copyfile('/var/local/k/xa', f'{home}/.Xauthority')
+        os.environ['XAUTHORITY'] = f'{home}/.Xauthority'
+
         os.environ['PULSE_SERVER'] = 'tcp:127.0.0.1:4713'
-        # XDG_* vars appear to be necessary for Chrome to open file-save dialogs and similar.
-        # TODO(defer): copy these over from original user environment...? (tweaks to some values needed...)
         os.environ['XDG_CONFIG_DIRS'] = '/etc/xdg/xdg-ubuntu:/etc/xdg'
         os.environ['XDG_MENU_PREFIX@'] = 'gnome-'
         os.environ['XDG_SESSION_DESKTOP'] = 'ubuntu'
