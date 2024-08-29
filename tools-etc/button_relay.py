@@ -97,7 +97,7 @@ def play_sound(basename='ding'):  # see pi1:~pi/sounds for list of available sou
     return speak('@' + basename)
 
 def speak(msg):
-    url = 'http://pi1/speak/' + C.quote_plus(msg)
+    url = 'http://web/speak/' + C.quote_plus(msg)
     return C.read_web_e(url, timeout=4)
 
 def stoi(s):
