@@ -48,7 +48,7 @@ CONFIG = {
     '/root/rsnap/daily.0/a4/rw/home/rubuntu/backup/var/log/syslog': RUBUNTU_LOG_MAX_AGE,
     
     # cron exceptions
-    '/root/syslog/cron-blue.log':                  3 * DAY,
+    '/root/syslog/cron-black.log':                 3 * DAY,
     '/root/syslog/cron-jack2.log':                 2 * DAY,
     '/root/syslog/cron-glowbox1.log':              None,  # Disable globbed file.
     
