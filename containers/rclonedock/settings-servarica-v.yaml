@@ -2,10 +2,10 @@
 # Need to disable user-ns mapping because it was also disabled in rsnapdock, so files in /mnt/rsnap are owned by their real-uid owners and we need access.
 extra_docker: "--userns=host"
 
-name: "rclonedock-wasabi"
+name: "rclonedock-servarica-v"
 hostname: "rclonedock"
 
-extra_init: "wasabi"
+extra_init: ["-v", "servarica"]
 
 mount_rw:
   - var_log: /var/log

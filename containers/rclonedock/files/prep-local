@@ -3,9 +3,11 @@ ACCOUNTS_DONT_DELETE_REGEX="^(root)"
 GROUP_DONT_DELETE_REGEX="^(.*)"
 KMC_RM=0
 ROOT_RM_HOMEDIR=0
-SBIN_DONT_DELETE_REGEX="nologin|fusermount|mount.fuse"
+SBIN_DONT_DELETE_REGEX="chown|nologin|fusermount|mount.fuse"
 SUID_DONT_DELETE_REGEX="/fusermount"
+SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|ln|od|strings|su)$"
 
 # Some files stored in private.d subdirs to keep them out of git;
 # move them into their real positions.
 mv /root/.config/rclone/private.d/rclone.conf /root/.config/rclone/rclone.conf || true
+mv /root/.ssh/private.d/* /root/.ssh || true

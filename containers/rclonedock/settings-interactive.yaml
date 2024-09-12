@@ -15,6 +15,9 @@ extra_docker:
   - "--cap-add=SYS_ADMIN"
   - "--security-opt=apparmor:unconfined"
 
+name: "rclonedock-human"
+hostname: "rclonedock"
+
 extra_init: "interactive"
 foreground: 1
 
