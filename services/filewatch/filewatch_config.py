@@ -33,7 +33,7 @@ CONFIG = {
     # rsnapshot based
     '/root/rsnap/daily.0/a4/var/log/syslog':                       RSNAP_LOG_AGE,
     '/root/rsnap/daily.0/home/home/ken/share/tmp/touch':           RSNAP_LOG_AGE,
-    '/root/rsnap/daily.0/home/home/blue-backup/backup/var/log/auth.log': 4 * DAY,
+    '/root/rsnap/daily.0/home/home/black-backup/backup/var/log/auth.log': 4 * DAY,
     '/root/rsnap/echo-back/vault-touch':                           32 * DAY,
     
     # syslog based
