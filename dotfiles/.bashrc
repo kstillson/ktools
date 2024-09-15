@@ -99,51 +99,6 @@ PROMPT_COMMAND='set_prompt'
 
 
 # ======================================================================
-# ssh agent
-
-# Some logic to try to "do the right thing" with ssh agents.  basically:
-# "A" will start a local ssh-agent if needed, set apporpriate environment variables,
-#     and load default private keys (prompting for passwords when necessary).
-# "AX" will clear out and kill the ssh agent and clean-up the environment.
-
-# TODO: This is dangerously complex stuff for .bashrc.  Move to somewhere safer.
-
-# return success (0) if agent is running and registered with this shell.
-function test_ssh_agent() {
-  if [[ ! -v SSH_AGENT_PID || ! -v SSH_AUTH_SOCK ]]; then return 1; fi
-  if [[ ! -d "/proc/${SSH_AGENT_PID}" ]]; then return 1; fi
-  if [[ ! -S "$SSH_AUTH_SOCK" ]]; then return 1; fi
-  return 0
-}
-# run ssh-add if keyring empty (agent should already be running).
-function AA() {
-  { ssh-add -l >& /dev/null; } || ssh-add -v
-}
-# attempt to reconnect with existing agent; return 0 if successful.
-SSH_AGENT_DAT="${HOME}/.ssh_agent"
-function A0() {
-  test_ssh_agent && return 0
-  [[ -f ${SSH_AGENT_DAT} ]] || return 1
-  source ${SSH_AGENT_DAT}
-  test_ssh_agent && return 0
-  echo "existing agent data stale." 2>&1
-  # rm ${SSH_AGENT_DAT}
-  return 2
-}
-# activate ssh agent (attach to old or start new)
-function A() {
-  if A0; then AA; echo "attached to existing agent" 2>&1; return 0; fi
-  /usr/bin/ssh-agent -s -t 4h > ${SSH_AGENT_DAT}
-  source ${SSH_AGENT_DAT}
-  if ! test_ssh_agent; then echo "ouch; unable to start agent" 2>&1; return -1; fi
-  echo "agent started" 2>&1;
-  AA
-}
-# kill all agents for this user.
-alias AX='{ pkill -u $USER ssh-agent && echo "ssh-agent stopped"; }; rm -f ${SSH_AGENT_DAT}'
-
-
-# ======================================================================
 # aliases and trivial functions
 
 # ls
@@ -193,6 +148,10 @@ function RG() {
   echo ${out} | Copy +
 }
 
+function Newest() {
+    find ${1:-.} -type f -exec stat --format '%Y :%y %n' "{}" \; | sort -nr | cut -d: -f2- | head
+}
+
 # add a directory to the end of $PATH if it's valid and not in $PATH already.
 addpath() {
     if [[ ! -d "$1" ]]; then echo "$1 not a valid dir"; return 1; fi
@@ -225,12 +184,10 @@ alias rd='rmdir'
 function md() { mkdir -p "$1"; cd "$1"; }
 
 # ssh
-alias s='A; ssh'
-alias Ssh='ssh -fMN'
+alias Ssh='s -fMN'
 
 # git
 alias g="git"
-alias GP="A; git push"
 alias UPDOT='cd ~/dev/ktools/dotfiles && if [[ -O . ]]; then git pull; else echo "cannot git pull; wrong user"; fi && make dots && cd && . .bashrc'
 
 # base 64 stuff
@@ -246,7 +203,7 @@ function EM() { date -d @$(( $1 / 1000000 )); }
 function ES2ED() { echo $(( $1 / 86400)); }
 
 # screen
-function S() { ses=${1:-k1}; shift; screen -D -R ${ses} $@; AX; exit 0; }
+function S() { ses=${1:-k1}; shift; screen -D -R ${ses} $@; exit 0; }
 alias Sl="screen -ls"
 
 # make
@@ -273,7 +230,8 @@ alias    AAR='sudo $APT autoremove'
 alias    AI="_ $APT show"
 alias    AIN="sudo $APT install"
 alias    AR='sudo $APT remove'
-function AS() { { $APT search "$@"; printf "\n<> Snaps\n"; snap search "$@"; printf "\n<> Flathub\n"; flatpak search "$@"; printf "\n<> appimage\n"; appimage-cli-tool search "$@"; } | less; }
+function AS() { $APT search "$@" | less; }
+function ASA() { { $APT search "$@"; printf "\n<> Flathub\n"; flatpak search "$@"; printf "\n<> appimage\n"; appimage-cli-tool search "$@"; } | less; }
 function AQ() { /usr/bin/dpkg -l "$1" | /usr/bin/tail -1 | /bin/egrep --color=always -e '^..'; }
 alias    AU='sudo $APT update'
 alias    AUP='sudo $APT upgrade'
