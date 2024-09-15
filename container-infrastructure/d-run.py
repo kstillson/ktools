@@ -175,10 +175,10 @@ def get_ip_to_use():
     return ip
 
 
-def get_puid(name):
-    '''Decorate the machine's PUID with a container-name specific one.'''
+def get_puid(hostname):
+    '''Decorate the machine's PUID with a host-name specific one.'''
     system_puid = A.get_machine_private_data()
-    return f'{system_puid}:{name}'
+    return f'{system_puid}:{hostname}'
 
 
 # Try to find the location of the specified docker container dir.
@@ -532,7 +532,7 @@ def gen_command_via_settings_yaml():
     add_ports(cmnd, get_setting('ports'), KS.s.get_int('port_offset'), get_bool_setting('ipv6_ports'))
 
     puid = get_setting('puid')
-    if puid == 'auto': puid = get_puid(name)
+    if puid == 'auto': puid = get_puid(get_setting('hostname'))
     if puid: cmnd.extend(['--env', 'PUID=' + puid])
 
     image_name = get_setting('image')

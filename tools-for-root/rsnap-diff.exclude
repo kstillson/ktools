@@ -1,4 +1,11 @@
+.config/dconf/user
+.config/ibus/bus/
 .lesshst
+.local/share/containers
+.local/share/gnome-shell/application_state
+.local/share/gvfs-metadata/root
+.local/share/keyrings/login.keyring
+.local/share/recently-used.xbel
 .mca
 .ssh_agent
 .viminfo
@@ -16,6 +23,9 @@ boot/
 cups/
 debsums
 dnsmasq.leases
+encfs/default/ydmvQFtIaeHAdLEqRIaTqbKt/
+encfs/home/DaSx,O-MgeM1SwsqEQld8TLI/
+etc/analog-dns-file
 etc/mtab
 fake-hwclock
 google-chrome/
@@ -39,4 +49,3 @@ snap/
 v/test/
 var
 vmlinuz
-ydmvQFtIaeHAdLEqRIaTqbKt/

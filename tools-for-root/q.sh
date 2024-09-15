@@ -49,6 +49,7 @@ eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linu
 # formulae are wrong for you).
 
 DD="${KTOOLS_Q_DD:-${D_SRC_DIR}/dnsdock/files/etc/dnsmasq/private.d}"                 # Where dnsmasq config files are stored.
+GIT_DEFAULT_BRANCH="${GIT_DEFAULT_BRANCH:-master}"                                    # Name of branch to update/sync/whatever...
 IPT_FILE="${IPT_FILE:-/root/iptables.rules}"                                          # Location of saved iptables rules
 IPT_FILE_BACKUP="${IPT_FILE_BACKUP:-/root/iptables.rules.mbk}"                        # Location of iptables rules backup
 KMD_P="${KTOOLS_Q_KMD_P:-${D_SRC_DIR}/private.d/km.data.pcrypt}"                      # Location of encrypted keymaster secrets file
@@ -80,8 +81,6 @@ function emitC() { if [[ "$1" == "-" ]]; then shift; nl=''; else nl="\n"; fi; co
 function emitc() { color=${1^^}; shift; if [[ -t 1 ]]; then emitC "$color" "$@"; else printf "$@\n" >&2; fi; }
 
 # ---------- ssh agent
-
-# TODO: can this be simplified?  externalized?
 
 # return success (0) if agent is running and registered with this shell.
 function test_ssh_agent() {
@@ -257,7 +256,6 @@ function git_check_all() {
 # $1 is a git controlled directory.  Will check-in any local changes, then
 # pull updates from all remotes, then push updates to all remotes.
 # assumes "need_ssh_agent" was already called.
-# TODO: assumes remote branch is named "master"
 function git_sync() {
     dir="$1"
     if [[ ! -d "${dir}/.git" ]]; then emitc red "missing git dir: $dir"; return 1; fi
@@ -269,7 +267,7 @@ function git_sync() {
     else
         runner "git commit -v -a"
     fi
-    runner "git remote | xargs -L1 -I@ echo git pull @ master"
+    runner "git remote | xargs -L1 -I@ echo git pull @ ${GIT_DEFAULT_BRANCH}"
     runner "git remote | xargs -L1 git push"
     popd >& /dev/null
     echoc green "done: $dir"
@@ -299,13 +297,12 @@ function git_update_pis() {
     set +e
     t=$(gettemp git-updates.out)
     RP_FLAGS="${RP_FLAGS_BASE} --output $t"
-    # TODO(defer): add lightning
-    hosts="hs-family hs-lounge hs-mud pibr pout trellis1 twinkle"
+    hosts="${Q_PI_HOSTS}"
     echo "pulling git updates..."
-    RUN_PARA "$hosts" "$RW /bin/su pi -c 'cd /home/pi/dev; git pull'"
+    RUN_PARA "$hosts" "$RW /bin/su pi -c 'cd /home/pi/svc && git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
     echo "restarting services..."
-    RUN_PARA "$hosts" "systemctl daemon-reload; /home/pi/dev/Restart"
+    RUN_PARA "$hosts" "systemctl daemon-reload; /home/pi/svc/Restart"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some restart failures"; return 1; fi
     emitc green "all done\n"
 }
@@ -678,7 +675,7 @@ function keypad_commands {
     else
         fmt="fgrep $1"
     fi
-    git archive --remote gitro:git/homectrl.git master keypad_scanner.py | tar -xOf - | \
+    git archive --remote gitro:git/homectrl.git ${GIT_DEFAULT_BRANCH} keypad_scanner.py | tar -xOf - | \
         sed -e '/[#:]/!d' -e 's/, GO//' -e 's/common.trigger//' -e 's/common.control//' -e 's@common.read_web(\"http://@(web-@' \
             -e '/touch-home/d' -e '/disarm/d' \
             -e "s/)\',//" -e 's/#/:####/' -e "s/'//g" -e 's/"//g' -e 's/),/)/g' | \

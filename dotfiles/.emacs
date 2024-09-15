@@ -117,7 +117,8 @@
 (global-set-key "\C-z"     'zap-to-char)
 (global-set-key "\e\C-z"   'suspend-emacs)
 (global-set-key "\e]"      'forward-paragraph)
-(global-set-key "\e["      'backward-paragraph)
+;;(global-set-key "\e["      'backward-paragraph)   ;; cannot bind ^[ or breaks bracketed paste mode (annoying control chars wrap attempts to paste)
+                                                    ;; solve via x-level map of ctrl+up to esc+{
 (global-set-key "\C-xF"    'find-name-dired)
 (global-set-key "\C-xG"    'find-grep-dired)
 (global-set-key "\C-\\"    'compile)
