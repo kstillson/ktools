@@ -298,10 +298,16 @@ function git_update_pis() {
     t=$(gettemp git-updates.out)
     RP_FLAGS="${RP_FLAGS_BASE} --output $t"
     hosts="${Q_PI_HOSTS}"
-    echo "pulling git updates..."
-    RUN_PARA "$hosts" "$RW /bin/su pi -c 'cd /home/pi/svc && git pull'"
+
+    echo""; echo "pulling git updates..."
+    RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/svc && git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
-    echo "restarting services..."
+
+    echo ""; echo "syning past overlay..."
+    RUN_PARA "$hosts" "rw-sync home/pi"
+    if [[ $? != 0 ]]; then emitc yellow "some rw-sync failures (expected); proceeding anyway..."; fi
+
+    echo ""; echo "restarting services..."
     RUN_PARA "$hosts" "systemctl daemon-reload; /home/pi/svc/Restart"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some restart failures"; return 1; fi
     emitc green "all done\n"
