@@ -588,7 +588,7 @@ function reset_ipt_alerts() {
     curl http://z:8082/healthz
     echo ""
 
-    nag -r
+    runner nag -r
 }
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
@@ -998,6 +998,8 @@ function main() {
             curl -sS ${PROCMON}/scan >/dev/null ; curl -sS ${PROCMON}/healthz; echo '' ;;
         procmon-zap | homesec-reset | hr | pz)                            ## clear procmon queue
             runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;
+	procmon-zap2 | pZ)                                                ## reset procmon, retest, update nag
+	    runner ":>$PROCQ"; $0 pr | tee /dev/stderr | grep 'all ok' && runner nag -r ;;
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
         push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
 	reset-iptables-alerts | rip) reset_ipt_alerts ;;                  ## clear noisy alerts
