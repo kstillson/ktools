@@ -399,12 +399,14 @@ function iptables_save() {
 
 # list each parent dir of specified dir or current dir.
 function parent_dirs() {
-    d=${1:-$(pwd)}
-    d=$(dirname $d)
-    while [[ "$d" != "/" ]]; do
+    if [[ -z "$1" || ! -d "$1" ]]; then emit red "parent_dirs: start dir ($d) does not exist or not specified"; return 1; fi
+    d="$(realpath $1)"
+    stop="$(realpath $(pwd))"
+    while [[ "$d" != "/"  &&  "$d" != "$stop" ]]; do
 	echo "$d"
 	d=$(dirname $d)
     done
+    if [[ "$d" != "/" ]]; then echo "$d"; fi
 }
 
 # copy root pubkey to root@ arg1's a_k via pi std login.
@@ -914,7 +916,7 @@ function main() {
         git-sync-all | git-all | ga) git_sync_all ;;               ## check all git dirs for unsubmitted changes and submit them
 	man-packages)                                              ## list manually installed packages  ;-)
 	    comm -23 <(apt-mark showmanual | sort -u) <(gzip -dc /var/log/installer/initial-status.gz | sed -n 's/^Package: //p' | sort -u) ;;
-	parent-dirs | parents | pds | pd) parent_dirs "$1" ;;      ## list each parent dir of given (or current) dir
+	parent-dirs | parents | pds | pd) parent_dirs "$1" ;;      ## list each parent dir of given dir, up through root or cwd.
         pi-root | pir) pi_root ${1:-rp} ;;                         ## copy root pubkey to root@ arg1's a_k via pi std login.
         ports | listening | l)                                     ## list listening TCP ports
             ss -tupln | tail -n +2 | awk '{$3=$4=$6=""; print; }' | sed -e 's/users:((//' -e 's/))//' -e 's/,/ /g' -e 's/"//g' | column -t | sort -n ;;
