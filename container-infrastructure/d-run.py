@@ -36,7 +36,11 @@ def get_setting(name, skip_auto_test_mode=False):
     if TEST_MODE and not skip_auto_test_mode:
         test_val = KS.get('test_' + name)
         if test_val is not None: return test_val
-    return KS.get(name)
+    try:
+        return KS.get(name)
+    except ValueError as v:
+        err(f'got exception trying to get setting {name}: {str(v)}.  Returning None')
+        return None
 
 
 def get_bool_setting(name):
