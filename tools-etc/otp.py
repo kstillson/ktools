@@ -45,6 +45,21 @@ Otpdata = namedtuple('OTP_secret_entry', 'name secret issuer type counter url')
 # are all metadata available for searching / filtering.
 
 
+# ---------- msgs
+
+def zmsg(msg, type='info', timeout=1, background=True):
+    print(msg, file=sys.stderr)
+    # external timeout (rather than zenity flag) for fractional values.
+    cmd = ['/usr/bin/timeout', str(timeout), '/usr/bin/zenity', f'--{type}', '--text', msg]
+    return subprocess.Popen(cmd) if background else C.popen(cmd)
+
+def info(msg, timeout=1): return zmsg(msg, timeout=timeout)
+
+def fatal(msg):
+    zmsg(msg, type='error', timeout=4, background=True)
+    sys.exit(-1)
+
+
 # ---------- main
 
 
@@ -66,41 +81,44 @@ def parse_args(argv):
 def main(argv=[]):
     args = parse_args(argv or sys.argv[1:])
 
-    pcrypt_password = C.popener(['/usr/bin/secret-tool', 'lookup', args.kk, args.kv])
-    if not pcrypt_password: C.zfatal('failed to get pcrypt decryption password')
+    if args.kk:
+        pcrypt_password = C.popener(['/usr/bin/secret-tool', 'lookup', args.kk, args.kv])
+        if not pcrypt_password: fatal('failed to get pcrypt decryption password')
 
-    db_crypted = C.read_file(args.db)
-    if not db_crypted: C.zfatal(f'unable to read encrypted otp secrets database {args.db}')
+        db_crypted = C.read_file(args.db)
+        if not db_crypted: fatal(f'unable to read encrypted otp secrets database {args.db}')
 
-    db_csv = UC.symmetric_crypt(db_crypted, pcrypt_password)
-    if not db_csv: C.zfatal(f'unable to decrypt {args.db}')
+        db_csv = UC.symmetric_crypt(db_crypted, pcrypt_password)
+        if not db_csv: fatal(f'unable to decrypt {args.db}')
+
+    else: db_csv = C.read_file(args.db)
 
     otp_db = []
     for line in db_csv.split('\n'):
         if not line or line.startswith('#') or line.startswith('name,'): continue
         fields = line.split(',')
         otp_db.append(Otpdata(*fields))
-    if len(otp_db) == 0: C.zfatal('no fields parsed from decrypted otp data')
+    if len(otp_db) == 0: fatal('no fields parsed from decrypted otp data')
 
     found = []
     for i in otp_db:
         if args.otp.lower() in i.name.lower(): found.append(i)
 
-    if len(found) == 0: C.zfatal(f'No entries matching "{args.otp}" found (searched {len(otp_db)} entries)')
+    if len(found) == 0: fatal(f'No entries matching "{args.otp}" found (searched {len(otp_db)} entries)')
     elif len(found) == 1:
         secret = found[0].secret
     else:
         # Multiple secrets matched; ask user which one they want.
         found.sort()
         sel = C.popener(['/usr/bin/zenity', '--list', '--column', 'OTP to generate', '--width', '450', '--height', str(80 + 40 * len(found))] + [f'{i.name} ({i.issuer})' for i in found])
-        if 'ERROR' in sel: C.zfatal('aborted')
+        if 'ERROR' in sel: fatal('aborted')
         sel, _ = sel.split(' (', 1)
         for i in found:
             if i.name == sel:
                 secret = i.secret
                 break
         else:
-            C.zfatal(f'unable to find {sel} in matched names.. ?!')
+            fatal(f'unable to find {sel} in matched names.. ?!')
 
     otp = C.popener(['/usr/bin/oathtool', '-b', '--totp', '-'], stdin_str=secret)
 
@@ -108,7 +126,7 @@ def main(argv=[]):
         print(otp)
     else:
         C.popen(['/usr/bin/xclip', '-selection', 'clipboard', '-i'], stdin_str=otp, timeout=1, passthrough=True)
-        C.zmsg(msg='copied', timeout=0.7)
+        info('copied', timeout=0.7)
 
 
 if __name__ == '__main__': sys.exit(main())
