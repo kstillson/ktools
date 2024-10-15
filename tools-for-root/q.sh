@@ -43,7 +43,7 @@ RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
 # ---------- control constants
 
-eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linux_hosts q_pi_hosts vol_base)
+eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linux_hosts q_pi_hosts q_rsnap_conf vol_base)
 
 # derived controls (overridble from the environment, in-case these default
 # formulae are wrong for you).
@@ -56,7 +56,7 @@ KMD_P="${KTOOLS_Q_KMD_P:-${D_SRC_DIR}/private.d/km.data.pcrypt}"                
 LEASES="${KTOOLS_Q_LEASES:-${VOL_BASE}/dnsdock/var_log_dnsmasq/dnsmasq.leases}"       # Location of dnsmasq leases (output/generated) file.
 PROCMON="${PROCMON:-localhost:8080}"                                                  # host:port of the procmon instance to work with.
 PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                                         # Location of ../services/procmon output file
-RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
+RSNAP_CONF="${Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"         # Location of rsnapshot config input file
 RW="${RW:-/root/bin/rw}"                                                              # Prefix command to put host into read+write mode
 
 # ---------- colorizers
@@ -999,7 +999,7 @@ function main() {
         procmon-zap | homesec-reset | hr | pz)                            ## clear procmon queue
             runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;
 	procmon-zap2 | pZ)                                                ## reset procmon, retest, update nag
-	    runner ":>$PROCQ"; $0 pr | tee /dev/stderr | grep 'all ok' && runner nag -r ;;
+	    runner ":>$PROCQ"; $0 pr | tee /dev/stderr | grep 'all ok' && runner "nag -r" ;;
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
         push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
 	reset-iptables-alerts | rip) reset_ipt_alerts ;;                  ## clear noisy alerts
