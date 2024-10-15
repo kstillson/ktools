@@ -399,8 +399,10 @@ function iptables_save() {
 
 # list each parent dir of specified dir or current dir.
 function parent_dirs() {
-    if [[ -z "$1" || ! -d "$1" ]]; then emit red "parent_dirs: start dir ($d) does not exist or not specified"; return 1; fi
+    if [[ -z "$1" ]]; then emit red "parent_dirs: must specify starting point"; return 1; fi
     d="$(realpath $1)"
+    if [[ -f "$d" ]]; then d="$(dirname $d)"; fi   # if startpoint is a file rather than a dir...
+    if [[ ! -d "$d" ]]; then emit red "parent_dirs: start dir ($d) does not exist"; return 2; fi
     stop="$(realpath $(pwd))"
     while [[ "$d" != "/"  &&  "$d" != "$stop" ]]; do
 	echo "$d"
