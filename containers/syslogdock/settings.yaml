@@ -10,6 +10,11 @@ mount_rw:
   - /rw/log: /var/log
 
 # pull the pb-push api key from keymaster.
+
+# NB: if keymaster is not up & ready (e.g. on boot), the
+# files/usr/local/sbin/shout script will enter an endless retry loop
+# trying to get the key.  This will block critial alerts from broadcasting.
+#
 env:
   - PB_TOKEN: "*pb-push"
 

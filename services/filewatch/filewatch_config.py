@@ -33,7 +33,7 @@ CONFIG = {
     # rsnapshot based
     '/root/rsnap/daily.0/a4/var/log/syslog':                       RSNAP_LOG_AGE,
     '/root/rsnap/daily.0/home/home/ken/share/tmp/touch':           RSNAP_LOG_AGE,
-    '/root/rsnap/daily.0/home/home/black-backup/backup/var/log/auth.log': 4 * DAY,
+    '/root/rsnap/daily.0/home2/black-backup/mnt/home2/black-backup/backup/var/log/auth.log': 4 * DAY,
     '/root/rsnap/echo-back/vault-touch':                           32 * DAY,
     
     # syslog based
@@ -45,7 +45,7 @@ CONFIG = {
     '/root/dv/rsnapdock/var_log/rsnapshot.log':    RSNAP_LOG_AGE,
     '/root/dv/webdock/var_log_apache2/access.log': SYS_LOG_AGE,
 
-    '/root/rsnap/daily.0/a4/rw/home/rubuntu/backup/var/log/syslog': RUBUNTU_LOG_MAX_AGE,
+    '/root/rsnap/daily.0/home/home/rubuntu/backup/var/log/syslog': RUBUNTU_LOG_MAX_AGE,
     
     # cron exceptions
     '/root/syslog/cron-black.log':                 3 * DAY,

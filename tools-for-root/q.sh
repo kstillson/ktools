@@ -43,7 +43,7 @@ RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
 # ---------- control constants
 
-eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linux_hosts q_pi_hosts vol_base)
+eval $(ktools_settings -cnq d_src_dir keymaster_host q_exclude q_git_dirs q_linux_hosts q_pi_hosts q_rsnap_conf vol_base)
 
 # derived controls (overridble from the environment, in-case these default
 # formulae are wrong for you).
@@ -56,7 +56,7 @@ KMD_P="${KTOOLS_Q_KMD_P:-${D_SRC_DIR}/private.d/km.data.pcrypt}"                
 LEASES="${KTOOLS_Q_LEASES:-${VOL_BASE}/dnsdock/var_log_dnsmasq/dnsmasq.leases}"       # Location of dnsmasq leases (output/generated) file.
 PROCMON="${PROCMON:-localhost:8080}"                                                  # host:port of the procmon instance to work with.
 PROCQ="${KTOOLS_Q_PROCQ:-/var/procmon/queue}"                                         # Location of ../services/procmon output file
-RSNAP_CONF="${KTOOLS_Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"  # Location of rsnapshot config input file
+RSNAP_CONF="${Q_RSNAP_CONF:-${D_SRC_DIR}/rsnapdock/files/etc/rsnapshot.conf}"         # Location of rsnapshot config input file
 RW="${RW:-/root/bin/rw}"                                                              # Prefix command to put host into read+write mode
 
 # ---------- colorizers
@@ -298,10 +298,16 @@ function git_update_pis() {
     t=$(gettemp git-updates.out)
     RP_FLAGS="${RP_FLAGS_BASE} --output $t"
     hosts="${Q_PI_HOSTS}"
-    echo "pulling git updates..."
-    RUN_PARA "$hosts" "$RW /bin/su pi -c 'cd /home/pi/svc && git pull'"
+
+    echo""; echo "pulling git updates..."
+    RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/svc && git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
-    echo "restarting services..."
+
+    echo ""; echo "syning past overlay..."
+    RUN_PARA "$hosts" "rw-sync home/pi"
+    if [[ $? != 0 ]]; then emitc yellow "some rw-sync failures (expected); proceeding anyway..."; fi
+
+    echo ""; echo "restarting services..."
     RUN_PARA "$hosts" "systemctl daemon-reload; /home/pi/svc/Restart"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some restart failures"; return 1; fi
     emitc green "all done\n"
@@ -393,12 +399,16 @@ function iptables_save() {
 
 # list each parent dir of specified dir or current dir.
 function parent_dirs() {
-    d=${1:-$(pwd)}
-    d=$(dirname $d)
-    while [[ "$d" != "/" ]]; do
+    if [[ -z "$1" ]]; then emit red "parent_dirs: must specify starting point"; return 1; fi
+    d="$(realpath $1)"
+    if [[ -f "$d" ]]; then d="$(dirname $d)"; fi   # if startpoint is a file rather than a dir...
+    if [[ ! -d "$d" ]]; then emit red "parent_dirs: start dir ($d) does not exist"; return 2; fi
+    stop="$(realpath $(pwd))"
+    while [[ "$d" != "/"  &&  "$d" != "$stop" ]]; do
 	echo "$d"
 	d=$(dirname $d)
     done
+    if [[ "$d" != "/" ]]; then echo "$d"; fi
 }
 
 # copy root pubkey to root@ arg1's a_k via pi std login.
@@ -582,7 +592,7 @@ function reset_ipt_alerts() {
     curl http://z:8082/healthz
     echo ""
 
-    nag -r
+    runner nag -r
 }
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
@@ -908,7 +918,7 @@ function main() {
         git-sync-all | git-all | ga) git_sync_all ;;               ## check all git dirs for unsubmitted changes and submit them
 	man-packages)                                              ## list manually installed packages  ;-)
 	    comm -23 <(apt-mark showmanual | sort -u) <(gzip -dc /var/log/installer/initial-status.gz | sed -n 's/^Package: //p' | sort -u) ;;
-	parent-dirs | parents | pds | pd) parent_dirs "$1" ;;      ## list each parent dir of given (or current) dir
+	parent-dirs | parents | pds | pd) parent_dirs "$1" ;;      ## list each parent dir of given dir, up through root or cwd.
         pi-root | pir) pi_root ${1:-rp} ;;                         ## copy root pubkey to root@ arg1's a_k via pi std login.
         ports | listening | l)                                     ## list listening TCP ports
             ss -tupln | tail -n +2 | awk '{$3=$4=$6=""; print; }' | sed -e 's/users:((//' -e 's/))//' -e 's/,/ /g' -e 's/"//g' | column -t | sort -n ;;
@@ -992,6 +1002,8 @@ function main() {
             curl -sS ${PROCMON}/scan >/dev/null ; curl -sS ${PROCMON}/healthz; echo '' ;;
         procmon-zap | homesec-reset | hr | pz)                            ## clear procmon queue
             runner ":>$PROCQ; echo 'procmon queue cleared.'" ;;
+	procmon-zap2 | pZ)                                                ## reset procmon, retest, update nag
+	    runner ":>$PROCQ"; $0 pr | tee /dev/stderr | grep 'all ok' && runner "nag -r" ;;
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
         push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
 	reset-iptables-alerts | rip) reset_ipt_alerts ;;                  ## clear noisy alerts

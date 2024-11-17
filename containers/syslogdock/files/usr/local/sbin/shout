@@ -14,6 +14,11 @@ MAIL_SUBJ="syslog-ng critical log"
 
 # ---------- init
 
+# WARNING: as written, the call to kmc will retry forever until it gets the
+# token.  This blocks both pushbullet and email based shouting, when it's only
+# really necessary to block pb.
+# TODO: allow to fail independently.
+
 if [[ "$PB_TOKEN" == "" ]]; then
     PB_TOKEN="$(/usr/local/bin/kmc pb-push)"
     if [[ "$PB_TOKEN" == *Error* ]]; then PB_TOKEN=""; fi
