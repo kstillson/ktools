@@ -883,6 +883,7 @@ function main() {
             --timeout | -t)                               ## ssh timeout in seconds
                 TIMEOUT=$2;
                 if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]]; then echoc red 'error: -t arg must be numeric.'; exit 1; fi
+		RP_FLAGS="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT --output - "
                 shift
                 ;;
             --verbose | -v) VERBOSE=1 ;;                  ## print things while doing them
