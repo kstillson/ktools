@@ -9,7 +9,7 @@
 
 set -e   # Stop on first error...
 
-source /root/bin/blib  # for erun, emit*.  needs full path for when run via logrotate.
+source blib  # for erun, emit*.  needs full path for when run via logrotate.
 
 cmd="$1"
 shift || true
@@ -23,7 +23,8 @@ if [[ "$PATH" != "/root/bin"* ]]; then PATH="/root/bin:${PATH}"; fi
 
 # Load settings
 eval $(ktools_settings -cn docker_exec d_src_dir d_src_dir2 timeout)
-TIMEOUT=${TIMEOUT:-60}
+FOLLOW=${FOLLOW:-3}        # How long to follow logs after launching a container.  0 to disable.
+TIMEOUT=${TIMEOUT:-60}     # How long (secs) to let operations (mostly parallel ones) run before interrupt.
 
 if [[ "$TESTER" == "" ]]; then
     if [[ "$KTOOLS_DRUN_TEST_PROD" == "1" ]]; then
@@ -235,16 +236,29 @@ function up() {
       erun ./Run ${extra_flags}
   elif [[ -f ./docker-compose.yaml ]]; then
       ip=$(host ${sel} | cut -f4 -d' ')
-      if [[ "$ip" == "" ]]; then echo "unable to get IP"; exit -1; fi
+      if [[ "$ip" == "" ]]; then emitc yellow "unable to get IP"; fi
       puid="$(k_auth -e):$sel"
-      if [[ "$puid" == "" ]]; then echo "unable to get PUID"; exit -2; fi
+      if [[ "$puid" == "" ]]; then emitc yellow "unable to get PUID"; fi
       emitc cyan "launching via $DOCKER_EXEC compose to $ip"
       erun IP="$ip" PUID="$puid" $DOCKER_EXEC compose up -d ${extra_flags}
   else
       # This substitution only supports a single param to the right of the "--".
       extra_flags=${extra_flags/-- /--extra_init=}
       emitc cyan "launching via d-run"
-      erun d-run ${extra_flags} |& sed -e '/See.*--help/d' -e '/Conflict/s/.*/Already up/'
+      erun d-run ${extra_flags}
+  fi
+  status=$?
+  if [[ $status != 0 ]]; then emitc red "launch exited with status $status"; return $status; fi
+  emitc green "launch ok"
+  
+  sleep 1
+  if [[ "$FOLLOW" -gt 0 ]]; then
+      set +e
+      timeout $FOLLOW $DOCKER_EXEC logs -ft --color $sel
+      status=$?
+      if [[ "$status" == "124" ]]; then emitc green "... seems to be up"
+      else emitc yellow "follow logs failed with status $status"
+      fi
   fi
 }
 
@@ -322,6 +336,7 @@ function upgrade() {
 
 function do-in-waves() {
     op="$1"
+    FOLLOW=0
     set +e
     list-autostart-waves | cut -f1,2 | waves | while read -r line; do
 	if [[ "$line" == +* ]]; then
@@ -353,6 +368,14 @@ function myhelp() {
 
 # ------------------------------
 # main:
+
+# ---- special spec mapping
+
+case "$spec" in
+    tts) spec=tortoise-tts ;;
+esac
+
+# ---- main cmd switch
 
 case "$cmd" in
 
@@ -426,7 +449,7 @@ case "$cmd" in
     ;;
   run) $DOCKER_EXEC exec -u 0 $(pick_container_from_up $spec) "$@" ;;  ## Run command $2+ as root in $1
   shell)                                                         ## Start container $1 but shell overriding entrypoint.
-      $DOCKER_EXEC run -ti --user root --entrypoint /bin/bash ktools/$(pick_container_from_all $spec):latest ;;
+      $DOCKER_EXEC run -ti --user root --entrypoint /bin/bash $(pick_container_from_all $spec):${TAG:-latest} ;;
 
 # Multiple container management done in parallel
   build-all | ba)                                                ## Build all buildable containers.
@@ -473,7 +496,7 @@ case "$cmd" in
 	$DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
     done | column -t | sort
     ;;
-  log | logs)                                                    ## Print logs for $1
+  log | logs | L)                                                ## Print logs for $1
       $DOCKER_EXEC logs -ft --details $(pick_container_from_all $spec) ;;
   pid)                                                           ## Print main PID for $1
       $DOCKER_EXEC inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;

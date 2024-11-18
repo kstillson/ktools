@@ -277,16 +277,20 @@ function Ips() {
 }
 function Ip() { Ips | grep "$1" | awk '{print $2}'; }
 
+# process inspectors
+alias mine="ps aux --forest  | grep '$USER '"
+alias pag='ps auxwww --forest | grep '
+alias pam='ps aux --forest | less'
+alias pidc='ps h -o user --sort user --ppid 2 --deselect  | uniq -c | sort -rn'
+alias pidC='pidc | egrep -v -f ~/bin/pidc.expect'
 
-# other general command shortcuts
+# x-win helpers
 alias Clk="xclock -d -twelve -brief &"
-function Curl() { curl -sS $(echo "$@" | perl -p -e 's/([^A-Za-z0-9\:\/])/sprintf("%%%02X", ord($1))/seg' | sed -e 's/%0A//'); }
 alias LOCK="xscreensaver-command -lock"
-alias Sort="( sed -u 1q; sort )"
 alias XF='/usr/bin/xhost +si:localuser:nobody'
 alias XR='/usr/bin/xhost +si:localuser:root'
-alias c2n='tr "," "\n"'
 alias clock='xclock -digital -twelve -brief -fg white -bg black -face "arial black-20:bold" &'
+alias x="/home/ken/bin/x-start"
 function copy() {
     if [[ "$1" == "+" ]]; then printer='echo -n "copied to clipboard: " >&2; tee -a /dev/stderr'; shift; else printer='cat'; fi
     if [[ "$1" == "" ]]; then src="cat -"; else src="echo $@"; fi
@@ -294,14 +298,18 @@ function copy() {
     bash -c "$src | { $printer; } | /usr/bin/xclip -selection clipboard -rmlastnl -in"
 }
 function Copy() { if [[ "$1" == "+" ]]; then clear; shift; fi; copy + "$@"; }
-alias mine="ps aux --forest  | grep '$USER '"
-alias pag='ps auxwww --forest | grep '
-alias pam='ps aux --forest | less'
+
+# other general command shortcuts
+function Curl() { curl -sS $(echo "$@" | perl -p -e 's/([^A-Za-z0-9\:\/])/sprintf("%%%02X", ord($1))/seg' | sed -e 's/%0A//'); }
+alias Sort="( sed -u 1q; sort )"
+alias broken_links='find -L . -type l'
+alias c2n='tr "," "\n"'
 alias rlcp='cp --reflink=always '
 alias s2n='tr " " "\n"'
-alias x="exec startx"
 alias Z="xz -T0 -v "
+function Gpg() { sed -e "s/\r//g" "$@" | gpg -d; }
 
+# parallel execs
 alias RP='run_para --align --cmd'
 alias listp='run_para --dry_run --cmd'   # $1 is command to run (needs to be quoted)
 function listP() { while IFS= read -r line; do echo "${@//@/${line}}"; done; }  # perform "@" expansion from stdin to stdout (not auto-run)

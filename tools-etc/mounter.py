@@ -32,7 +32,8 @@ Mp = namedtuple('mountpoint_config', 'name aliases source mp_needs mp_provides')
 
 #       name            aliases         source                                             mp_needs  mp_provides
 CONFIGS = [
-    Mp('share',         ['s'],          Sshfs('-p 222',  'jack:/home/ken/share'),          None,     'mnt/share'),
+    Mp('share',         ['s'],          Sshfs(['-p', '222', '-o', 'allow_other', '-o', 'default_permissions'],
+                                              'jack:/home/ken/share'),                     None,     'mnt/share'),
     Mp('arc',           ['a'],          Encfs('arc',     'mnt/share/encfs/arc'),           'share',  'mnt/arc'),
     Mp('default',       ['d'],          Encfs('default', 'mnt/share/encfs/default'),       'share',  'mnt/default'),
     Mp('home',          ['h'],          Encfs('home',    'mnt/share/encfs/home'),          'share',  'mnt/home'),
@@ -44,6 +45,7 @@ CONFIGS = [
     # jack
     Mp('jroot',         ['r'],          Sshfs('',        'j:/rw/root'),                    None,     'mnt/jroot'),
     Mp('jrootdir',      ['R'],          Sshfs('-r',      'j:/'),                           None,     'mnt/jrootdir'),
+    Mp('rsnap',         [],             Sshfs('-r',      'j:/mnt/rsnap'),                  None,     'mnt/rsnap'),
     Mp('html',          ['H'],          Sshfs('',        'j:/rw/dv/webdock/var_www/html'), None,     'mnt/html'),
     Mp('rw',            [],             Sshfs('',        'j:/rw'),                         None,     'mnt/rw'),
     # a1
