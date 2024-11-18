@@ -33,7 +33,7 @@ DEBUG=0          # don't delete tempfiles
 HOST_SUBST="@"   # replace this substring with hostnames in some commands
 PARA=1           # run commands for multiple hosts in parallel
 TEST=0           # for commands that would make changes, print them rather than running them
-TIMEOUT=90       # default ssh connect timeout
+TIMEOUT=${TIMEOUT:-90}       # default ssh connect timeout
 VERBOSE=0        # print commands as they are run
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
