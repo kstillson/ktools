@@ -29,13 +29,12 @@ GC_SRC_DIR = '/root/dev/ktools/services/gift-coordinator'
 LAST_SENT_STAMP = '/var/local/gift-coord-notify.stamp'
 
 NOTIFY_LIST = {
-  'alexlbullock@icloud.com': 'Alex',
+  'alex@point0.net':      'Alex',
   'bullockxj@point0.net': 'Judy',
-  'gavin@point0.net': 'Gavin',
-  'ken@kenstillson.com': 'Ken',
-  'mbs@point0.net': 'Nanny',
-  'rts@point0.net': 'Poppy',
-  'xander.bullock@gmail.com': 'Xander',
+  'gavin@point0.net':     'Gavin',
+  'ken@point0.net':       'Ken',
+  'mbs@point0.net':       'Nanny',
+  'rts@point0.net':       'Poppy',
 }
 
 SMTP_SERVER = 'eximdock:2525'
