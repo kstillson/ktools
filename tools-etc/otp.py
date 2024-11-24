@@ -35,6 +35,7 @@ from collections import namedtuple
 
 import kcore.common as C
 import kcore.uncommon as UC
+import ktools.kmc as KMC
 
 
 # ---------- types
@@ -72,8 +73,7 @@ def parse_args(argv):
 
     g2 = ap.add_argument_group('advanced')
     g2.add_argument('--db',            default='/home/ken/.local/otp.csv.pcrypt',  help='path to pcrypt-encrypted totp secrets')
-    g1.add_argument('--kk',            default='pcrypt',                           help='name of gnome keyring key to retrieve')
-    g1.add_argument('--kv',            default='otp',                              help='name of gnome keyring value to retrieve  (contains decryption password for the --db file)')
+    g1.add_argument('--kmc',           default='pcrypt-otp',                       help='name of key to retrieve from keymaster for unlocking OTP db')
 
     return ap.parse_args(argv)
 
@@ -81,8 +81,8 @@ def parse_args(argv):
 def main(argv=[]):
     args = parse_args(argv or sys.argv[1:])
 
-    if args.kk:
-        pcrypt_password = C.popener(['/usr/bin/secret-tool', 'lookup', args.kk, args.kv])
+    if args.kmc:
+        pcrypt_password = KMC.query_km(args.kmc)
         if not pcrypt_password: fatal('failed to get pcrypt decryption password')
 
         db_crypted = C.read_file(args.db)
