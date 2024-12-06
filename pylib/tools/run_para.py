@@ -255,7 +255,7 @@ def generate_output(job_ids):
     outfile = '/dev/stdout' if ARGS.output == '-' else ARGS.output
     with open(outfile, 'w') as f:
       for job_id in job_ids:
-        if not ARGS.plain: print(colorize('yellow', f'\n{job_id}:\n'), file=f)
+        if not ARGS.plain: print(f'\njob id:{colorize("yellow", " " + job_id + " ")}\n', file=f)
         for line in LOG[job_id]:
           if ARGS.plain:
             out = f'{job_id}: {line}'
@@ -293,7 +293,7 @@ def parse_args(argv):
   parser.add_argument('--max_para', '-m', type=int, default=multiprocessing.cpu_count(), help='max number of things to do concurrently')
   parser.add_argument('--output', '-o', default=None, help='name of file to send full output log to (blank to disable, "-" for stdout, "@" to create separate logfile for each)')
   parser.add_argument('--plain', '-p', action='store_true', help='in log output, just include simple stdout, nothing else.')
-  parser.add_argument('--quiet', '-q', action='store_true', help='dont print things like overall status')
+  parser.add_argument('--quiet', '-q', action='store_true', help='dont print progress or overall status (to stderr).  warning: without --output, you have no way of knowning which commands worked or failed.')
   parser.add_argument('--sep', default='auto', help='Use this character to separate values from stdin (rather than newline) (e.g. space or comma).  If "auto", attempt autodetect separator if stdin is a single line')
   parser.add_argument('--ssh', default=None, help='Rather than reading complete commands from stdin, stdin is a list of hostnames and the command specified in this flag value will be run on each of them (in parallel)')
   parser.add_argument('--stdin_file', '-s', default=None, help='filename of contents to send to each job stdin')
@@ -362,13 +362,13 @@ def main(argv=[], stdin_list=[]):
   if ARGS.debug: print(f'DEBUG: #jobs={num_jobs}, #workers={num_workers}, assignments={assignment_queues}', file=sys.stderr)
 
   # Create and start the workers.
-  print('Running...', file=sys.stderr)
+  if not ARGS.quiet: print('Running...', file=sys.stderr)
   threads = []
   for worker_number, assignment in enumerate(assignment_queues):
     t = threading.Thread(target=run_wrapper, args=(worker_number, assignment))
     threads.append(t)
     t.daemon = True
-    print('worker init...', file=sys.stderr)
+    if not ARGS.quiet: print('worker init...', file=sys.stderr)
     t.start()
 
   # Update cycle
@@ -377,12 +377,13 @@ def main(argv=[], stdin_list=[]):
   try:
     while DONE_WORKERS < num_workers:
       time.sleep(ARGS.cycle_time)
-      cursor_up(num_workers + 2)
-      print(f'Running {num_workers - DONE_WORKERS} workers on remaining {num_jobs - DONE_JOBS} tasks       ', file=sys.stderr)
+      if not ARGS.quiet:
+        cursor_up(num_workers + 2)
+        print(f'Running {num_workers - DONE_WORKERS} workers on remaining {num_jobs - DONE_JOBS} tasks       ', file=sys.stderr)
       for worker_number in range(num_workers):
         job_id = CURRENT_WORK[worker_number]
         max_len = columns - (len(job_id) + 4)
-        print(f'{CLEAR_TO_EOL}{job_id}: {UPDATES[job_id][:max_len]}', file=sys.stderr)
+        if not ARGS.quiet: print(f'{CLEAR_TO_EOL}{job_id}: {UPDATES[job_id][:max_len]}', file=sys.stderr)
     # All workers done; compute combined status.
     for t in threads: t.join()
     status = 0   # all ok
@@ -396,7 +397,7 @@ def main(argv=[], stdin_list=[]):
   if ARGS.debug: print(f'DEBUG: combined exit status={status}', file=sys.stderr)
 
   # Generate output transcript logs, if requested.
-  print('', file=sys.stderr)
+  if not ARGS.quiet: print('', file=sys.stderr)
   generate_output(job_ids)
 
   # Overall status summary
