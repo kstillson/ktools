@@ -10,4 +10,5 @@ USB*
 dlnadock/var_cache_minidlna
 home/rsnapshot/***
 mlocate.db
+mnt-black-backup/
 rw/var/lib/docker/***
