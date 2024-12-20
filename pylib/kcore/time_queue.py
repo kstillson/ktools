@@ -53,21 +53,20 @@ class Event:
 
 # TimedEvent's fire at a given hour/min of the day, repeating daily.
 class TimedEvent(Event):
-    def __init__(self, time_hour, time_min, func, args=[], kwargs={}, force_now_ms=None):
+    def __init__(self, time_hour, time_min, func, args=[], kwargs={}, _force_now_ms=None):
+        super().__init__(-1, func, args, kwargs, ONE_DAY_IN_MS)
+
         # Compute hour/min offset into a day, in ms
         wanted_ms = hm_to_ms(time_hour, time_min)
+
         # And find the offset into today's current time, again in ms.
         now_ts = time.localtime()
-        now_ms = force_now_ms or hm_to_ms(now_ts.tm_hour, now_ts.tm_min)
+        now_ms = _force_now_ms or hm_to_ms(now_ts.tm_hour, now_ts.tm_min)
+
         # If event time for today has already passed, bump it to tomorrow.
-        if now_ms > wanted_ms:
-            wanted_ms += ONE_DAY_IN_MS
-        #
+        if now_ms > wanted_ms: wanted_ms += ONE_DAY_IN_MS
+
         self.fire_at_ms = wanted_ms
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-        self.repeat_after_ms = ONE_DAY_IN_MS
 
 
 # ---------- TimeQueue
