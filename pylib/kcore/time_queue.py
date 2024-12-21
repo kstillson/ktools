@@ -105,7 +105,7 @@ class TimeQueue:
                 else:
                     rm_events.append(i)
             else:
-                break  # sorted
+                break  # they're sorted, so we're all done.
         for i in reversed(rm_events): self.queue.pop(i)
         self.queue.sort(key=lambda x: x.fire_at_ms)
         return fired
