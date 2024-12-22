@@ -50,6 +50,7 @@ CONFIG = {
     # cron exceptions
     '/root/syslog/cron-black.log':                 3 * DAY,
     '/root/syslog/cron-jack2.log':                 2 * DAY,
+    '/root/syslog/cron-jack3.log':                 2 * DAY,
     '/root/syslog/cron-glowbox1.log':              None,  # Disable globbed file.
     
     # globs

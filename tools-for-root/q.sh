@@ -592,7 +592,7 @@ function reset_ipt_alerts() {
     curl http://z:8082/healthz
     echo ""
 
-    runner nag -r
+    runner "nag -r"
 }
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
