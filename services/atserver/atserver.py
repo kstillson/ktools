@@ -8,8 +8,7 @@ p = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../pylib'))
 if sys.path[0] != p: sys.path.insert(0, p)
 
 
-
-import datetime, re, time, smtplib, sys, textwrap
+import datetime, ephem, re, time, smtplib, sys, textwrap
 import dateparser as DP
 from dataclasses import dataclass
 
@@ -41,6 +40,7 @@ HANDLERS = {
     '/':     lambda rqst: handler_root(rqst),
     '/add':  lambda rqst: handler_add(rqst),
     '/del':  lambda rqst: handler_del(rqst),
+    '/varz': lambda rqst: handler_varz(rqst),
 }
 
 # for sunset lookup via ephem
@@ -48,8 +48,6 @@ LAT = '38.928'
 LONG = '-77.357'
 
 LOOP_TIME = 20   # seconds
-
-RETAIN_DONE_QUEUE_FOR = 60 * 60    # 60 minutes in seconds
 
 
 # ------------------------------ model ------------------------------
@@ -89,26 +87,33 @@ def add(url, dt, name=None, out=None, notes=None):
     atevent = make_atevent(url, name, out, notes)
     edc = TQP.EventDC(dt, 'fire_and_get_url', args=[], kwargs=atevent.__dict__)
     QUEUE.add_event(edc)
+    V.bump('added:ok')
+    return atevent.index
 
 
 def del_index(index: int) -> bool:
     for i, edc in enumerate(QUEUE.queue):
         if edc.kwargs.get('index') == index:
             with QUEUE._p.get_rw() as d:
+                ate_dict_to_done_queue(edc.kwargs, 'CANCELLED', -99)
                 rm = d.pop(i)
                 C.log(f'removed event index {index}: {str(rm)}')
+                V.bump('del:ok')
                 return True
     C.log_error('unsuccessful attempt to remove index {index}')
+    V.bump('del:err')
     return False
 
 
 def prune_done_queue():
     global DONE_QUEUE
-    max_dt = datetime.datetime.now() - datetime.timedelta(seconds=RETAIN_DONE_QUEUE_FOR)
+    max_dt = datetime.datetime.now() - datetime.timedelta(hours=ARGS.keep)
+    V.set('done_prune_time', str(max_dt))
     rm = []
     for i, d in enumerate(DONE_QUEUE):
         if d['when'] < max_dt: rm.append(i)
     if not rm: return
+    V.inc('pruned', len(rm))
     for i in sorted(rm, reverse=True): DONE_QUEUE.pop(i)
     C.log(f'pruned {len(rm)} old events from done queue.')
     return len(rm)
@@ -116,9 +121,14 @@ def prune_done_queue():
 
 # ------------------------------ controller ------------------------------
 
-def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
-    now = datetime.datetime.now()
+def ate_dict_to_done_queue(kwargs, out, code):
+    kwargs['when'] = datetime.datetime.now()
+    kwargs['output'] = out
+    kwargs['status'] = code
+    DONE_QUEUE.append(kwargs)
 
+
+def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
     atevent = AtEvent(**kwargs)
     resp = C.web_get(atevent.url, ARGS.timeout)
     if resp.ok:
@@ -134,11 +144,7 @@ def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
     # Always send output to the log
     C.log(f'fired event {atevent}  -> {resp.ok=}  output: {out or "(no output)"}', C.INFO if resp.ok else C.ERROR)
 
-    # Append to DONE_QUEUE
-    kwargs['when'] = now
-    kwargs['output'] = out
-    kwargs['status'] = resp.status_code
-    DONE_QUEUE.append(kwargs)
+    ate_dict_to_done_queue(kwargs, out, resp.status_code)
 
     # Anywhere else to send the output?
     dest = atevent.out
@@ -159,7 +165,6 @@ def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
 
 
 def sunset(lat=LAT, long=LONG) -> datetime:
-    import ephem
     ob = ephem.Observer()
     ob.lat = lat
     ob.long = long
@@ -171,7 +176,7 @@ def sunset(lat=LAT, long=LONG) -> datetime:
 def text_to_datetime(txt):
     parts = txt.split('+')
 
-    base = parts.pop(0).strip()
+    base = parts.pop(0).strip() or 'now'
     if base == 'sunset': start = sunset()
     else: start = DP.parse(base, languages=['en'], settings={'PREFER_DATES_FROM': 'future', 'PREFER_DAY_OF_MONTH': 'first'})
     C.log_debug(f'base time: {base} -> {start}')
@@ -195,8 +200,9 @@ def text_to_datetime(txt):
 
 # ------------------------------ view (web server) ------------------------------
 
-def handler_root(request):
-    out = '<p>'
+def handler_root(request, hl_index=None, msg=None):
+    out = msg if msg else ''
+    out += '<p/>\n'
 
     tab = []
     now = datetime.datetime.now()
@@ -205,11 +211,14 @@ def handler_root(request):
         delta = edc.fire_dt - now
         when_mins = round(delta.total_seconds() / 60, 1)
         controls = f'<button onclick="window.location.href=\'del?index={atevent.index}\';">del</button>\n'
-        tab.append([controls, atevent.index, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:30], atevent.out ])
+        idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
+        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:30], atevent.out ])
 
     out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"',
-                           header_list=['controls', 'index', 'when', '+mins', 'name', 'notes', 'url', 'out'],
+                           header_list=['controls', 'index', 'when', '+mins', 'name', 'notes', 'url', 'send'],
                            title='Queued events')
+
+    if hl_index: out = out.replace(f'<td><b>{hl_index}</b></td>', f'<td bgcolor="yellow"><b>{hl_index}</b></td>')
 
     out += '''
   <p>Add an event:</p>
@@ -222,7 +231,7 @@ def handler_root(request):
     </table><br/>
     <input type="submit" value=" add ">
   </form>
-'''
+    '''
 
     if DONE_QUEUE:
         out += '<p/>'
@@ -233,6 +242,7 @@ def handler_root(request):
                                header_list=['index', 'fired at', 'name', 'notes', 'url', 'output', 'sent-to'],
                                title='Recently completed events')
 
+    out += '<p><button onclick="window.location.href=\'.\';">refresh</button>\n'
     return H.html_page_wrap(out, 'At-server')
 
 
@@ -252,27 +262,37 @@ def handler_add(request):
     user = os.environ.get('REMOTE_USER') or 'unknown'
     notes = f'created {es_now()} by {user}'
 
-    add(url, when, name, out, notes)
-    return f'<p>ok: added event index {NEXT_INDEX - 1}\n{cont}'
+    new_idx = add(url, when, name, out, notes)
+    return handler_root(request, new_idx, f'ok: added event {new_idx}')
 
 
 def handler_del(request):
     index = safe_int(request.get_params.get('index'))
     ok = del_index(index)
-    out = '<p>delete: ok' if ok else 'delete: failed'
-    out += '<p><a href=".">continue</a></p>'
-    return out
+    if not ok: return 'delete failed...  <p><a href=".">continue</a></p>'
 
+    return handler_root(request, None, f'ok: deleted index {index}')
+
+
+def handler_varz(request):
+    return W.varz_handler(request, {
+        'next_index': NEXT_INDEX,
+        'lat_long': f'{LAT} / {LONG}',
+        'sunset': str(sunset()),
+        'queue_size': len(QUEUE.queue),
+        'done_queue_size': len(DONE_QUEUE),
+    })
 
 # ========== main
 
 def parse_args(argv):
   ap = C.argparse_epilog()
-  ap.add_argument('--debug',    '-d', action='store_true', help='include debugging info in log')
+  ap.add_argument('--debug',    '-d', action='store_true',              help='include debugging info in log')
   ap.add_argument('--filename', '-F', default='atserver_queue.persist', help='filename for persisted queue')
-  ap.add_argument('--logfile',  '-L', default='atserver.log', help='logfile name; use "-" for stdout.')
-  ap.add_argument('--port',     '-P', default=8080, help='html service port.  0 to disable.')
-  ap.add_argument('--timeout',  '-T', default=5, help='html get timeout (seconds)')
+  ap.add_argument('--keep',     '-K', default=4.0, type=float,          help='how long to retain completed items (hours)')
+  ap.add_argument('--logfile',  '-L', default='atserver.log',           help='logfile name; use "-" for stdout.')
+  ap.add_argument('--port',     '-P', default=8080,                     help='html service port.  0 to disable.')
+  ap.add_argument('--timeout',  '-T', default=5,                        help='html get timeout (seconds)')
 
   g1 = ap.add_argument_group('CLI add an event')
   g1.add_argument('--add',  '-a',  action='store_true', help='add a queued item')
@@ -316,8 +336,8 @@ def main(argv=[]):
     if ARGS.add:
         note = f'added via CLI at {es_now()}'
         if not when: sys.exit('unable to parse provided time.')
-        add(ARGS.url, when, ARGS.name, ARGS.out, note)
-        print(f'added index {NEXT_INDEX - 1}')
+        new_idx = add(ARGS.url, when, ARGS.name, ARGS.out, note)
+        print(f'added index {new_idx}')
         return 0
 
     elif ARGS.check:
@@ -349,6 +369,7 @@ def main(argv=[]):
         QUEUE.check()
         prune_done_queue()
         time.sleep(LOOP_TIME)
+        V.bump('check-loops')
 
 
 if __name__ == '__main__':  sys.exit(main())
