@@ -18,8 +18,8 @@ import kcore.persister as P
 import kcore.time_queue as TQ
 
 
-'''Slimy-as-heck: need a way to communicate the eval_globals context passed to
-   the constructor of TimeQueuePersisted to be forwarded to the EventDC.fire()
+'''Slimy-as-heck: need a way to communicate the CONTEXT passed to the
+   constructor of TimeQueuePersisted to be forwarded to the EventDC.fire()
    method.  Can't trivially add it to the constructor of EventDC, as those
    instances must be able to be restored via deserialization, can't trivially
    just store it in the TimeQueuePersisted instance, as the parent's check()
@@ -32,39 +32,45 @@ import kcore.time_queue as TQ
    long-running.  TODO(defer): find a better way.
 
 '''
-EVAL_GLOBALS = {}
+CONTEXT = globals()
 
 
 @dataclass
 class EventDC(TQ.Event):
     fire_dt: datetime.datetime
-    code_to_call: str
-    repeat_ms: int = None
+    func_name: str
+    args: list[str]
+    kwargs: dict[str, str]
+    repeat_after_ms: int
 
-    def __init__(self, fire_dt, code_to_call, repeat_ms=None, _force_now_dt=None):
+    def __init__(self, fire_dt, func_name, args=[], kwargs={}, repeat_after_ms=None, _force_now_dt=None):
         self.fire_dt = fire_dt
-        self.code_to_call = code_to_call
-        self.repeat_ms = repeat_ms
+        self.func_name = func_name
 
         now = _force_now_dt or datetime.datetime.now()
         fire_in_ms = int((fire_dt - now).total_seconds() * 1000)
-        super().__init__(fire_in_ms, func=None, args=None, kwargs=None, repeat_after_ms=repeat_ms)
+
+        # we could set func=self.fire, but this won't serialize or deserialize
+        # well, so instead we'll just override the local fire() method and
+        # set self.func to None, as it's no longer used.
+
+        super().__init__(fire_in_ms, None, args, kwargs, repeat_after_ms)
 
     #override
-    def fire(self): return eval(self.code_to_call, EVAL_GLOBALS)
+    def fire(self):
+        func = getattr(CONTEXT, self.func_name)
+        return func(*self.args, **self.kwargs)
 
     #override
     def __str__(self): return self.__repr__()
 
 
 class TimeQueuePersisted(TQ.TimeQueue):
-    def __init__(self, filename, eval_globals={}):
-        self.eval_globals = eval_globals
+    def __init__(self, filename, context):
+        self.context = context
         self._p = P.PersisterListOfDC(filename, EventDC, eval_globals=globals())
         with self._p.get_rw() as d:
             super().__init__(d)
-
-    def add_dt(self, dt, code): self.add_event(EventDC(dt, code))
 
     #override
     def add_event(self, event):
@@ -74,9 +80,11 @@ class TimeQueuePersisted(TQ.TimeQueue):
 
     #override
     def check(self, use_ms_time=None):
-        global EVAL_GLOBALS
-        EVAL_GLOBALS = self.eval_globals
+        global CONTEXT
+        CONTEXT = self.context
         with self._p.get_rw() as d:
             self.queue = d
             cnt = super().check(use_ms_time)
         return cnt
+
+    def get_queue_ro(self): return self._p.get_data()
