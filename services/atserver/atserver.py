@@ -9,7 +9,7 @@ if sys.path[0] != p: sys.path.insert(0, p)
 
 
 
-import datetime, time, smtplib, sys, textwrap
+import datetime, re, time, smtplib, sys, textwrap
 import dateparser as DP
 from dataclasses import dataclass
 
@@ -24,10 +24,13 @@ import kcore.varz as V
 
 def es_now(): return int(time.time())
 
+def safe_float(str_float):
+    try: return float(str_float)
+    except: return None
+
 def safe_int(str_int):
     try: return int(str_int)
     except: return None
-
 
 # ========== const
 
@@ -39,6 +42,10 @@ HANDLERS = {
     '/add':  lambda rqst: handler_add(rqst),
     '/del':  lambda rqst: handler_del(rqst),
 }
+
+# for sunset lookup via ephem
+LAT = '38.928'
+LONG = '-77.357'
 
 LOOP_TIME = 20   # seconds
 
@@ -151,10 +158,39 @@ def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
             s.sendmail(EMAIL_FROM, [target], msg)
 
 
+def sunset(lat=LAT, long=LONG) -> datetime:
+    import ephem
+    ob = ephem.Observer()
+    ob.lat = lat
+    ob.long = long
+    sun = ephem.Sun()
+    sun.compute()
+    return ephem.localtime(ob.next_setting(sun))
+
+
 def text_to_datetime(txt):
-    return DP.parse(txt, languages=['en'],
-                    settings={'PREFER_DATES_FROM': 'future',
-                              'PREFER_DAY_OF_MONTH': 'first'})
+    parts = txt.split('+')
+
+    base = parts.pop(0).strip()
+    if base == 'sunset': start = sunset()
+    else: start = DP.parse(base, languages=['en'], settings={'PREFER_DATES_FROM': 'future', 'PREFER_DAY_OF_MONTH': 'first'})
+    C.log_debug(f'base time: {base} -> {start}')
+
+    delta = datetime.timedelta(0)
+    for adj in parts:
+        pattern = re.compile(r'^ *(-?[0-9\.]+) *([a-z]*)')
+        match = pattern.match(adj)
+        if not match: C.log_error(f'invalid adjustment format: {adj}; ignored.'); continue
+        num = safe_float(match.group(1))
+        if not num: C.log_error(f'invalid adjustment numeric potion: {str(match.group(1))}; ignored.'); continue
+        unit = match.group(2)[0]
+        if   unit.startswith('s'): delta += datetime.timedelta(seconds=num)
+        elif unit.startswith('m'): delta += datetime.timedelta(minutes=num)
+        elif unit.startswith('h'): delta += datetime.timedelta(hours=num)
+        else: C.log_error(f'unknown adjustment unit: {unit}; ignored.')
+        C.log_debug(f'adj: {adj} -> {num=} {unit=} cumulative delta={delta}')
+
+    return start + delta
 
 
 # ------------------------------ view (web server) ------------------------------
@@ -232,6 +268,7 @@ def handler_del(request):
 
 def parse_args(argv):
   ap = C.argparse_epilog()
+  ap.add_argument('--debug',    '-d', action='store_true', help='include debugging info in log')
   ap.add_argument('--filename', '-F', default='atserver_queue.persist', help='filename for persisted queue')
   ap.add_argument('--logfile',  '-L', default='atserver.log', help='logfile name; use "-" for stdout.')
   ap.add_argument('--port',     '-P', default=8080, help='html service port.  0 to disable.')
@@ -259,7 +296,7 @@ def main(argv=[]):
 
     global ARGS
     ARGS = parse_args(argv or sys.argv[1:])
-    C.init_log(sys.argv[0], logfile=ARGS.logfile)
+    C.init_log(sys.argv[0], logfile=ARGS.logfile, filter_level_logfile=C.DEBUG if ARGS.debug else C.INFO)
 
     global QUEUE
     context = sys.modules[__name__]
