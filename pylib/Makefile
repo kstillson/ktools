@@ -150,6 +150,14 @@ install-circuitpy:
 	@echo "you should now be ready to:"
 	@echo " TESTHOST=testcircpy pytest-3 tests/kcore/test_webserver_circpy.py "
 
+test-cert:
+	openssl req -x509 -out testdata/server-cn=localhost.crt -keyout testdata/server-cn=localhost.key \
+	  -newkey rsa:2048 -nodes -sha256 -days 358000 \
+	  -subj '/CN=localhost' -extensions EXT -config <( \
+	   printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+	cat testdata/server-cn=localhost.crt testdata/server-cn=localhost.key > testdata/server-cn=localhost.pem
+	rm testdata/server-cn=localhost.key
+
 
 # ---------- virtual environment support
 
