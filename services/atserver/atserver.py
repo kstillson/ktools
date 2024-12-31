@@ -2,13 +2,8 @@
 
 '''web interface for scheduling/managing future http-get requests.'''
 
-##@@ temp- path to live pylib dir
-import os, sys
-p = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../pylib'))
-if sys.path[0] != p: sys.path.insert(0, p)
 
-
-import datetime, ephem, re, time, smtplib, sys, textwrap
+import datetime, ephem, os, re, time, smtplib, sys, textwrap
 import dateparser as DP
 from dataclasses import dataclass
 
@@ -30,6 +25,14 @@ def safe_float(str_float):
 def safe_int(str_int):
     try: return int(str_int)
     except: return None
+
+def send_email(to, mail_from, subj, text):
+    with smtplib.SMTP() as s:
+        msg = textwrap.dedent(f'From: {mail_from}\nTo: {to}\nSubject: {subj}\n\n{text}\n')
+        C.log(f'sending email: ' + msg.replace('\n', '; '))
+        s.connect()
+        s.sendmail(mail_from, [to], msg)
+
 
 # ========== const
 
@@ -63,8 +66,9 @@ class AtEvent:
     index: int
     url:   str
     name:  str = None
-    out:   str = None   # "syslog", or "file:filename", or "email:dest@, or "stdout" (for cli) else app log
+    out:   str = None   # "syslog", or "file:filename", or "email:dest@, or "err-email:dest@", or "stdout" (for cli) else app log
     notes: str = None
+    retries: int = 0
 
 
 # ========== globals  (initialized by main)
@@ -76,17 +80,23 @@ QUEUE = None        # instance of TQP.TimeQueuePersisted
 
 # ========== model methods
 
-def make_atevent(url, name=None, out=None, notes=None):
+def make_atevent(url, name=None, out=None, notes=None, retries=None):
     global NEXT_INDEX
-    e = AtEvent(NEXT_INDEX, url, name, out, notes)
+    if retries is None: retries = ARGS.default_retries
+    if out is None: out = ARGS.default_output
+    e = AtEvent(NEXT_INDEX, url, name, out, notes, retries)
     NEXT_INDEX += 1
     return e
 
-def add(url, dt, name=None, out=None, notes=None):
+def add(url, dt, name=None, out=None, notes=None, retries=None):
     if not url.startswith('http'): url = 'http://' + url
-    atevent = make_atevent(url, name, out, notes)
+    if not dt:
+        C.log_error('Cannot add event to queue without datetime')
+        return None
+    atevent = make_atevent(url, name, out, notes, retries)
     edc = TQP.EventDC(dt, 'fire_and_get_url', args=[], kwargs=atevent.__dict__)
     QUEUE.add_event(edc)
+    C.log(f'added: {str(edc)}')
     V.bump('added:ok')
     return atevent.index
 
@@ -95,7 +105,7 @@ def del_index(index: int) -> bool:
     for i, edc in enumerate(QUEUE.queue):
         if edc.kwargs.get('index') == index:
             with QUEUE._p.get_rw() as d:
-                ate_dict_to_done_queue(edc.kwargs, 'CANCELLED', -99)
+                atevent_dict_to_done_queue(edc.kwargs, 'CANCELLED', -99)
                 rm = d.pop(i)
                 C.log(f'removed event index {index}: {str(rm)}')
                 V.bump('del:ok')
@@ -121,7 +131,7 @@ def prune_done_queue():
 
 # ------------------------------ controller ------------------------------
 
-def ate_dict_to_done_queue(kwargs, out, code):
+def atevent_dict_to_done_queue(kwargs, out, code):
     kwargs['when'] = datetime.datetime.now()
     kwargs['output'] = out
     kwargs['status'] = code
@@ -131,7 +141,14 @@ def ate_dict_to_done_queue(kwargs, out, code):
 def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
     atevent = AtEvent(**kwargs)
     resp = C.web_get(atevent.url, ARGS.timeout)
-    if resp.ok:
+    resp_ok = resp.ok
+
+    if resp_ok and 'error' in resp.text.lower():
+        resp_ok = False
+        V.bump('mapped-ok-to-error')
+        C.log_warning(f'mapped response status to error due to output content: {resp.text}')
+
+    if resp_ok:
         out = resp.text
         V.bump('fired:ok')
     elif resp.exception:
@@ -141,27 +158,34 @@ def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
         out = f'Error code={resp.status_code} result={resp.text}'
         V.bump('fired:error')
 
-    # Always send output to the log
-    C.log(f'fired event {atevent}  -> {resp.ok=}  output: {out or "(no output)"}', C.INFO if resp.ok else C.ERROR)
+    C.log(f'fired event {atevent}  -> {resp_ok=}  output: {out or "(no output)"}', C.INFO if resp_ok else C.ERROR)
 
-    ate_dict_to_done_queue(kwargs, out, resp.status_code)
+    atevent_dict_to_done_queue(kwargs, out, resp.status_code)
 
-    # Anywhere else to send the output?
-    dest = atevent.out
+    # ---- process output
 
+    dest = atevent.out or ARGS.default_output or 'log'
     target = None
     if ':' in dest: dest, target = dest.split(':', 1)
 
-    if dest == 'syslog':   C.log_syslog(out, level=C.INFO if resp.ok else C.ERROR, ident=sys.argv[0])
+    if dest == 'syslog':   C.log_syslog(out, level=C.INFO if resp_ok else C.ERROR, ident=sys.argv[0])
     elif dest == 'stdout': print(out)
     elif dest == 'file':
         with open(target, 'a') as fil: fil.write(out + '\n')
     elif dest == 'email':
-        with smtplib.SMTP() as s:
-            msg = textwrap.dedent(f'From: {EMAIL_FROM}\nTo: {target or "root"}\nSubject: {EMAIL_SUBJ}: {atevent.name}\n\n{out}\n')
-            C.log(f'sending email: ' + msg.replace('\n', '; '))
-            s.connect()
-            s.sendmail(EMAIL_FROM, [target], msg)
+        send_email(target or "root", EMAIL_FROM, f'{EMAIL_SUBJ}: {atevent.name}', out)
+    elif dest == 'err-email' and not resp_ok:
+        send_email(target or "root", EMAIL_FROM, f'{EMAIL_SUBJ}: {atevent.name}', out)
+
+    # ---- retries?
+
+    if not resp_ok and atevent.retries:
+        dt = text_to_datetime(f'now + {ARGS.retry_secs}s')
+        retries = safe_int(atevent.retries) - 1
+        notes = f'RETRY ({retries} remain); {atevent.notes}'
+        idx = add(atevent.url, dt, atevent.name, atevent.out, notes, retries)
+        C.log(f'queued retry event index {idx}')
+        V.bump('retries-queued')
 
 
 def sunset(lat=LAT, long=LONG) -> datetime:
@@ -174,6 +198,14 @@ def sunset(lat=LAT, long=LONG) -> datetime:
 
 
 def text_to_datetime(txt):
+    try:
+        return text_to_datetime_real(txt)
+    except Exception as e:
+        C.log_error(f'error parsing text into date: {txt} -> {str(e)}')
+        return None
+
+
+def text_to_datetime_real(txt):
     parts = txt.split('+')
 
     base = parts.pop(0).strip() or 'now'
@@ -292,12 +324,18 @@ def parse_args(argv):
   ap.add_argument('--keep',     '-K', default=4.0, type=float,          help='how long to retain completed items (hours)')
   ap.add_argument('--logfile',  '-L', default='atserver.log',           help='logfile name; use "-" for stdout.')
   ap.add_argument('--port',     '-P', default=8080,                     help='html service port.  0 to disable.')
-  ap.add_argument('--timeout',  '-T', default=5,                        help='html get timeout (seconds)')
 
-  g1 = ap.add_argument_group('CLI add an event')
+  g0 = ap.add_argument_group('General event properties')
+  g0.add_argument('--default_output',   '-O',  default='err-email:root',  help='default --out option if not provided. nb: only effects items added via web')
+  g0.add_argument('--default_retries',  '-R',  default=5,                 help='default --retries option if not provided; nb: only effects items added via web')
+  g0.add_argument('--retry_secs',              default=30,                help='how long to wait before retrying (seconds); applies to all events')
+  ap.add_argument('--timeout',          '-T',  default=5,                 help='html get timeout (seconds); applies to all events')
+
+  g1 = ap.add_argument_group('Add an event from CLI')
   g1.add_argument('--add',  '-a',  action='store_true', help='add a queued item')
   g1.add_argument('--name', '-n',  default='anonymous', help='name for the item')
-  g1.add_argument('--out' , '-o',  default='stdout',    help='what to do with any output')
+  g1.add_argument('--out' , '-o',  default=None,        help='what to do with any output: syslog,file:name,email:dest,err-email:deststdout')
+  g1.add_argument('--retries',     default=None,        help='how many times to retry if fails')
   g1.add_argument('--time', '-t',  default='',          help='when to run (~free text)')
   g1.add_argument('--url',  '-u',  default='',          help='url to retrieve')
 
@@ -364,7 +402,7 @@ def main(argv=[]):
 
     # ---- Primary run mode: launch web-server and start checking loop.
 
-    if ARGS.port: W.WebServer(handlers=HANDLERS).start(port=ARGS.port)
+    if ARGS.port: W.WebServer(handlers=HANDLERS).start(port=int(ARGS.port))
     while True:
         QUEUE.check()
         prune_done_queue()
