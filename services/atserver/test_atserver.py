@@ -55,7 +55,7 @@ def test_primary(setup_test, tmp_path):
         '--default_output', 'log',
         '--default_retries', '2',
         '--retry_secs', '1', ]
-    
+
     # start the atserver
     A.LOOP_TIME = 1
     atserver_port = random.randrange(10000, 19999)
@@ -90,4 +90,4 @@ def test_primary(setup_test, tmp_path):
     assert varz.get('fired:ok') == 2
     assert varz.get('fired:error') == 1
     assert varz.get('retries-queued') == 1
-    
+
