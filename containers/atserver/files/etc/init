@@ -3,4 +3,4 @@
 DD=${HOME}/data
 SVC=atserver
 
-exec ${HOME}/${SVC} --logfile ${DD}/${SVC}.log --filename ${DD}/${SVC}.persist
+exec ${HOME}/${SVC} --logfile ${DD}/${SVC}.log --filename ${DD}/${SVC}.persist --keep 96

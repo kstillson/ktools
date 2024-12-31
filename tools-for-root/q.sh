@@ -38,7 +38,7 @@ VERBOSE=0        # print commands as they are run
 
 MY_HOSTNAME=$(hostname)    # always run commands locally on this host.
 # default flags to run_para command (see ../pylib_tools):
-RP_FLAGS_BASE="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT "
+RP_FLAGS_BASE="--plain --output= --subst $HOST_SUBST --timeout $TIMEOUT "
 RP_FLAGS="${RP_FLAGS_BASE} --output - "
 
 # ---------- control constants
@@ -425,7 +425,7 @@ function pi_root() {
 # (in parallel) ping the list of hosts in $@.  Try up to 3 times.
 function pinger() {
     set +e
-    RP_FLAGS="${RP_FLAGS_BASE} -q -m 99 -o -"
+    RP_FLAGS="${RP_FLAGS_BASE} -m 99 -o -"
     problems=$(RUN_PARA LOCAL "$@" "set -o pipefail; ping -c3 -W3 -i0.5 -q ^^@ | grep loss | sed -e 's/^.*received, //'" | fgrep -v " 0%" $t | cut -f1 -d:)
     if [[ "$problems" == "" ]]; then emitc green "all ok\n"; return; fi
     for try in 1 2 3; do
@@ -592,7 +592,7 @@ function reset_ipt_alerts() {
     curl http://z:8082/healthz
     echo ""
 
-    runner nag -r
+    runner "nag -r"
 }
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
@@ -883,7 +883,7 @@ function main() {
             --timeout | -t)                               ## ssh timeout in seconds
                 TIMEOUT=$2;
                 if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]]; then echoc red 'error: -t arg must be numeric.'; exit 1; fi
-		RP_FLAGS="--plain --quiet --subst $HOST_SUBST --timeout $TIMEOUT --output - "
+		RP_FLAGS="--plain --output= --subst $HOST_SUBST --timeout $TIMEOUT --output - "
                 shift
                 ;;
             --verbose | -v) VERBOSE=1 ;;                  ## print things while doing them
@@ -937,7 +937,7 @@ function main() {
             RUN_PARA "$(list_linux)" "df -h | egrep ' /$'" | column -t | sort ;;
         ping-pis | p) pinger "$(list_pis)" ;;                      ## ping all pis
         ping-pis-continuous | ppc | pp)                            ## ping all pi's continuously until stopped
-            RP_FLAGS="--quiet"; RUN_PARA LOCAL "$(list_pis)" "ping @" ;;
+            RP_FLAGS="--output="; RUN_PARA LOCAL "$(list_pis)" "ping @" ;;
         ping-tps | ptp) pinger "$(list_tps)" ;;                    ## ping all tplinks
         reboot-counts-month | rcm)                                 ## count of reboots this month on all pi's
             m=$(date +%b); RUN_PARA "$(list_pis)" "fgrep -a reboot-tracker /var/log/messages | fgrep $m | wc -l" ;;
