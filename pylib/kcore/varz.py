@@ -57,7 +57,7 @@ def get(counter_name=None):
 
 
 def get_dict():
-    copy = {(k, v() if callable(v) else v) for k, v in VARZ.items()}
+    copy = {k: (v() if callable(v) else v) for k, v in VARZ.items()}
     return copy
 
 
