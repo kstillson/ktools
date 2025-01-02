@@ -27,7 +27,7 @@ def safe_int(str_int):
     except: return None
 
 def send_email(to, mail_from, subj, text):
-    with smtplib.SMTP() as s:
+    with smtplib.SMTP(host=ARGS.smtp_host) as s:
         msg = textwrap.dedent(f'From: {mail_from}\nTo: {to}\nSubject: {subj}\n\n{text}\n')
         C.log(f'sending email: ' + msg.replace('\n', '; '))
         s.connect()
@@ -43,6 +43,7 @@ HANDLERS = {
     '/':     lambda rqst: handler_root(rqst),
     '/add':  lambda rqst: handler_add(rqst),
     '/del':  lambda rqst: handler_del(rqst),
+    '/list': lambda rqst: handler_list(rqst),
     '/varz': lambda rqst: handler_varz(rqst),
 }
 
@@ -113,6 +114,19 @@ def del_index(index: int) -> bool:
     C.log_error('unsuccessful attempt to remove index {index}')
     V.bump('del:err')
     return False
+
+
+def get_queue(hl_index=None):  # returns queue table as a list of list elements
+    tab = []
+    now = datetime.datetime.now()
+    for edc in QUEUE.get_queue_ro():
+        atevent = AtEvent(**edc.kwargs)
+        delta = edc.fire_dt - now
+        when_mins = round(delta.total_seconds() / 60, 1)
+        controls = f'<button onclick="window.location.href=\'del?index={atevent.index}\';">del</button>\n'
+        idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
+        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:30], atevent.out ])
+    return tab
 
 
 def prune_done_queue():
@@ -236,16 +250,7 @@ def handler_root(request, hl_index=None, msg=None):
     out = msg if msg else ''
     out += '<p/>\n'
 
-    tab = []
-    now = datetime.datetime.now()
-    for edc in QUEUE.get_queue_ro():
-        atevent = AtEvent(**edc.kwargs)
-        delta = edc.fire_dt - now
-        when_mins = round(delta.total_seconds() / 60, 1)
-        controls = f'<button onclick="window.location.href=\'del?index={atevent.index}\';">del</button>\n'
-        idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
-        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:30], atevent.out ])
-
+    tab = get_queue(hl_index)
     out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"',
                            header_list=['controls', 'index', 'when', '+mins', 'name', 'notes', 'url', 'send'],
                            title='Queued events')
@@ -294,16 +299,28 @@ def handler_add(request):
     user = os.environ.get('REMOTE_USER') or 'unknown'
     notes = f'created {es_now()} by {user}'
 
+    quiet = request.post_params.get('quiet', None)
+
     new_idx = add(url, when, name, out, notes)
-    return handler_root(request, new_idx, f'ok: added event {new_idx}')
+    msg = f'ok: added event {new_idx}'
+
+    return msg if quiet == '1' else handler_root(request, new_idx, msg)
 
 
 def handler_del(request):
     index = safe_int(request.get_params.get('index'))
     ok = del_index(index)
-    if not ok: return 'delete failed...  <p><a href=".">continue</a></p>'
+    if not ok: return '<p>delete failed...  <p><a href=".">continue</a></p>'
 
     return handler_root(request, None, f'ok: deleted index {index}')
+
+
+def handler_list(request):
+    ttl = ['', 'index', 'fire-at', 'when-mins', 'name', 'notes', 'url', 'output']
+    out = f'{ttl[1]:<6} {ttl[2]:<28} {ttl[3]:<8} {ttl[4]:<20} {ttl[5]:<30} {ttl[6]:<30} {ttl[7]:<10}\n'
+    for row in get_queue():
+        out += f'{row[1]:<6} {str(row[2]):<28} {row[3]:<8} {row[4]:<20} {row[5]:<30} {row[6]:<30} {row[7]:<10}\n'
+    return out
 
 
 def handler_varz(request):
@@ -324,9 +341,10 @@ def parse_args(argv):
   ap.add_argument('--keep',     '-K', default=4.0, type=float,          help='how long to retain completed items (hours)')
   ap.add_argument('--logfile',  '-L', default='atserver.log',           help='logfile name; use "-" for stdout.')
   ap.add_argument('--port',     '-P', default=8080,                     help='html service port.  0 to disable.')
+  ap.add_argument('--smtp_host',      default='smtp',                   help='host to connect to when sending email')
 
   g0 = ap.add_argument_group('General event properties')
-  g0.add_argument('--default_output',   '-O',  default='err-email:root',  help='default --out option if not provided. nb: only effects items added via web')
+  g0.add_argument('--default_output',   '-O',  default='err-email:tech@point0.net',  help='default --out option if not provided. nb: only effects items added via web')
   g0.add_argument('--default_retries',  '-R',  default=5,                 help='default --retries option if not provided; nb: only effects items added via web')
   g0.add_argument('--retry_secs',              default=30,                help='how long to wait before retrying (seconds); applies to all events')
   ap.add_argument('--timeout',          '-T',  default=5,                 help='html get timeout (seconds); applies to all events')
@@ -403,11 +421,16 @@ def main(argv=[]):
     # ---- Primary run mode: launch web-server and start checking loop.
 
     if ARGS.port: W.WebServer(handlers=HANDLERS).start(port=int(ARGS.port))
+
     while True:
-        QUEUE.check()
-        prune_done_queue()
+        try:
+            QUEUE.check()
+            prune_done_queue()
+            V.bump('check-loops')
+        except Exception as e:
+            C.log_error(f'exception during check loop: {str(e)}')
+            V.bump('check-loop-exceptions')
         time.sleep(LOOP_TIME)
-        V.bump('check-loops')
 
 
 if __name__ == '__main__':  sys.exit(main())
