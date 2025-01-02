@@ -51,7 +51,7 @@ HANDLERS = {
 LAT = '38.928'
 LONG = '-77.357'
 
-LOOP_TIME = 20   # seconds
+LOOP_TIME = 5   # seconds
 
 
 # ------------------------------ model ------------------------------
@@ -125,7 +125,7 @@ def get_queue(hl_index=None):  # returns queue table as a list of list elements
         when_mins = round(delta.total_seconds() / 60, 1)
         controls = f'<button onclick="window.location.href=\'del?index={atevent.index}\';">del</button>\n'
         idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
-        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:30], atevent.out ])
+        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:30], atevent.out, atevent.retries])
     return tab
 
 
@@ -153,8 +153,16 @@ def atevent_dict_to_done_queue(kwargs, out, code):
 
 
 def fire_and_get_url(**kwargs) -> None:   # called by TQ.Event.fire()
+    try:
+        fire_and_get_url_real(**kwargs)
+    except Exception as e:
+        C.log_error(f'exception during fire_and_get: {str(e)}')
+        V.bump('fire_and_get_exceptions')
+
+
+def fire_and_get_url_real(**kwargs) -> None:
     atevent = AtEvent(**kwargs)
-    resp = C.web_get(atevent.url, ARGS.timeout)
+    resp = C.web_get(atevent.url, ARGS.timeout, wrap_exceptions=True)
     resp_ok = resp.ok
 
     if resp_ok and 'error' in resp.text.lower():
@@ -252,7 +260,7 @@ def handler_root(request, hl_index=None, msg=None):
 
     tab = get_queue(hl_index)
     out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"',
-                           header_list=['controls', 'index', 'when', '+mins', 'name', 'notes', 'url', 'send'],
+                           header_list=['controls', 'index', 'when', '+mins', 'name', 'notes', 'url', 'send', 'retries'],
                            title='Queued events')
 
     if hl_index: out = out.replace(f'<td><b>{hl_index}</b></td>', f'<td bgcolor="yellow"><b>{hl_index}</b></td>')
