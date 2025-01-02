@@ -1,1 +1,1 @@
-export RCLONE_CONFIG_PASS=$(/usr/local/bin/kmc rclone)
+export RCLONE_CONFIG_PASS=$(/usr/local/bin/kmc --km-host-port keymaster:4444 --km_cert "" rclone)
