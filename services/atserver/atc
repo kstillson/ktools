@@ -1,0 +1,19 @@
+#!/bin/bash
+
+SVC="${SVC:-https://home.point0.net/at}"
+D="--data-urlencode"
+
+if [[ "$1" == "-h" || "$1" == "" ]]; then echo "$0 {when} {action} {url} [{name}] [{out}]" >&2; exit 0; fi
+if [[ "$1" == "-l" ]]; then curl -sS ${SVC}/list; exit 0; fi
+
+when="$1"
+action="$2"
+url="$3"
+name="$4"
+output="$5"
+
+if [[ "$url" == "@"* ]]; then url="https://home.point0.net/speak/$url"; fi
+
+. blib
+erun curl -sS $D "when1=now" $D "when2=$when" $D "action=$action" $D "url=$url" $D "name=$name" $D "output=$output" $D "quiet=1"  ${SVC}/add
+echo ""

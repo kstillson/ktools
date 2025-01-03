@@ -1,0 +1,58 @@
+<html>
+ <head>
+  <title>At-server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+ </head>
+
+ <body>
+  <p> !!MSG!! </p>
+  <p> !!QUEUE!! </p>
+
+  <p>Add an event:</p>
+  <form action="add" method="post" style="display: inline;">
+    <table border="1" cellpadding="5">
+
+      <tr><td>When</td>  <td>
+          <select name="when1">
+            <option value="now">now +</option>
+            <option value=""></option>
+          </select>
+          <input name="when2" size="8">
+          <select name="when3">
+            <option value="" selected></option>
+            <option value="s">sec</option>
+            <option value="m">min</option>
+            <option value="h">hrs</option>
+          </select>
+      </td></tr>
+
+      <tr><td>Action</td>   <td>
+          <select name="action">
+            <option value="chime1">chime 1</option>
+            <option value="buzz">buzz</option>
+            <option value="beep">beep</option>
+            <option value="hc">HC</option>
+            <option value="url">url</option>
+          </select>
+          <input name="url"  size="20"></td></tr>
+      </td></tr>
+
+      <tr><td>Name</td>   <td><input name="name" size="20"></td></tr>
+
+      <tr><td>Output</td> <td>
+          <select name="output">
+            <option value="email-err">email-err</option>
+            <option value="email">email</option>
+            <option value="log">log</option>
+          </select>
+      </td></tr>
+    </table><br/>
+    <input type="submit" value=" add ">
+  </form>
+
+  <p> <button onclick="window.location.href='.';">refresh</button> </p>
+
+  <p> !!DONE_QUEUE!! </p>
+
+ </body>
+</html>

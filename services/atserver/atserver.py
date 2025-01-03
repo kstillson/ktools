@@ -3,7 +3,7 @@
 '''web interface for scheduling/managing future http-get requests.'''
 
 
-import datetime, ephem, os, re, time, smtplib, sys, textwrap
+import datetime, ephem, os, re, time, smtplib, sys, textwrap, threading
 import dateparser as DP
 from dataclasses import dataclass
 
@@ -32,6 +32,25 @@ def send_email(to, mail_from, subj, text):
         C.log(f'sending email: ' + msg.replace('\n', '; '))
         s.connect()
         s.sendmail(mail_from, [to], msg)
+
+
+# ========== specialized helpers
+
+def audible_feedback(name):
+    C.log('sending audible feedback: ' + name)
+    web_get_bg('https://home.point0.net/speak/@' + name)
+
+
+def web_get_bg(*args, **kwargs):
+    t = threading.Thread(target=web_get_wrap, args=args, kwargs=kwargs)
+    t.start()
+
+
+def web_get_wrap(*args, **kwargs):
+    resp = C.web_get(*args, **kwargs)
+    C.log_debug(f'bg web_get: {args=} {kwargs=} -> {resp=}')
+    status = 'ok' if resp.ok else 'failed'
+    C.log(f'background web_get {status}: {str(resp)}', C.INFO if resp.ok else C.WARNING)
 
 
 # ========== const
@@ -201,13 +220,18 @@ def fire_and_get_url_real(**kwargs) -> None:
 
     # ---- retries?
 
-    if not resp_ok and atevent.retries:
-        dt = text_to_datetime(f'now + {ARGS.retry_secs}s')
-        retries = safe_int(atevent.retries) - 1
-        notes = f'RETRY ({retries} remain); {atevent.notes}'
-        idx = add(atevent.url, dt, atevent.name, atevent.out, notes, retries)
-        C.log(f'queued retry event index {idx}')
-        V.bump('retries-queued')
+    if not resp_ok:
+        if atevent.retries:
+            dt = text_to_datetime(f'now + {ARGS.retry_secs}s')
+            retries = safe_int(atevent.retries) - 1
+            notes = f'RETRY ({retries} remain); {atevent.notes}'
+            idx = add(atevent.url, dt, atevent.name, atevent.out, notes, retries)
+            C.log(f'queued retry event index {idx}')
+            V.bump('retries-queued')
+        else:
+            C.log_warning('event failed and all out of retries  :-(...')
+            V.bump('retries-exhausted')
+            audible_feedback('quick_err')
 
 
 def sunset(lat=LAT, long=LONG) -> datetime:
@@ -255,64 +279,86 @@ def text_to_datetime_real(txt):
 # ------------------------------ view (web server) ------------------------------
 
 def handler_root(request, hl_index=None, msg=None):
-    out = msg if msg else ''
-    out += '<p/>\n'
-
-    tab = get_queue(hl_index)
-    out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"',
-                           header_list=['controls', 'index', 'when', '+mins', 'name', 'notes', 'url', 'send', 'retries'],
-                           title='Queued events')
-
-    if hl_index: out = out.replace(f'<td><b>{hl_index}</b></td>', f'<td bgcolor="yellow"><b>{hl_index}</b></td>')
-
-    out += '''
-  <p>Add an event:</p>
-  <form action="add" method="post" style="display: inline;">
-    <table border="1" cellpadding="5">
-      <tr><td>When</td>  <td><input name="when" size="20"></td></tr>
-      <tr><td>Name</td>  <td><input name="name" size="20"></td></tr>
-      <tr><td>URL</td>   <td><input name="url"  size="30"></td></tr>
-      <tr><td>Output</td><td><input name="out"  size="20"></td></tr>
-    </table><br/>
-    <input type="submit" value=" add ">
-  </form>
-    '''
+    queue_l2 = get_queue(hl_index)
+    queue_html = H.list_to_table(
+        queue_l2, table_fmt='border="1" cellpadding="5"',
+        header_list=['controls', 'index', 'when', '+mins', 'name', 'notes', 'url', 'send', 'retries'],
+        title='Queued events')
+    if hl_index: queue_html = queue_html.replace(f'<td><b>{hl_index}</b></td>', f'<td bgcolor="yellow"><b>{hl_index}</b></td>')
 
     if DONE_QUEUE:
-        out += '<p/>'
         tab = []
         for d in DONE_QUEUE:
             tab.append([d['index'], d['when'], d['name'], d['notes'], d['url'], d['output'], d['out']])
-        out += H.list_to_table(tab, table_fmt='border="1" cellpadding="5"',
-                               header_list=['index', 'fired at', 'name', 'notes', 'url', 'output', 'sent-to'],
-                               title='Recently completed events')
+        done_html = H.list_to_table(
+            tab, table_fmt='border="1" cellpadding="5"',
+            header_list=['index', 'fired at', 'name', 'notes', 'url', 'output', 'sent-to'],
+            title='Recently completed events')
+    else:
+        done_html = ''
 
-    out += '<p><button onclick="window.location.href=\'.\';">refresh</button>\n'
-    return H.html_page_wrap(out, 'At-server')
+    return C.read_file('root.html'). \
+        replace('!!MSG!!', msg or ''). \
+        replace('!!QUEUE!!', queue_html). \
+        replace('!!DONE_QUEUE!!', done_html)
 
 
 def handler_add(request):
+    ok, relative, quiet, resp = handler_add_real(request)
+    C.log_debug(f'add handler results: {ok=} {relative=} {resp=}')
+    if relative and not quiet:
+        if ok: audible_feedback('dink')
+        else:  audible_feedback('quick_err')
+    return resp
+
+
+def handler_add_real(request):
     cont = '<p><a href=".">continue</a></p>'
+    pd = request.post_params
 
-    when = text_to_datetime(request.post_params.get('when'))
-    if not when: return 'add: unable to parse provided time.' + cont
+    quiet = pd.get('quiet', None)
 
-    name = request.post_params.get('name')
-    if not name: name = '(anonymous)'
+    if pd.get('when1').startswith('now'):
+        in_when = 'now + '
+        relative = True
+    else:
+        in_when = ''
+        relative = False
+    in_when += pd.get('when2')
+    # If we're relative and unit not provided in when2, look for it in when3.
+    if relative and in_when[-1:].isdigit():
+        in_when += pd.get('when3') or 'm'
 
-    url = request.post_params.get('url')
-    if not url: return 'add: unable to parse provided URL.' + cont
+    when = text_to_datetime(in_when)
+    if not when:
+        C.log_warning(f'unable to parse requested time: {in_when}')
+        return False, relative, quiet, f'<p>add: unable to parse provided time: {in_when} {cont}'
 
-    out = request.post_params.get('out')
-    user = os.environ.get('REMOTE_USER') or 'unknown'
-    notes = f'created {es_now()} by {user}'
+    url = ''
+    act = pd.get('action')
+    if   act == 'chime1': url = 'https://home.point0.net/speak/@chime1'
+    elif act == 'buzz':   url = 'https://home.point0.net/speak/@buzz'
+    elif act == 'beep':   url = 'https://home.point0.net/speak/@beep'
+    elif act == 'hc':     url = 'https://home.point0.net/control/' + pd.get('url').replace(' ', '/')
+    elif act == 'url':    url = pd.get('url')
+    if not url: return False, relative, quiet, '<p>add: unable to parse provided URL.' + cont
 
-    quiet = request.post_params.get('quiet', None)
+    name = pd.get('name')
+    if not name: name = 'auto-' + C.random_printable(len=8, charset='abcdefghijklmnopqrstuvwxyz')
+
+    in_out = pd.get('out')
+    if    in_out == 'email-err': out = 'err-email:tech@point0.net'
+    elif  in_out == 'email':     out = 'email:tech@point0.net'
+    else: out = 'log'
+
+    user = os.environ.get('REMOTE_USER') or '?'
+    notes = f'at {in_when}; created {es_now()} by {user}'
 
     new_idx = add(url, when, name, out, notes)
     msg = f'ok: added event {new_idx}'
 
-    return msg if quiet == '1' else handler_root(request, new_idx, msg)
+    out = msg if quiet == '1' else handler_root(request, new_idx, msg)
+    return True, quiet, relative, out
 
 
 def handler_del(request):
@@ -398,8 +444,8 @@ def main(argv=[]):
     # ---- Alternate run modes
 
     if ARGS.add:
-        note = f'added via CLI at {es_now()}'
-        if not when: sys.exit('unable to parse provided time.')
+        if not when: sys.exit('no --when provided.')
+        note = f'at {when}; via CLI at {es_now()}'
         new_idx = add(ARGS.url, when, ARGS.name, ARGS.out, note)
         print(f'added index {new_idx}')
         return 0
@@ -417,7 +463,7 @@ def main(argv=[]):
         return 0
 
     elif ARGS.parse:
-        if not when: sys.exit('unable to parse provided time.')
+        if not when: sys.exit('no provided --when.')
         print(when.strftime('%c'))
         return 0
 

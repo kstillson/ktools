@@ -73,21 +73,24 @@ def test_primary(setup_test, tmp_path):
         '--time', 'now',
         '--url', url])
     assert rtn == 0
+    assert A.V.get('added:ok') == 1
 
     # add second event via http form
     resp = C.web_get(f'http://localhost:{atserver_port}/add', post_dict={
-        'when': 'now + 1s',
+        'when1': 'now',
+        'when2': '1s',
         'name': 'test2',
+        'quiet': '1',
+        'action': 'url',
         'url': url})
     assert resp.ok
+    assert A.V.get('added:ok') == 2
 
-    time.sleep(3)
+    time.sleep(4)
 
     # check results via varz
-    varz = A.V.get_dict()
-    assert varz.get('added:ok') == 3   # 2 orig + 1 retry
-    assert varz.get('mapped-ok-to-error') == 1
-    assert varz.get('fired:ok') == 2
-    assert varz.get('fired:error') == 1
-    assert varz.get('retries-queued') == 1
-
+    assert A.V.get('added:ok') == 3   # 2 orig + 1 retry
+    assert A.V.get('mapped-ok-to-error') == 1
+    assert A.V.get('fired:ok') == 2
+    assert A.V.get('fired:error') == 1
+    assert A.V.get('retries-queued') == 1
