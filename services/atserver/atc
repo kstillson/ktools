@@ -9,7 +9,7 @@ if [[ "$1" == "-l" ]]; then curl -sS "${SVC}/list"; echo ""; exit $?; fi
 if [[ "$1" == "-d" ]]; then curl -sS "${SVC}/del?index=$2"; echo ""; exit $?; fi
 
 # relative time adjustments
-if [[ "$1" == "sunset"* ]]; then when1=""; else when1="now"; fi
+if [[ "$1" == "sunset"* || "$1" == *":"* ]]; then when1=""; else when1="now"; fi
 
 when="$1"
 action="$2"
