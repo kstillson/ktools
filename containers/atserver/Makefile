@@ -1,6 +1,6 @@
 
 HW_DIR := files/home/atsvc
-HW_FILES := atserver
+HW_FILES := atserver.py root.html
 HW_TARGETS := $(addprefix $(HW_DIR)/, $(HW_FILES))
 
 DIRS := $(HW_DIR)
@@ -17,7 +17,7 @@ copy: $(DIRS) $(HW_TARGETS)
 $(DIRS):
 	mkdir -p $@
 
-$(HW_TARGETS): $(HW_DIR)/% : ../../services/atserver/%.py
+$(HW_TARGETS): $(HW_DIR)/% : ../../services/atserver/%
 	cp $^ $@
 
 
