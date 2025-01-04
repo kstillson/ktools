@@ -146,7 +146,7 @@ def get_queue(hl_index=None):  # returns queue table as a list of list elements
         when_mins = round(delta.total_seconds() / 60, 1)
         controls = f'<a href="./del?index={atevent.index}"><button>del</button></a>\n'
         idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
-        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:45], atevent.out, atevent.retries])
+        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:40], atevent.url[:50], atevent.out, atevent.retries])
     return tab
 
 
@@ -320,17 +320,15 @@ def handler_add_real(request):
 
     quiet = pd.get('quiet', False)
 
-    when1 = pd.get('when1')
-    if not when1 or when1.startswith('now'):
-        in_when = 'now + '
-        relative = True
-    else:
-        in_when = ''
-        relative = False
-    in_when += pd.get('when2')
-    # If we're relative and unit not provided in when2, look for it in when3.
-    if relative and in_when[-1:].isdigit():
-        in_when += pd.get('when3') or 'm'
+    when0 = pd.get('when0', '')
+    when  = pd.get('when',  '')
+    when2 = pd.get('when2', '')
+    if when0 == 'now':    when0 = 'now + '
+    if when0 == 'sunset': when0 = 'sunset + '
+    in_when = when0 + when + when2
+
+    relative = '+' in in_when
+    if relative and in_when[-1:].isdigit(): in_when += 'm'
 
     when = text_to_datetime(in_when)
     if not when:
