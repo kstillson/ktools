@@ -144,7 +144,7 @@ def get_queue(hl_index=None):  # returns queue table as a list of list elements
         atevent = AtEvent(**edc.kwargs)
         delta = edc.fire_dt - now
         when_mins = round(delta.total_seconds() / 60, 1)
-        controls = f'<button onclick="window.location.href=\'del?index={atevent.index}\';">del</button>\n'
+        controls = f'<a href="./del?index={atevent.index}"><button>del</button></a>\n'
         idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
         tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:45], atevent.out, atevent.retries])
     return tab
@@ -307,7 +307,7 @@ def handler_root(request, hl_index=None, msg=None):
 
 def handler_add(request):
     ok, relative, quiet, resp = handler_add_real(request)
-    C.log_debug(f'add handler results: {ok=} {relative=} {resp=}')
+    C.log_debug(f'add handler results: {ok=} {relative=} {quiet=} {resp=}')
     if relative and not quiet:
         if ok: audible_feedback('dink')
         else:  audible_feedback('quick_err')
@@ -318,7 +318,7 @@ def handler_add_real(request):
     cont = '<p><a href=".">continue</a></p>'
     pd = request.post_params
 
-    quiet = pd.get('quiet', None)
+    quiet = pd.get('quiet', False)
 
     if pd.get('when1').startswith('now'):
         in_when = 'now + '
@@ -359,8 +359,8 @@ def handler_add_real(request):
     new_idx = add(url, when, name, out, notes)
     msg = f'ok: added event {new_idx}'
 
-    out = msg if quiet == '1' else handler_root(request, new_idx, msg)
-    return True, quiet, relative, out
+    out = msg if quiet else handler_root(request, new_idx, msg)
+    return True, relative, quiet, out
 
 
 def handler_del(request):
