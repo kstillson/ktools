@@ -320,7 +320,8 @@ def handler_add_real(request):
 
     quiet = pd.get('quiet', False)
 
-    if pd.get('when1').startswith('now'):
+    when1 = pd.get('when1')
+    if not when1 or when1.startswith('now'):
         in_when = 'now + '
         relative = True
     else:
@@ -339,6 +340,7 @@ def handler_add_real(request):
     url = ''
     act = pd.get('action')
     if   act == 'chime1': url = 'https://home.point0.net/speak/@chime1'
+    elif act == 'chime2': url = 'https://home.point0.net/speak/@ascending4'
     elif act == 'buzz':   url = 'https://home.point0.net/speak/@buzz'
     elif act == 'beep':   url = 'https://home.point0.net/speak/@beep'
     elif act == 'hc':     url = 'https://home.point0.net/control/' + pd.get('url').replace(' ', '/')
@@ -404,7 +406,7 @@ def parse_args(argv):
   g0.add_argument('--default_output',   '-O',  default='err-email:tech@point0.net',  help='default --out option if not provided. nb: only effects items added via web')
   g0.add_argument('--default_retries',  '-R',  default=5,                 help='default --retries option if not provided; nb: only effects items added via web')
   g0.add_argument('--retry_secs',              default=30,                help='how long to wait before retrying (seconds); applies to all events')
-  ap.add_argument('--timeout',          '-T',  default=5,                 help='html get timeout (seconds); applies to all events')
+  ap.add_argument('--timeout',          '-T',  default=8,                 help='html get timeout (seconds); applies to all events')
 
   g1 = ap.add_argument_group('Add an event from CLI')
   g1.add_argument('--add',  '-a',  action='store_true', help='add a queued item')
