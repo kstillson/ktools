@@ -27,11 +27,13 @@ def safe_int(str_int):
     except: return None
 
 def send_email(to, mail_from, subj, text):
-    with smtplib.SMTP(host=ARGS.smtp_host) as s:
+    try:
         msg = textwrap.dedent(f'From: {mail_from}\nTo: {to}\nSubject: {subj}\n\n{text}\n')
         C.log(f'sending email: ' + msg.replace('\n', '; '))
-        s.connect()
-        s.sendmail(mail_from, [to], msg)
+        with smtplib.SMTP(host=ARGS.smtp_host, port=ARGS.smtp_port) as s:
+            s.sendmail(mail_from, [to], msg)
+    except Exception as e:
+        C.log_error(f'error sending email: {ARGS.smtp_host=} {ARGS.smtp_port=} exception={str(e)}')
 
 
 # ========== specialized helpers
@@ -144,7 +146,7 @@ def get_queue(hl_index=None):  # returns queue table as a list of list elements
         when_mins = round(delta.total_seconds() / 60, 1)
         controls = f'<button onclick="window.location.href=\'del?index={atevent.index}\';">del</button>\n'
         idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
-        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:30], atevent.out, atevent.retries])
+        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:45], atevent.out, atevent.retries])
     return tab
 
 
@@ -215,7 +217,7 @@ def fire_and_get_url_real(**kwargs) -> None:
         with open(target, 'a') as fil: fil.write(out + '\n')
     elif dest == 'email':
         send_email(target or "root", EMAIL_FROM, f'{EMAIL_SUBJ}: {atevent.name}', out)
-    elif dest == 'err-email' and not resp_ok:
+    elif not resp_ok and not atevent.retries and dest in('err-email','email-err'):
         send_email(target or "root", EMAIL_FROM, f'{EMAIL_SUBJ}: {atevent.name}', out)
 
     # ---- retries?
@@ -346,7 +348,7 @@ def handler_add_real(request):
     name = pd.get('name')
     if not name: name = 'auto-' + C.random_printable(len=8, charset='abcdefghijklmnopqrstuvwxyz')
 
-    in_out = pd.get('out')
+    in_out = pd.get('output')
     if    in_out == 'email-err': out = 'err-email:tech@point0.net'
     elif  in_out == 'email':     out = 'email:tech@point0.net'
     else: out = 'log'
@@ -396,6 +398,7 @@ def parse_args(argv):
   ap.add_argument('--logfile',  '-L', default='atserver.log',           help='logfile name; use "-" for stdout.')
   ap.add_argument('--port',     '-P', default=8080,                     help='html service port.  0 to disable.')
   ap.add_argument('--smtp_host',      default='smtp',                   help='host to connect to when sending email')
+  ap.add_argument('--smtp_port',      default=25, type=int,             help='port to connect to when sending email')
 
   g0 = ap.add_argument_group('General event properties')
   g0.add_argument('--default_output',   '-O',  default='err-email:tech@point0.net',  help='default --out option if not provided. nb: only effects items added via web')
@@ -426,7 +429,9 @@ def main(argv=[]):
 
     global ARGS
     ARGS = parse_args(argv or sys.argv[1:])
-    C.init_log(sys.argv[0], logfile=ARGS.logfile, filter_level_logfile=C.DEBUG if ARGS.debug else C.INFO)
+    C.init_log(sys.argv[0], logfile=ARGS.logfile,
+               filter_level_logfile=C.DEBUG if ARGS.debug else C.INFO,
+               filter_level_stderr=C.NEVER)
 
     global QUEUE
     context = sys.modules[__name__]
