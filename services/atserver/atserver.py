@@ -39,7 +39,13 @@ def send_email(to, mail_from, subj, text):
 # ========== specialized helpers
 
 def audible_feedback(name):
+    hour = datetime.datetime.now().hour
+    if hour < 9:
+        C.log_warning(f'audible feedback "{name}" quashed due to time of day {hour=}')
+        V.bump('audible-feedback-quashed')
+        return
     C.log('sending audible feedback: ' + name)
+    V.bump('audible-feedback-sent')
     web_get_bg('https://home.point0.net/speak/@' + name)
 
 
@@ -351,6 +357,7 @@ def handler_add_real(request):
     in_out = pd.get('output')
     if    in_out == 'email-err': out = 'err-email:tech@point0.net'
     elif  in_out == 'email':     out = 'email:tech@point0.net'
+    elif  not in_out: out = ARGS.default_output
     else: out = 'log'
 
     user = os.environ.get('REMOTE_USER') or '?'
