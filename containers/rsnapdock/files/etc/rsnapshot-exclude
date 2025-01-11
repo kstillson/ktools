@@ -8,6 +8,7 @@
 /var/cache/***
 USB*
 dlnadock/var_cache_minidlna
+home/black-backup/mnt-black-backup
 home/rsnapshot/***
 mlocate.db
 mnt-black-backup/
