@@ -50,12 +50,6 @@ CONFIGS = [
     Mp('rw',            [],             Sshfs('',        'j:/rw'),                         None,     'mnt/rw'),
     # a1
     Mp('aroot',         ['A'],          Sshfs('',        'a1:/'),                          None,     'mnt/aroot'),
-    # steamdeck
-    Mp('sdd',           ['S'],          Sshfs('',        'sdd:/run/media/mmcblk0p1'),      None,     'mnt/sdd'),
-    Mp('sdh',           [],             Sshfs('',        'sdd:/home/deck'),                None,     'mnt/tmp'),
-    # kasm
-    Mp('d-b',           [],             Sshfs('',        'kasm://home/persist/chrome-b/ken-b/Downloads'),      None,     'mnt/d-b'),
-    Mp('d-bbb',         [],             Sshfs('',        'kasm://home/persist/chrome-bbb/ken-bbb/Downloads'),  None,     'mnt/d-bbb'),
     # gdrive
     Mp('gdrive',        ['g'],          Rclon('--read-only', 'gdrive-ro:/'),               None,     'mnt/gdrive'),
     # ext
@@ -205,6 +199,7 @@ def unmounter(force=False):
                 emit(f'unmount of {c.name}:{c.mp_provides} failed: {out.out}')
             else:
                 emit(f'unmounted {c.name}')
+        time.sleep(0.25)
 
 
 # ---------- GUI
