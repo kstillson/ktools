@@ -254,7 +254,7 @@ function up() {
   sleep 1
   if [[ "$FOLLOW" -gt 0 ]]; then
       set +e
-      timeout $FOLLOW $DOCKER_EXEC logs -ft --color $sel
+      timeout $FOLLOW $DOCKER_EXEC logs -ft $sel
       status=$?
       if [[ "$status" == "124" ]]; then emitc green "... seems to be up"
       else emitc yellow "follow logs failed with status $status"
