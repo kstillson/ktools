@@ -9,7 +9,7 @@
 
 set -e   # Stop on first error...
 
-source blib  # for erun, emit*.  needs full path for when run via logrotate.
+source /root/bin/blib  # for erun, emit*.  needs full path for when run via logrotate.
 
 cmd="$1"
 shift || true
@@ -250,7 +250,7 @@ function up() {
   status=$?
   if [[ $status != 0 ]]; then emitc red "launch exited with status $status"; return $status; fi
   emitc green "launch ok"
-  
+
   sleep 1
   if [[ "$FOLLOW" -gt 0 ]]; then
       set +e
@@ -501,6 +501,14 @@ case "$cmd" in
   pid)                                                           ## Print main PID for $1
       $DOCKER_EXEC inspect --format '{{.State.Pid}}' $(pick_container_from_up $spec) ;;
   spec | s) $DOCKER_EXEC inspect $(pick_container_from_up $spec) ;;    ## Print docker details for $1
+  up-missing | um | start-missing | sm)                          ## Start any containers that should be running but arent.
+      t=$(mktemp)
+      list-up | cut -d' ' -f1 > $t
+      missing=$(list-autostart | fgrep -v -f $t || true)
+      rm $t
+      for sel in $missing; do up $sel; done
+      if [[ "$missing" == "" ]]; then emitc green "all ok"; fi
+      ;;
   veth)                                                          ## Print virtual eth name for $1
     idx=$($DOCKER_EXEC exec $(pick_container_from_up $spec) cat /sys/class/net/eth0/iflink)
     /bin/grep -l "$idx" /sys/class/net/veth*/ifindex | /usr/bin/cut -d/ -f5
