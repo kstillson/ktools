@@ -65,11 +65,11 @@ def test_TimedEvents_against_mocked_time():
     reset(-1)
     start_ms = Q.hm_to_ms(1, 30)  # event [100] should push to tomorrow.
     tq = Q.TimeQueue([
-        Q.TimedEvent(3, 0,   setter, [300], force_now_ms=start_ms),
-        Q.TimedEvent(4, 0,   setter, [400], force_now_ms=start_ms),
-        Q.TimedEvent(2, 0,   setter, [200], force_now_ms=start_ms),
-        Q.TimedEvent(1, 0,   setter, [100], force_now_ms=start_ms),
-        Q.TimedEvent(23, 59, setter, [2359], force_now_ms=start_ms)])
+        Q.TimedEvent(3, 0,   setter, [300], _force_now_ms=start_ms),
+        Q.TimedEvent(4, 0,   setter, [400], _force_now_ms=start_ms),
+        Q.TimedEvent(2, 0,   setter, [200], _force_now_ms=start_ms),
+        Q.TimedEvent(1, 0,   setter, [100], _force_now_ms=start_ms),
+        Q.TimedEvent(23, 59, setter, [2359], _force_now_ms=start_ms)])
 
     # Confirm sort order.
     last = 0
@@ -120,7 +120,7 @@ def test_only_one_event_and_it_is_passed():
 
     global VALUE
     tq = Q.TimeQueue([
-        Q.TimedEvent(2, 0,   setter, [200], force_now_ms=start_ms)])
+        Q.TimedEvent(2, 0,   setter, [200], _force_now_ms=start_ms)])
     assert VALUE == -2  # event should not have run.
 
     # Advance clock a few mins and call check.  Event should still not have run.
@@ -141,8 +141,8 @@ def test_end_of_day_without_wrapping():
 
     global VALUE
     tq = Q.TimeQueue([
-        Q.TimedEvent(10, 0, setter, [1000], force_now_ms=start_ms),
-        Q.TimedEvent(18, 0, setter, [1800], force_now_ms=start_ms)])
+        Q.TimedEvent(10, 0, setter, [1000], _force_now_ms=start_ms),
+        Q.TimedEvent(18, 0, setter, [1800], _force_now_ms=start_ms)])
 
     # Check immediately upon construction.
     assert tq.check(hm_to_ms_wrap(15, 30)) == 0

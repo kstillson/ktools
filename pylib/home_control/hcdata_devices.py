@@ -58,7 +58,6 @@ DEVICES = {
     'garage-R'			: 'TPLINK-PLUG:tp-%d:%c',
     'kitchen'			: 'TPLINK-SWITCH:tp-%d:%c',
     'kitchen-pendants'		: 'TPLINK-SWITCH:tp-%d:%c',
-#    'landscaping'		: 'TPLINK-PLUG:tp-%d:%c',
     'lantern'			: 'TPLINK-BULB:tp-%d:%c',
     'lounge'			: 'TPLINK-SWITCH:tp-%d:%c',
     'lounge-chandelier'		: 'TPLINK-SWITCH:tp-%d:%c',
@@ -72,6 +71,7 @@ DEVICES = {
     'space-heater'		: 'TPLINK-PLUG:tp-%d:%c',
     'tree'			: 'TPLINK-PLUG:tp-%d:%c',
     'window-lights'		: 'TPLINK-SWITCH:tp-%d:%c',
+    'xmas'			: 'TPLINK-SWITCH:tp-%d:%c',
 
     # ---------- tplink individual device overrides and aliases
 

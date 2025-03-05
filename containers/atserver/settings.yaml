@@ -1,0 +1,16 @@
+
+autostart: 5
+
+ports:
+  - 8085:8080
+
+mount_rw:
+  - data: /home/atsvc/data
+
+vol_defaults:
+  owner: user/atsvc
+  group: group/atsvc
+  perm: '02755'
+
+vols:
+  - data

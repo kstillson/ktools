@@ -158,17 +158,17 @@ function main() {
     while [[ $# -gt 0 ]]; do
         flag="$1"
         case "$flag" in
-            --setlive | -s) just_live=1 ;;                ## run mode: just tag :latest to :live and exit
-            --test | -t) run_tests=1 ;;                   ## run mode: build and run tests, then exit
+            --setlive|-s) just_live=1 ;;                     ## run mode: just tag :latest to :live and exit
+            --test|-t) run_tests=1 ;;                        ## run mode: build and run tests, then exit
 
-            --build_params | -b) build_params="$1" ;;     ## params for "docker build" (defaults to $BUILD_PARAMS)
-            --cd) cd="$2"; shift ;;                       ## location of Dockerfile to build (can be relative to $D_SRC_DIR)
-            --name) name="$1"; shift ;;                   ## output image name; defaults to basename of directory
-            --repo) repo="$1"; shift ;;                   ## repo to build image into; defaults to $REPO1
-            --tag) tag="$1"; shift ;;                     ## tag to set after build.  defaults to ":latest"
+            --build_params|-b) build_params="$2"; shift ;;   ## params for "docker build" (defaults to $BUILD_PARAMS)
+            --cd) cd="$2"; shift ;;                          ## location of Dockerfile to build (can be relative to $D_SRC_DIR)
+            --name) name="$2"; shift ;;                      ## output image name; defaults to basename of directory
+            --repo) repo="$2"; shift ;;                      ## repo to build image into; defaults to $REPO1
+            --tag) tag="$2"; shift ;;                        ## tag to set after build.  defaults to ":latest"
 
             --help | -h) myhelp; exit 0 ;;
-            *) echo "unknown flag: $flag (try --help)"; exit -1 ;;
+            *) echo "unknown flag: '$flag' (try --help)"; exit -1 ;;
         esac
         shift
     done

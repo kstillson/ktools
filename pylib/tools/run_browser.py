@@ -91,10 +91,10 @@ ARGS1 = ['--window-size=2000,1200', '--window-position=200,100"']   # Note: Chro
 
 
 CONFIGS = { #   uid        browser      sandbox      reset          profile     args    appmode dis-uids    sync_acct        pw_db             note                                             aliases
-    'bf':   Cfg('ken-bf',  B.CHROME,    None,        True,          'Default',  ARGS1,  None,   ['ken-*'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',          []),
 
-    'k':     Cfg('ken',    B.CHROME,    Sb.FIREJAIL, True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
-    'knj':   Cfg('ken',    B.CHROME,    None,        True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(no fj)',         []),
+    # bf: having problems w/ FF saving pdf's from inside FJ; switch to no FJ for now...
+    'bf': Cfg('ken-bf',  B.FIREFOX,   None,        True,          'Default-bf', ARGS1, None,  ['ken-b', 'ken-bbb'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',          []),
+    'bf_fj': Cfg('ken-bf', B.FIREFOX,   Sb.FIREJAIL, True,          'Default-bf', ARGS1, None,  ['ken-b', 'ken-bbb'],  None,            'lp:ken@p0',      '[AC-4] Financial browser direct(fj)',          []),
 
     'b':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'Default',    ARGS0,  None,   None,       None,          'lp:ken@kds',     'Firefox general browsing direct(fj)',          []),
     'bnj':  Cfg('ken-b',   B.FIREFOX,   None,        True,          'Default',    ARGS0,  None,   None,       None,          'lp:ken@kds',     'Firefox general browsing direct(no fj)',       []),
@@ -105,6 +105,9 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     # firefox separate space for proton extension integration
     'p':    Cfg('ken-b',   B.FIREFOX,   Sb.FIREJAIL, True,          'proton',     ARGS0,  None,   None,       None,          'protonpass',     'Firefox general browsing direct(fj)',          []),
 
+    # firefox under ken-tor and locked to using tor (by iptables)
+    't':    Cfg('ken-tor', B.FIREFOX,   Sb.FIREJAIL, True,          'default',    ARGS0,  None,   None,       None,          None,             'Firefox browsing via tor and fj',              ['ff-tor', 'ftor', 'tor']),
+    
     # Experimental / other
     'e':    Cfg('ken',     B.FIREFOX,   None,        False, 'add-on experiments', ARGS0, None,   None,       None,           None,            'Firefox for add-on dev/experiments',            ['addon', 'exp']),
 
@@ -112,6 +115,9 @@ CONFIGS = { #   uid        browser      sandbox      reset          profile     
     'R':    Cfg('ken',     B.CHROME,    None,        False,         None,       ARGS1,  None,   None,       'ks@g',          'lp:ks@g',       'raw chrome',                                    ['raw']),
     'F':    Cfg('ken',     B.FIREFOX,   None,        False,         None,       ARGS0,  None,   None,       None,            None,            'raw firefox',                                   ['f', 'ff']),
 
+    # moved to ~/bin/app...
+    #'k':    Cfg('ken',     B.CHROME,    Sb.FIREJAIL, True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(fj)',            ['g','google','kstillson']),
+    #'knj':  Cfg('ken',     B.CHROME,    None,        True,          'Default',    ARGS1,  None,   None,       None,          'lp:kstillson@g', '[AC-c] Chrome Google:* direct(no fj)',         []),
 
     # Deprecated modes
      #'b0':   Cfg('ken-b',   B.CHROME,    Sb.FIREJAIL, True,          'Default',  ARGS1,  None,   None,       'chrome-b@p0',   'lp:ken@kds',     '[AC-0] General browsing direct(fj)',           []),
@@ -356,7 +362,7 @@ def safedir(dir: str):  # Create this dir if needed, along with any missing pare
 def snap_config(cfg):
     source = get_profile_dir(cfg)
     dest = get_snapshot_dir(cfg)
-
+    
     if BACKUP_SFX:
         dest_backup = dest + BACKUP_SFX
         debug(f'backing up snapshot {dest} -> {dest_backup}')
@@ -460,9 +466,7 @@ def main(argv=[]):
     # ---- alternate run modes that need a selected config.
 
     if ARGS.snap:
-        # We must change user to have perms to save the snapshot where the reset function will expect it.
-        # If we end up calling switch_user_if_needed(), the call doesn't return; it restarts the script as the new uid,
-        # which runs the same logic, but won't run sudo again because of the --sudo_done flag.
+        switch_user_if_needed(cfg, ARGS.sudo_done)  # (if runs sudo, doesn't return; restrts the script as the new uid and with --sudo-done)
         ok = snap_config(cfg)
         if not ok:
             C.zwarn('error reported during snap operation')

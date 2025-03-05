@@ -547,8 +547,8 @@ def gen_command_via_settings_yaml():
         repo_name = get_setting('repo2')
         if not does_image_exist(repo_name, image_name, tag_name):
             repo_name = None
-            err(f'This probably wont work; {image_name}:{tag_name} not found in primary or secondary repo.')
-
+            # err(f'This probably wont work; {image_name}:{tag_name} not found in primary or secondary repo.')
+    
     if repo_name: full_spec = f'{repo_name}/{image_name}:{tag_name}'
     else:         full_spec = f'{image_name}:{tag_name}'
     cmnd.append(full_spec)
@@ -590,7 +590,7 @@ def parse_args(argv=sys.argv[1:]):
     g2.add_argument('--test-mode',     '-T', action='store_true', help='Launch with alternate settings, so version under test does not interfere with production version.')
 
     g3 = ap.add_argument_group('shortcuts')
-    g3.add_argument('--latest',        '-l', action='store_true', help='shortcute for --tag=latest')
+    g3.add_argument('--latest',        '-l', action='store_true', help='shortcut for --tag=latest')
 
     args, _ = ap.parse_known_args(argv)   # Parse enough flags to get the settings dir & filename(s)
 

@@ -316,8 +316,15 @@ class DictOfDataclasses(PersisterDictOfDC, dict):
 # A Persister specialized for lists of @dataclass instances.
 
 class PersisterListOfDC(Persister):
-    def __init__(self, filename, dc_type, default_value=[], **kwargs):
+    def __init__(self, filename, dc_type, default_value=[], eval_globals={}, **kwargs):
+        '''Specialization of Persister for lists of @dataclass's.
+
+           eval_globals can be set to "globals()" by the caller if the
+           serialized data will contain fields whose subtypes need to be
+           imported before being eval'd.  e.g. if the DC contains datetime's.
+        '''
         self.dc_type = dc_type
+        self.eval_globals = eval_globals
         super().__init__(filename=filename, default_value=default_value, **kwargs)
 
     def deserialize(self, serialized):
@@ -326,7 +333,7 @@ class PersisterListOfDC(Persister):
         data = self.get_default_value()
         for line in serialized.split('\n'):
             if not line or line.startswith('#'): continue
-            data.append(eval(line, {}, locals))
+            data.append(eval(line, self.eval_globals, locals))
         return data
 
     def serialize(self, data):

@@ -26,5 +26,5 @@ def query_cmd(name, container_to_test):
 # ---------- tests
 
 def test_dnsdock_default_config(container_to_test):
-    D.popen_expect(query_cmd('jack',  container_to_test), 'has address 192.168.1.2')
-    D.popen_expect(query_cmd('jackX', container_to_test), 'NXDOMAIN')
+    D.popen_expect(query_cmd('jack.h.point0.net',  container_to_test), 'has address 192.168.1.2')
+    D.popen_expect(query_cmd('jackX.h.point0.net', container_to_test), 'NXDOMAIN')

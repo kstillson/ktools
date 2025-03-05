@@ -1,0 +1,9 @@
+
+ACCOUNTS_DONT_DELETE_REGEX="^(root|atsvc|nobody)"
+GROUP_DONT_DELETE_REGEX="^(root|atsvc|nobody)"
+WORLD_WRITABLE_DIRS_RM=0
+
+# ---------- fix ownership / permissions
+
+chgrp -R atsvc /home /tmp
+chmod -R g+rX /home

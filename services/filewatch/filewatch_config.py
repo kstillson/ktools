@@ -33,7 +33,7 @@ CONFIG = {
     # rsnapshot based
     '/root/rsnap/daily.0/a4/var/log/syslog':                       RSNAP_LOG_AGE,
     '/root/rsnap/daily.0/home/home/ken/share/tmp/touch':           RSNAP_LOG_AGE,
-    '/root/rsnap/daily.0/home2/black-backup/mnt/home2/black-backup/backup/var/log/auth.log': 4 * DAY,
+    '/root/rsnap/daily.0/home2/encfs-black-backup/mnt/home2/encfs-black-backup/8KDFlw0eY0UZy98mW4ieT5q3/ilYCfI3KAmQTQB99BhQhdNHt/H1kiffd4L60JLSu5uU5RK13E/mga-bX,iZAg5pfspBbT3Remr': 2 * DAY,
     '/root/rsnap/echo-back/vault-touch':                           32 * DAY,
     
     # syslog based
@@ -50,6 +50,7 @@ CONFIG = {
     # cron exceptions
     '/root/syslog/cron-black.log':                 3 * DAY,
     '/root/syslog/cron-jack2.log':                 2 * DAY,
+    '/root/syslog/cron-jack3.log':                 2 * DAY,
     '/root/syslog/cron-glowbox1.log':              None,  # Disable globbed file.
     
     # globs

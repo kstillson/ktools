@@ -1,0 +1,22 @@
+#!/bin/bash
+
+SVC="${SVC:-https://home.point0.net/at}"
+D="--data-urlencode"
+
+# alternate run modes
+if [[ "$1" == "-h" || "$1" == "" ]]; then echo "$0 {when} {action} {url} [{name}] [{out}]" >&2; exit 0; fi
+if [[ "$1" == "-l" ]]; then curl -sS "${SVC}/list"; echo ""; exit $?; fi
+if [[ "$1" == "-d" ]]; then curl -sS "${SVC}/del?index=$2"; echo ""; exit $?; fi
+
+# relative time adjustments
+if [[ "$1" == "sunset"* || "$1" == *":"* ]]; then when1=""; else when1="now"; fi
+
+when="$1"
+action="$2"
+url="$3"
+name="$4"
+output="$5"
+
+if [[ "$url" == "@"* ]]; then url="https://home.point0.net/speak/$url"; fi
+
+curl -sS $D "when1=$when1" $D "when2=$when" $D "action=$action" $D "url=$url" $D "name=$name" $D "output=$output" $D "quiet=1"  ${SVC}/add | fgrep -v ok: || true
