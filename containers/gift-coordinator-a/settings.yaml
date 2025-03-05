@@ -1,8 +1,8 @@
 
 autostart: 5;host=a4.point0.net
 
-ports:
-  - 10.88.0.1:8100:8080
+# ports:
+#  - 10.88.0.1:8100:8080
 
 mount_rw:
   - data: /home/santa/data
