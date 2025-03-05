@@ -252,7 +252,7 @@ function up() {
   emitc green "launch ok"
 
   sleep 1
-  if [[ "$FOLLOW" -gt 0 ]]; then
+  if [[ -t 0 && "$FOLLOW" -gt 0 ]]; then
       set +e
       timeout $FOLLOW $DOCKER_EXEC logs -ft $sel
       status=$?
