@@ -2,6 +2,10 @@
  <head>
   <title>At-server</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { transform: scale(1.15); transform-origin: 0 0; margin: 10px;
+           color: white; background-color: black; }
+  </style>
  </head>
 
  <body>
@@ -13,12 +17,12 @@
     <table border="1" cellpadding="5">
 
       <tr><td>When</td>  <td>
-          <select name="when1">
+          <select name="when0">
             <option value="now">now +</option>
             <option value=""></option>
           </select>
-          <input name="when2" size="8">
-          <select name="when3">
+          <input name="when" size="8">
+          <select name="when2">
             <option value="" selected></option>
             <option value="s">sec</option>
             <option value="m">min</option>
@@ -29,6 +33,7 @@
       <tr><td>Action</td>   <td>
           <select name="action">
             <option value="chime1">chime 1</option>
+            <option value="chime2">chime 2</option>
             <option value="buzz">buzz</option>
             <option value="beep">beep</option>
             <option value="hc">HC</option>

@@ -39,7 +39,13 @@ def send_email(to, mail_from, subj, text):
 # ========== specialized helpers
 
 def audible_feedback(name):
+    hour = datetime.datetime.now().hour
+    if hour < 9:
+        C.log_warning(f'audible feedback "{name}" quashed due to time of day {hour=}')
+        V.bump('audible-feedback-quashed')
+        return
     C.log('sending audible feedback: ' + name)
+    V.bump('audible-feedback-sent')
     web_get_bg('https://home.point0.net/speak/@' + name)
 
 
@@ -146,7 +152,7 @@ def get_queue(hl_index=None):  # returns queue table as a list of list elements
         when_mins = round(delta.total_seconds() / 60, 1)
         controls = f'<a href="./del?index={atevent.index}"><button>del</button></a>\n'
         idx = f'<b>{atevent.index}</b>' if atevent.index == hl_index else atevent.index
-        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:30], atevent.url[:45], atevent.out, atevent.retries])
+        tab.append([controls, idx, edc.fire_dt, when_mins, atevent.name, atevent.notes[:40], atevent.url[:50], atevent.out, atevent.retries])
     return tab
 
 
@@ -320,16 +326,15 @@ def handler_add_real(request):
 
     quiet = pd.get('quiet', False)
 
-    if pd.get('when1').startswith('now'):
-        in_when = 'now + '
-        relative = True
-    else:
-        in_when = ''
-        relative = False
-    in_when += pd.get('when2')
-    # If we're relative and unit not provided in when2, look for it in when3.
-    if relative and in_when[-1:].isdigit():
-        in_when += pd.get('when3') or 'm'
+    when0 = pd.get('when0', '')
+    when  = pd.get('when',  '')
+    when2 = pd.get('when2', '')
+    if when0 == 'now':    when0 = 'now + '
+    if when0 == 'sunset': when0 = 'sunset + '
+    in_when = when0 + when + when2
+
+    relative = '+' in in_when
+    if relative and in_when[-1:].isdigit(): in_when += 'm'
 
     when = text_to_datetime(in_when)
     if not when:
@@ -339,6 +344,7 @@ def handler_add_real(request):
     url = ''
     act = pd.get('action')
     if   act == 'chime1': url = 'https://home.point0.net/speak/@chime1'
+    elif act == 'chime2': url = 'https://home.point0.net/speak/@ascending4'
     elif act == 'buzz':   url = 'https://home.point0.net/speak/@buzz'
     elif act == 'beep':   url = 'https://home.point0.net/speak/@beep'
     elif act == 'hc':     url = 'https://home.point0.net/control/' + pd.get('url').replace(' ', '/')
@@ -351,6 +357,7 @@ def handler_add_real(request):
     in_out = pd.get('output')
     if    in_out == 'email-err': out = 'err-email:tech@point0.net'
     elif  in_out == 'email':     out = 'email:tech@point0.net'
+    elif  not in_out: out = ARGS.default_output
     else: out = 'log'
 
     user = os.environ.get('REMOTE_USER') or '?'
@@ -404,7 +411,7 @@ def parse_args(argv):
   g0.add_argument('--default_output',   '-O',  default='err-email:tech@point0.net',  help='default --out option if not provided. nb: only effects items added via web')
   g0.add_argument('--default_retries',  '-R',  default=5,                 help='default --retries option if not provided; nb: only effects items added via web')
   g0.add_argument('--retry_secs',              default=30,                help='how long to wait before retrying (seconds); applies to all events')
-  ap.add_argument('--timeout',          '-T',  default=5,                 help='html get timeout (seconds); applies to all events')
+  ap.add_argument('--timeout',          '-T',  default=8,                 help='html get timeout (seconds); applies to all events')
 
   g1 = ap.add_argument_group('Add an event from CLI')
   g1.add_argument('--add',  '-a',  action='store_true', help='add a queued item')
