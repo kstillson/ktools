@@ -597,17 +597,17 @@ function reset_ipt_alerts() {
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
 function procmon_clear_cow() {
-    for f in $(curl -sS ${PROCMON}/healthz | grep COW | sed -e 's/COW: unexpected file: //'); do
+    for f in $($0 procmon-query | grep COW | cut -d: -f3-4); do
         emitC blue "$f"
         docker=${f%%:*}
-        relfile=${f#*:}
+        relfile=${f#*:/}
         echoc yellow "${docker}:${relfile}"
         base=$(d cow $docker)
         fn="${base}/${relfile}"
         runner "/bin/rm $fn"
     done
-    emitc green done
-    runner "nag -r"
+    emitc green "cows cleared"
+    $0 pZ
 }
 
 # Update the whitelist of known-processes on the primary server.  Test the results
