@@ -588,11 +588,11 @@ function reset_ipt_alerts() {
     cat "$SRC" >> "$DEST"
     :> "$SRC"
 
-    echo -n "updated filewatch status: "
-    curl http://z:8082/healthz
-    echo ""
-
-    runner "nag -r"
+    if [[ "$MY_HOSTNAME" == "jack" ]]; then
+	echo -n "updated filewatch status: "
+	curl http://z:8082/healthz ; echo ""
+	runner "nag -r"
+    fi
 }
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
@@ -607,6 +607,7 @@ function procmon_clear_cow() {
         runner "/bin/rm $fn"
     done
     emitc green done
+    runner "nag -r"
 }
 
 # Update the whitelist of known-processes on the primary server.  Test the results
@@ -993,7 +994,7 @@ function main() {
         keymaster-status | kms) keymaster_status ;;                       ## print keymaster healthz status
         keymaster-update | kmu) keymaster_update ;;                       ## edit keymaster encrypted data and restart
         keymaster-zap | kmz) keymaster_zap ;;                             ## clear keymaster state (and raise alerts)
-	iptables-reload | ir) iptables_reload ;;                          ## safely reload iptables from source file
+	iptables-reload | reipt | ir) iptables_reload ;;                  ## safely reload iptables from source file
         panic-reset | PR)                                                 ## recover from a homesec panic
             keymaster_reload; /usr/local/bin/panic reset ;;
         procmon-clear-cow | pcc | cc) procmon_clear_cow ;;                ## remove any unexpected docker cow file changes
