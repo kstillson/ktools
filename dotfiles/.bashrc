@@ -97,6 +97,8 @@ function set_prompt() {
 }
 PROMPT_COMMAND='set_prompt'
 
+function title() { printf "\033]0;$*\007"; }
+
 
 # ======================================================================
 # aliases and trivial functions
@@ -220,6 +222,11 @@ function CU() {
     make clean && make && make test && make install && d 01 $name
 }
 
+# ktools
+alias hc='/usr/local/bin/hc'
+function Cow() { cd $(d cow "$1"); }
+
+
 # root-type stuff
 alias R="sudo -i bash"
 # btrfs
@@ -278,6 +285,7 @@ function Ips() {
 function Ip() { Ips | grep "$1" | awk '{print $2}'; }
 
 # process inspectors
+alias GL="glances -C /home/ken/.config/glances"
 alias mine="ps aux --forest  | grep '$USER '"
 alias pag='ps auxwww --forest | grep '
 alias pam='ps aux --forest | less'
@@ -301,6 +309,8 @@ function Copy() { if [[ "$1" == "+" ]]; then clear; shift; fi; copy + "$@"; }
 
 # other general command shortcuts
 function Curl() { curl -sS $(echo "$@" | perl -p -e 's/([^A-Za-z0-9\:\/])/sprintf("%%%02X", ord($1))/seg' | sed -e 's/%0A//'); }
+function H() { host 192.168."$@"; }
+alias DM="less -R +F /var/log/dmesg.log || dmesg -wT"
 alias Sort="( sed -u 1q; sort )"
 alias broken_links='find -L . -type l'
 alias c2n='tr "," "\n"'

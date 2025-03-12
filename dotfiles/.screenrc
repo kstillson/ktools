@@ -20,6 +20,8 @@ zmodem catch auto
 
 bind % silence
 bind & screen -t root 7 su - 0
+
+bind D screen -t DM 6 sudo bash -c 'less -R +F /var/log/dmesg.log || dmesg -wT'
 bind E screen -t emacs 1 emacs -nw
 bind R screen -t root 9 su - 0
 bind T screen -t root 8 sudo bash
