@@ -21,7 +21,7 @@ zmodem catch auto
 bind % silence
 bind & screen -t root 7 su - 0
 
-bind D screen -t DM 6 DM'
+bind D screen -t DM 6 DM
 bind E screen -t emacs 1 emacs -nw
 bind R screen -t root 9 su - 0
 bind T screen -t root 8 sudo bash
