@@ -310,7 +310,6 @@ function Copy() { if [[ "$1" == "+" ]]; then clear; shift; fi; copy + "$@"; }
 # other general command shortcuts
 function Curl() { curl -sS $(echo "$@" | perl -p -e 's/([^A-Za-z0-9\:\/])/sprintf("%%%02X", ord($1))/seg' | sed -e 's/%0A//'); }
 function H() { host 192.168."$@"; }
-alias DM="less -R +F /var/log/dmesg.log || dmesg -wT"
 alias Sort="( sed -u 1q; sort )"
 alias broken_links='find -L . -type l'
 alias c2n='tr "," "\n"'

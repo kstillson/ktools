@@ -11,7 +11,7 @@ HOME_FILES := .bashrc .ees.el .emacs .gitconfig .gitignore .profile .screenrc .s
 HOME_TARGETS := $(addprefix $(HOME_DIR)/, $(HOME_FILES))
 
 BIN_DIR := $$HOME/bin
-BIN_FILES := blib
+BIN_FILES := blib DM
 BIN_TARGETS := $(addprefix $(BIN_DIR)/, $(BIN_FILES))
 
 # ---------- custom logic
@@ -48,3 +48,6 @@ $(HOME_TARGETS): $(HOME_DIR)/% : %
 
 $(BIN_TARGETS): $(BIN_DIR)/% : %
 	cp -buv $^ $@
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)

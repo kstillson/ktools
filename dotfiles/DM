@@ -1,0 +1,9 @@
+#!/bin/bash
+
+[[ "$UID" == "0" ]] || exec sudo -u root "$0" "$1"
+[[ -r /var/log/dmesg.log ]] && exec less -R +F /var/log/dmesg.log
+[[ "$1" == "-" ]] && exec /bin/dmesg  --kernel --ctime --decode --color=always | less -R +G
+exec /bin/dmesg  --kernel --ctime --decode --follow
+
+# for dmesg.log, the following command should be run by root in the background upon startup:
+# /bin/dmesg --kernel --decode --color=always --reltime --nopager --follow > /var/log/dmesg.log &
