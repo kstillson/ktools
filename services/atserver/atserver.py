@@ -347,7 +347,18 @@ def handler_add_real(request):
     elif act == 'chime2': url = 'https://home.point0.net/speak/@ascending4'
     elif act == 'buzz':   url = 'https://home.point0.net/speak/@buzz'
     elif act == 'beep':   url = 'https://home.point0.net/speak/@beep'
+    elif act == 'keypad': url = 'https://home.point0.net/cgi-bin/kcmd.cgi?k=' + pd.get('url')
+    elif act == 'hc10':
+        base = 'https://home.point0.net/control/' + pd.get('url')
+        resp = C.web_get(base + '/on')
+        if resp.ok:
+            C.log(f'hc01 on-phase ok: {base}/on -> {str(resp)}')
+            url = base + '/off'
+        else:
+            C.log_warning(f'hc01 on failed: {str(resp)}')
+            url = None
     elif act == 'hc':     url = 'https://home.point0.net/control/' + pd.get('url').replace(' ', '/')
+    elif act == 'mpc':    url = "https://home.point0.net/media?" + (pd.get('url') or 's')
     elif act == 'url':    url = pd.get('url')
     if not url: return False, relative, quiet, '<p>add: unable to parse provided URL.' + cont
 
