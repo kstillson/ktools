@@ -55,8 +55,8 @@ import kcore.webserver as W
 def hs_control_handler(request):
     try:
         items = request.path.split('/')[2:]   # [0] is "", i.e. lhs of leading '/'.  [1] is "control"
-        target = items[0]
-        command = items[1] if len(items) > 1 else 'on'
+        target = items[0].lower()
+        command = items[1].lower() if len(items) > 1 else 'on'
     except:
         return W.Response('correct path looks like /control/target[/command].', 400)
     ok, rslt = HC.control(target, command)
