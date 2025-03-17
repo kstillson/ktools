@@ -760,6 +760,13 @@ function run_keypad_command {
     echo ""
 }
 
+function startup_sequence() {
+    keymaster_reload; sleep 0.5
+    d 01 syslogdock;  sleep 0.5
+    $0 procmon-zap2
+    emitc green "startup sequence done"
+}
+
 
 # ----------------------------------------
 # host lists
@@ -1009,6 +1016,7 @@ function main() {
         procmon-update | pu) procmon_update ;;                            ## edit procmon whilelist and restart
         push-wheel) push_wheel "$@" ;;                                    ## push update of kcore_pylib to select rpi's
 	reset-iptables-alerts | rip) reset_ipt_alerts ;;                  ## clear noisy alerts
+	startup | sup | up) startup_sequence ;;                           ## sequence to run on freshly booted system
         syslog-queue-archive | queue-archive | sqa | qa)                  ## show full queue history
             zcat -f /root/j/logs/queue $(/bin/ls -t /root/j/logs/Arc/que*) | less ;;
         syslog-queue-filter-ssh | queue-filter | sqf | qf)                ## remove sshs from log queue
