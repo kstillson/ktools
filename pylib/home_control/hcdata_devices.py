@@ -56,6 +56,7 @@ DEVICES = {
     'garage'			: 'TPLINK-BULB:tp-%d:%c',
     'garage-L'			: 'TPLINK-PLUG:tp-%d:%c',
     'garage-R'			: 'TPLINK-PLUG:tp-%d:%c',
+    'humid'			: 'TPLINK-PLUG:tp-%d:%c',
     'kitchen'			: 'TPLINK-SWITCH:tp-%d:%c',
     'kitchen-pendants'		: 'TPLINK-SWITCH:tp-%d:%c',
     'lantern'			: 'TPLINK-BULB:tp-%d:%c',
