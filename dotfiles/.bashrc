@@ -83,6 +83,9 @@ esac
 # ======================================================================
 # prompt
 
+# to support overlay root file system detection in the prompt, add the following to /etc/local.d or equivalent:
+# grep -q ' / overlay' /proc/mounts && touch /tmp/olr
+
 # this function is run before each command, so it should be as efficient as possible.
 function set_prompt() {
   local last=$?
