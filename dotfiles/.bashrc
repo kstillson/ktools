@@ -264,6 +264,7 @@ alias ddd="dd status=progress"
 alias SdSpeedTest='sudo hdparm --direct -t '
 alias Space='baobab'
 alias SpaceR='sudo baobab'
+function ST() { x="$1"; if [[ ! -a "$x" ]]; then x="sd$x"; fi; printf "/dev/$x: ...\r"; sudo hdparm -t --direct "/dev/$x" | sed -z -e 's/:.*=/:/' -e 's/^\n//'; }  # Speed Test
 # info about the mountpoint of the specified dir (or current) dir.
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
 # give just the mountpoint dir of the specified (or current) dir.
