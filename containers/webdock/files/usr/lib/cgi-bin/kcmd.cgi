@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import cgi, requests, sys
+import cgi, requests, sys, urllib.parse
 
 def err(msg='invalid request', code=400):
   print(f'Status: {code} {msg}\n\n')
@@ -10,7 +10,7 @@ def err(msg='invalid request', code=400):
 def main():
   form = cgi.FieldStorage()
   if 'k' not in form: err("no data provided.")
-  k = form['k'].value
+  k = urllib.parse.quote(form['k'].value)
   
   r = requests.post('http://hs-lounge:1235/', data={'cmd': k}, timeout=5)
   if r.status_code != 200: err(r.reason, r.status_code)    
