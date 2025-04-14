@@ -2,7 +2,7 @@
 # Supported meta-targets:  all, clean, test, install, update
 
 PY_TARGETS := iptables_log_sum
-SH_TARGETS := q
+SH_TARGETS := q rw
 INSTALL_DIR := /root/bin
 include ../etc/Makefile-common
 

@@ -83,6 +83,9 @@ esac
 # ======================================================================
 # prompt
 
+# to support overlay root file system detection in the prompt, add the following to /etc/local.d or equivalent:
+# grep -q ' / overlay' /proc/mounts && touch /tmp/olr
+
 # this function is run before each command, so it should be as efficient as possible.
 function set_prompt() {
   local last=$?
@@ -261,6 +264,7 @@ alias ddd="dd status=progress"
 alias SdSpeedTest='sudo hdparm --direct -t '
 alias Space='baobab'
 alias SpaceR='sudo baobab'
+function ST() { x="$1"; if [[ ! -a "$x" ]]; then x="sd$x"; fi; printf "/dev/$x: ...\r"; sudo hdparm -t --direct "/dev/$x" | sed -z -e 's/:.*=/:/' -e 's/^\n//'; }  # Speed Test
 # info about the mountpoint of the specified dir (or current) dir.
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
 # give just the mountpoint dir of the specified (or current) dir.
