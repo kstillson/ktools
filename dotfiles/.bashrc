@@ -189,7 +189,16 @@ alias rd='rmdir'
 function md() { mkdir -p "$1"; cd "$1"; }
 
 # ssh
-alias Ssh='s -fMN'
+function ssh-init() {
+    local ENV_FILE="${HOME}/.env"
+    [[ -f ${ENV_FILE} ]] && source ${ENV_FILE}
+    [[ -d "/proc/$SSH_AGENT_PID" && -S "$SSH_AUTH_SOCK" ]] || \
+	{ ssh-agent -s -t 4h | fgrep -v echo > ${ENV_FILE}; source ${ENV_FILE}; }
+    ssh-add -l >/dev/null || ssh-add -v
+}
+alias A="ssh-init; source ${HOME}/.env"
+alias s='A; ssh '
+alias Ssh='s -fMN'  # start bg master
 
 # git
 alias g="git"
