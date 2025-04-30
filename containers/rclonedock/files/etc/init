@@ -6,12 +6,23 @@
 #                (will create many duplicates due to albums, favorites, etc)
 #   interactive: interactive shell ready for "rclone mount" commands
 #   photos: syncs this year's "by-month" google-photos to /root/photos-backup
-#   test: copies a single file back and forth from wasabi.
-#   wasabi: syncs /root/src to wasabi
+#   test: copies a single file back and forth from ??  (see below)
+
+
+###
+#
+# TODO: NB on MODE=test: this used to copy a single file back-and-forth from wasabi
+# using the s3 protocol; but that service is cancelled in favor of servica.
+# MODE=servica doesn't actually use rclone, it uses rsync, so using that isnt
+# a very good test for the rclone container.  Perhaps this should be replaced
+# with a single Google-photos xfer, but at time of writing (4/21/25), thats
+# actually not working, so will just leave this pending..
+#
+###
+
 
 BASENAME=rclonedock
-LOG=/var/log/${BASENAME}.log
-RCLONE=/root/bin/rclone
+RCLONE=/usr/bin/rclone
 
 # ----------
 # Parse flags
@@ -32,6 +43,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 MODE="$1"
+LOG=/var/log/${BASENAME}-${MODE}.log
 
 # ----------
 # Basic flag processing
@@ -135,12 +147,12 @@ case $MODE in
 	DEST="/root/echo-back/test-in"
 	DEST_FILE="/root/echo-back/test-in/test-out"
 	echo "copying cookie out"
-	${RCLONE} -v copy ${SRC} wasabi-s3:kstillson-s3
+	${RCLONE} -v copy ${SRC} servica:kstillson-s3
 	STATUS=$?
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 	echo "copying cookie back"
 	rm -rf /root/echo-back/test-in
-	${RCLONE} -v copy wasabi-s3:kstillson-s3/test-out ${DEST}
+	${RCLONE} -v copy servica:kstillson-s3/test-out ${DEST}
 	/usr/bin/diff ${SRC} ${DEST_FILE} || { echo "ERROR- test cookie copy-back doesnt match."; cat ${SRC}; cat ${DEST_FILE}; exit -1; }
 	echo "init: ${SRC} == ${DEST_FILE} : $(cat ${DEST_FILE})"
 	echo "init: pass"
@@ -166,22 +178,6 @@ case $MODE in
 	rm -rf ${DEST}
 	rsync servarica:/home/backup/src/home/home/ken/share/tmp/touch ${DEST}
 	/usr/bin/diff /root/src/home/home/ken/share/tmp/touch ${DEST} || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
-        ;;
-
-    wasabi)
-	# check that source is mounted ok (dont want to zap dest because of a src mounting error).
-	if [[ ! -d /root/src/rw ]]; then echo "rclone $MODE cannot find source canary file; aborting."; exit -2; fi
-	# copy rsnap daily.0 to remote archive
-	${RCLONE} sync ${STATS} --links --one-file-system --modify-window 10s --exclude '**/bp/**' --exclude '**/mov/**' /root/src wasabi-s3:kstillson-s3
-	STATUS=$?
-	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
-
-	# Sanity check: copy jack's cron log back into a holding area.  filewatchdock also monitors the age of this file.
-	DEST="/root/echo-back/ken-touch"
-	echo "$(date): starting echo back to ${DEST}"
-	rm -rf ${DEST}
-	${RCLONE} copy wasabi-s3:kstillson-s3/home/home/ken/share/tmp/touch ${DEST}
-	/usr/bin/diff /root/src/home/home/ken/share/tmp/touch ${DEST}/touch || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
         ;;
 
     *)
