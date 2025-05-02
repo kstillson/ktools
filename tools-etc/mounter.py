@@ -109,6 +109,19 @@ def smartappend(target_list, item):
     target_list.extend(item if type(item) == list else [item])
     return target_list
 
+def read_env_file(filename=None):
+    if not filename: filename = os.environ.get('HOME') + '/.env'
+    if not os.path.isfile(filename): return False
+    count = 0
+    with open(filename) as f:
+        for line in f:
+            for entry in line.split(';'):
+                if not '=' in entry: continue
+                name, val = entry.strip().split('=', 1)
+                os.environ[name] = val
+                count += 1
+    return count
+
 
 # ---------- business logic
 
@@ -233,6 +246,7 @@ def parse_args(argv):
 def main(argv=[]):
     global ARGS
     ARGS = parse_args(argv or sys.argv[1:])
+    read_env_file()  # enable ssh agent to prevent unnecessary passwd re-entry.
 
     if not ARGS.targets: ARGS.targets = show_gui()
 
