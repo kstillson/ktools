@@ -83,6 +83,9 @@ esac
 # ======================================================================
 # prompt
 
+# to support overlay root file system detection in the prompt, add the following to /etc/local.d or equivalent:
+# grep -q ' / overlay' /proc/mounts && touch /tmp/olr
+
 # this function is run before each command, so it should be as efficient as possible.
 function set_prompt() {
   local last=$?
@@ -186,7 +189,16 @@ alias rd='rmdir'
 function md() { mkdir -p "$1"; cd "$1"; }
 
 # ssh
-alias Ssh='s -fMN'
+function ssh-init() {
+    local ENV_FILE="${HOME}/.env"
+    [[ -f ${ENV_FILE} ]] && source ${ENV_FILE}
+    [[ -d "/proc/$SSH_AGENT_PID" && -S "$SSH_AUTH_SOCK" ]] || \
+	{ ssh-agent -s -t 4h | fgrep -v echo > ${ENV_FILE}; source ${ENV_FILE}; }
+    ssh-add -l >/dev/null || ssh-add -v
+}
+alias A="ssh-init; source ${HOME}/.env"
+alias s='A; ssh '
+alias Ssh='s -fMN'  # start bg master
 
 # git
 alias g="git"
@@ -248,7 +260,7 @@ alias    KU='sudo /usr/bin/killall -u '
 
 # disk level ops
 # human-friendly and filtered list of device blkid's
-alias Blk='lsblk -AMe7 -o NAME,FSTYPE,UUID,SIZE,FSUSE%,MOUNTPOINTS,MODEL'
+alias Blk="lsblk -AMe7 -o NAME,LABEL,PARTLABEL,FSTYPE,UUID,SIZE,FSUSE%,MOUNTPOINTS,MODEL | sed -z -e 's: *\n  */:, /:'"
 # combine lines with the same device but different mountpoints (e.g. btrfs) into a single line:
 alias Df="Dfs | awk '/Mounted on/ { print; next; } { if (\$1 in a) { a[\$1]=sprintf(\"%s, %s\", a[\$1], \$7); } else { a[\$1]=\$0; } } END { for(i in a) print a[i]; }' | Sort"
 alias Dedup="/usr/bin/rmlint --types=duplicates --size ${MINSIZE:-50M} --no-hardlinked --no-followlinks --no-crossdev --xattr --algorithm=sha256 --progress --config=progressbar:fancy --with-color --output=summary:dedup.txt --output=sh:dedup.sh --config=sh:handler=${HANDLER:-hardlink,symlink} "
@@ -261,6 +273,7 @@ alias ddd="dd status=progress"
 alias SdSpeedTest='sudo hdparm --direct -t '
 alias Space='baobab'
 alias SpaceR='sudo baobab'
+function ST() { x="$1"; if [[ ! -a "$x" ]]; then x="sd$x"; fi; printf "/dev/$x: ...\r"; sudo hdparm -t --direct "/dev/$x" | sed -z -e 's/:.*=/:/' -e 's/^\n//'; }  # Speed Test
 # info about the mountpoint of the specified dir (or current) dir.
 function mnt() { q="${1:-.}"; findmnt --target ${q}; }
 # give just the mountpoint dir of the specified (or current) dir.

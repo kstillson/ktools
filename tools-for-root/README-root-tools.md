@@ -14,3 +14,6 @@
 - rsnap-diff: generates a consolidated report of the files which have changed
   between two directories.  Intended to summarize changes since the previous
   day's rsnapshot backup, for all systems included in the backup.
+
+- rw: tool to deal with read-only root or overlay-root filesystems.
+

@@ -1,5 +1,6 @@
 
 extra_init: "photos"
+#extra_init: ["-v", "photos"]
 
 mount_rw:
   - var_log: /var/log

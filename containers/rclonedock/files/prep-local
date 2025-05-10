@@ -9,5 +9,5 @@ SYSDIRS_RM_REGEX="/(hexdump|chgrp|chmod|ln|od|strings|su)$"
 
 # Some files stored in private.d subdirs to keep them out of git;
 # move them into their real positions.
-mv /root/.config/rclone/private.d/rclone.conf /root/.config/rclone/rclone.conf || true
+mv /root/.config/rclone/private.d/rclone.conf /root/.config/rclone/rclone.conf
 mv /root/.ssh/private.d/* /root/.ssh || true
