@@ -1,0 +1,7 @@
+#!/bin/bash
+
+CONFIG="filewatch_config"
+if [[ "$1" == "test" ]]; then CONFIG="filewatch_config_test"; fi
+
+cd /home/watch
+exec ./filewatch --config $CONFIG
