@@ -2,7 +2,7 @@
 HW_DIR := files/home/watch
 HW_FILES := filewatch filewatch_config
 HW_TARGETS := $(addprefix $(HW_DIR)/, $(HW_FILES))
-HW_TEST_FILES := test_filewatchdock.py filewatch_config_test
+HW_TEST_FILES := filewatch_config_test
 HW_TEST_TARGETS := $(addprefix $(HW_DIR)/, $(HW_TEST_FILES))
 
 DIRS := $(HW_DIR)

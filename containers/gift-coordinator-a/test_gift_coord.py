@@ -18,8 +18,8 @@ def skip_if(): return D.check_env_for_prod_mode() and D.not_required_host('a1')
 @pytest.mark.skipif(skip_if(), reason='prod test requires host a1')
 def test_gift_coord(container_to_test):
     time.sleep(5)  # Give things a chance to start-up.
-    ip = 'localhost'
-    port = 8100 + container_to_test.port_shift
+    ip = container_to_test.ip # 'localhost'
+    port = 8080 + container_to_test.port_shift
 
     # Check our overall health is good.
     D.web_expect('ok', ip, '/healthz', port)

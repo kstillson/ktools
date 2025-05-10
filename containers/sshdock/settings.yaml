@@ -1,8 +1,8 @@
 
 autostart: 5
 
-ports:
-  - "2222:22"
+#ports:
+#  - "2222:22"
 
 debug_extra_init: "-d"
 

@@ -1,6 +1,8 @@
 
 autostart: 5
 
+extra_docker: "--cap-add=CAP_NET_RAW"
+
 test_env: "TEST=1"
 test_ports: ['1234:1234']
 

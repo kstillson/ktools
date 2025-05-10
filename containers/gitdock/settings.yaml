@@ -1,8 +1,8 @@
 
 autostart: 5
 
-ports:
-  - "2223:22"
+#ports:
+#  - "2223:22"
 
 debug_extra_init: -d
 
@@ -31,7 +31,11 @@ test_vols:
     owner: "user/git-ro"
     contents: "command: tar --no-same-owner -C %targetdir% -xvf testdata/test-repo.tar; chown -R %owner% %targetdir%/git"
     
+  - hostkeys:
+    owner: "user/root"
+    perm: "0755"
+
   - hostkeys/host_keygen.out:
-    owner: "user/git-ro"
+    owner: "user/root"
     group: "group/git"
     contents: "command: mkdir -p /tmp/_sshkeygen/etc/ssh/; ssh-keygen -A -f /tmp/_sshkeygen; install -o %owner% -g %group% -m 0600 /tmp/_sshkeygen/etc/ssh/* %targetdir%; rm -rf /tmp/_sshkeygen"

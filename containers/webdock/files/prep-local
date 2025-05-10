@@ -21,3 +21,4 @@ rm /etc/apache2/conf.d/default.conf /etc/apache2/conf.d/info.conf /etc/apache2/c
 # Ownership fixes
 /bin/chown apache.apache /run/apache2
 /bin/chgrp -R apache /etc/apache2 /usr/lib/cgi-bin /usr/local/bin /var/www
+

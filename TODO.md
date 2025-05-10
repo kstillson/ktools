@@ -1,4 +1,10 @@
 
+# podman fixes
+
+  - integrate into instructions:
+     - podman network create -d bridge --gateway 192.168.3.1 --subnet 192.168.3.0/24 network2
+     - podman network create -d bridge --gateway 192.168.2.1 --subnet 192.168.2.0/24 network1
+
 # bugs to fix
 
   - settings: OVERRIDE_ doesn't seem to work from shell for ktools_settings;

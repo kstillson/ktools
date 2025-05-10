@@ -3,6 +3,7 @@
 ACCOUNTS_DONT_DELETE_REGEX="^(exim)"
 GROUP_DONT_DELETE_REGEX="^(exim)"
 SBIN_DONT_DELETE_REGEX="exim|nologin"
+SYSDIRS_RM_REGEX="/(hexdump|od|strings|su)$"
 
 # Create spool dir so that exim user doesn't have to.
 # Dockerfile treats this as a volume.

@@ -38,7 +38,7 @@ clean:
 # ---------- custom targets
 
 purge:
-	@read -p 'About to purge ALL docker images (not just the ones created by this Makefile). ok (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E $DOCKER_EXEC image prune -a; else exit -1; fi
+	@read -p 'About to purge ALL container images (not just the ones created by this Makefile). ok (y/n)? ' ok && if [[ "$$ok" == "y" ]]; then sudo -E ${DOCKER_EXEC} image prune -a; else exit -1; fi
 
 
 # ---------- 1-time preparation sequence

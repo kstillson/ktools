@@ -1,8 +1,8 @@
 
 autostart: 5
 
-ports:
-  - 3128:3128
+#ports:
+#  - 3128:3128
 
 mount_rw:
   - var_log_squid: /var/log/squid

@@ -8,4 +8,5 @@ RUN /prep
 
 USER watch
 WORKDIR /home/watch
-CMD ["/home/watch/filewatch"]
+
+ENTRYPOINT ["/etc/init"]

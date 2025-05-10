@@ -13,13 +13,13 @@ def container_to_test(): return D.find_or_start_container_env()
 
 # ---------- tests
 
-def test_keymaster(container_to_test):
+def test_keymaster(container_to_test: D.ContainerData):
     prod_mode = D.check_env_for_prod_mode()
     if prod_mode:
         warnings.warn('cannot do in-place prod testing; test is destructive to its container.')
         return
 
-    server = 'localhost'
+    server = container_to_test.ip
     test_port = 4444 + container_to_test.port_shift
     
     # Try retrieving the test key before decrypting the database; should fail.

@@ -98,7 +98,7 @@ def test_nagios(container_to_test):
     D.file_expect('INITIAL SERVICE STATE: host;test-service;OK;', LOG_FILE)
 
     # now disable health on the test service and make sure Nagios notices.
-    D.web_expect('bad', server='localhost', path='/?v=bad', port=1234+container_to_test.port_shift)
+    D.web_expect('bad', server=container_to_test.ip, path='/?v=bad', port=1234)
     send_cmd('SCHEDULE_FORCED_SVC_CHECK;host;test-service;$NOW')
     D.file_expect_within(MAX_UPDATE_DELAY, 'SERVICE ALERT: host;test-service;CRITICAL;', LOG_FILE)
 
