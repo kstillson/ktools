@@ -197,6 +197,7 @@ function ssh-init() {
     ssh-add -l >/dev/null || ssh-add -v
 }
 alias A="ssh-init; source ${HOME}/.env"
+alias AX='rm -f ${HOME}/.ssh_agent ${HOME}/.env; pkill -u $USER ssh-agent && emitC green "ssh-agent stopped" || emitc yellow "ssh-agent was not running"'
 alias s='A; ssh '
 alias Ssh='s -fMN'  # start bg master
 
