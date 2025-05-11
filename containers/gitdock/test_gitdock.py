@@ -27,9 +27,9 @@ def test_gitdock(container_to_test):
     tmpdir = tempfile.mkdtemp()
     atexit.register(cleanup, tmpdir, orig_dir)
 
-    port = 2223 + container_to_test.port_shift
+    port = 22 # 2223 + container_to_test.port_shift
     os.chdir(tmpdir)
-    cmd = ['git', 'clone', 'git-ro@localhost:git']
+    cmd = ['git', 'clone', f'git-ro@{container_to_test.ip}:git']
     env = { 'GIT_SSH_COMMAND': f'/usr/bin/ssh -i {container_to_test.settings_dir}/testdata/git-ro-test-key -p {port} -v -o StrictHostKeyChecking=no' }
     rslt = C.popen(cmd, env=env, timeout=5)
     print(f'{cmd=} {env=} -> {rslt.out=}')

@@ -23,4 +23,4 @@ def test_rsnapdock(container_to_test):
         if os.path.exists(TEST_FILE) and os.path.getsize(TEST_FILE) > 0: break
         time.sleep(2)
 
-    D.file_expect('root:!:', TEST_FILE)
+    D.file_expect('daemon:*:', TEST_FILE)

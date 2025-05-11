@@ -18,15 +18,7 @@ def test_webdock(container_to_test):
     port_http = 8080 + container_to_test.port_shift
     port_https = 8443 + container_to_test.port_shift
 
-    # TODO(defer): for reasons not currently understood, the redirect tests
-    # below fail in prod mode when using the iptables-based redirect.
-    # Specifically, apache emits the contents of html/index.html for http
-    # requests, rather than producing a redirect, but only when the request
-    # comes via dnat, not when it's sent directly.  Something to do with the
-    # VirtualHost directive perhaps?  Dunno; it looks right to me.  Anyway,
-    # this allows the test to pass in prod mode, but uses a Ken-specific
-    # container name.  Not sure how to generalize this...
-    server = 'webdock' if D.check_env_for_prod_mode() else 'localhost'
+    server = 'webdock' if D.check_env_for_prod_mode() else container_to_test.ip
 
     # Using popen_expect rather than web_expect because it doesn't follow redirects,
     # and we want to check the content of the redirects.

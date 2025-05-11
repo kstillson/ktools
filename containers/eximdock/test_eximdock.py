@@ -30,10 +30,10 @@ def send_email(cookie, ip, port=2525):
 
 def test_sending_email(container_to_test):
     prod_mode = D.check_env_for_prod_mode()
-    have_pswd = os.path.isfile(os.path.join(container_to_test.settings_dir, 'files/etc/exim/private.d/passwd.client'))
+    have_pswd = os.path.exists(os.path.join(container_to_test.settings_dir, 'files/etc/exim/passwd.client'))
 
     cookie = D.gen_random_cookie()
-    send_email(cookie, 'localhost', 25 + container_to_test.port_shift)
+    send_email(cookie, str(container_to_test.ip), 2525) # 25 + container_to_test.port_shift)
 
     time.sleep(10)
     ## prefix = container_to_test.vol_dir + ('/' if prod_mode else '/_rw_dv_eximdock_')
