@@ -62,6 +62,7 @@ SCENES = {
   'bedtime'     : [ 'inside:off', 'pout2:off', 'delay:2:bedroom-light:dim:10' ],
   'comp'        : [ 'fam:off', 'kit:off', 'office:dim:55', 'lng:off' ],
   'cooking'     : [ 'kitchen:dim:60', 'kitchen-pendants:dim:60', 'breakfast-nook:off' ],
+  'front'       : [ 'fam:off', 'kit:dim:55', 'office:dim:55', 'lng:off'],
   'gh0'         : [ 'lantern:bright-warm', 'garage:bulb-off', 'mobile-bulb:bulb-off', 'garage-L:on', 'garage-R:on', 'out-sconce:on', 'out-front-moon:on' ],
   'gh1'         : [ 'lantern:green', 'garage:dim-red', 'mobile-bulb:bulb-dim:2', 'garage-L:off', 'garage-R:off', 'out-sconce:off', 'out-front-moon:off' ],
   'home'        : [ 'office:med', 'lng:dim:30', 'kitchen:dim:60', 'dining-chandelier:dim:30' ],
