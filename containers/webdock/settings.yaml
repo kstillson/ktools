@@ -7,7 +7,7 @@ autostart: 5
 #  - 443:8443
 #  - 8443:8443
 
-test_ports: ['8080:8080', '8443:8443']
+## test_ports: ['8080:8080', '8443:8443']
 
 mount_ro:
   - etc_apache2_keys: /etc/apache2/keys
