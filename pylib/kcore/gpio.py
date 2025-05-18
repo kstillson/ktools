@@ -20,7 +20,7 @@ cooperative multi-tasking, and the caller must regularly (ideally multiple
 times a second) call the check() method to run any pending actions.
 
 One exception to the unified API:
-In simulation mode, bcm_pin's should be an int.
+In simulation mode, constructor "bcm_pin" params should be an int.
 For CircuitPython, they must be an instance from the board.* module
 For RPi, they can be either of those.
 
@@ -108,9 +108,11 @@ def input(bcm_pin):  # Returns bool (even for RPi, which usually returns int 1 o
 
 class KButton:
     def __init__(self, bcm_pin, func=None, name='?', log=False,
-                 background=True, normally_high=True, pull_float_high=True,
+                 background=None, normally_high=True, pull_float_high=True,
                  debounce_ms=1000, require_pressed_ms=100):
         '''Button abstraction.'''
+
+        if background is None: background = not CIRCUITPYTHON
 
         # ----- sanity checks
 
@@ -130,6 +132,7 @@ class KButton:
         self._func = func or self._internal_press_func
         self._name = '%s(%s)' % (bcm_pin, name)
         self._normally_high = normally_high
+        self._processing_press = False
         self._last_press = 0
         self._log = log
         self._require_pressed_ms = require_pressed_ms
@@ -153,7 +156,8 @@ class KButton:
 
     def check(self):
         if not CIRCUITPYTHON: return -1
-        return self._event_queue.check()
+        self._event_queue.check()
+        if self.pressed(): self._pressed1(self._bcm_pin)
 
     def disable(self):
         if self._log: C.log('disabling events for KButton ' + self._name)
@@ -178,10 +182,14 @@ class KButton:
         SIM_BUTTONS[self._bcm_pin] = self._normally_high
         return simout('button on bcm_pin %s unpressed (back to %s)' % (self._bcm_pin, self._normally_high))
 
-    def value(self):   # Returns bool (even for RPi, which usually returns int 1 or 0)
+    def value(self):   # Returns high/low as bool (even for RPi, which usually returns int 1 or 0)
         if SIMULATION: return SIM_BUTTONS.get(self._bcm_pin, True)
         elif CIRCUITPYTHON: return self._dio.value
         else: return GPIO.input(self._bcm_pin) == 1 # RPi
+
+    def pressed(self):  # Returns True/False for whether button is currently in non-default state.
+        return self.value() != self._normally_high
+
 
     # ----- internals
 
@@ -191,10 +199,15 @@ class KButton:
     # duration check in the background, or jump right to the callback.
     def _pressed1(self, bcm_pin):
         if self._debounce_ms:
-            if TQ.now_in_ms() - self._last_press < self._debounce_ms:
+            since = TQ.now_in_ms() - self._last_press
+            if since < self._debounce_ms:
                 V.bump('count-sensor-debounced-%s' % self._name)
                 if self._log: C.log('KButton debounce ignored: ' + self._name)
                 return False
+
+        if self._processing_press: return
+        self._processing_press = True
+
         if CIRCUITPYTHON:
             evt = TQ.Event(self._require_pressed_ms, self._pressed2_circpy, [bcm_pin])
             self._event_queue.add_event(evt)
@@ -215,18 +228,20 @@ class KButton:
             sample_time = (self._require_pressed_ms / 1000.0) / samples
             for sample in range(samples):
                 time.sleep(sample_time)
-                if self.value() == self._normally_high:
+                if not self.pressed():
                     if self._log: C.log('dropped unsustained bcm_pin %s on sample %d' % (self._name, sample))
                     V.bump('dropped-unsustained-bcm_pin-%s' % self._name)
+                    self._processing_press = False
                     return False
         return self._pressed3(bcm_pin)
 
     # 2nd stage alternative mode for circuit python.  This activates after
     # require_pressed_ms, so just verify the button is still pressed.
     def _pressed2_circpy(self, bcm_pin):
-        if self.value() == self._normally_high:
+        if not self.pressed():
             if self._log: C.log('dropped unsustained bcm_pin %s' % (self._name))
             V.bump('dropped-unsustained-bcm_pin-%s' % self._name)
+            self._processing_press = False
             return False
         return self._pressed3(bcm_pin)
 
@@ -236,6 +251,7 @@ class KButton:
         if self._log: C.log('KButton event triggered for: ' + self._name)
         V.bump('count-sensor-bcm_pin-%s' % self._name)
         V.stamp('sensor-bcm_pin-%s-stamp' % self._name)
+        self._processing_press = False
         return self._func(bcm_pin)
 
 

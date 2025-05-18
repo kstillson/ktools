@@ -173,7 +173,7 @@ FILTER_LEVEL_MIN = DEBUG
 # ---------- Internal state
 
 LOG_FILENAME = None
-LOG_TITLE = sys.argv[0] or 'log'
+LOG_TITLE = 'log' if CIRCUITPYTHON else sys.argv[0]
 FORCE_TIME = None
 
 if not CIRCUITPYTHON:
