@@ -31,16 +31,16 @@ LOW_BATTERY_THRESHOLD = 4000
 BUTTON_MAP = {
     'F412FA9DB4B8': {   # hs-mud replacement
         18: lambda: trigger('front_door'),
-        17: lambda: trigger('garage'),
-        9:  lambda: trigger('side_door'),
-        8:  lambda: trigger('touch-away-delay/ken'),
+        17: lambda: trigger('side_door'),
+        9:  lambda: trigger('garage'),
+        8:  lambda: commander('.'),
     },
     '84F73D97E46': {   # tv-now button
         17: lambda: control('tv'),
     },
     '*': {              # match from any not-otherwise-matched sender
-        99: lambda: speak('greetings professor falcon'),
         98: lambda: trigger('test'),
+        99: lambda: speak('greetings professor falcon'),
     },
 }
 
@@ -106,16 +106,21 @@ def handler_noop(request): return None
 
 # ---------- general helpers
 
+def read_web(url):
+    ans = C.read_web(url, timeout=ARGS.timeout)
+    C.log(f'web read "{url}" -> {ans}')
+    return ans
+
+def commander(cmd):
+    return read_web(f'http://commander:5555/?c={cmd}')
+
 def control(target, command='on'):
-    url = f'http://home-control:8080/{target}/{command}'
-    return C.read_web(url, timeout=5)
+    return read_web(f'http://home-control:8080/{target}/{command}')
 
 def play_sound(basename='ding'):  # see /rw/dv/speaker/cache for list of available sounds
     return speak('@' + basename)
 
-def speak(msg):
-    url = 'http://speaker:8080/' + C.quote_plus(msg)
-    return C.read_web_e(url, timeout=4)
+def speak(msg): return read_web('http://speaker:8080/' + C.quote_plus(msg))
 
 def stoi(s):
     s = s.replace(',', '').strip()
@@ -125,7 +130,7 @@ def trigger(trigger):
     path0 = '/trigger/' + trigger
     token = A.generate_token(path0)
     path = path0 + '?a2=' + token
-    return C.read_web_e('http://homesecdock:1111' + path)
+    return read_web('http://homesecdock:1111' + path)
 
 
 # ---------- business logic (e.g. button press handlers)
@@ -207,6 +212,7 @@ def parse_args(argv):
     ap.add_argument('--ping_freq', '-P',  default=20,   type=int, help='ping every this many seconds')
     ap.add_argument('--port',      '-p',  default=8080, type=int, help='webserver port')
     ap.add_argument('--serial',    '-s',  default=None, help='serial port to monitor; default will auto-search /dev/ttyUSB* and wait if needed')
+    ap.add_argument('--timeout',   '-t',  default=6,    help='timeout secs for outbound web reads')
     return ap.parse_args(argv)
 
 
@@ -240,7 +246,7 @@ def main(argv=[]):
     ARGS = parse_args(argv or sys.argv[1:])
 
     C.init_log(log_title='button relay', logfile=ARGS.logfile, filter_level_syslog=C.WARNING)
-    W.WebServer(port=ARGS.port, handlers=HANDLERS).start()
+    if ARGS.port: W.WebServer(port=ARGS.port, handlers=HANDLERS).start()
 
     while True:
         try:
