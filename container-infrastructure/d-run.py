@@ -5,7 +5,7 @@
 This scripts constructs the command-line parameters for Docker to launch a
 container. '''
 
-import glob, grp, os, pprint, pwd, socket, subprocess, sys
+import glob, grp, os, pprint, pwd, socket, subprocess, sys, threading, time
 from dataclasses import dataclass
 
 import kcore.auth as A
@@ -483,6 +483,36 @@ def fix_ownership(volspec):
         return Debug(f'Skipping chown to {owner} for {path} because not root and not using podman.')
 
 
+# ---------- primary business logic: create container reference data
+
+def gen_ref_data():
+    time.sleep(2)   # give container in other thread a moment to start up
+    
+    refdir = get_setting('ref_dir')
+    if not refdir: return
+
+    container_name = get_setting('name')
+
+    # out with the old...
+    for old in glob.glob(f'{refdir}/{container_name}.*'): os.unlink(old)
+
+    # cow dir
+    rslt = C.popen(['podman', 'inspect', container_name, '--format', '{{.GraphDriver.Data.UpperDir}}'])
+    if not rslt.ok: return err(f'warning: unable to get ref data for {container_name}')
+    os.symlink(rslt.out, f'{refdir}/{container_name}.cow')
+
+    # merged dir
+    os.symlink(rslt.out.replace('/diff', '/merged'), f'{refdir}/{container_name}.root')
+
+    # ip addr
+    ip = get_ip_to_use()
+    if not ip:   # check if dynamically allocated
+        ip = C.popener([DOCKER_EXEC, 'inspect', container_name,
+                        '--format', f'{{{{.NetworkSettings.Networks.{get_setting("network")}.IPAddress}}}}'])
+    if ip:
+        with open(f'{refdir}/{container_name}.ip', 'w') as f: print(ip, file=f)
+
+
 # ---------- primary business logic: construct the launch command
 
 def gen_command_via_settings_yaml():
@@ -531,9 +561,19 @@ def gen_command_via_settings_yaml():
     mount_src_dirs =      add_mounts(cmnd, basename, 'mount_ro', True)
     mount_src_dirs.update(add_mounts(cmnd, basename, 'mount_rw', False))
 
+    # WARNING: bind-mounting /dev/log into the container will allow syslog messages
+    # to flow to the host, but they will be identified as coming from the hostname
+    # of the host, not of the container.
+    if get_bool_setting('add_dev_log'):
+        cmnd.extend(['--mount', 'type=bind,source=/dev/log,destination=/dev/log'])
+
     create_vol_dirs(mount_src_dirs, basename, TEST_MODE)
 
-    add_ports(cmnd, get_setting('ports'), KS.s.get_int('port_offset'), get_bool_setting('ipv6_ports'))
+    ports = get_setting('ports')
+    if get_setting('no_port_mappings') != 1:
+        add_ports(cmnd, ports, KS.s.get_int('port_offset'), get_bool_setting('ipv6_ports'))
+    else:
+        if ports: err(f'warning- no_port_mappings is set; ignoring requested port mappings: {ports}')
 
     puid = get_setting('puid')
     if puid == 'auto': puid = get_puid(get_setting('hostname'))
@@ -547,8 +587,8 @@ def gen_command_via_settings_yaml():
         repo_name = get_setting('repo2')
         if not does_image_exist(repo_name, image_name, tag_name):
             repo_name = None
-            # err(f'This probably wont work; {image_name}:{tag_name} not found in primary or secondary repo.')
-    
+            err(f'This probably wont work; {image_name}:{tag_name} not found in primary or secondary repo.')
+
     if repo_name: full_spec = f'{repo_name}/{image_name}:{tag_name}'
     else:         full_spec = f'{image_name}:{tag_name}'
     cmnd.append(full_spec)
@@ -590,7 +630,7 @@ def parse_args(argv=sys.argv[1:]):
     g2.add_argument('--test-mode',     '-T', action='store_true', help='Launch with alternate settings, so version under test does not interfere with production version.')
 
     g3 = ap.add_argument_group('shortcuts')
-    g3.add_argument('--latest',        '-l', action='store_true', help='shortcut for --tag=latest')
+    g3.add_argument('--latest',        '-l', action='store_true', help='shortcute for --tag=latest')
 
     args, _ = ap.parse_known_args(argv)   # Parse enough flags to get the settings dir & filename(s)
 
@@ -678,9 +718,25 @@ def main():
     if not KS.s['no_rm']:
         with open('/dev/null', 'w') as z:
             subprocess.call([DOCKER_EXEC, 'rm', get_setting('name')], stdout=z, stderr=z)
+    cni_ip_lockfile = f'/var/lib/cni/networks/{get_setting("network")}/{get_ip_to_use()}'
+    oops_lockfile = os.path.isfile(cni_ip_lockfile)
+    if oops_lockfile: err(f'WARNING- CNI IP lockfile exists: {cni_ip_lockfile}')
 
+    # launch the ref-data method in a parallel thread (in-case container is running
+    # in the foreground).
+    threading.Thread(target=gen_ref_data, daemon=True).start()
+    
     # actually run the launch command
-    return subprocess.call(cmnd)
+    return_code = subprocess.call(cmnd)
+
+    # try again w/ lockfle removal if that failed.
+    if return_code != 0 and oops_lockfile:
+        err('trying again after removing CNI IP lockfile.')
+        os.unlink(cni_ip_lockfile)
+        return_code = subprocess.call(cmnd)
+        err('looks like that worked...' if return_code == 0 else 'still failed.. :-(')
+
+    return return_code
 
 
 if __name__ == "__main__":
