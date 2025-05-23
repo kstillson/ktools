@@ -44,7 +44,7 @@ test_vols:
     perm: "02750"
     
   - var_www/.ssh/id_rsa.out:
-    contents: "command:cd %targetdir%; ssh-keygen -N '' -f ./id_rsa"
+    contents: "command:cd %targetdir%; ssh-keygen -N '' -f ./id_rsa > id_rsa.out"
     
   - var_www/make_links.out:
     contents: "command:cd %targetdir%; ln -s /usr/lib/cgi-bin; ln -s /var/log/apache2 logs; ln -s /run/apache2 run; ln -s /usr/lib/apache2 modules"
