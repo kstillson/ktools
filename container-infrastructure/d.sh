@@ -23,7 +23,7 @@ if [[ "$PATH" != "/root/bin"* ]]; then PATH="/root/bin:${PATH}"; fi
 
 # Load settings
 eval $(ktools_settings -cn docker_exec d_src_dir d_src_dir2 timeout)
-FOLLOW=${FOLLOW:-3}        # How long to follow logs after launching a container.  0 to disable.
+FOLLOW=${FOLLOW:-2}        # How long to follow logs after launching a container.  0 to disable.
 TIMEOUT=${TIMEOUT:-60}     # How long (secs) to let operations (mostly parallel ones) run before interrupt.
 
 if [[ "$TESTER" == "" ]]; then
@@ -77,7 +77,7 @@ function get_autostart_wave() {
     if [[ "$wave" == *"host="* ]]; then
 	required_host=$(echo "$wave" | sed -e s'/^.*host=//' -e 's/,.*$//')
 	if [[ "$required_host" != $(hostname) ]]; then
-	    emitC yellow "info: skipping $sel autostart; not required host ($required_host)."
+	    # emitC yellow "info: skipping $sel autostart; not required host ($required_host)."
 	    echo ""
 	    return
 	fi
@@ -338,11 +338,14 @@ function do-in-waves() {
     op="$1"
     FOLLOW=0
     set +e
+    wave="q"
     list-autostart-waves | cut -f1,2 | waves | while read -r line; do
 	if [[ "$line" == +* ]]; then
-	    emitc green "starting wave: ${line/+ /}"
+	    wave="${line/+ /}"
+	    emitc green "${op} wave: ${wave}"
 	else
-	    echo $line | tr ' ' '\n' | /usr/local/bin/run_para --align --cmd "$0 $op @" --timeout $TIMEOUT
+	    echo $line | tr ' ' '\n' | erun /usr/local/bin/run_para --output "/tmp/wave-${wave}-${op}.out" --cmd "$0 $op @" --timeout $TIMEOUT
+	    sleep 1
 	fi
     done
 }
@@ -488,12 +491,16 @@ case "$cmd" in
     set -o pipefail
     name="$(pick_container_from_up $spec)"
     if [[ "$name" == "" ]]; then exit -1; fi
-    $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
+    ## old way: $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
+    out=$($DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network1.IPAddress}}')
+    if [[ "$out" != '192'* ]]; then out=$($DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network2.IPAddress}}'); fi
+    echo $out
     ;;
   get-all-ips | ips)                                             ## Print IPs for all up containers.
     for name in $($DOCKER_EXEC ps --format "{{.Names}}"); do
 	echo -n "${name}   "
-	$DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
+	## old way: $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
+        $DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network1.IPAddress}}'
     done | column -t | sort
     ;;
   log | logs | L)                                                ## Print logs for $1
