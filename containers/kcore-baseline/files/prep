@@ -22,6 +22,7 @@ set -x
 
 ACCOUNTS_DONT_DELETE_REGEX="^(user1|user2)"
 APK_CLEANUP=1
+CLEAN_BROKEN_SYMLINKS=1
 CRONTABS_REMOVE=1
 GROUP_DONT_DELETE_REGEX="^(group1|group2)"
 KMC_RM=1
@@ -148,12 +149,16 @@ rm -fr /etc/acpi /etc/mdev.conf /etc/modprobe.d /etc/modules /etc/sysctl*
 # Remove fstab since we do not need it.
 rm -f /etc/fstab
 
-# Remove broken symlinks (because we removed the targets above).
-find $sysdirs -xdev -type l -exec test ! -e {} \; -delete
 
 # --------------------
-# Remove this script; no point showing off our handwork.
+# Final conditional cleanups
 
+# Remove broken symlinks (because we removed the targets above).
+if [[ "${CLEAN_BROKEN_SYMLINKS}" == "1" ]]; then
+    find $sysdirs -xdev -type l -exec test ! -e {} \; -delete
+fi
+
+# Remove this script; no point showing off our handwork.
 if [[ "${HARDEN_SELF_REMOVE}" == "1" ]]; then
   rm -f ${0}*
 fi

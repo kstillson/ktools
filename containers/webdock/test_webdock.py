@@ -32,7 +32,7 @@ def test_webdock(container_to_test):
                       'document has moved <a href="https://home.point0.net/q">here')
 
     # Check cgi script basics
-    D.web_expect('ok', server, '/cgi-bin/test', port_https, https=True, verify_ssl=False)
+    D.web_expect('ok', server, '/cgi-bin/test0', port_https, https=True, verify_ssl=False)
 
 
 def skip_if_not_ken_and_prod():

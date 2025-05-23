@@ -62,7 +62,7 @@ def run_command_in_container(container_name, cmd, raw_popen=False):
     return C.popen(command) if raw_popen else C.popener(command)
 
 
-def find_cow_dir(container_name):
+def find_cow_dir_OLD(container_name):
     try:
         upperdir_json = C.popener(f'{DOCKER_BIN} inspect {container_name} | fgrep UpperDir', shell=True).strip()
     except:
@@ -71,7 +71,19 @@ def find_cow_dir(container_name):
     return val.replace('",', '').replace('"', '')
 
 
+def find_cow_dir(container_name):
+    rslt = C.popen(['podman', 'inspect', container_name, '--format', '{{.GraphDriver.Data.UpperDir}}'])
+    if not rslt.ok: sys.exit('cannot find container (is it up??)')
+    return rslt.out
+
+
 def find_ip_for(name): return C.popener(['d', 'ip', name])
+    out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network1.IPAddress}}'])
+    if not out or 'ERROR' in out:
+        out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network2.IPAddress}}'])
+    if not out or 'ERROR' in out: sys.exit('cannot find container (is it up??)')
+    return out
+
 
 def get_cow_dir(container_name): return find_cow_dir(container_name)  # alias for find_cow_dir
 

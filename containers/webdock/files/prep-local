@@ -1,5 +1,6 @@
 
 ACCOUNTS_DONT_DELETE_REGEX="^(apache)"
+CLEAN_BROKEN_SYMLINKS=0   # will be creating symlink to dir not bind-mounted yet (during build phase)
 GROUP_DONT_DELETE_REGEX="^(apache)"
 SBIN_DONT_DELETE_REGEX="nologin|httpd|ssmtp"
 WORLD_WRITABLE_DIRS_RM=0
@@ -21,4 +22,13 @@ rm /etc/apache2/conf.d/default.conf /etc/apache2/conf.d/info.conf /etc/apache2/c
 # Ownership fixes
 /bin/chown apache.apache /run/apache2
 /bin/chgrp -R apache /etc/apache2 /usr/lib/cgi-bin /usr/local/bin /var/www
+
+# Create cgi-bin symlinks (apparently Dockerfile's dont support incorporating them)
+cd /usr/lib/cgi-bin
+ln -s /var/www/cgi-test Test
+ln -s Test/ip
+ln -s Test/jump
+ln -s Test/media
+ln -s Test/test
+ln -s Test/timer
 

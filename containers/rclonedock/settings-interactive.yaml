@@ -14,6 +14,7 @@ extra_docker:
   - "--device=/dev/fuse"
   - "--cap-add=SYS_ADMIN"
   - "--security-opt=apparmor:unconfined"
+extra_docker0: []
 
 name: "rclonedock-human"
 hostname: "rclonedock"

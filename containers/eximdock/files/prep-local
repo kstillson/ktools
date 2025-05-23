@@ -1,7 +1,7 @@
 
 # Local hardening settings.
-ACCOUNTS_DONT_DELETE_REGEX="^(exim)"
-GROUP_DONT_DELETE_REGEX="^(exim)"
+ACCOUNTS_DONT_DELETE_REGEX="^(root|exim)"
+GROUP_DONT_DELETE_REGEX="^(root|exim)"
 SBIN_DONT_DELETE_REGEX="exim|nologin"
 SYSDIRS_RM_REGEX="/(hexdump|od|strings|su)$"
 
@@ -14,10 +14,6 @@ chmod 0755 /var/spool/exim
 # Remove suid bit from exim.
 chmod u-s /usr/sbin/exim
 
-# Some files stored in private.d subdirs to keep them out of git;
-# move them into their real positions.
-mv -f /etc/exim/private.d/* /etc/exim || true
-
 # Fix perms
 chgrp -R exim /etc/exim /etc/email-addresses /etc/aliases
-chmod -R g+rX /etc/exim
+chmod -R g+rX /etc

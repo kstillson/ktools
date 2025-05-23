@@ -28,9 +28,26 @@ import kcore.varz as V
 
 LOW_BATTERY_THRESHOLD = 4000
 
+BUTTON_MAP = {
+    'F412FA9DB4B8': {   # hs-mud replacement
+        18: lambda: trigger('front_door'),
+        17: lambda: trigger('side_door'),
+        9:  lambda: trigger('garage'),
+        8:  lambda: commander('.'),
+    },
+    '84F73D97E46': {   # tv-now button
+        17: lambda: control('tv'),
+    },
+    '*': {              # match from any not-otherwise-matched sender
+        98: lambda: trigger('test'),
+        99: lambda: speak('greetings professor falcon'),
+    },
+}
+
 
 # ---------- global state
 
+ARGS = None
 HEALTHZ_STATUS = 'No ping yet'
 SERIAL_PORT = None
 
@@ -75,7 +92,7 @@ def handler_default(request):
         return 'sent'
     button_test = request.get_params.get('b')
     if button_test:
-        mac = request.get_params.get('m', 'na')
+        mac = request.get_params.get('m', 'na').upper()
         rslt = handle_button_real(stoi(button_test), -1, 'test' + mac)
         C.log(f'button test mac {mac} button {button_test} -> {rslt}')
         return rslt
@@ -89,16 +106,21 @@ def handler_noop(request): return None
 
 # ---------- general helpers
 
-def control(target, command='on'):
-    url = f'http://web/control/{target}/{command}'
-    return C.read_web(url, timeout=5)
+def read_web(url):
+    ans = C.read_web(url, timeout=ARGS.timeout)
+    C.log(f'web read "{url}" -> {ans}')
+    return ans
 
-def play_sound(basename='ding'):  # see pi1:~pi/sounds for list of available sounds
+def commander(cmd):
+    return read_web(f'http://commander:5555/?c={cmd}')
+
+def control(target, command='on'):
+    return read_web(f'http://home-control:8080/{target}/{command}')
+
+def play_sound(basename='ding'):  # see /rw/dv/speaker/cache for list of available sounds
     return speak('@' + basename)
 
-def speak(msg):
-    url = 'http://web/speak/' + C.quote_plus(msg)
-    return C.read_web_e(url, timeout=4)
+def speak(msg): return read_web('http://speaker:8080/' + C.quote_plus(msg))
 
 def stoi(s):
     s = s.replace(',', '').strip()
@@ -108,10 +130,10 @@ def trigger(trigger):
     path0 = '/trigger/' + trigger
     token = A.generate_token(path0)
     path = path0 + '?a2=' + token
-    return C.read_web_e('http://homesecdock:1111' + path)
+    return read_web('http://homesecdock:1111' + path)
 
 
-# ---------- business logic
+# ---------- business logic (e.g. button press handlers)
 
 
 def parse_button_msg(msg):  # format:    button: xx, voltage: yy, mac: aabbccddeeff
@@ -131,13 +153,9 @@ def handle_button_real(button:int, battery:int, mac:str):
         C.log_warning(f'low battery level on {mac}: {battery} < {LOW_BATTERY_THRESHOLD}')
         V.bump(f'low_batt_{mac}')
 
-    # testing buttons (MAC independents)
-    if button == 99: return speak('greetings professor falcon')
-    if button == 98: return trigger('test')
-
-    # sender specific buttons
-    if mac == '84F73D97E46':   # qt py esp32-s2 single button, tv mode
-       if button == 17: return control('tv')
+    hostmap = BUTTON_MAP.get(mac.upper()) or BUTTON_MAP.get('*')
+    cmd = hostmap.get(button)
+    if cmd: return cmd()
 
     # If we get to here, unknown sender or unknown button
     play_sound()
@@ -147,12 +165,16 @@ def handle_button_real(button:int, battery:int, mac:str):
 
 
 def handle_button(msg):
+    global HEALTHZ_STATUS
+    button= battery= mac= '?'
     try:
         button, battery, mac = parse_button_msg(msg)
         return handle_button_real(button, battery, mac)
     except Exception as e:
-        V.bump('handle_button_exception')
-        C.log_error(f'exception during button processing: {str(e)}')
+        V.bump('EXCEPTION_handle_button')
+        msg = f'exception during processing {button=} {mac=} {battery=} : exception={str(e)}'
+        HEALTHZ_STATUS = msg
+        C.log_error(msg)
 
 
 def now(): return int(time.time())
@@ -185,10 +207,12 @@ def ping(s):
 
 def parse_args(argv):
     ap = C.argparse_epilog(argv)
+    ap.add_argument('--creds',     '-c',  default=None, help='username:password for homesec requests')
     ap.add_argument('--logfile',   '-l',  default='-')
     ap.add_argument('--ping_freq', '-P',  default=20,   type=int, help='ping every this many seconds')
     ap.add_argument('--port',      '-p',  default=8080, type=int, help='webserver port')
     ap.add_argument('--serial',    '-s',  default=None, help='serial port to monitor; default will auto-search /dev/ttyUSB* and wait if needed')
+    ap.add_argument('--timeout',   '-t',  default=6,    help='timeout secs for outbound web reads')
     return ap.parse_args(argv)
 
 
@@ -199,7 +223,7 @@ HANDLERS = {
 }
 
 
-def serial_listen_loop(s, args):
+def serial_listen_loop(s):
     next_ping = 0
     while True:
         line = sget(s)
@@ -210,7 +234,7 @@ def serial_listen_loop(s, args):
             else:
                 C.log(f'unprocessed input: {line}')
         if now() > next_ping:
-            next_ping = now() + args.ping_freq
+            next_ping = now() + ARGS.ping_freq
             if not ping(s):
                 C.log_warning(f'ping fail: {HEALTHZ_STATUS}')
                 return
@@ -218,18 +242,22 @@ def serial_listen_loop(s, args):
 
 
 def main(argv=[]):
-    args = parse_args(argv or sys.argv[1:])
+    global ARGS, HEALTHZ_STATUS
+    ARGS = parse_args(argv or sys.argv[1:])
 
-    C.init_log(log_title='button relay', logfile=args.logfile, filter_level_syslog=C.WARNING)
-    W.WebServer(port=args.port, handlers=HANDLERS).start()
+    C.init_log(log_title='button relay', logfile=ARGS.logfile, filter_level_syslog=C.WARNING)
+    if ARGS.port: W.WebServer(port=ARGS.port, handlers=HANDLERS).start()
 
     while True:
         try:
-            s = setup_serial(args.serial)
-            serial_listen_loop(s, args)
+            s = setup_serial(ARGS.serial)
+            serial_listen_loop(s)
         except Exception as e:
-            C.log_error(f'exception during processing: {str(e)}')
-        time.sleep(3)  # never loop too fast.
+            V.bump('EXCEPTION_serial_listen')
+            msg = f'exception during processing: {str(e)}'
+            HEALTHZ_STATUS = msg
+            C.log_error(msg)
+        time.sleep(5)  # never loop too fast.
 
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ mount_ro:
   - /rw/dv/eximdock/var/spool/exim/input: /root/exim
 
 test_mount_ro:
-  - tmp2: /tmp2
+  - tmp2: /tmp
 
 test_extra_init: test
 

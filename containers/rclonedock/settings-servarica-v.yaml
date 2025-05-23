@@ -1,6 +1,7 @@
 
 # Need to disable user-ns mapping because it was also disabled in rsnapdock, so files in /mnt/rsnap are owned by their real-uid owners and we need access.
 extra_docker: "--userns=host"
+extra_docker0: []
 
 name: "rclonedock-servarica-v"
 hostname: "rclonedock"

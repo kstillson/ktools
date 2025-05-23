@@ -12,7 +12,7 @@ def main():
   if 'k' not in form: err("no data provided.")
   k = urllib.parse.quote(form['k'].value)
   
-  r = requests.post('http://hs-lounge:1235/', data={'cmd': k}, timeout=5)
+  r = requests.post('http://commander:5555/', data={'cmd': k}, timeout=7)
   if r.status_code != 200: err(r.reason, r.status_code)    
     
   print("Status: 200 OK\nContent-Type: text/html\n\n")
