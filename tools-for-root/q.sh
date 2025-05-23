@@ -303,7 +303,7 @@ function git_update_pis() {
     RUN_PARA "$hosts" "/bin/su pi -c 'cd /home/pi/svc && git pull'"
     if [[ $? != 0 ]]; then cat $t; rmtemp $t; echo ''; emitc red "some failures; not safe to do restarts"; return 1; fi
 
-    echo ""; echo "syning past overlay..."
+    echo ""; echo "syncing past overlay..."
     RUN_PARA "$hosts" "rw-sync home/pi"
     if [[ $? != 0 ]]; then emitc yellow "some rw-sync failures (expected); proceeding anyway..."; fi
 
@@ -367,9 +367,9 @@ function iptables_reload() {
     f2b=0
     pgrep fail2ban && { f2b=1; }
 
-    if [[ "$f2b" == 1 ]]; then runner "systemctl stop fail2ban"; fi
+    if [[ "$f2b" == 1 ]]; then runner "rc-service fail2ban stop"; fi
     runner "iptables-restore $IPT_FILE"
-    if [[ "$f2b" == 1 ]]; then runner "systemctl start fail2ban"; fi
+    if [[ "$f2b" == 1 ]]; then runner "rc-service fail2ban start"; fi
 
     if [[ -s /root/j/Iptables.log ]]; then
 	emitc yellow "iptables showing alerts"
@@ -590,19 +590,19 @@ function reset_ipt_alerts() {
 
     if [[ "$MY_HOSTNAME" == "jack" ]]; then
 	echo -n "updated filewatch status: "
-	curl http://z:8082/healthz ; echo ""
+	curl -m2 http://filewatchdock:8080/healthz ; echo ""
 	runner "nag -r"
     fi
 }
 
 # Remove all docker copy-on-write files that have changed unexpectedly.
 function procmon_clear_cow() {
-    for f in $($0 procmon-query | grep COW | cut -d: -f3-4); do
+    for f in $($0 procmon-query | grep COW | cut -d: -f3-4 | sort -u); do
         emitC blue "$f"
-        docker=${f%%:*}
-        relfile=${f#*:/}
+        docker="${f%%:*}"
+        relfile="${f#*:}"
         echoc yellow "${docker}:${relfile}"
-        base=$(d cow $docker)
+        base=$(d cow $docker | tr -d :)
         fn="${base}/${relfile}"
         runner "/bin/rm $fn"
     done
@@ -616,26 +616,25 @@ function procmon_update() {
     if [[ "$TEST" == 1 ]]; then emitC red "not supported in test mode."; exit -1; fi
     t=$(gettemp procmon-queue-sorted)
     sort -u < $PROCQ > $t
-    cd /root/dev/ktools/services/procmon
-    emacs private.d/procmon_whitelist.py $t
-    ./procmon.py -t -w private.d/procmon_whitelist.py --noro --nocontainers --nodupchk | tee $t
+    cd /root/ktools/procmon
+    emacs procmon_whitelist $t
+    ./procmon -t -w procmon_whitelist --noro --nocontainers --nodupchk | tee $t
     last=$(tail -1 $t)
     rm -f $t
     if [[ "$last" != "all ok" ]]; then
         echoc yellow "SCAN DOESN'T LOOK CLEAN; NOT RESTARTING PROCMON."
         return
     fi
-    echo "updating procmon and clearing queue..."
-    runner "make install"
+    echo "reloading procmon and clearing queue..."
     runner ":>$PROCQ"
-    runner "systemctl restart procmon"
+    runner "rc-service procmon restart"
     runner "nag -r"
 }
 
 # push an update of the pylib wheel distribute to select RPI's
 function push_wheel() {
     DESTS="$@"
-    if [[ "$DESTS" == "" ]]; then DESTS="ap2 hs-mud hs-family hs-lounge pi1 pibr pout trellis1"; fi
+    if [[ "$DESTS" == "" ]]; then DESTS="ap2 hs-family hs-lounge pi1 pibr pout trellis1"; fi
     SRC="/root/dev/ktools/pylib/dist/kcore_pylib-*-py3-none-any.whl"
     SRC_BASE=$(basename "$SRC")
     echoc cyan "copy phase"
@@ -756,13 +755,13 @@ function keymaster_zap() {
 
 # Run $1 as if it was typed into a homesec keypad.
 function run_keypad_command {
-    runner "curl -sS -d 'cmd=$1' -X POST http://hs-mud:1235/ | sed -e 's/<[^>]*>//g'"
+    runner "curl -sS -d 'cmd=$1' -X POST http://commander:5555/" # | sed -e 's/<[^>]*>//g'"
     echo ""
 }
 
 function startup_sequence() {
     keymaster_reload; sleep 0.5
-    d 01 syslogdock;  sleep 0.5
+    # d 01 syslogdock;  sleep 0.5
     $0 procmon-zap2
     emitc green "startup sequence done"
 }
