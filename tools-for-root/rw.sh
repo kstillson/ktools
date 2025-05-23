@@ -63,6 +63,7 @@ make_rw() {
 subshell() {
     if [[ "$@" == "" ]]; then
 	info "entering +rw shell"
+	export prompt_prefix='[RW]'
 	bash -i
     else
 	debug "entering +rw shell with cmnd: $@"
