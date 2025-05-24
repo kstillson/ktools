@@ -261,6 +261,7 @@ alias    AUP='sudo $APT upgrade'
 # process mgmt
 alias    KA='sudo /usr/bin/killall '
 alias    KU='sudo /usr/bin/killall -u '
+function pidenv() { tr '\0' '\n' < /proc/$1/environ; }
 
 # disk level ops
 # human-friendly and filtered list of device blkid's
