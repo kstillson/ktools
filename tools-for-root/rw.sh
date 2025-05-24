@@ -140,7 +140,7 @@ EOF
 elif [[ -n "$RO_ROOT" ]]; then
     debug "mode: read-only root"
     make_rw /
-    subshell
+    subshell "$@"
 
 
 # ---- overlay mode
@@ -175,7 +175,7 @@ elif [[ -n "$OVERLAY" ]]; then
 
 else
     info "Neither overlay nor read-only root; $0 is a no-op."
-    subshell
+    subshell "$@"
 
 fi
 
