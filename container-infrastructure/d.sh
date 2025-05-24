@@ -344,7 +344,7 @@ function do-in-waves() {
 	    wave="${line/+ /}"
 	    emitc green "${op} wave: ${wave}"
 	else
-	    echo $line | tr ' ' '\n' | erun /usr/local/bin/run_para --output "/tmp/wave-${wave}-${op}.out" --cmd "$0 $op @" --timeout $TIMEOUT
+	    echo $line | tr ' ' '\n' | erun run_para --output "/tmp/wave-${wave}-${op}.out" --cmd "$0 $op @" --timeout $TIMEOUT
 	    sleep 1
 	fi
     done
@@ -456,15 +456,15 @@ case "$cmd" in
 
 # Multiple container management done in parallel
   build-all | ba)                                                ## Build all buildable containers.
-      $0 build kcore-baseline; list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
+      $0 build kcore-baseline; list-buildable | run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
   down-all | stop-all | 0a | 00)                                 ## Down all up containers
-      list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
+      list-up | run_para --max_para=32 --align --cmd "$0 down @" --timeout $TIMEOUT ;;
   restart-all | 01a | ra | RA | Ra)                              ## Restart all up containers
       $0 down-all ; $0 up-all ;;
   run-in-all | ria)                                              ## Run $1+ in root shell in all up containers
-      list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
+      list-up | run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
   test-all | ta)                                                 ## Test all testable containers (#latest)
-      list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
+      list-testable | run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
   up-all | start-all | 1a | 11) do-in-waves up ;;                ## Launch all autostart containers
   upgrade-all | ua) do-in-waves upgrade ;;                       ## upgrade all containers
 # various queries
