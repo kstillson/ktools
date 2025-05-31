@@ -25,7 +25,8 @@ while [[ $# -gt 0 ]]; do
 	-b|--beep)  BEEP="1"          ;;
 	-d|--dest)  DEST="$2"; shift  ;;
 	-f|--full)  FULL="-f"         ;;
-	-p|--pid)   PID="$2"; shift   ;;
+	-p|--pid)   PID="$2";  shift  ;;
+	-s|--subj)  SUBJ="$2"; shift  ;;
 	*)          POS+=("$1")       ;;
     esac
     shift

@@ -513,8 +513,12 @@ case "$cmd" in
       list-up | cut -d' ' -f1 > $t
       missing=$(list-autostart | fgrep -v -f $t || true)
       rm $t
-      for sel in $missing; do up $sel; done
-      if [[ "$missing" == "" ]]; then emitc green "all ok"; fi
+      ## for sel in $missing; do up $sel; done
+      if [[ "$missing" == "" ]]; then
+	  emitc green "all ok"; exit 0
+      else
+	  echo "$missing" | run_para --cmd "$0 up @" --timeout $TIMEOUT
+      fi
       ;;
   veth)                                                          ## Print virtual eth name for $1
     idx=$($DOCKER_EXEC exec $(pick_container_from_up $spec) cat /sys/class/net/eth0/iflink)
