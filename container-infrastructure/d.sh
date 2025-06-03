@@ -40,10 +40,12 @@ fi
 
 function cd_sel() { cd $(find_dir $1); }
 
+# basically for running Python method docker_lib.get_cow_dir(container_name),
+# but can call other docker_lib methods that take 1 string and return a string.
 function dlib_run() {
     func="$1"
     param="$2"
-    python3 -c "import kcore.docker_lib as D; print(D.${func}('${param}'))"
+    python3 -c "import kcore.docker_lib as DL; print(DL.${func}('${param}'))"
 }
 
 # stdin a list of pathnames, on per-line.  output is the basename of the dirname for each input.
@@ -491,17 +493,12 @@ case "$cmd" in
     set -o pipefail
     name="$(pick_container_from_up $spec)"
     if [[ "$name" == "" ]]; then exit -1; fi
-    ## old way: $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
-    out=$($DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network1.IPAddress}}')
-    if [[ "$out" != '192'* ]]; then out=$($DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network2.IPAddress}}'); fi
-    echo $out
+    dlib_run find_ip_for $name
     ;;
   get-all-ips | ips)                                             ## Print IPs for all up containers.
-    for name in $($DOCKER_EXEC ps --format "{{.Names}}"); do
-	echo -n "${name}   "
-	## old way: $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
-        $DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network1.IPAddress}}'
-    done | column -t | sort
+    { for name in $($DOCKER_EXEC ps --format "{{.Names}}"); do
+	{ ip=$(dlib_run find_ip_for $name); echo "${name}   ${ip}"; } &
+    done; wait; } | column -t | sort
     ;;
   log | logs | L)                                                ## Print logs for $1
       $DOCKER_EXEC logs -ft --details $(pick_container_from_all $spec) ;;

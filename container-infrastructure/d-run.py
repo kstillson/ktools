@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 import kcore.auth as A
 import kcore.common as C
+import kcore.docker_lib as DL
 import kcore.settings as S
 import ktools.ktools_settings as KS
 
@@ -487,30 +488,8 @@ def fix_ownership(volspec):
 
 def gen_ref_data():
     time.sleep(2)   # give container in other thread a moment to start up
-    
-    refdir = get_setting('ref_dir')
-    if not refdir: return
-
-    container_name = get_setting('name')
-
-    # out with the old...
-    for old in glob.glob(f'{refdir}/{container_name}.*'): os.unlink(old)
-
-    # cow dir
-    rslt = C.popen(['podman', 'inspect', container_name, '--format', '{{.GraphDriver.Data.UpperDir}}'])
-    if not rslt.ok: return err(f'warning: unable to get ref data for {container_name}')
-    os.symlink(rslt.out, f'{refdir}/{container_name}.cow')
-
-    # merged dir
-    os.symlink(rslt.out.replace('/diff', '/merged'), f'{refdir}/{container_name}.root')
-
-    # ip addr
-    ip = get_ip_to_use()
-    if not ip:   # check if dynamically allocated
-        ip = C.popener([DOCKER_EXEC, 'inspect', container_name,
-                        '--format', f'{{{{.NetworkSettings.Networks.{get_setting("network")}.IPAddress}}}}'])
-    if ip:
-        with open(f'{refdir}/{container_name}.ip', 'w') as f: print(ip, file=f)
+    if not get_setting('ref_dir'): return False
+    DL.update_refdir(get_setting('name'), cow_dir=None, ip_addr=get_ip_to_use())
 
 
 # ---------- primary business logic: construct the launch command

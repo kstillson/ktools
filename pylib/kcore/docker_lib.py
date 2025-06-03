@@ -9,7 +9,7 @@ Some highlights:
 
 '''
 
-import atexit, os, random, socket, subprocess, sys, threading, time, warnings
+import atexit, glob, os, random, socket, subprocess, sys, threading, time, warnings
 import kcore.common as C
 import ktools.ktools_settings as KS
 
@@ -17,18 +17,103 @@ from dataclasses import dataclass
 
 PY_VER = sys.version_info[0]
 
+DEBUG = False    # only supported in a few methods atm.
+
 s = KS.init(test_mode=True)
 DOCKER_BIN = s.get('docker_exec')
 DV_BASE = s.get('vol_base')
+REF_DIR = s.get('ref_dir')   # cache dir for container metadata & symlinks
 TEST_DV_BASE = s.get('test_vol_base')
 TEST_PORT_SHIFT = KS.get('port_offset')
 
-# Testing related
-OUT = sys.stdout
 
+# ---------- internal helpers
+
+def Debug(msg):
+    if DEBUG: C.c0('DEBUG: ', msg, 'cyan', out=2)
+    return False
+
+
+# ---- ref_dir maintenance.
+
+# Returns path of .cow symlink if it's still valid, None if it's not.
+def is_refdir_ok(container_name: str) -> str:
+    if not REF_DIR: return False
+    cow_symlink = os.path.join(REF_DIR, container_name) + '.cow'
+    ans = cow_symlink if os.path.islink(cow_symlink) and os.path.exists(cow_symlink) else None
+    Debug(f'cow ref_dir "{container_name}.cow" still valid?  {"yes" if ans else "no"}')
+    return ans
+
+
+def update_refdir(container_name, cow_dir=None, ip_addr=None):
+    if not REF_DIR: return False
+    
+    # out with the old...
+    # (ensures out recursive calls to find_cow_dir/find_ip_for don't fall into loops.)
+    for old in glob.glob(f'{REF_DIR}/{container_name}.*'):
+        Debug(f'rm outdated ref_dir item: {old}')
+        os.unlink(old)
+
+    if not cow_dir: cow_dir = find_cow_dir_nocache(container_name)
+    if not ip_addr: ip_addr = find_nocache_ip_for(container_name)
+
+    if not cow_dir or not ip_addr: return Debug(f'Unable to update refdir for {container_name}; container data not found.')
+    
+    os.symlink(cow_dir, f'{REF_DIR}/{container_name}.cow')
+    os.symlink(cow_dir.replace('/diff', '/merged'), f'{REF_DIR}/{container_name}.root')
+    with open(f'{REF_DIR}/{container_name}.ip', 'w') as f: print(ip_addr, file=f)
+
+    Debug(f'updated ref_dir for {container_name} (ip={ip_addr})')
+    
 
 # ----------------------------------------
-# Intended as external command targets (generally called by ~/bin/d)
+# Intended as external command targets (generally called by ~/bin/d: function dlib_run)
+
+# ---- ref_dir cached
+
+def find_cow_dir_nocache(container_name):
+    rslt = C.popen([DOCKER_BIN, 'inspect', container_name, '--format', '{{.GraphDriver.Data.UpperDir}}'])
+    if not rslt.ok: return Debug('cannot find container (is it up??)')
+    return rslt.out
+
+
+def find_cow_dir(container_name):
+    symlink_name = is_refdir_ok(container_name)
+    if symlink_name: return os.readlink(symlink_name)
+
+    cow_dir = find_cow_dir_nocache(container_name)
+    update_refdir(container_name, cow_dir, ip_addr=None)
+    return cow_dir
+
+
+def find_merged_dir(container_name):
+    cow_dir = find_cow_dir(container_name)
+    return cow_dir.replace('/diff', '/merged') if cow_dir else False
+
+
+def find_nocache_ip_for(container_name):
+    out = C.popener([DOCKER_BIN, 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network1.IPAddress}}'])
+    if not out or 'ERROR' in out:
+        out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network2.IPAddress}}'])
+    if not out or 'ERROR' in out: return Debug('cannot find container (is it up??)')
+    return out
+
+
+def find_ip_for(container_name):
+    symlink_name = is_refdir_ok(container_name)
+    if symlink_name:
+        ip_cache_filename = symlink_name.replace('.cow', '.ip')
+        return C.read_file(ip_cache_filename)
+
+    ip_addr = find_nocache_ip_for(container_name)
+    update_refdir(container_name, cow_dir=None, ip_addr=ip_addr)
+    return ip_addr
+
+
+def get_cow_dir(container_name): return find_cow_dir(container_name)  # alias for find_cow_dir
+
+
+# ---- not ref_dir cached
 
 def get_cid(container_name):  # or None if container not running.
     out = C.popener([DOCKER_BIN, 'ps', '--format', '{{.ID}} {{.Names}}', '--filter', 'name=' + container_name])
@@ -60,32 +145,6 @@ def run_command_in_container(container_name, cmd, raw_popen=False):
     if isinstance(cmd, list): command.extend(cmd)
     else: command.append(cmd)
     return C.popen(command) if raw_popen else C.popener(command)
-
-
-def find_cow_dir_OLD(container_name):
-    try:
-        upperdir_json = C.popener(f'{DOCKER_BIN} inspect {container_name} | fgrep UpperDir', shell=True).strip()
-    except:
-        sys.exit('cannot find container (is it up?)')
-    key, val = upperdir_json.split(': ', 1)
-    return val.replace('",', '').replace('"', '')
-
-
-def find_cow_dir(container_name):
-    rslt = C.popen(['podman', 'inspect', container_name, '--format', '{{.GraphDriver.Data.UpperDir}}'])
-    if not rslt.ok: sys.exit('cannot find container (is it up??)')
-    return rslt.out
-
-
-def find_ip_for(name):
-    out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network1.IPAddress}}'])
-    if not out or 'ERROR' in out:
-        out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network2.IPAddress}}'])
-    if not out or 'ERROR' in out: sys.exit('cannot find container (is it up??)')
-    return out
-
-
-def get_cow_dir(container_name): return find_cow_dir(container_name)  # alias for find_cow_dir
 
 
 # ----------------------------------------
@@ -223,6 +282,7 @@ def find_or_start_container_env(control_var='KTOOLS_DRUN_TEST_PROD', name=None, 
     return find_or_start_container(test_mode, name, settings)
 
 
+# NB: drun.py depends on this library, so cannot import it.  Make this call at a popen level.
 def start_test_container(settings='settings.yaml'):
     emit('starting test container for: ' + os.path.abspath(settings))
     rslt = C.popen(['d-run', '--test-mode', '--debug', '--settings', settings], passthrough=True)
