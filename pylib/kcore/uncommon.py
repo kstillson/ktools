@@ -128,6 +128,7 @@ def load_file_into_module(source_filename, target_module=None):
     if not os.path.isfile(source_filename): return False
 
     if not target_module: target_module = C.get_callers_module(levels=2)
+    if not target_module: return None
     target_dict = target_module.__dict__
 
     mod = load_file_as_module(source_filename)

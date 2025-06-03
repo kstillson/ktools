@@ -84,7 +84,7 @@ def test_retries_and_timeout(init):
     TEST_SETTINGS['retry'] = 2
     TEST_SETTINGS['retry_delay'] = 2
     TEST_SETTINGS['timeout'] = 2
-    HANDLER_DELAY = 3
+    HANDLER_DELAY = 4
     HANDLER_DELAY_NEXT = 1
 
     # This should work in a single call, as we're in syncronous mode, but it should take 2 retries.
