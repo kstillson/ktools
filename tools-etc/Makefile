@@ -34,7 +34,7 @@ KTE_FILES := button_relay.py kds-button_relay.service
 KTE_TARGETS := $(addprefix $(KTE_DIR)/, $(KTE_FILES))
 
 RB_DIR := /root/bin
-RB_FILES := m
+RB_FILES := m WaitNotify pb-push
 RB_TARGETS := $(addprefix $(RB_DIR)/, $(RB_FILES))
 
 ULB_DIR := /usr/local/bin
@@ -47,7 +47,6 @@ ULB_TARGETS := $(addprefix $(ULB_DIR)/, $(ULB_FILES))
 install-jack: $(KTE_TARGETS) $(RB_TARGETS) $(ULB_TARGETS)
 	@printf "\n$(YELLOW)install exceptions:$(RESET)\n\n"
 	@echo "party-lights.py, tplink.py are pulled by ../containers/webdock/Makefile"
-	@echo "pb-push.sh is pulled by ../containers/homesecdoc/Makefile"
 	@echo "speak-cgi.py and speak.py must to be maually copied to pi1"
 	@echo "Arduino/arduino-filter-boards.py must be manually copied to blue:/bin"
 	@echo ""
@@ -58,7 +57,13 @@ $(KTE_DIR)/button_relay.py: button_relay.py
 $(KTE_DIR)/kds-button_relay.service: button_relay.service
 	cp -puv $^ $@
 
-$(RB_DIR)/m: m.py
+$(RB_DIR)/m: mounter.py
+	cp -puv $^ $@
+
+$(RB_DIR)/%: %.py
+	cp -puv $^ $@
+
+$(RB_DIR)/%: %.sh
 	cp -puv $^ $@
 
 $(ULB_DIR)/sunsetter.py: sunsetter.py

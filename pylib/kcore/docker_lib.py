@@ -77,7 +77,7 @@ def find_cow_dir(container_name):
     return rslt.out
 
 
-def find_ip_for(name): return C.popener(['d', 'ip', name])
+def find_ip_for(name):
     out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network1.IPAddress}}'])
     if not out or 'ERROR' in out:
         out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network2.IPAddress}}'])

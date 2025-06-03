@@ -1,10 +1,12 @@
 
-INSTALLED_TOOLS := hc k_auth kmc nag pcrypt ratelimiter run_browser run_para
+##@ INSTALLED_TOOLS := hc k_auth kmc nag pcrypt ratelimiter run_browser run_para
 SHELL := /bin/bash
 TEST_LOG ?= test.log
 
+# LOCAL_SITE_DIR is for things that can be imported as Python lib's.
+# SIMPLE_BIN_DIR is for things that are executed from CLI
 LOCAL_SITE_DIR ?= $(shell python3 -m site --user-site)
-SIMPLE_BIN_DIR ?= ~/.local/bin
+SIMPLE_BIN_DIR ?= ~/bin
 
 BUILD_SIMPLE ?= $(shell ktools_settings -b simple)
 
@@ -65,10 +67,11 @@ install-wheel: $(WHEEL)
 	@if [[ "$UID" == "0" ]]; then printf "\n $(shell tput setaf 3) NOTICE- $(shell tput sgr0) installing into root's .local directory.  Use target 'install-system' to install into /usr/local for all users."; fi
 	pip3 install -U $(shell if [[ ! -v VIRTUAL_ENV ]]; then echo "--user "; fi) $(WHEEL)
 
-# Skip the whole packaging and wheel generation; just copy updated source files
-# directly info to ~/.local.  This has some hard-coded path assumptions, and
-# won't automatically pick up new subdirs, so it might not work at all for you.
-# But when making lots of changes, this is quicker (when it works).
+# Skip the whole packaging and wheel generation; just copy updated source
+# libraries directly to ~/.local/... and cli's to ~/bin.  This has some
+# hard-coded path assumptions, and won't automatically pick up new subdirs, so
+# it might not work at all for you.  But when making lots of changes, this is
+# quicker (when it works).
 install-simple: tools/keymaster.crt
 	rm -rf */__pycache__ */.pytest_cache
 	mkdir -p $(LOCAL_SITE_DIR) $(SIMPLE_BIN_DIR)
@@ -91,6 +94,7 @@ install-simple: tools/keymaster.crt
 	mkdir -p $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/* $(LOCAL_SITE_DIR)/ktools
 	cp -puv tools/keymaster.crt $(SIMPLE_BIN_DIR)/keymaster.crt
+	cp -puv tools/kmc.py $(SIMPLE_BIN_DIR)/kmc
 	cp -puv tools/ktools_settings.py $(SIMPLE_BIN_DIR)/ktools_settings
 	cp -puv tools/nag.py $(SIMPLE_BIN_DIR)/nag
 	cp -puv tools/pcrypt.py $(SIMPLE_BIN_DIR)/pcrypt
@@ -99,7 +103,6 @@ install-simple: tools/keymaster.crt
 	cp -puv tools/run_para.py $(SIMPLE_BIN_DIR)/run_para
 	cp -puv tools/substring_counter.py $(SIMPLE_BIN_DIR)/substring_counter
 	#
-	$(MAKE) link
 	chmod -R go+rX $(LOCAL_SITE_DIR)
 
 
@@ -115,7 +118,6 @@ uninstall-wheel:
 	pip3 uninstall kcore_pylib
 
 uninstall-simple:
-	$(MAKE) unlink
 	rm -rf $(LOCAL_SITE_DIR)/kcore
 	rm -rf $(LOCAL_SITE_DIR)/ktools
 	rm -rf $(LOCAL_SITE_DIR)/home_control
@@ -132,14 +134,6 @@ install-system-simple:
 
 install-system-wheel: $(WHEEL)
 	umask 022; pip3 install -t /usr/local --upgrade $(WHEEL)
-
-
-# Create symlinks from wherever we installed our executable scripts to the user's ~/bin dir.
-link:
-	sdir=$${VIRTUAL_ENV:-~/.local} && for x in $(INSTALLED_TOOLS); do ln -fs $$sdir/bin/$$x $$HOME/bin/$$x; done
-
-unlink:
-	for x in $(INSTALLED_TOOLS); do rm -f ~/bin/$$x; done
 
 install-circuitpy:
 	@if [[ ! -d $(CIRCUITPY_DIR)/lib ]]; then echo "ERROR- cannot find $(CIRCUITPY_DIR)/lib"; exit 1; fi
