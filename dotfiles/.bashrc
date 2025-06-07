@@ -201,6 +201,9 @@ alias AX='rm -f ${HOME}/.ssh_agent ${HOME}/.env; pkill -u $USER ssh-agent && emi
 alias s='A; ssh '
 alias Ssh='s -fMN'  # start bg master
 
+## -- if ssh envir file exists, go ahead and source it
+[[ -f ${HOME}/.env ]] && source ${HOME}/.env
+
 # git
 alias g="git"
 alias UPDOT='cd ~/dev/ktools/dotfiles && if [[ -O . ]]; then git pull; else echo "cannot git pull; wrong user"; fi && make dots && cd && . .bashrc'
@@ -258,6 +261,7 @@ alias    AUP='sudo $APT upgrade'
 # process mgmt
 alias    KA='sudo /usr/bin/killall '
 alias    KU='sudo /usr/bin/killall -u '
+function pidenv() { tr '\0' '\n' < /proc/$1/environ; }
 
 # disk level ops
 # human-friendly and filtered list of device blkid's

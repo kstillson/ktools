@@ -63,6 +63,7 @@ make_rw() {
 subshell() {
     if [[ "$@" == "" ]]; then
 	info "entering +rw shell"
+	export prompt_prefix='[RW]'
 	bash -i
     else
 	debug "entering +rw shell with cmnd: $@"
@@ -139,7 +140,7 @@ EOF
 elif [[ -n "$RO_ROOT" ]]; then
     debug "mode: read-only root"
     make_rw /
-    subshell
+    subshell "$@"
 
 
 # ---- overlay mode
@@ -174,7 +175,7 @@ elif [[ -n "$OVERLAY" ]]; then
 
 else
     info "Neither overlay nor read-only root; $0 is a no-op."
-    subshell
+    subshell "$@"
 
 fi
 

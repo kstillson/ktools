@@ -40,10 +40,12 @@ fi
 
 function cd_sel() { cd $(find_dir $1); }
 
+# basically for running Python method docker_lib.get_cow_dir(container_name),
+# but can call other docker_lib methods that take 1 string and return a string.
 function dlib_run() {
     func="$1"
     param="$2"
-    python3 -c "import kcore.docker_lib as D; print(D.${func}('${param}'))"
+    python3 -c "import kcore.docker_lib as DL; print(DL.${func}('${param}'))"
 }
 
 # stdin a list of pathnames, on per-line.  output is the basename of the dirname for each input.
@@ -344,7 +346,7 @@ function do-in-waves() {
 	    wave="${line/+ /}"
 	    emitc green "${op} wave: ${wave}"
 	else
-	    echo $line | tr ' ' '\n' | erun /usr/local/bin/run_para --output "/tmp/wave-${wave}-${op}.out" --cmd "$0 $op @" --timeout $TIMEOUT
+	    echo $line | tr ' ' '\n' | erun run_para --output "/tmp/wave-${wave}-${op}.out" --cmd "$0 $op @" --timeout $TIMEOUT
 	    sleep 1
 	fi
     done
@@ -456,15 +458,15 @@ case "$cmd" in
 
 # Multiple container management done in parallel
   build-all | ba)                                                ## Build all buildable containers.
-      $0 build kcore-baseline; list-buildable | /usr/local/bin/run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
+      $0 build kcore-baseline; list-buildable | run_para --align --cmd "$0 build @" --output d-build-all.out --timeout $TIMEOUT ;;
   down-all | stop-all | 0a | 00)                                 ## Down all up containers
-      list-up | /usr/local/bin/run_para --align --cmd "$0 down @" --timeout $TIMEOUT ;;
+      list-up | run_para --max_para=32 --align --cmd "$0 down @" --timeout $TIMEOUT ;;
   restart-all | 01a | ra | RA | Ra)                              ## Restart all up containers
       $0 down-all ; $0 up-all ;;
   run-in-all | ria)                                              ## Run $1+ in root shell in all up containers
-      list-up | /usr/local/bin/run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
+      list-up | run_para --align --cmd "$0 run @ $spec $@" --output d-run-in-all.out --timeout $TIMEOUT ;;
   test-all | ta)                                                 ## Test all testable containers (#latest)
-      list-testable | /usr/local/bin/run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
+      list-testable | run_para --align --cmd "$0 test @" --output d-all-test.out --timeout $TIMEOUT ;;
   up-all | start-all | 1a | 11) do-in-waves up ;;                ## Launch all autostart containers
   upgrade-all | ua) do-in-waves upgrade ;;                       ## upgrade all containers
 # various queries
@@ -491,17 +493,12 @@ case "$cmd" in
     set -o pipefail
     name="$(pick_container_from_up $spec)"
     if [[ "$name" == "" ]]; then exit -1; fi
-    ## old way: $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
-    out=$($DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network1.IPAddress}}')
-    if [[ "$out" != '192'* ]]; then out=$($DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network2.IPAddress}}'); fi
-    echo $out
+    dlib_run find_ip_for $name
     ;;
   get-all-ips | ips)                                             ## Print IPs for all up containers.
-    for name in $($DOCKER_EXEC ps --format "{{.Names}}"); do
-	echo -n "${name}   "
-	## old way: $DOCKER_EXEC inspect "$name" | fgrep '"IPAddr' | tail -1 | cut -d'"' -f4
-        $DOCKER_EXEC inspect "$name" --format '{{.NetworkSettings.Networks.network1.IPAddress}}'
-    done | column -t | sort
+    { for name in $($DOCKER_EXEC ps --format "{{.Names}}"); do
+	{ ip=$(dlib_run find_ip_for $name); echo "${name}   ${ip}"; } &
+    done; wait; } | column -t | sort
     ;;
   log | logs | L)                                                ## Print logs for $1
       $DOCKER_EXEC logs -ft --details $(pick_container_from_all $spec) ;;
@@ -513,8 +510,12 @@ case "$cmd" in
       list-up | cut -d' ' -f1 > $t
       missing=$(list-autostart | fgrep -v -f $t || true)
       rm $t
-      for sel in $missing; do up $sel; done
-      if [[ "$missing" == "" ]]; then emitc green "all ok"; fi
+      ## for sel in $missing; do up $sel; done
+      if [[ "$missing" == "" ]]; then
+	  emitc green "all ok"; exit 0
+      else
+	  echo "$missing" | run_para --cmd "$0 up @" --timeout $TIMEOUT
+      fi
       ;;
   veth)                                                          ## Print virtual eth name for $1
     idx=$($DOCKER_EXEC exec $(pick_container_from_up $spec) cat /sys/class/net/eth0/iflink)

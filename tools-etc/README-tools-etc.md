@@ -43,6 +43,9 @@ look, and make use of anything that appeals to you.
 
 - sunsetter: Wait until an offset before/after sunset and then run a command.
 
+- WaitNotify: notify by email and/or audio when a process finishes.
+  Search for process by pid or pgrep expression.
+
 
 ## Arduino/
 
@@ -53,7 +56,7 @@ look, and make use of anything that appeals to you.
   via serial port.  Also accepts various ad-hoc commands via serial.
   Intended to be paired with button_relay (above) and receive signals
   from espnow_sleepy_button_sender (below).
-  
+
 - espnow_sleepy_button_sender: designed for Adafruit Qt Py esp32-x boards,
   spends most of its time in "deep sleep" waiting for a physical button push.
   Then wakes, transmits button and battery voltage information via espnow,

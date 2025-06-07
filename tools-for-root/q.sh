@@ -761,7 +761,7 @@ function run_keypad_command {
 
 function startup_sequence() {
     keymaster_reload; sleep 0.5
-    # d 01 syslogdock;  sleep 0.5
+    d up-missing; sleep 0.5
     $0 procmon-zap2
     emitc green "startup sequence done"
 }
