@@ -20,6 +20,7 @@ import kcore.common as C
 # ---------- types
 
 Encfs = namedtuple('encfs_mounter',  'kmc_name encfs_dir')
+Gocfs = namedtuple('gocryptfs_mounter',  'kmc_name gocfs_dir')
 Mount = namedtuple('mount_mounter',  'opts')
 Rclon = namedtuple('rclone_mounter', 'opts source')
 Sshfs = namedtuple('sshfs_mounter',  'opts source')
@@ -34,25 +35,40 @@ Mp = namedtuple('mountpoint_config', 'name aliases source mp_needs mp_provides')
 CONFIGS = [
     Mp('share',         ['s'],          Sshfs(['-p', '222', '-o', 'allow_other', '-o', 'default_permissions'],
                                               'jack:/home/ken/share'),                     None,     'mnt/share'),
+
+    # ---- encfs
     Mp('arc',           ['a'],          Encfs('arc',     'mnt/share/encfs/arc'),           'share',  'mnt/arc'),
     Mp('default',       ['d'],          Encfs('default', 'mnt/share/encfs/default'),       'share',  'mnt/default'),
     Mp('home',          ['h'],          Encfs('home',    'mnt/share/encfs/home'),          'share',  'mnt/home'),
     Mp('private',       ['p'],          Encfs('private', 'mnt/share/encfs/private'),       'share',  'mnt/private'),
-    # mm
+    # -- gocryptfs
+    Mp('Garc',          [],             Gocfs('arc',     'mnt/share/gocryptfs/arc'),       'share',  'mnt/arc'),
+    Mp('Gdefault',      [],             Gocfs('default', 'mnt/share/gocryptfs/default'),   'share',  'mnt/default'),
+    Mp('Ghome',         [],             Gocfs('home',    'mnt/share/gocryptfs/home'),      'share',  'mnt/home'),
+    Mp('Gprivate',      [],             Gocfs('private', 'mnt/share/gocryptfs/private'),   'share',  'mnt/private'),
+
+    # ---- mm
     Mp('data1',         ['D'],          Sshfs('-p 222',  'jack:/data1'),                   'share',  'mnt/data1'),
-    Mp('mov',           ['m'],          Encfs('mov',     'mnt/data1/mov'),                 'data1',  'mnt/mov'),
     Mp('bp',            ['b'],          Encfs('bp',      'mnt/data1/bp'),                  'data1',  'mnt/bp'),
-    # jack
+    Mp('mov',           ['m'],          Encfs('mov',     'mnt/data1/mov'),                 'data1',  'mnt/mov'),
+    # -- mm gocryptfs
+    #Mp('bp',            ['b'],          Gocfs('bp',      'mnt/data1/bp'),                  'data1',  'mnt/bp'),
+    #Mp('mov',           ['m'],          Gocfs('mov',     'mnt/data1/mov'),                 'data1',  'mnt/mov'),
+
+    # ---- jack
     Mp('jroot',         ['r'],          Sshfs('',        'j:/rw/root'),                    None,     'mnt/jroot'),
     Mp('jrootdir',      ['R'],          Sshfs('-r',      'j:/'),                           None,     'mnt/jrootdir'),
     Mp('rsnap',         [],             Sshfs('-r',      'j:/mnt/rsnap'),                  None,     'mnt/rsnap'),
     Mp('html',          ['H'],          Sshfs('',        'j:/rw/dv/webdock/var_www/html'), None,     'mnt/html'),
     Mp('rw',            [],             Sshfs('',        'j:/rw'),                         None,     'mnt/rw'),
-    # a1
+
+    # ---- a1
     Mp('aroot',         ['A'],          Sshfs('',        'a1:/'),                          None,     'mnt/aroot'),
-    # gdrive
+
+    # ---- gdrive
     Mp('gdrive',        ['g'],          Rclon('--read-only', 'gdrive-ro:/'),               None,     'mnt/gdrive'),
-    # ext
+
+    # ---- ext
     #Mp('ext',           ['e'],          Mount(None),                                       None,      '/mnt/ext'),
     #Mp('ext-encfs',     ['ee'],         Encfs('ext',     '/mnt/ext/encfs'),                'ext',     '/mnt/ext/efs'),
 ]
@@ -136,6 +152,12 @@ def mount(config: Mp) -> str:
         if is_mountpoint(config.mp_provides): return emit(config.name + ' already mounted', None)
     if isinstance(config.source, Encfs):
         cmd = ['/usr/bin/encfs', '--extpass', f'/usr/local/bin/kmc --km_cert /home/ken/.local/bin/keymaster.crt encfs-{config.source.kmc_name}', d(config.source.encfs_dir), d(config.mp_provides)]
+    elif isinstance(config.source, Mount):
+        cmd = ['/usr/bin/mount']
+        smartappend(cmd, config.source.opts)
+        cmd.append(d(config.mp_provides))
+    elif isinstance(config.source, Gocfs):
+        cmd = ['/usr/bin/gocryptfs', '--extpass=/usr/local/bin/kmc', '--extpass=--km_cert', '--extpass=/home/ken/.local/bin/keymaster.crt', f'--extpass=gocfs-{config.source.kmc_name}', d(config.source.gocfs_dir), d(config.mp_provides)]
     elif isinstance(config.source, Mount):
         cmd = ['/usr/bin/mount']
         smartappend(cmd, config.source.opts)
