@@ -1,7 +1,6 @@
 
-# Need fuse for encfs
+# Need fuse for gocryptfs
 extra_docker:
-  - "--cap-add=SYS_PTRACE"
   - "--device=/dev/fuse"
   - "--cap-add=SYS_ADMIN"
   - "--security-opt=apparmor:unconfined"
@@ -10,5 +9,4 @@ extra_init: "gdrive"
 
 mount_rw:
   - var_log: /var/log
-  - /home/ken/share/encfs/default: /root/gdrive
-
+  - /home/ken/share/gocryptfs/default: /root/gdrive

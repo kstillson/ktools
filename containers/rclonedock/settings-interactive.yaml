@@ -6,11 +6,10 @@
 # This means ownership uids will be correct for rsnapshot files, but WILL BE WRONG
 # for all the other targets, which used mapped uids.  BE VERY CAREFUL.
 #
-# We also need fuse for encfs.
+# We also need fuse for gocryptfs
 extra_docker:
   - "-ti"
   - "--userns=host"
-  - "--cap-add=SYS_PTRACE"
   - "--device=/dev/fuse"
   - "--cap-add=SYS_ADMIN"
   - "--security-opt=apparmor:unconfined"
@@ -24,7 +23,7 @@ foreground: 1
 
 mount_rw:
   - var_log: /var/log
-  - /home/ken/share/encfs/default: /root/gdrive
+  - /home/ken/share/gocfs/default: /root/gdrive
   - /rw/mnt/data1/photos: /root/photos
   - /rw/mnt/rsnap/echo-back: /root/echo-back
 
