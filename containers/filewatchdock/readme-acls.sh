@@ -16,7 +16,7 @@ mapfile targets <<EOF
  /home/ken/share/rcam/homesec1
  /home/ken/share/rcam/homesec2
  /rw/mnt/rsnap/daily.0/a4/var/log/syslog
- /rw/mnt/rsnap/daily.0/home2/encfs-black-backup/mnt/home2/encfs-black-backup/8KDFlw0eY0UZy98mW4ieT5q3/ilYCfI3KAmQTQB99BhQhdNHt/H1kiffd4L60JLSu5uU5RK13E/mga-bX,iZAg5pfspBbT3Remr
+ /rw/mnt/rsnap/daily.0/home2/mnt/home2/gocryptfs-black-backup/MWO9lVk0_fy0jyzCFLa2cg/MFI_Qa5e_2qWhLmHKBDdQQ/W7uzaCEYuNjYCmM8tysTpw/55kMJUCPHMkLt5TD6N1ioA
  /rw/mnt/rsnap/daily.0/home/home/ken/share/tmp/touch
  /rw/mnt/rsnap/daily.0/home/home/rubuntu/backup/var/log/syslog
  /rw/mnt/rsnap/echo-back/vault-touch
@@ -24,6 +24,7 @@ mapfile targets <<EOF
  /rw/log/daemon.log
  /rw/log/iptables.log
 EOF
+
 
 cd /rw/mnt/rsnap  # set stop dir for "q parent_dirs"
 
