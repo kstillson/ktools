@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # $1 is primary mode:
-#   gdrive: syncs google-drive contents to /root/gdrive-efs (mounted via efs)
+#   gdrive: syncs google-drive contents to /root/gdrive-gocfs (mounted via gocryptfs)
 #   full-photos: syncs (almost) all of google-photos to /root/photos-archive
 #                (will create many duplicates due to albums, favorites, etc)
 #   interactive: interactive shell ready for "rclone mount" commands
@@ -82,16 +82,17 @@ if [[ -z "$RCLONE_CONFIG_PASS" ]]; then
 fi
 
 # ----------
-# efs helper
+# gocfs helper
 
-function mount_efs() {
-    TEST="/root/gdrive-efs/gdrive/active"
-    mkdir -p /root/gdrive-efs
+function mount_gocfs() {
+    D="/root/gdrive-gocfs"
+    TEST="$D/gdrive/active"
+    mkdir -p $D
     while [ ! -d ${TEST} ]; do
-	/usr/bin/encfs --extpass "/usr/local/bin/kmc encfs-default" /root/gdrive /root/gdrive-efs
-	if [ ! -d ${TEST} ]; then echo "encfs fail; retrying after delay."; sleep 20; fi
+	/usr/bin/gocryptfs --nosyslog --extpass "/usr/local/bin/kmc gocfs-default" /root/gdrive $D
+	if [ ! -d ${TEST} ]; then echo "gocryptfs fail; retrying after delay."; sleep 20; fi
     done
-    echo "encfs mount ok."
+    echo "gocfs mount ok."
 }
 
 
@@ -101,18 +102,18 @@ function mount_efs() {
 echo "$(date): starting rclone $MODE run"
 case $MODE in
     gdrive)
-	mount_efs
-	${RCLONE} sync ${STATS} --modify-window 10s gdrive-ro:/ /root/gdrive-efs/gdrive
+	mount_gocfs
+	${RCLONE} sync ${STATS} --modify-window 10s gdrive-ro:/ /root/gdrive-gocfs/gdrive
 	STATUS=$?
 	if [[ $STATUS != 0 ]]; then echo "rclone $MODE exited with status $STATUS"; exit $STATUS; fi
 
 	# Sanity check: check financial worksheet edited within last 30 days
-	DEST="/root/gdrive-efs/gdrive/active/Money planning.xlsx"
+	DEST="/root/gdrive-gocfs/gdrive/active/Money planning.xlsx"
 	if test $(find "$DEST" -mtime +30); then echo "gdrive local-copy of test file is too old ($DEST)"; exit -4; fi
 	;;
 
     interactive)
-	mount_efs
+	mount_gocfs
 	echo "ready for 'rclone mount ...' (or whatever)"
 	/bin/bash -il
 	;;

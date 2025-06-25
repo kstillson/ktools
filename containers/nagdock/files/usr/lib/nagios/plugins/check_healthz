@@ -22,11 +22,11 @@ URL="${PROTO}://${SERVER}:${PORT}${ADDR}"
 
 ARGS="-L -sS -k --connect-timeout 6 --max-time ${MAX_TIME} --retry ${RETRIES} --retry-connrefused --retry-delay 5"
 
-out=$(curl ${ARGS} ${URL} | head -1 | tr '[:upper:]' '[:lower:]')
+out=$(curl ${ARGS} ${URL} | head -3 | tr '\n' ' ' | tr '[:upper:]' '[:lower:]')
 STATUS=$PIPESTATUS
 
 ##@@ TEMP
-echo "$(now) ;; ARGS=$ARGS ;; URL=$URL ;; STATUS=$STATUS ;; out=$out " >> /tmp/check-healthz-debug.log
+## echo "$(date) ;; ARGS=$ARGS ;; URL=$URL ;; STATUS=$STATUS ;; out=$out " >> /tmp/check-healthz-debug.log
 
 if [[ $STATUS != 0 ]]; then
   echo "CRITICAL; error trying to retrieve ${URL}"
@@ -36,7 +36,7 @@ fi
 if [[ "${out}" == "ok"* ]]; then
   echo "OK"
   exit 0
-elif [[ "${out}" == "all ok"* ]]; then
+elif [[ "${out}" == *"all ok"* ]]; then
   echo "OK"
   exit 0
 elif [[ "${out}" == *"warning"* ]]; then

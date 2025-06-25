@@ -93,9 +93,9 @@ def find_merged_dir(container_name):
 
 def find_nocache_ip_for(container_name):
     out = C.popener([DOCKER_BIN, 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network1.IPAddress}}'])
-    if not out or 'ERROR' in out:
+    if not out[0].isdigit():
         out = C.popener(['podman', 'inspect', container_name, '--format', '{{.NetworkSettings.Networks.network2.IPAddress}}'])
-    if not out or 'ERROR' in out: return Debug('cannot find container (is it up??)')
+    if not out[0].isdigit(): return Debug('cannot find container (is it up??)')
     return out
 
 
@@ -103,7 +103,8 @@ def find_ip_for(container_name):
     symlink_name = is_refdir_ok(container_name)
     if symlink_name:
         ip_cache_filename = symlink_name.replace('.cow', '.ip')
-        return C.read_file(ip_cache_filename)
+        ans = C.read_file(ip_cache_filename, strip=True)
+        if ans[0].isdigit(): return ans
 
     ip_addr = find_nocache_ip_for(container_name)
     update_refdir(container_name, cow_dir=None, ip_addr=ip_addr)
@@ -205,7 +206,7 @@ def pick_test_port() -> int:
     port = os.environ.get('TESTPORT')
     if port: return int(port)
     return random.randint(20000, 29999)
-        
+
 
 # ---------- find/launch test containers
 #
@@ -255,6 +256,7 @@ def find_or_start_container(test_mode, name='@basedir', settings='settings.yaml'
         # Assume production container is already running (and has no name prefix).
         fullname = name
 
+    time.sleep(1)
     cow = find_cow_dir(fullname)
 
     # Give the container a moment to start if it needs it (can heavily depend on server load)

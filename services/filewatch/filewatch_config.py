@@ -33,8 +33,10 @@ CONFIG = {
     # rsnapshot based
     '/root/rsnap/daily.0/a4/var/log/syslog':                       RSNAP_LOG_AGE,
     '/root/rsnap/daily.0/home/home/ken/share/tmp/touch':           RSNAP_LOG_AGE,
-    '/root/rsnap/daily.0/home2/encfs-black-backup/mnt/home2/encfs-black-backup/8KDFlw0eY0UZy98mW4ieT5q3/ilYCfI3KAmQTQB99BhQhdNHt/H1kiffd4L60JLSu5uU5RK13E/mga-bX,iZAg5pfspBbT3Remr': 2 * DAY,
     '/root/rsnap/echo-back/vault-touch':                           32 * DAY,
+
+    # This is .../gocfs-black-backup/backup/var/log/auth.log:
+    '/root/rsnap/daily.0/home2/mnt/home2/gocryptfs-black-backup/MWO9lVk0_fy0jyzCFLa2cg/MFI_Qa5e_2qWhLmHKBDdQQ/W7uzaCEYuNjYCmM8tysTpw/55kMJUCPHMkLt5TD6N1ioA': 2 * DAY,
     
     # syslog based
     '/root/syslog/daemon.log':                     SYS_LOG_AGE,
@@ -55,12 +57,6 @@ CONFIG = {
     
     # globs
     '/root/syslog/cron*':                          SYS_LOG_AGE,
-
-    # make sure local encrypted Thunderbird email archive doesn't get too old
-    # (this is the encrypted name for .../Mail/ImapMail/imap.gmail.com/INBOX )
-    ## (disabled: this is a good idea, but getting the permissions to work
-    ##  is turning out to be too painful...)
-    ## '/root/rsnap/daily.0/home/home/ken/share/encfs/home/DaSx,O-MgeM1SwsqEQld8TLI/ScKW5ztumsgoFcssXsphPZJg/e8DhAJvxoDFgiypC5I9FgyDOSFVdqEx7xRwF8nAgCgbMa0/tDHHQLumRIf,RIptwOKwO13v/Bra6UJlLxuFAmvFyoU8TxV96/gZQ2ANy3YMgZk-C5zzgtz5t8':  TBIRD_MAX_AGE,
 
     # specials
     '/root/dnsmasq/dnsmasq.leases':                'NOT-FOUND:.9.',
