@@ -206,6 +206,7 @@ alias Ssh='s -fMN'  # start bg master
 
 # git
 alias g="git"
+alias GP="A; git push"
 alias UPDOT='cd ~/dev/ktools/dotfiles && if [[ -O . ]]; then git pull; else echo "cannot git pull; wrong user"; fi && make dots && cd && . .bashrc'
 
 # base 64 stuff
