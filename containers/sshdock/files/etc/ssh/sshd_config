@@ -10,8 +10,7 @@ Port 22
 Protocol 2
 # HostKeys for protocol version 2
 HostKey /etc/ssh/hostkeys/ssh_host_rsa_key
-HostKey /etc/ssh/hostkeys/ssh_host_dsa_key
-HostKeyAlgorithms +ssh-rsa,ssh-dss
+HostKeyAlgorithms +ssh-rsa
 
 #MaxAuthTries 3
 
