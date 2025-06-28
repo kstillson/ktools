@@ -597,7 +597,8 @@ def parse_args(argv=sys.argv[1:]):
     ap = C.argparse_epilog(description='docker container launcher', add_help=False)  # Defer help until after we've added our settings-based flags.
 
     g1 = ap.add_argument_group('d-run logic options', 'Do something other than simply launching a container.')
-    g1.add_argument('--debug',         '-d', action='store_true', help='Print the source of each control value, and final command as a list (showing args are separate)')
+    g1.add_argument('--debug',         '-d', action='store_true')
+    g1.add_argument('--debug2',        '-D', action='store_true', help='Print the source of each control value')
     g1.add_argument('--help',          '-h', action='store_true', help='print help')
     g1.add_argument('--print-cmd',           action='store_true', help='Launch the container as normal, but also print out the command being used for the launch.')
     g1.add_argument('--test',          '-t', action='store_true', help='Just print the command that would be run rather than running it.')
@@ -625,7 +626,7 @@ def parse_args(argv=sys.argv[1:]):
     s = KS.init(selected_groups=['containers', 'container launching', 'd-run'],
                 files_to_load=[args.host_settings, args.settings],
                 argparse_instance=ap, flag_aliases=flag_aliases,
-                debug=args.debug, test_mode=args.test_mode)
+                debug=args.debug2, test_mode=args.test_mode)
 
     # Add environment varaible fallbacks for all settings.
     s.tweak_all_settings('env_name', 'DRUN_{name}')
