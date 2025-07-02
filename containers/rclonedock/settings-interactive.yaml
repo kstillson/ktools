@@ -23,7 +23,7 @@ foreground: 1
 
 mount_rw:
   - var_log: /var/log
-  - /home/ken/share/gocfs/default: /root/gdrive
+  - /home/ken/share/gocryptfs/default: /root/gdrive
   - /rw/mnt/data1/photos: /root/photos
   - /rw/mnt/rsnap/echo-back: /root/echo-back
 

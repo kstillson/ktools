@@ -20,7 +20,7 @@ mv -f /etc/apache2/conf.d/private.d/* /etc/apache2/conf.d || true
 rm /etc/apache2/conf.d/default.conf /etc/apache2/conf.d/info.conf /etc/apache2/conf.d/ssl.conf /etc/apache2/conf.d/userdir.conf
 
 # Ownership fixes
-/bin/chown apache.apache /run/apache2
+/bin/chown apache:apache /run/apache2
 /bin/chgrp -R apache /etc/apache2 /usr/lib/cgi-bin /usr/local/bin /var/www
 
 # Create cgi-bin symlinks (apparently Dockerfile's dont support incorporating them)
