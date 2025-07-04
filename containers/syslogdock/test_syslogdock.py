@@ -18,6 +18,7 @@ def test_syslogdock(container_to_test):
     port = 1514
     cookie = D.gen_random_cookie()
 
+    time.sleep(2)  # Give syslog a chance to start.
     cmd = ['/usr/bin/logger', '-T', '-n', server, '-p', 'local1.info', '-P', str(port), cookie]
     rslt = C.popen(cmd)
     if not rslt.ok: print(f'ERROR test cmd failed: {cmd=} -> {rslt=}', file=sys.stderr)
