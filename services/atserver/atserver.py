@@ -46,7 +46,7 @@ def audible_feedback(name):
         return
     C.log('sending audible feedback: ' + name)
     V.bump('audible-feedback-sent')
-    web_get_bg('https://home.point0.net/speak/@' + name)
+    web_get_bg('https://home.point0.net/speak/@buzz')
 
 
 def web_get_bg(*args, **kwargs):
@@ -217,7 +217,7 @@ def fire_and_get_url_real(**kwargs) -> None:
     target = None
     if ':' in dest: dest, target = dest.split(':', 1)
 
-    if dest == 'syslog':   C.log_syslog(out, level=C.INFO if resp_ok else C.ERROR, ident=sys.argv[0])
+    if   dest == 'syslog': C.log_syslog(out, level=C.INFO if resp_ok else C.ERROR, ident=sys.argv[0])
     elif dest == 'stdout': print(out)
     elif dest == 'file':
         with open(target, 'a') as fil: fil.write(out + '\n')
@@ -352,13 +352,15 @@ def handler_add_real(request):
         base = 'https://home.point0.net/control/' + pd.get('url')
         resp = C.web_get(base + '/on')
         if resp.ok:
-            C.log(f'hc01 on-phase ok: {base}/on -> {str(resp)}')
+            C.log(f'hc10 on-phase ok: {base}/on -> {str(resp)}')
             url = base + '/off'
         else:
-            C.log_warning(f'hc01 on failed: {str(resp)}')
+            C.log_warning(f'hc10 on failed: {str(resp)}')
             url = None
     elif act == 'hc':     url = 'https://home.point0.net/control/' + pd.get('url').replace(' ', '/')
     elif act == 'mpc':    url = "https://home.point0.net/media?" + (pd.get('url') or 's')
+    elif act == 'play':   url = "https://home.point0.net/speak/@" + pd.get('url')
+    elif act == 'speak':  url = "https://home.point0.net/speak/"  + pd.get('url')
     elif act == 'url':    url = pd.get('url')
     if not url: return False, relative, quiet, '<p>add: unable to parse provided URL.' + cont
 
