@@ -36,7 +36,7 @@ BUTTON_MAP = {
         8:  lambda: commander('.'),
     },
     '84F73D97E46': {   # tv-now button
-        17: lambda: control('tv'),
+        1: lambda: control('tv'),
     },
     '*': {              # match from any not-otherwise-matched sender
         98: lambda: trigger('test'),
@@ -115,7 +115,7 @@ def commander(cmd):
     return read_web(f'http://commander:5555/?c={cmd}')
 
 def control(target, command='on'):
-    return read_web(f'http://home-control:8080/{target}/{command}')
+    return read_web(f'https://home.point0.net/control/{target}/{command}')
 
 def play_sound(basename='ding'):  # see /rw/dv/speaker/cache for list of available sounds
     return speak('@' + basename)
