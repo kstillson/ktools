@@ -30,17 +30,25 @@ LOW_BATTERY_THRESHOLD = 4000
 
 BUTTON_MAP = {
     'F412FA9DB4B8': {   # hs-mud replacement
+        -1: 'hs-mud',
         18: lambda: trigger('front_door'),
         17: lambda: trigger('side_door'),
         9:  lambda: trigger('garage'),
         8:  lambda: commander('.'),
     },
-    '84F73D97E46': {   # tv-now button
-        1: lambda: control('tv'),
+    '84F73D97E46': {    # tv-now button
+        -1: 'tv-now',
+        1:  lambda: control('tv'),
+    },
+    'F412FA4417AC':{    # coffee two button unit
+        -1: 'coffee',
+        1:  lambda: commander('///'),
+        2:  lambda: commander('/'),
     },
     '*': {              # match from any not-otherwise-matched sender
-        98: lambda: trigger('test'),
-        99: lambda: speak('greetings professor falcon'),
+        -1: 'unknown',
+        98: lambda: speak('greetings professor falcon'),
+        99: lambda: trigger('test'),
     },
 }
 
@@ -145,21 +153,27 @@ def parse_button_msg(msg):  # format:    button: xx, voltage: yy, mac: aabbccdde
     return button, battery, mac
 
 
+def get_hostname(mac):
+    hostmap = BUTTON_MAP.get(mac.upper()) or BUTTON_MAP.get('*')
+    return hostmap.get(-1, '???')
+
+
 def handle_button_real(button:int, battery:int, mac:str):
     V.bump(f'press_{mac}_{button}')
     V.set(f'batt_{mac}_batt', battery)
+    hostname = get_hostname(mac)
 
-    if battery > 0 and battery < LOW_BATTERY_THRESHOLD:
-        C.log_warning(f'low battery level on {mac}: {battery} < {LOW_BATTERY_THRESHOLD}')
+    if battery >= 0 and battery < LOW_BATTERY_THRESHOLD:
+        C.log_warning(f'low battery level on {hostname} [mac:{mac}]: {battery} < {LOW_BATTERY_THRESHOLD}')
         V.bump(f'low_batt_{mac}')
 
     hostmap = BUTTON_MAP.get(mac.upper()) or BUTTON_MAP.get('*')
     cmd = hostmap.get(button)
-    if cmd: return cmd()
+    if cmd: return f'[host:{hostname}] -> {cmd()}'
 
     # If we get to here, unknown sender or unknown button
     play_sound()
-    C.log_error(f'unknown button {button} from {mac}')
+    C.log_error(f'unknown button {button} from {hostname} [mac:{mac}]')
     V.bump('unknown_button')
     return False
 
@@ -230,7 +244,7 @@ def serial_listen_loop(s):
         if line:
             if line.startswith('button:'):
                 rslt = handle_button(line)
-                C.log(f'{line} -> {rslt}')
+                C.log(f'serial: {line} -> {rslt}')
             else:
                 C.log(f'unprocessed input: {line}')
         if now() > next_ping:
