@@ -47,6 +47,7 @@
         case "o": toggle("col-out"); break;
         case "r": toggle("col-rooms"); break;
         case "s": toggle("col-spcl"); break;
+        case "S": toggle("col-spcl2"); break;
 
             // direct HC commands
         case "!": send("sirens"); break;
@@ -227,28 +228,31 @@
 	<td><button class="bb" onclick='send("out-arch", "-")'>R arch</button></td>
 	<td><button class="bb" onclick='send("out-moon", "-")'>R moon</button></td>
       </tr><tr>
-        <td colspan='9' class="l">Special &nbsp; <button id="col-spcl-button" class="bb-sm toggle init-off" onclick='toggle("col-spcl")'>-</button> </td></tr>
+        <td colspan='9' class="l">Special devices &nbsp; <button id="col-spcl-button" class="bb-sm toggle init-off" onclick='toggle("col-spcl")'>-</button> </td></tr>
       </tr><tr class="col-spcl">
 	<td><button class="bb" onclick='send("space-heater")'>heater</button></td>
-	<td><button class="bb" onclick='send("homesec1")'>homesec1</button></td>
 	<td><button class="bb" onclick='send("xmas")'>xmas</button></td>
       </tr><tr class="col-spcl">
-	<td><button class="bb" onclick='send("party", "go")'>PARTY</button></td>
-	<td><button class="bb" onclick='send("neotree", "-")'>neotree</button></td>
+	<td><button class="bb" onclick='send("kdsguest")'>kdsugest</button></td>
 	<td><button class="bb" onclick='send("tree")'>tree</button></td>
+      </tr><tr class="col-spcl">
+	<td><button class="bb" onclick='send("garage")'>garage</button></td>
+	<td><button class="bb" onclick='send("mobile-bulb")'>mobile</button></td>
+      </tr><tr class="col-spcl">
+	<td><button class="bb" onclick='send("garage-L")'>gd-L</button></td>
+	<td><button class="bb" onclick='send("garage-R")'>gd-R</button></td>
       </tr><tr class="col-spcl">
 	<td><button class="bb" onclick='send("siren1")'>siren1</button></td>
 	<td><button class="bb" onclick='send("siren2")'>siren2</button></td>
 	<td><button class="bb" onclick='send("siren3")'>siren3</button></td>
-      </tr><tr class="col-spcl">
+      </tr><tr>
+        <td colspan='9' class="l">Special scenes &nbsp; <button id="col-spcl2-button" class="bb-sm toggle init-off" onclick='toggle("col-spcl2")'>-</button> </td></tr>
+      </tr><tr class="col-spcl2">
+	<td><button class="bb" onclick='send("neotree", "-")'>neotree</button></td>
+	<td><button class="bb" onclick='send("party", "go")'>PARTY</button></td>
+      </tr><tr class="col-spcl2">
 	<td><button class="bb" onclick='send("gh1", "on")'>gh1</button></td>
 	<td><button class="bb" onclick='send("gh0", "on")'>gh0</button></td>
-	<td><button class="bb" onclick='send("garage")'>garage</button></td>
-      </tr><tr class="col-spcl">
-	<td><button class="bb" onclick='send("garage-L")'>gd-L</button></td>
-	<td><button class="bb" onclick='send("garage-R")'>gd-R</button></td>
-	<td><button class="bb" onclick='send("mobile-bulb")'>mobile</button></td>
-      </tr><tr>
       </tr>
     </table>
   </body>
