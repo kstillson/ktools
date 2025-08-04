@@ -12,7 +12,7 @@ elif [[ -v DEBUG ]]; then
     COMMAND="$SVC --debug --logfile -"
 
 else
-    FLAGS="${FLAGS:- --logfile /var/log/km/km.log --syslog}"
+    FLAGS="${FLAGS:- --logfile /var/log/km/km.log --syslog --reset-url=http://speaker:8080/@mixkit-falling-game-over-1942.wav}"
     COMMAND="$SVC $FLAGS"
 fi
 
