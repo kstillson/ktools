@@ -35,7 +35,7 @@
 
 ; ---- dired
 ; use ^u-s to change dired "switches" at runtime
-(setq dired-listing-switches "-Bhl1v  --group-directories-first")
+(setq dired-listing-switches "-ahl1v  --group-directories-first")
 (setq image-dired-thumb-size 200)
 
 ; --- calc prefs
