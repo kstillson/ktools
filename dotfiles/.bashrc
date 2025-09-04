@@ -15,14 +15,31 @@ fi
 # general use variables
 
 export BLACK='\u001b[30m'
-export BLUE='\033[01;34m'
-export CYAN='\033[01;36m'
-export GREEN='\033[01;32m'
-export MAGENTA='\033[01;35m'
-export RED='\033[0;31m'
-export YELLOW='\033[0;33m'
-export WHITE='\033[01;37m'
 export RESET='\033[00m'
+
+export BLUE='\033[0;94m'
+export CYAN='\033[0;96m'
+export GREEN='\033[0;92m'
+export MAGENTA='\033[0;95m'
+export RED='\033[0;91m'
+export YELLOW='\033[0;93m'
+export WHITE='\033[0;97m'
+
+export B_BLUE='\033[1;34m'
+export B_CYAN='\033[1;36m'
+export B_GREEN='\033[1;32m'
+export B_MAGENTA='\033[1;35m'
+export B_RED='\033[1;31m'
+export B_YELLOW='\033[1;33m'
+export B_WHITE='\033[1;37m'
+
+export BG_BLUE='\033[01;44m'
+export BG_CYAN='\033[01;46m'
+export BG_GREEN='\033[01;42m'
+export BG_MAGENTA='\033[01;45m'
+export BG_RED='\033[0;41m'
+export BG_YELLOW='\033[0;43m'
+export BG_WHITE='\033[01;47m'
 
 export THREADS=$(grep -c ^processor /proc/cpuinfo)
 
@@ -192,7 +209,7 @@ function md() { mkdir -p "$1"; cd "$1"; }
 function ssh-init() {
     local ENV_FILE="${HOME}/.env"
     [[ -f ${ENV_FILE} ]] && source ${ENV_FILE}
-    [[ -d "/proc/$SSH_AGENT_PID" && -S "$SSH_AUTH_SOCK" ]] || \
+    [[ -S "$SSH_AUTH_SOCK" ]] && [[ $(stat -c %u "$SSH_AUTH_SOCK") == $UID ]] || \
 	{ ssh-agent -s -t 4h | fgrep -v echo > ${ENV_FILE}; source ${ENV_FILE}; }
     ssh-add -l >/dev/null || ssh-add -v
 }
