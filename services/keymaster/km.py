@@ -108,12 +108,13 @@ class Secrets(P.DictOfDataclasses):
 
     def ready(self): return len(self.cache) > 0
 
-    def reset(self):
+    def reset(self, skip_audio_feedback=False):
         self.clear()
         self.cache_mtime = 0  # will need to reload from file next time.
         C.log('RESET: keys cleared')
         V.bump('resets')
         V.set('loaded-keys', 0)
+        if ARGS.reset_url and not skip_audio_feedback: C.log(f'reset url -> {C.web_get_e(ARGS.reset_url)}')
 
 
 # ---------- global state
@@ -157,7 +158,7 @@ def km_healthz_handler(request):
 
 
 def km_load_handler(request):
-    SECRETS.reset()
+    SECRETS.reset(skip_audio_feedback=True)
 
     global SECRETS_PASSWORD
     SECRETS_PASSWORD = request.post_params.get('password')
@@ -243,16 +244,17 @@ def km_default_handler(request):
 def parse_args(argv):
   ap = argparse.ArgumentParser(description='key manager server')
   ap.add_argument('--certkeyfile', '-k', default='keymaster.pem', help='name of file with both server TLS key and matching certificate.  set to blank to serve http rather than https (NOT RECOMMENDED!)')
-  ap.add_argument('--datafile', '-d', default='km.data.pcrypt', help='name of encrypted file with secrets database')
+  ap.add_argument('--datafile', '-d',    default='km.data.pcrypt', help='name of encrypted file with secrets database')
   ap.add_argument('--db-filename', '-D', default='kcore_auth_db.data.pcrypt', help='name of the encrypted registration database file')
-  ap.add_argument('--debug', '-Z', action='store_true', help='puts kcore.auth into debug mode. WARNING- outputs logs of secrets.')
-  ap.add_argument('--dont-panic', action='store_true', help='By default the server will panic (i.e. clear its decrypted secrets database) if just about anything unexpected happens, including any denied request for a key.  This flag disables that, favoring stability over pananoia.')
-  ap.add_argument('--logfile', '-l', default='km.log', help='filename for operations log.  "-" for stderr, blank to disable log file')
+  ap.add_argument('--debug', '-Z',          action='store_true', help='puts kcore.auth into debug mode. WARNING- outputs logs of secrets.')
+  ap.add_argument('--dont-panic',           action='store_true', help='By default the server will panic (i.e. clear its decrypted secrets database) if just about anything unexpected happens, including any denied request for a key.  This flag disables that, favoring stability over pananoia.')
+  ap.add_argument('--logfile', '-l',     default='km.log', help='filename for operations log.  "-" for stderr, blank to disable log file')
   ap.add_argument('--port', '-p', type=int, default=4444, help='port to listen on')
-  ap.add_argument('--nohostcheck', '-H', action='store_true', help='Skip hostname verification (advised for testing only!)')
-  ap.add_argument('--noratchet', '-R', action='store_true', help='By default each request for a key must come after the last successful request for that key; this prevents request replay attacks.  It also limits key retrievals to one-per-second (for each key).  This disables that limit, and relies just on --window to prevent replay attacks.')
-  ap.add_argument('--syslog', '-s', action='store_true', help='sent alert level log messages to syslog')
-  ap.add_argument('--window', '-w', type=int, default=90, help='max seconds time difference between client key request and server receipt (i.e. max clock skew between clients and servers).  Set to 0 for "unlimited".')
+  ap.add_argument('--nohostcheck', '-H',    action='store_true', help='Skip hostname verification (advised for testing only!)')
+  ap.add_argument('--noratchet', '-R',      action='store_true', help='By default each request for a key must come after the last successful request for that key; this prevents request replay attacks.  It also limits key retrievals to one-per-second (for each key).  This disables that limit, and relies just on --window to prevent replay attacks.')
+  ap.add_argument('--reset-url', help='URL to send a GET to if/when internal database is panic reset.')
+  ap.add_argument('--syslog', '-s',         action='store_true', help='sent alert level log messages to syslog')
+  ap.add_argument('--window', '-w',      default=90, type=int, help='max seconds time difference between client key request and server receipt (i.e. max clock skew between clients and servers).  Set to 0 for "unlimited".')
   return ap.parse_args(argv)
 
 

@@ -164,7 +164,7 @@ case $MODE in
 	# fix ownership of ~/.ssh (was set to shifted uids during copy which used alt uid namespace)
 	chown -R root:root /root/.ssh
 	# using rsync rather than rclone, so re-specialize our run flags
-	if [[ "$VERBOSE" == "1" ]]; then STATS='-vP --stats'; else STATS='--stats'; fi
+	if [[ "$VERBOSE" == "1" ]]; then STATS='-vP --info=progress2 --stats'; else STATS='--stats'; fi
 
 	# check that source is mounted ok (dont want to zap dest because of a src mounting error).
 	if [[ ! -d /root/src/rw ]]; then echo "rclone $MODE cannot find source canary file; aborting."; exit -2; fi

@@ -37,7 +37,7 @@ has only quite low-level networking.  So, the functionality is split like this:
 
 '''
 
-import cgi, threading, ssl, sys
+import threading, ssl, sys
 
 import kcore.common as C             # for logging.
 from kcore.webserver_base import *   # you can use Request/Response without separately importing webserver_base.
@@ -48,6 +48,8 @@ if PY_VER == 2:
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
     DEFAULT_SERVER_CLASS = HTTPServer
 else:
+    from email.parser import BytesParser
+    from email.policy import default
     from urllib.parse import parse_qs
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     DEFAULT_SERVER_CLASS = ThreadingHTTPServer
@@ -75,25 +77,28 @@ class Worker(BaseHTTPRequestHandler):
         return self.send(self.server._k_webserver.find_and_run_handler(request))
 
     def parse_post(self):
-        if PY_VER == 2: ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
-        else: ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
-        if PY_VER == 2:
-            length = int(self.headers.getheader('content-length'))
+        length = int(self.headers.get('content-length'), 0)
+        ctype_full = self.headers.get('content-type', '')
+        ctype = ctype_full.split(';', 1)[0]
+        body = self.rfile.read(length)
+
+        if ctype == 'application/x-www-form-urlencoded':
+            bytes_dict = parse_qs(body, keep_blank_values=1)
+            return {k.decode(): v[0].decode() for k, v in bytes_dict.items()}
+
+        elif ctype == 'multipart/form-data':
+            # Reconstruct a fake email-style message
+            raw = b'Content-Type: ' + ctype_full.encode() + b'\r\n\r\n' + body
+            msg = BytesParser(policy=default).parsebytes(raw)
+            fields = {}
+            for part in msg.iter_parts():
+                name = part.get_param('name', header='content-disposition')
+                filename = part.get_filename()
+                if filename: fields[name] = { 'filename': filename, 'content': part.get_content() }
+                else:        fields[name] = [part.get_content()]
+            return fields
         else:
-            length = int(self.headers.get('content-length'))
-        if ctype == 'multipart/form-data':
-            if PY_VER == 3:
-                pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-                pdict['CONTENT-LENGTH'] = length   # https://bugs.python.org/issue34226 (needed for Py 3.6 on RPi)
-            postvars = cgi.parse_multipart(self.rfile, pdict)
-        elif ctype == 'application/x-www-form-urlencoded':
-            postvars = parse_qs(self.rfile.read(length), keep_blank_values=1)
-            if PY_VER == 2:
-                postvars = {k: v[0] for k, v in postvars.items()}
-            if PY_VER == 3:
-                postvars = {k.decode('utf-8'): v[0].decode('utf-8') for k, v in postvars.items()}
-        else: postvars = {}
-        return postvars
+            return {}
 
     def log_message(self, format, *args):
         if args[0] in ['GET', 'POST']: return    # Already handled by logging adapter.

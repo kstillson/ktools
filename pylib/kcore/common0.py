@@ -350,7 +350,7 @@ class FakeResponse:
     def __str__(self):  return 'ok:%s, code:%s, exception:%s, text:%s, headers:%s, url:%s, elapsed:%s' % (self.ok, self.status_code, self.exception, self.text, self.headers, self.url, self.elapsed)
 
 
-def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, cafile=None, proxy_host=None):
+def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True, cafile=None, proxy_host=None) -> FakeResponse:
     '''Retrieve web data.  Works for both Python 2 & 3, and hides the differences.
 
        For Python 3, this is basically a trivial wrapper around "requests",
@@ -375,19 +375,19 @@ def web_get(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wra
                       cafile=cafile, proxy_host=proxy_host)
 
 
-def web_get_e(url, *args, **kwargs):
+def web_get_e(url, *args, **kwargs) -> FakeResponse:
     '''Same as web_get, except will print any exceptions to stderr.'''
     resp = web_get(url, *args, **kwargs)
     if resp.exception: stderr('web_get exception: %s: %s' % (url, resp.exception))
     return resp
 
 
-def read_web(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True):
+def read_web(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True) -> str:
     '''Really simple web-get interface; returns a string or None upon error.'''
     return web_get(url, timeout, get_dict, post_dict, verify_ssl, wrap_exceptions).text
 
 
-def read_web_e(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True):
+def read_web_e(url, timeout=10, get_dict=None, post_dict=None, verify_ssl=True, wrap_exceptions=True) -> str:
     '''Really simple web-get interface; returns a string with either content or human-readable error message.'''
     rslt = web_get(url, timeout, get_dict, post_dict, verify_ssl, wrap_exceptions)
     return rslt.text if rslt.ok else rslt.exception or f'ERROR: [{rslt.status_code}] {rslt.text}'
