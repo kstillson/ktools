@@ -10,7 +10,7 @@ mount_ro:
   - /rw/log:    /root/syslog
   - /rw/dv:     /root/dv
   - /rw/dv/dnsdock/var_log_dnsmasq:        /root/dnsmasq
-  - /home/ken/share/rcam:                  /root/rcam
+  - /home/ken/share:                  /root/share
   - /rw/dv/eximdock/var/spool/exim/input: /root/exim
 
 test_mount_ro:

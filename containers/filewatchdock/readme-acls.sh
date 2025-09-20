@@ -13,6 +13,7 @@ mapfile targets <<EOF
  /rw/dv/rsnapdock/var_log/rsnapshot.log
  /rw/dv/webdock/var_log_apache2/access.log
  /rw/dv/eximdock/var/spool/exim/input
+ /home/ken/share/gocryptfs/mailarc/jimVlLOKliHlB2EinQbtpw/69fLQXh0yRjE53VKWU5sHw
  /home/ken/share/rcam/homesec1
  /home/ken/share/rcam/homesec2
  /rw/mnt/rsnap/daily.0/a4/var/log/syslog

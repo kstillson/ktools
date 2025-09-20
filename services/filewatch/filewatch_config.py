@@ -42,6 +42,10 @@ CONFIG = {
     '/root/syslog/daemon.log':                     SYS_LOG_AGE,
     '/root/dv/eximdock/var/log/exim/mainlog':      3 * DAY,
     
+    # auto mail archiver
+    '/root/syslog/mailarc.log':                    8 * DAY,
+    '/root/share/gocryptfs/mailarc/jimVlLOKliHlB2EinQbtpw/69fLQXh0yRjE53VKWU5sHw':  8 * DAY,  # tmp/update.done
+    
     # other general services
     '/root/dv/nagdock/var_log_nagios/nagios.log':  SYS_LOG_AGE,
     '/root/dv/rsnapdock/var_log/rsnapshot.log':    RSNAP_LOG_AGE,
@@ -61,7 +65,7 @@ CONFIG = {
     # specials
     '/root/dnsmasq/dnsmasq.leases':                'NOT-FOUND:.9.',
     '/root/exim':                                  'DIR-EMPTY',
-    '/root/rcam/homesec1/{NEWEST}':                CAM_AGE,
-    '/root/rcam/homesec2/{NEWEST}':                CAM_AGE,
+    '/root/share/rcam/homesec1/{NEWEST}':           CAM_AGE,
+    '/root/share/rcam/homesec2/{NEWEST}':           CAM_AGE,
     '/root/syslog/iptables.log':                   'FILE-EMPTY',
 }
