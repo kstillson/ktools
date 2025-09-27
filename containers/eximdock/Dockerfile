@@ -14,4 +14,4 @@ VOLUME ["/var/log", "/var/mail", "/var/spool"]
 
 USER exim
 ENTRYPOINT ["/usr/sbin/exim"]
-CMD ["-bd", "-v", "-C", "/etc/exim/exim.conf"]
+CMD ["-bd", "-q15m", "-v", "-C", "/etc/exim/exim.conf"]
