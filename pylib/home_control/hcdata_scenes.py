@@ -71,9 +71,8 @@ SCENES = {
   'party'       : [  'bendy', 'breakfast-nook', 'dining-chandelier', 'family-room-left',
                      'family-room-right', 'kitchen-pendants', 'kitchen', 'lounge',
                      'office', 'window-lights', 'accents-party', 'neotree', 'twinkle', 'lightning' ],
-  'tv'          : [  'bendy:off', 'breakfast-nook:off', 'dining-chandelier:dim:25', 'family-room-left:dim:20',
-                     'family-room-right:dim:20', 'kitchen-pendants:dim:30', 'kitchen:off', 'lounge:dim:15',
-                     'office:dim:20', 'window-lights:off' ],
+  'tv'          : [  'fam:dim:40', 'lounge:dim:15', 'office:dim:20',
+                     'bendy:off', 'breakfast-nook:off', 'kitchen:off', 'window-lights:off' ],
   'warmer'      : [ 'space-heater:on', 'delay:900:space-heater:off' ],
 
  # Special command-specific overrides
