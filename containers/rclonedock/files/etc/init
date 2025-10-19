@@ -178,7 +178,9 @@ case $MODE in
 	echo "$(date): starting echo back to ${DEST}"
 	rm -rf ${DEST}
 	rsync servarica:/home/backup/src/home/home/ken/share/tmp/touch ${DEST}
-	/usr/bin/diff /root/src/home/home/ken/share/tmp/touch ${DEST} || { echo "ERROR- jack cron copy-back doesnt match."; exit -4; }
+	diff_hours=$(( ( $(date -d "$(cat /root/src/home/home/ken/share/tmp/touch)" +%s) - $(date -d "$(cat $DEST)" +%s) ) / 3600 ))
+	if [[ -z "$diff_hours" || "$diff_hours" -gt 25 ]]; then echo "ERROR- jack cron copy-back doesnt match; diff_hours=$diff_hours."; exit -4; fi
+	echo "ok (copy-back diff hours = $diff_hours)"
         ;;
 
     *)
