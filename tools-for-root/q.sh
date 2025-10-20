@@ -570,7 +570,7 @@ function dns_update_rmmac() {
     emit "committing change..."
     /root/bin/d 0 dnsdock
     mv -f $t $LEASES
-    chown droot.dgroup $LEASES
+    chown droot:dgroup $LEASES
     # filewatchdock needs to be able to monitor this file.
     chmod go+r $LEASES
     /root/bin/d 1 dnsdock

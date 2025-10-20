@@ -7,7 +7,7 @@ fi
 
 # The build happened with userns turned on.  Now that we're running without
 # the ns mapping, we need to put some files back to their real-uid owners.
-/bin/chown -R root.root /root/.ssh
+/bin/chown -R root:root /root/.ssh
 
 # TEST MODE
 if [[ "$1" == "test" ]]; then
