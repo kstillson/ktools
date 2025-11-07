@@ -57,16 +57,11 @@ def control(plugin_name, plugin_params, device_name, dev_command):
 # ---------- actual command io
 
 def shelly_send(hostname, command):
-    if ':' in command:
-        tmp, cmd_param = command.split(':', 1)
-        command = tmp + ':@@'    # (This is what to we'll earch for in CMD_LOOKUP)
-    else:
-        cmd_param = None
-
     params = CMD_LOOKUP.get(command)
     if not params: return False, f'{hostname}: unknown shelly command: {command}'
 
-    method = params.pop('method')
+    method = params.pop('method', None)
+    if not method: return False, f'home-control internal error; no method found for {command}'
     url = f'http://{hostname}/rpc/{method}'
 
     resp = C.web_get(url, get_dict=params, timeout=SETTINGS.get('timeout', 10))
