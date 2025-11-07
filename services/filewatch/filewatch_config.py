@@ -43,8 +43,10 @@ CONFIG = {
     '/root/dv/eximdock/var/log/exim/mainlog':      3 * DAY,
     
     # auto mail archiver
-    '/root/syslog/mailarc.log':                    8 * DAY,
     '/root/share/gocryptfs/mailarc/jimVlLOKliHlB2EinQbtpw/69fLQXh0yRjE53VKWU5sHw':  8 * DAY,  # tmp/update.done
+    '/root/syslog/mailarc.log':                         8 * DAY,
+    '/root/var_local/mailarc/ok-dken-dcc-mbox.stamp':   8 * DAY,
+    '/root/var_local/mailarc/ok-dken-dken-sent.stamp':  8 * DAY,
     
     # other general services
     '/root/dv/nagdock/var_log_nagios/nagios.log':  SYS_LOG_AGE,
