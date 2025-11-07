@@ -46,7 +46,7 @@ def audible_feedback(name):
         return
     C.log('sending audible feedback: ' + name)
     V.bump('audible-feedback-sent')
-    web_get_bg('https://home.point0.net/speak/@buzz')
+    web_get_bg(f'https://home.point0.net/speak/@{name}')
 
 
 def web_get_bg(*args, **kwargs):
@@ -296,7 +296,7 @@ def handler_root(request, hl_index=None, msg=None):
 
     if DONE_QUEUE:
         tab = []
-        for d in DONE_QUEUE:
+        for d in reversed(DONE_QUEUE):
             tab.append([d['index'], d['when'], d['name'], d['notes'], d['url'], d['output'], d['out']])
         done_html = H.list_to_table(
             tab, table_fmt='border="1" cellpadding="5"',
