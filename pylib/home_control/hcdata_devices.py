@@ -84,6 +84,11 @@ DEVICES = {
     'rear-flood:dim'		: 'TPLINK-PLUG:tp-rear-flood:off',  # rear flood only activates for "full" and "on"
     'rear-flood:med'		: 'TPLINK-PLUG:tp-rear-flood:off',
 
+    # ---------- Shelly smart devices
+
+    'sp1'                       : 'SHELLY-PLUG:%d:%c',
+
+
     # ---------- delay trigger
 
     'delay'             : 'DELAY:%c',
