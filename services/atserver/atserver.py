@@ -198,7 +198,7 @@ def fire_and_get_url_real(**kwargs) -> None:
         C.log_warning(f'mapped response status to error due to output content: {resp.text}')
 
     if resp_ok:
-        out = resp.text
+        out = re.sub(r"<[^>]+>", "", resp.text).replace('\n', ' ')
         V.bump('fired:ok')
     elif resp.exception:
         out = f'Exception: {resp.exception}'
@@ -324,6 +324,9 @@ def handler_add_real(request):
     cont = '<p><a href=".">continue</a></p>'
     pd = request.post_params
 
+    # quiet param does two things: (1) supresses audible 'dink' feedback when adding event,
+    # and (2) responds with a simple 1-line msg, rather than html that contains the output
+    # of the root handler (i.e. list of all events) with the new event highlighted.
     quiet = pd.get('quiet', False)
 
     when0 = pd.get('when0', '')

@@ -57,11 +57,11 @@ def control(plugin_name, plugin_params, device_name, dev_command):
 # ---------- actual command io
 
 def shelly_send(hostname, command):
-    params = CMD_LOOKUP.get(command)
+    params = dict(CMD_LOOKUP.get(command, {}))
     if not params: return False, f'{hostname}: unknown shelly command: {command}'
 
     method = params.pop('method', None)
-    if not method: return False, f'home-control internal error; no method found for {command}'
+    if not method: return False, f'home-control internal error; no method found for {command}; {params=}'
     url = f'http://{hostname}/rpc/{method}'
 
     resp = C.web_get(url, get_dict=params, timeout=SETTINGS.get('timeout', 10))
