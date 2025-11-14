@@ -117,7 +117,7 @@ class Response:
             self.msg_type = msg_type
         else:
             if self.body:
-                self.msg_type = msg_type or ('text/html' if self.body.startswith('<') else 'text')
+                self.msg_type = msg_type or ('text/html' if self.body.startswith('<') else 'text/plain')
             else:
                 self.msg_type = '?'
         self.exception = exception
